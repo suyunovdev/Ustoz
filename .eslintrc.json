@@ -1,0 +1,47 @@
+{
+  "root": true,
+  "extends": [
+    "next/core-web-vitals",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "parser": "@typescript-eslint/parser",
+  "plugins": [
+    "@typescript-eslint"
+  ],
+  "rules": {
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+    "@typescript-eslint/no-explicit-any": "warn",
+    "@typescript-eslint/no-require-imports": "warn",
+    "react/no-unescaped-entities": "warn",
+    "no-console": [
+      "warn",
+      {
+        "allow": ["warn", "error", "info", "log"]
+      }
+    ],
+    "@typescript-eslint/no-empty-object-type": "warn",
+    "@typescript-eslint/ban-ts-comment": "warn",
+    "no-useless-escape": "warn",
+    "no-case-declarations": "warn"
+  },
+  "ignorePatterns": [
+    "node_modules/",
+    ".next/",
+    "out/",
+    "public/",
+    "supabase/functions/"
+  ],
+  "env": {
+    "browser": true,
+    "node": true,
+    "es6": true
+  }
+}

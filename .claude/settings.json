@@ -1,0 +1,44 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node generate-tz-v2.mjs)",
+      "Bash(grep -n \"attempt_count\\\\|locked_until\" /Users/ilyossuyunov/Downloads/ustoz/supabase/migrations/*.sql)",
+      "Bash(grep -n \"CREATE TABLE.*enrollments\\\\|CREATE TABLE.*payment_transactions\" /Users/ilyossuyunov/Downloads/ustoz/supabase/migrations/*.sql)",
+      "Bash(curl -s http://localhost:4028/course-marketplace)",
+      "Bash(curl -s \"http://localhost:4028/_next/static/css/app/layout.css\")",
+      "Bash(curl -s \"http://localhost:4028/course-marketplace\")",
+      "Bash(curl -s \"http://localhost:4028/_next/static/css/app/layout.css?v=1779341322068\")",
+      "Bash(curl -si \"http://localhost:4028/course-marketplace\")",
+      "Bash(grep -n \"CREATE TABLE.*courses\" /Users/ilyossuyunov/Downloads/ustoz/supabase/migrations/*.sql)",
+      "Bash(grep -rn \"CREATE TABLE\" /Users/ilyossuyunov/Downloads/ustoz/supabase/migrations/*.sql)",
+      "Bash(curl -s http://localhost:4028/api/health)",
+      "Bash(open http://localhost:4028)",
+      "Bash(curl -s http://localhost:4028/api/auth/me -H \"Content-Type: application/json\")",
+      "Bash(curl -s -b /tmp/cookies.txt -X POST http://localhost:4028/api/teacher/courses -H 'Content-Type: application/json' -d '{\"title\":\"Python asoslari\",\"description\":\"Boshlangichlar uchun\",\"category\":\"programming\",\"targetAudience\":\"university_students\",\"subjectCategory\":\"programming\",\"language\":\"uz\",\"priceUzs\":150000}')",
+      "Bash(curl -v -b /tmp/cookies.txt -X POST http://localhost:4028/api/teacher/courses -H 'Content-Type: application/json' -d '{\"title\":\"Python asoslari\",\"category\":\"programming\",\"targetAudience\":\"university_students\",\"subjectCategory\":\"programming\",\"language\":\"uz\"}')",
+      "Bash(jobs -l)",
+      "Bash(ls /tmp/ustoz*.log)",
+      "Bash(sed -i '' \"s|import { getSessionFromRequest } from '@/lib/auth';|import { getSessionFromRequest } from '@/lib/auth';\\\\nimport { jsonResponse } from '@/lib/json';|\" src/app/api/teacher/courses/route.ts)",
+      "Bash(sed -i '' \"s|return NextResponse.json\\({|return jsonResponse\\({|g\" src/app/api/teacher/courses/route.ts)",
+      "Bash(sed -i '' \"s|return NextResponse.json\\({ course }, { status: 201 }\\);|return jsonResponse\\({ course }, { status: 201 }\\);|g\" src/app/api/teacher/courses/route.ts)",
+      "Bash(sed -i '' \"s|import { getSessionFromRequest } from '@/lib/auth';|import { getSessionFromRequest } from '@/lib/auth';\\\\nimport { jsonResponse } from '@/lib/json';|\" src/app/api/teacher/courses/[id]/route.ts)",
+      "Bash(sed -i '' \"s|return NextResponse.json\\({|return jsonResponse\\({|g\" src/app/api/teacher/courses/[id]/route.ts)",
+      "Bash(sed -i '' 's/return NextResponse\\\\.json\\({/return jsonResponse\\({/g' src/app/api/courses/route.ts)",
+      "Bash(sed -i '' 's/return NextResponse\\\\.json\\({/return jsonResponse\\({/g' \"src/app/api/courses/[id]/route.ts\")",
+      "Bash(sed -i '' 's/return NextResponse\\\\.json\\({/return jsonResponse\\({/g' \"src/app/api/courses/[id]/enroll/route.ts\")",
+      "Bash(sed -i '' \"s|import { prisma } from '@/lib/prisma';|import { prisma } from '@/lib/prisma';\\\\nimport { jsonResponse } from '@/lib/json';|\" \"src/app/api/courses/[id]/route.ts\")",
+      "Bash(sed -i '' \"s|import { prisma } from '@/lib/prisma';|import { prisma } from '@/lib/prisma';\\\\nimport { jsonResponse } from '@/lib/json';|\" \"src/app/api/courses/[id]/enroll/route.ts\")",
+      "Bash(sed -i '' 's/if \\(course\\\\.priceUzs > BigInt\\(0\\)\\) {/if \\(Number\\(course.priceUzs\\) > 0\\) {/' \"src/app/api/courses/[id]/enroll/route.ts\")",
+      "Bash(sed -i '' 's/return NextResponse\\\\.json\\(/return jsonResponse\\(/g' \"src/app/api/courses/[id]/enroll/route.ts\")",
+      "Bash(curl -s -c /tmp/cookies2.txt -X POST http://localhost:4028/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"teacher@test.uz\",\"password\":\"test1234\"}')",
+      "Bash(curl -s -b /tmp/cookies2.txt -X POST http://localhost:4028/api/teacher/courses -H 'Content-Type: application/json' -d '{\"title\":\"Python asoslari\",\"category\":\"programming\",\"targetAudience\":\"university_students\",\"subjectCategory\":\"programming\",\"language\":\"uz\",\"priceUzs\":150000}')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Courses:', len\\(d['courses']\\), '| Total:', d['stats']['totalCourses'], '| Revenue:', d['stats']['totalRevenueUzs']\\)\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Total courses:', d['totalCourses'], '| Enrollments:', d['totalEnrollments']\\)\")",
+      "Bash(curl -s http://localhost:4028/api/courses)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Published courses:', d['pagination']['total']\\)\")"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}
