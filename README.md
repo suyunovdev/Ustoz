@@ -1,91 +1,164 @@
-# Next.js
+# Ustoz — O'zbek tilidagi onlayn ta'lim platformasi
 
-A modern Next.js 15 application built with TypeScript and Tailwind CSS.
+Talabalar va o'qituvchilar uchun marketplace + student dashboard. Real progress tracking, streak, shaxsiy tavsiyalar va sertifikatlar.
 
-## 🚀 Features
+## Tech Stack
 
-- **Next.js 15** - Latest version with improved performance and features
-- **React 19** - Latest React version with enhanced capabilities
-- **Tailwind CSS** - Utility-first CSS framework for rapid UI development
+| Qatlam | Texnologiya |
+| --- | --- |
+| Framework | Next.js 15 (App Router) |
+| UI | React 19 + Tailwind CSS 3.4 |
+| Language | TypeScript (strict) |
+| Database | PostgreSQL 15 + Prisma 7.8 (pg adapter) |
+| Auth | JWT (jose) + httpOnly cookie + bcryptjs |
+| State | TanStack Query v5 (cache + optimistic) |
+| Email | Resend |
+| Testing | Vitest + React Testing Library |
 
-## 🛠️ Installation
+## Arxitektura
 
-1. Install dependencies:
-  ```bash
-  npm install
-  # or
-  yarn install
-  ```
-
-2. Start the development server:
-  ```bash
-  npm run dev
-  # or
-  yarn dev
-  ```
-3. Open [http://localhost:4028](http://localhost:4028) with your browser to see the result.
-
-## 📁 Project Structure
+Uch qatlamli:
 
 ```
-nextjs/
-├── public/             # Static assets
-├── src/
-│   ├── app/            # App router components
-│   │   ├── layout.tsx  # Root layout component
-│   │   └── page.tsx    # Main page component
-│   ├── components/     # Reusable UI components
-│   ├── styles/         # Global styles and Tailwind configuration
-├── next.config.mjs     # Next.js configuration
-├── package.json        # Project dependencies and scripts
-├── postcss.config.js   # PostCSS configuration
-└── tailwind.config.js  # Tailwind CSS configuration
-
+HTTP route  →  Service        →  Repository      →  Prisma
+(app/api)      (lib/services)    (lib/repositories)
 ```
 
-## 🧩 Page Editing
+Tafsilot uchun [ARCHITECTURE.md](ARCHITECTURE.md).
 
-You can start editing the page by modifying `src/app/page.tsx`. The page auto-updates as you edit the file.
+## O'rnatish
 
-## 🎨 Styling
+1. Dependencies:
+   ```bash
+   npm install
+   ```
 
-This project uses Tailwind CSS for styling with the following features:
-- Utility-first approach for rapid development
-- Custom theme configuration
-- Responsive design utilities
-- PostCSS and Autoprefixer integration
+2. `.env`'ni `.env.example`'dan nusxalang va sozlang:
+   ```bash
+   cp .env.example .env
+   # DATABASE_URL, JWT_SECRET, RESEND_API_KEY'ni to'ldiring
+   ```
 
-## 📦 Available Scripts
+3. Database tayyorlash:
+   ```bash
+   npx prisma migrate deploy
+   npx prisma db seed
+   ```
 
-- `npm run dev` - Start development server on port 4028
-- `npm run build` - Build the application for production
-- `npm run start` - Start the development server
-- `npm run serve` - Start the production server
-- `npm run lint` - Run ESLint to check code quality
-- `npm run lint:fix` - Fix ESLint issues automatically
-- `npm run format` - Format code with Prettier
+4. Dev server:
+   ```bash
+   npm run dev
+   # → http://localhost:4028
+   ```
 
-## 📱 Deployment
+## Scripts
 
-Build the application for production:
+| Buyruq | Tavsif |
+| --- | --- |
+| `npm run dev` | Dev server (port 4028) |
+| `npm run build` | Production build |
+| `npm run serve` | Production server |
+| `npm run lint` | ESLint |
+| `npm run type-check` | `tsc --noEmit` |
+| `npm test` | Vitest watch mode |
+| `npm run test:run` | Single test run |
+| `npm run test:coverage` | Coverage report (HTML + text) |
+| `npm run analyze` | Bundle analyzer (`ANALYZE=true next build`) |
+| `npm run db:seed` | Prisma seed |
 
-  ```bash
-  npm run build
-  ```
+## Testlar
 
-## 📚 Learn More
+```bash
+npm run test:run
+# 4 fayl, 39 test, ~1.5s
+```
 
-To learn more about Next.js, take a look at the following resources:
+**Coverage** (`npm run test:coverage`):
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial
+| Modul | Statements |
+| --- | --- |
+| `lib/services/progress.service.ts` | 88.6% |
+| `lib/services/streak.service.ts` | 84.9% |
+| `lib/services/recommendation.service.ts` | 100% |
+| `app/student-dashboard/components/WelcomeSection.tsx` | 97.7% |
 
-You can check out the [Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Performance
 
-## 🙏 Acknowledgments
+- **Dashboard LCP**: ~600ms (SSR + HydrationBoundary)
+- **Cache hit**: ~22ms (TanStack Query)
+- **Server bundle**: 1 query per data source (N+1 muammosi yo'q — bitta helper barcha enrollment uchun)
 
-- Built with [Rocket.new](https://rocket.new)
-- Powered by Next.js and React
-- Styled with Tailwind CSS
+## Loyiha tuzilishi
 
-Built with ❤️ on Rocket.new
+```
+src/
+├── app/                       # Next.js App Router
+│   ├── api/                   # Route handlers
+│   ├── student-dashboard/     # Dashboard (server + interactive)
+│   ├── course-marketplace/
+│   ├── course-details/
+│   ├── learning-interface/
+│   ├── robots.ts              # SEO
+│   ├── sitemap.ts             # SEO
+│   └── layout.tsx             # Root layout + metadata
+│
+├── components/                # Reusable UI
+│   ├── common/                # RoleBasedHeader, Toaster, UserMenu
+│   ├── providers/             # QueryProvider
+│   └── ui/                    # AppIcon, AppImage
+│
+├── contexts/                  # AuthContext
+│
+├── hooks/                     # React hooks
+│   ├── queries/               # TanStack Query hook'lar
+│   └── mutations/             # TanStack Mutation hook'lar
+│
+├── lib/
+│   ├── auth.ts                # JWT helpers
+│   ├── prisma.ts              # Prisma client (pg adapter)
+│   ├── errors/                # ServiceError, EnrollmentNotFoundError…
+│   ├── repositories/          # DB access (1 fayl = 1 jadval)
+│   └── services/              # Biznes logika
+│       ├── progress.service.ts
+│       ├── streak.service.ts
+│       ├── recommendation.service.ts
+│       ├── dashboard.service.ts          # orchestrator
+│       └── dashboard-progress.helper.ts  # N+1 avoidance
+│
+├── styles/                    # Global CSS + Tailwind
+├── test/                      # Vitest setup
+└── types/                     # Shared types
+```
+
+## SEO
+
+- [`src/app/robots.ts`](src/app/robots.ts) — public sahifalar ochiq, dashboard/admin yopiq
+- [`src/app/sitemap.ts`](src/app/sitemap.ts) — statik route'lar + barcha published kurslar
+- Per-page metadata (`title`, `description`, `openGraph`, `twitter`)
+- `NEXT_PUBLIC_SITE_URL` env'dan o'qiladi
+
+## Xavfsizlik
+
+Security headers [next.config.mjs](next.config.mjs)'da:
+- `X-Frame-Options: DENY`
+- `X-Content-Type-Options: nosniff`
+- `Referrer-Policy: strict-origin-when-cross-origin`
+- `Permissions-Policy` (camera/microphone/geolocation off)
+- Production: `Strict-Transport-Security` + CSP
+
+JWT:
+- 7-kunlik httpOnly cookie (`ustoz_session`)
+- bcrypt 12 rounds parol uchun
+- TODO: refresh token (15-min access + 7-day refresh) — kelajak iteratsiya
+
+## Pre-deploy checklist
+
+- [ ] `npm run type-check` → 0 errors
+- [ ] `npm run test:run` → barcha PASS
+- [ ] `npm run build` → muvaffaqiyatli
+- [ ] `.env` to'liq (DATABASE_URL, JWT_SECRET, NEXT_PUBLIC_SITE_URL)
+- [ ] Database migration deploy (`npx prisma migrate deploy`)
+
+## Litsenziya
+
+Proprietary — Ustoz Team.

@@ -4,8 +4,14 @@ import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import CourseDetailsInteractive from './components/CourseDetailsInteractive';
 
 export const metadata: Metadata = {
-  title: 'Kurs Tafsilotlari - Ustoz',
-  description: 'Kurs haqida to\'liq ma\'lumot, o\'quv dasturi, sharhlar va sotib olish imkoniyati.',
+  title: 'Kurs tafsilotlari',
+  description:
+    "Kurs haqida to'liq ma'lumot, o'quv dasturi, sharhlar va sotib olish imkoniyati.",
+  openGraph: {
+    title: 'Kurs tafsilotlari | Ustoz',
+    description: "Kurs sahifasi — dastur, sharhlar va o'qituvchi haqida.",
+    type: 'article',
+  },
 };
 
 export default function CourseDetailsPage() {

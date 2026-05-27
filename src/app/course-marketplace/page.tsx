@@ -15,8 +15,16 @@ const MarketplaceInteractive = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: 'Course Marketplace - Ustoz',
-  description: 'Discover and purchase educational courses across multiple categories including programming, languages, business, design, and marketing. Filter by price, language, difficulty level, and ratings to find the perfect course for your learning journey.',
+  title: 'Kurslar marketplace',
+  description:
+    "O'zbek tilidagi kurslarni kashf eting: dasturlash, dizayn, biznes, tillar va marketing. Narx, daraja va reyting bo'yicha filtr qiling, sizga mos kursni toping.",
+  alternates: { canonical: '/course-marketplace' },
+  openGraph: {
+    title: 'Kurslar marketplace | Ustoz',
+    description: "O'zbek tilidagi onlayn kurslar katalogi.",
+    url: '/course-marketplace',
+    type: 'website',
+  },
 };
 
 export default function CourseMarketplacePage() {

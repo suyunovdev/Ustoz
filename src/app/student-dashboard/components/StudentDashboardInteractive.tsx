@@ -7,67 +7,54 @@ import ContinueLearningCard from './ContinueLearningCard';
 import CourseCard from './CourseCard';
 import RecommendedCourseCard from './RecommendedCourseCard';
 import CertificateCard from './CertificateCard';
+import StreakAlert from './StreakAlert';
+import ContinueLearningHero from './ContinueLearningHero';
+import ActivityHeatmap from './ActivityHeatmap';
+import ActivityHeatmapSkeleton from './ActivityHeatmapSkeleton';
 import SearchBar from './SearchBar';
 import CategoryFilter from './CategoryFilter';
 import QuickActions from './QuickActions';
 import Icon from '@/components/ui/AppIcon';
-
-interface ContinueLearningCourse {
-  id: string;
-  title: string;
-  instructor: string;
-  coverImage: string;
-  coverImageAlt: string;
-  progress: number;
-  nextTopic: string;
-  totalTopics: number;
-  completedTopics: number;
-}
-
-interface Course {
-  id: string;
-  title: string;
-  instructor: string;
-  coverImage: string;
-  coverImageAlt: string;
-  progress: number;
-  lastAccessed: string;
-  totalTopics: number;
-  completedTopics: number;
-  isCompleted: boolean;
-}
-
-interface RecommendedCourse {
-  id: string;
-  title: string;
-  instructor: string;
-  coverImage: string;
-  coverImageAlt: string;
-  category: string;
-  price: number;
-  currency: string;
-  rating: number;
-  studentsCount: number;
-  duration: string;
-}
-
-interface Certificate {
-  id: string;
-  courseTitle: string;
-  completionDate: string;
-  certificateNumber: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  icon: string;
-}
-
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449';
+import type {
+  DashboardEnrollment,
+} from '@/types/dashboard.types';
+import type { RecommendedCourse } from '@/types/recommendation.types';
+import { useStudentDashboard } from '@/hooks/queries/useStudentDashboard';
+import { useActivityCalendar } from '@/hooks/queries/useActivityCalendar';
 
 type DashboardTab = 'continue' | 'my-courses' | 'recommended';
 const VALID_TABS: DashboardTab[] = ['continue', 'my-courses', 'recommended'];
+
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449';
+
+/**
+ * Hero card uchun eng "tegishli" enrollment'ni topish:
+ *  1. In-progress (0 < progress < 100) — lastAccessedAt DESC, fallback enrolledAt DESC
+ *  2. Yo'q bo'lsa — not started (progress = 0) — enrolledAt DESC
+ *  3. Hech narsa yo'q yoki barchasi 100% — null
+ */
+function getMostRecentInProgress(
+  enrollments: DashboardEnrollment[],
+): DashboardEnrollment | null {
+  const inProgress = enrollments.filter((e) => !e.isCompleted && e.progress > 0);
+
+  const compareDesc = (a: DashboardEnrollment, b: DashboardEnrollment) => {
+    const at = a.lastAccessedAt ? new Date(a.lastAccessedAt).getTime() : new Date(a.enrolledAt).getTime();
+    const bt = b.lastAccessedAt ? new Date(b.lastAccessedAt).getTime() : new Date(b.enrolledAt).getTime();
+    return bt - at;
+  };
+
+  if (inProgress.length > 0) {
+    return [...inProgress].sort(compareDesc)[0];
+  }
+
+  const notStarted = enrollments.filter((e) => e.progress === 0);
+  if (notStarted.length > 0) {
+    return [...notStarted].sort(compareDesc)[0];
+  }
+
+  return null;
+}
 
 const StudentDashboardInteractive = () => {
   const router = useRouter();
@@ -76,140 +63,112 @@ const StudentDashboardInteractive = () => {
     const t = searchParams?.get('tab');
     return VALID_TABS.includes(t as DashboardTab) ? (t as DashboardTab) : 'continue';
   })();
+
   const [isHydrated, setIsHydrated] = useState(false);
   const [activeView, setActiveView] = useState<DashboardTab>(initialTab);
   const [userName, setUserName] = useState('Foydalanuvchi');
-  const [userStats, setUserStats] = useState({ coursesCompleted: 0, certificatesEarned: 0 });
-  const [loadingCourses, setLoadingCourses] = useState(true);
-  const [continueLearning, setContinueLearning] = useState<ContinueLearningCourse[]>([]);
-  const [myCourses, setMyCourses] = useState<Course[]>([]);
-  const [recommended, setRecommended] = useState<RecommendedCourse[]>([]);
-  const [certificates, setCertificates] = useState<Certificate[]>([]);
 
-  const categories: Category[] = [
-    { id: 'programming', name: 'Dasturlash', icon: 'CodeBracketIcon' },
-    { id: 'design', name: 'Dizayn', icon: 'PaintBrushIcon' },
-    { id: 'business', name: 'Biznes', icon: 'BriefcaseIcon' },
-    { id: 'language', name: 'Tillar', icon: 'LanguageIcon' },
-  ];
+  // Dashboard data — TanStack Query (cached + auto refetch)
+  const dashboardQuery = useStudentDashboard();
+  const data = dashboardQuery.data;
+  const loadingCourses = dashboardQuery.isLoading;
 
+  const enrollments = data?.enrollments ?? [];
+  const recommended = data?.recommended ?? [];
+  const certificates = data?.certificates ?? [];
+  const stats = data?.stats ?? {
+    enrolledCount: 0,
+    coursesCompleted: 0,
+    certificatesEarned: 0,
+    streak: { current: 0, longest: 0, activeToday: false },
+  };
+
+  // Activity heatmap — responsive days
+  const [heatmapDays, setHeatmapDays] = useState(90);
+  const activityQuery = useActivityCalendar(heatmapDays, stats.enrolledCount > 0);
+  const activities = activityQuery.data?.activities ?? [];
+  const activityLoading = activityQuery.isLoading;
+
+  // Recommendations: category filter + "Yana tavsiya" (manual fetch — chunki exclude key dynamic)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [extraRecommendations, setExtraRecommendations] = useState<RecommendedCourse[]>([]);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // User name (faqat 1 marta — AuthContext bilan birga keladi keyinroq)
   useEffect(() => {
     setIsHydrated(true);
-    loadDashboard();
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.user?.fullName) setUserName(d.user.fullName);
+        else if (dashboardQuery.isError && (dashboardQuery.error as any)?.message?.includes('401')) {
+          router.push('/login');
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // URL `?tab=` o'zgarganida active tab'ni yangilash (header link bosilganida)
+  // 401 handling — dashboardQuery xato berganida login'ga
+  useEffect(() => {
+    if (dashboardQuery.error?.message?.includes('401')) {
+      router.push('/login');
+    }
+  }, [dashboardQuery.error, router]);
+
+  const handleLoadMoreRecommendations = async () => {
+    if (loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const allIds = [...recommended, ...extraRecommendations].map((c) => c.id);
+      const params = new URLSearchParams({ limit: '6' });
+      if (allIds.length > 0) params.set('exclude', allIds.join(','));
+      const res = await fetch(`/api/student/recommendations?${params}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setExtraRecommendations((prev) => [...prev, ...(data.recommendations ?? [])]);
+    } catch (err) {
+      console.error('Yana tavsiya yuklashda xato:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // URL `?tab=` o'zgarganida active tab'ni yangilash (header link bosilganda)
   useEffect(() => {
     const t = searchParams?.get('tab');
     if (t && VALID_TABS.includes(t as DashboardTab) && t !== activeView) {
       setActiveView(t as DashboardTab);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  const loadDashboard = async () => {
-    try {
-      setLoadingCourses(true);
-
-      const [meRes, dataRes] = await Promise.all([
-        fetch('/api/auth/me', { credentials: 'include' }),
-        fetch('/api/enrollments/my', { credentials: 'include' }),
-      ]);
-
-      if (meRes.ok) {
-        const me = await meRes.json();
-        if (me?.user?.fullName) setUserName(me.user.fullName);
-      }
-
-      if (!dataRes.ok) {
-        if (dataRes.status === 401) {
-          router.push('/login');
-          return;
-        }
-        return;
-      }
-
-      const data = await dataRes.json();
-
-      const inProgress: ContinueLearningCourse[] = [];
-      const allCourses: Course[] = [];
-
-      (data.enrollments || []).forEach((e: any) => {
-        const c = e.course;
-        const totalTopics = c.totalTopics || 0;
-        const completedTopics = Math.round((totalTopics * (e.progress || 0)) / 100);
-        const courseObj: Course = {
-          id: c.id,
-          title: c.title,
-          instructor: c.teacherName || 'Ustoz',
-          coverImage: c.coverImage || DEFAULT_COVER,
-          coverImageAlt: `${c.title} kursi`,
-          progress: e.progress || 0,
-          lastAccessed: e.enrolledAt
-            ? new Date(e.enrolledAt).toLocaleDateString('uz-UZ')
-            : '—',
-          totalTopics,
-          completedTopics,
-          isCompleted: e.isCompleted,
-        };
-        allCourses.push(courseObj);
-
-        if ((e.progress || 0) > 0 && (e.progress || 0) < 100) {
-          inProgress.push({
-            id: c.id,
-            title: c.title,
-            instructor: c.teacherName || 'Ustoz',
-            coverImage: c.coverImage || DEFAULT_COVER,
-            coverImageAlt: `${c.title} kursi`,
-            progress: e.progress,
-            nextTopic: 'Keyingi mavzu',
-            totalTopics,
-            completedTopics,
-          });
-        }
-      });
-
-      setContinueLearning(inProgress.slice(0, 4));
-      setMyCourses(allCourses);
-
-      setRecommended(
-        (data.recommended || []).map((c: any) => ({
-          id: c.id,
-          title: c.title,
-          instructor: c.teacherName || 'Ustoz',
-          coverImage: c.coverImage || DEFAULT_COVER,
-          coverImageAlt: `${c.title} kursi`,
-          category: c.category || 'Kurs',
-          price: Number(c.priceUzs) || 0,
-          currency: 'UZS',
-          rating: Number(c.rating) || 0,
-          studentsCount: c.enrollmentCount || 0,
-          duration: c.difficultyLevel || '—',
-        }))
-      );
-
-      setCertificates(
-        (data.certificates || []).map((cert: any) => ({
-          id: cert.id,
-          courseTitle: cert.courseTitle,
-          completionDate: new Date(cert.issuedAt).toLocaleDateString('uz-UZ'),
-          certificateNumber: cert.certificateNumber,
-        }))
-      );
-
-      setUserStats({
-        coursesCompleted: data.stats?.coursesCompleted || 0,
-        certificatesEarned: data.stats?.certificatesEarned || 0,
-      });
-    } catch (err) {
-      console.error('Dashboard yuklashda xato:', err);
-    } finally {
-      setLoadingCourses(false);
-    }
-  };
+  // Heatmap responsive: mobile 30 / tablet 60 / desktop 90 kun
+  useEffect(() => {
+    const updateDays = () => {
+      const w = window.innerWidth;
+      if (w < 640) setHeatmapDays(30);
+      else if (w < 1024) setHeatmapDays(60);
+      else setHeatmapDays(90);
+    };
+    updateDays();
+    window.addEventListener('resize', updateDays);
+    return () => window.removeEventListener('resize', updateDays);
+  }, []);
 
   const handleCertificateDownload = (certificateId: string) => {
     window.open(`/api/certificates/${certificateId}`, '_blank');
   };
+
+  // Hero card uchun eng so'nggi ochilgan in-progress kurs
+  const heroEnrollment = getMostRecentInProgress(enrollments);
+
+  // Tab uchun filterlangan ro'yxatlar
+  const continueLearning = enrollments
+    .filter((e) => e.progress > 0 && !e.isCompleted)
+    .slice(0, 4);
 
   if (!isHydrated) {
     return (
@@ -237,13 +196,47 @@ const StudentDashboardInteractive = () => {
             <WelcomeSection
               userName={userName}
               stats={{
-                coursesCompleted: userStats.coursesCompleted,
-                certificatesEarned: certificates.length,
-                currentStreak: 0,
+                coursesCompleted: stats.coursesCompleted,
+                certificatesEarned: stats.certificatesEarned,
+                streak: stats.streak,
+                enrolledCount: stats.enrolledCount,
               }}
             />
 
-            <SearchBar onSearch={(q) => router.push(`/course-marketplace?search=${encodeURIComponent(q)}`)} />
+            {/* Streak'ni saqlash banner — current>0 va activeToday=false bo'lganda */}
+            <StreakAlert
+              streak={{ current: stats.streak.current, activeToday: stats.streak.activeToday }}
+              mostRecentEnrollment={
+                heroEnrollment
+                  ? {
+                      courseId: heroEnrollment.courseId,
+                      nextTopicId: heroEnrollment.nextTopic?.id,
+                    }
+                  : enrollments[0]
+                  ? {
+                      courseId: enrollments[0].courseId,
+                      nextTopicId: enrollments[0].nextTopic?.id,
+                    }
+                  : undefined
+              }
+            />
+
+            {/* Continue Learning Hero — eng so'nggi ochilgan kurs */}
+            {heroEnrollment && <ContinueLearningHero enrollment={heroEnrollment} />}
+
+            {/* Activity heatmap — faqat enrollment bo'lsa */}
+            {stats.enrolledCount > 0 &&
+              (activityLoading ? (
+                <ActivityHeatmapSkeleton weeks={Math.ceil(heatmapDays / 7) + 1} />
+              ) : (
+                <ActivityHeatmap activities={activities} days={heatmapDays} />
+              ))}
+
+            <SearchBar
+              onSearch={(q) =>
+                router.push(`/course-marketplace?search=${encodeURIComponent(q)}`)
+              }
+            />
 
             <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-hide">
               {[
@@ -253,7 +246,7 @@ const StudentDashboardInteractive = () => {
               ].map(({ key, label }) => (
                 <button
                   key={key}
-                  onClick={() => setActiveView(key as any)}
+                  onClick={() => setActiveView(key as DashboardTab)}
                   className={`px-6 py-2.5 rounded-md whitespace-nowrap transition-smooth flex-shrink-0 ${
                     activeView === key
                       ? 'bg-primary text-primary-foreground'
@@ -282,21 +275,25 @@ const StudentDashboardInteractive = () => {
                     <Icon name="PlayCircleIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-foreground mb-2">Hali boshlangan kurs yo'q</h3>
                     <p className="text-muted-foreground mb-6">
-                      {myCourses.length > 0
+                      {enrollments.length > 0
                         ? 'Kurslaringizdan birini boshlang'
                         : 'Birinchi kursingizni sotib oling'}
                     </p>
                     <button
-                      onClick={() => myCourses.length > 0 ? setActiveView('my-courses') : router.push('/course-marketplace')}
+                      onClick={() =>
+                        enrollments.length > 0
+                          ? setActiveView('my-courses')
+                          : router.push('/course-marketplace')
+                      }
                       className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
-                      {myCourses.length > 0 ? "Kurslarimni Ko'rish" : "Kurslarni Ko'rish"}
+                      {enrollments.length > 0 ? "Kurslarimni Ko'rish" : "Kurslarni Ko'rish"}
                     </button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {continueLearning.map((course) => (
-                      <ContinueLearningCard key={course.id} course={course} />
+                    {continueLearning.map((e) => (
+                      <ContinueLearningCard key={e.id} enrollment={e} />
                     ))}
                   </div>
                 )}
@@ -319,7 +316,7 @@ const StudentDashboardInteractive = () => {
                       </div>
                     ))}
                   </div>
-                ) : myCourses.length === 0 ? (
+                ) : enrollments.length === 0 ? (
                   <div className="bg-card rounded-lg border border-border p-12 text-center">
                     <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-foreground mb-2">Hali kurslar yo'q</h3>
@@ -333,8 +330,8 @@ const StudentDashboardInteractive = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {myCourses.map((course) => (
-                      <CourseCard key={course.id} course={course} />
+                    {enrollments.map((e) => (
+                      <CourseCard key={e.id} enrollment={e} />
                     ))}
                   </div>
                 )}
@@ -349,25 +346,65 @@ const StudentDashboardInteractive = () => {
                 </div>
                 <div className="mb-4">
                   <CategoryFilter
-                    categories={categories}
-                    onCategorySelect={(id) => router.push(`/course-marketplace?category=${id}`)}
+                    selectedSlug={selectedCategory}
+                    onSelect={setSelectedCategory}
                   />
                 </div>
-                {loadingCourses ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {[1, 2].map((i) => <div key={i} className="h-48 bg-muted rounded-md animate-pulse"></div>)}
-                  </div>
-                ) : recommended.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    Barcha kurslar allaqachon sizning ro'yxatingizda
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {recommended.map((course) => (
-                      <RecommendedCourseCard key={course.id} course={course} />
-                    ))}
-                  </div>
-                )}
+                {(() => {
+                  const all = [...recommended, ...extraRecommendations];
+                  const filtered = selectedCategory
+                    ? all.filter((c) => c.category?.slug === selectedCategory)
+                    : all;
+
+                  if (loadingCourses) {
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {[1, 2].map((i) => (
+                          <div key={i} className="h-48 bg-muted rounded-md animate-pulse"></div>
+                        ))}
+                      </div>
+                    );
+                  }
+
+                  if (filtered.length === 0) {
+                    return (
+                      <div className="text-center py-12 text-muted-foreground">
+                        {selectedCategory
+                          ? "Bu kategoriyada hozircha tavsiya yo'q"
+                          : "Barcha kurslar allaqachon sizning ro'yxatingizda"}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filtered.map((course) => (
+                          <RecommendedCourseCard key={course.id} course={course} />
+                        ))}
+                      </div>
+                      <div className="flex justify-center mt-6">
+                        <button
+                          onClick={handleLoadMoreRecommendations}
+                          disabled={loadingMore}
+                          className="px-6 py-3 bg-card border border-border text-foreground rounded-md hover:bg-muted transition-smooth disabled:opacity-50 flex items-center gap-2"
+                        >
+                          {loadingMore ? (
+                            <>
+                              <div className="w-4 h-4 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+                              <span>Yuklanmoqda...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Icon name="ArrowPathIcon" size={18} />
+                              <span>Yana tavsiya ko'rish</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -396,7 +433,12 @@ const StudentDashboardInteractive = () => {
                     {certificates.slice(0, 2).map((cert) => (
                       <CertificateCard
                         key={cert.id}
-                        certificate={cert}
+                        certificate={{
+                          id: cert.id,
+                          courseTitle: cert.courseTitle,
+                          completionDate: new Date(cert.issuedAt).toLocaleDateString('uz-UZ'),
+                          certificateNumber: cert.certificateNumber,
+                        }}
                         onDownload={() => handleCertificateDownload(cert.id)}
                       />
                     ))}

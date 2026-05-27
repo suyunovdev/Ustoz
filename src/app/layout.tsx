@@ -2,19 +2,52 @@ import React from 'react';
 import type { Metadata, Viewport } from 'next';
 import '../styles/index.css';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { QueryProvider } from '@/components/providers/QueryProvider';
+import { Toaster } from '@/components/common/Toaster';
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
 };
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ??
+  'http://localhost:4028';
+
 export const metadata: Metadata = {
-  title: "Ustoz Ta'lim - O'quv platformasi",
-  description: "O'zbek o'quvchilar va o'qituvchilar uchun zamonaviy onlayn ta'lim platformasi",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Ustoz Ta'lim — O'zbek tilidagi onlayn o'quv platformasi",
+    template: '%s | Ustoz',
+  },
+  description:
+    "O'zbek o'quvchilar va o'qituvchilar uchun zamonaviy onlayn ta'lim platformasi. Kurslar, sertifikatlar va shaxsiy tavsiyalar.",
+  applicationName: 'Ustoz',
+  keywords: [
+    "ustoz",
+    "onlayn ta'lim",
+    "kurslar",
+    "o'zbek tilida",
+    "sertifikat",
+    "video darslar",
+  ],
+  authors: [{ name: 'Ustoz Team' }],
   icons: {
-    icon: [
-      { url: '/favicon.ico', type: 'image/x-icon' }
-    ],
+    icon: [{ url: '/favicon.ico', type: 'image/x-icon' }],
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'uz_UZ',
+    siteName: 'Ustoz',
+    url: SITE_URL,
+    title: "Ustoz Ta'lim — O'zbek tilidagi onlayn o'quv platformasi",
+    description:
+      "Kurslarni o'rganing, sertifikat oling va kasbiy rivojlaning.",
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "Ustoz Ta'lim",
+    description: "O'zbek tilidagi onlayn o'quv platformasi",
   },
 };
 
@@ -41,7 +74,10 @@ export default function RootLayout({
       </head>
       <body>
         <AuthProvider>
-          {children}
+          <QueryProvider>
+            {children}
+            <Toaster />
+          </QueryProvider>
         </AuthProvider>
       </body>
     </html>

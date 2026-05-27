@@ -1,20 +1,20 @@
 // @ts-nocheck
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import LanguageSelector from './LanguageSelector';
 import NotificationBell from './NotificationBell';
 import UserMenu from './UserMenu';
+import { useAuth } from '@/contexts/AuthContext';
 interface RoleBasedHeaderProps {
   userRole?: 'teacher' | 'student' | null;
   currentPath?: string;
 }
 
 const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
-  const router = useRouter();
   const livePathname = usePathname();
   const searchParams = useSearchParams();
   const currentTab = searchParams?.get('tab');
@@ -28,32 +28,13 @@ const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   };
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<'teacher' | 'student' | 'admin' | null>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchQuery.trim();
-    router.push(q ? `/course-marketplace?search=${encodeURIComponent(q)}` : '/course-marketplace');
-  };
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled || !data?.user) return;
-        setUserId(data.user.id);
-        setUserRole(data.user.role || null);
-        setCurrentUser(data.user);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  // AuthContext app shell darajasida bitta marta yuklanadi. Navigatsiya paytida
+  // qayta mount qilinmaydi, shuning uchun user ma'lumoti darrov tayyor turadi.
+  const { user, loading: authLoading } = useAuth();
+  const currentUser = user;
+  const userId = user?.id || null;
+  const userRole: 'teacher' | 'student' | 'admin' | null = user?.role || null;
 
   // Public navigation (for non-authenticated users)
   const publicNavItems = [
@@ -126,26 +107,6 @@ const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
               );
             })}
           </nav>
-
-          {/* Search Bar (desktop only, only for logged-in users) */}
-          {userRole && (
-            <form onSubmit={handleSearch} className="hidden lg:flex flex-1 max-w-md mx-6">
-              <div className="relative w-full">
-                <Icon
-                  name="MagnifyingGlassIcon"
-                  size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
-                />
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Kurslarni qidirish..."
-                  className="w-full pl-10 pr-4 py-2 bg-muted/50 border border-transparent rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-card focus:border-border transition-smooth"
-                />
-              </div>
-            </form>
-          )}
 
           {/* Right Section */}
           <div className="flex items-center space-x-3">

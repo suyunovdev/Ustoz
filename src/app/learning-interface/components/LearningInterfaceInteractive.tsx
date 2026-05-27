@@ -11,6 +11,9 @@ import ProgressTracker from './ProgressTracker';
 import DiscussionPanel from './DiscussionPanel';
 import ResourceDownloads from './ResourceDownloads';
 import Icon from '@/components/ui/AppIcon';
+import { toast } from '@/components/common/Toaster';
+import type { CourseProgressResponse } from '@/types/dashboard.types';
+import { useCompleteTopicMutation } from '@/hooks/mutations/useCompleteTopicMutation';
 
 interface Topic {
   id: string;
@@ -51,6 +54,9 @@ const LearningInterfaceInteractive = () => {
   const [userId, setUserId] = useState<string | null>(null);
   const [courseTitle, setCourseTitle] = useState('');
   const [enrollmentProgress, setEnrollmentProgress] = useState(0);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
+  const completeMutation = useCompleteTopicMutation();
+  const isMarkingComplete = completeMutation.isPending;
 
   useEffect(() => {
     setIsHydrated(true);
@@ -59,6 +65,12 @@ const LearningInterfaceInteractive = () => {
       return;
     }
     loadCourse(courseId);
+
+    // Fire-and-forget: lastAccessedAt'ni yangilash (dashboard hero uchun)
+    fetch(`/api/enrollments/${courseId}/touch`, {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => {});
   }, [courseId]);
 
   const loadCourse = async (id: string) => {
@@ -88,11 +100,15 @@ const LearningInterfaceInteractive = () => {
 
       setCourseTitle(course.title);
 
-      // Get current progress
-      const progRes = await fetch(`/api/progress?courseId=${id}`, { credentials: 'include' });
+      // Real progress + completed topic IDs (Source of Truth)
+      const progRes = await fetch(`/api/enrollments/${id}/progress`, {
+        credentials: 'include',
+      });
+      let completedIds = new Set<string>();
       if (progRes.ok) {
-        const prog = await progRes.json();
+        const prog: CourseProgressResponse = await progRes.json();
         setEnrollmentProgress(prog.progress || 0);
+        completedIds = new Set(prog.completedTopicIds);
       }
 
       const topics = course.topics || [];
@@ -101,18 +117,27 @@ const LearningInterfaceInteractive = () => {
         return;
       }
 
-      // Completed topics derived from progress percentage (proportional)
-      const progressPct = Number(course.progress || 0);
-      const completedCountApprox = Math.round((topics.length * progressPct) / 100);
-
-      const mappedTopics: Topic[] = topics.map((t: any, i: number) => ({
+      const mappedTopics: Topic[] = topics.map((t: any) => ({
         id: t.id,
         title: t.title,
         duration: t.duration || '—',
-        isCompleted: i < completedCountApprox,
-        isCurrent: i === completedCountApprox,
+        isCompleted: completedIds.has(t.id),
+        isCurrent: false,
         videoUrl: t.content || '',
       }));
+
+      // URL'dan topicId yoki birinchi tugatilmagan
+      const urlTopicId = searchParams.get('topicId');
+      let initial = urlTopicId
+        ? mappedTopics.find((t) => t.id === urlTopicId)
+        : mappedTopics.find((t) => !t.isCompleted) ?? mappedTopics[0];
+      if (initial) {
+        initial = { ...initial, isCurrent: true };
+        mappedTopics.forEach((t) => {
+          t.isCurrent = t.id === initial!.id;
+        });
+        setCurrentTopic(initial);
+      }
 
       setSections([
         {
@@ -121,9 +146,6 @@ const LearningInterfaceInteractive = () => {
           topics: mappedTopics,
         },
       ]);
-
-      const firstCurrent = mappedTopics.find((t) => t.isCurrent) || mappedTopics[0];
-      if (firstCurrent) setCurrentTopic(firstCurrent);
     } catch (err) {
       console.error('Kurs yuklanmadi:', err);
     } finally {
@@ -131,34 +153,40 @@ const LearningInterfaceInteractive = () => {
     }
   };
 
-  const handleTopicComplete = async (topicId: string) => {
-    if (!userId || !courseId) return;
-    try {
-      // Calculate new progress based on completed topics in local state
-      const allTopics = sections.flatMap((s) => s.topics);
-      const completedCount =
-        allTopics.filter((t) => t.isCompleted || t.id === topicId).length;
-      const newProgress = Math.round((completedCount / allTopics.length) * 100);
+  const handleTopicComplete = (topicId: string) => {
+    if (!userId || !courseId || isMarkingComplete) return;
 
-      // Update progress via JWT API
-      await fetch('/api/progress', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ courseId, progress: newProgress }),
-      });
+    // Lokal optimistic UI (sections) — dashboard cache esa mutation ichida yangilanadi
+    const previousSections = sections;
+    setSections((prev) =>
+      prev.map((s) => ({
+        ...s,
+        topics: s.topics.map((t) =>
+          t.id === topicId ? { ...t, isCompleted: true } : t,
+        ),
+      })),
+    );
 
-      // Update local state
-      setSections((prev) =>
-        prev.map((s) => ({
-          ...s,
-          topics: s.topics.map((t) => (t.id === topicId ? { ...t, isCompleted: true } : t)),
-        }))
-      );
-      setEnrollmentProgress(newProgress);
-    } catch (err) {
-      console.error('Mavzu tugallanmadi:', err);
-    }
+    completeMutation.mutate(
+      { topicId, courseId },
+      {
+        onSuccess: (data) => {
+          setEnrollmentProgress(data.progress);
+          if (data.wasAlreadyCompleted) {
+            toast.info('Bu mavzu allaqachon tugatilgan');
+          } else if (data.shouldShowCertificateModal) {
+            toast.success('Kurs tugatildi! Progress: 100%');
+            setShowCertificateModal(true);
+          } else {
+            toast.success(`Mavzu tugatildi · ${data.progress}%`);
+          }
+        },
+        onError: (err) => {
+          setSections(previousSections);
+          toast.error(err.message || "Tarmoq xatosi. Qayta urinib ko'ring.");
+        },
+      },
+    );
   };
 
   const handleTopicSelect = (topic: Topic) => {
@@ -209,6 +237,41 @@ const LearningInterfaceInteractive = () => {
 
   return (
     <div className="min-h-screen bg-background pt-16">
+      {/* Certificate modal */}
+      {showCertificateModal && (
+        <div className="fixed inset-0 z-300 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="bg-card rounded-lg shadow-warm-2xl max-w-md w-full p-6 text-center animate-in zoom-in-95">
+            <div className="w-20 h-20 bg-gradient-to-br from-accent to-warning rounded-full flex items-center justify-center mx-auto mb-4">
+              <Icon name="TrophyIcon" size={40} variant="solid" className="text-primary-foreground" />
+            </div>
+            <h2 className="text-2xl font-heading font-bold text-foreground mb-2">
+              Tabriklaymiz! 🎉
+            </h2>
+            <p className="text-muted-foreground mb-2">
+              Siz <span className="font-semibold text-foreground">"{courseTitle}"</span> kursini muvaffaqiyatli tugatdingiz!
+            </p>
+            <p className="text-sm text-muted-foreground mb-6">
+              Sertifikatingiz tayyorlanmoqda — profilingizda paydo bo'ladi.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                onClick={() => router.push('/certificates')}
+                className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium flex items-center justify-center gap-2"
+              >
+                <Icon name="AcademicCapIcon" size={18} />
+                Sertifikatlarim
+              </button>
+              <button
+                onClick={() => setShowCertificateModal(false)}
+                className="flex-1 px-4 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-colors font-medium"
+              >
+                Yopish
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Top bar */}
       <div className="fixed top-16 left-0 right-0 z-40 bg-card border-b border-border h-12 flex items-center px-4 gap-4">
         <button onClick={() => router.push('/student-dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -266,16 +329,26 @@ const LearningInterfaceInteractive = () => {
               {currentTopic && !currentTopic.isCompleted && (
                 <button
                   onClick={() => handleTopicComplete(currentTopic.id)}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-success text-white rounded-md text-sm hover:bg-success/90 transition-colors"
+                  disabled={isMarkingComplete}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-success text-white rounded-md text-sm hover:bg-success/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Icon name="CheckIcon" size={16} />
-                  Tugallandi
+                  {isMarkingComplete ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Saqlanmoqda...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="CheckIcon" size={16} />
+                      Mavzuni tugatdim
+                    </>
+                  )}
                 </button>
               )}
               {currentTopic?.isCompleted && (
-                <span className="flex items-center gap-1 text-success text-sm">
+                <span className="flex items-center gap-1 text-success text-sm font-medium">
                   <Icon name="CheckCircleIcon" size={16} variant="solid" />
-                  Bajarildi
+                  Tugatildi
                 </span>
               )}
             </div>
