@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useAuth } from '@/contexts/AuthContext';
-import { createClient } from '@/lib/supabase/client';
 
 interface LoginFormProps {
   onLanguageChange: (lang: string) => void;
@@ -27,6 +26,7 @@ interface FormErrors {
 
 const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signIn } = useAuth();
   const [isHydrated, setIsHydrated] = useState(false);
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
@@ -155,24 +155,20 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
 
     try {
       const identifier = authMethod === 'email' ? formData.email : formData.phone;
-      await signIn(identifier, formData.password, authMethod === 'phone');
+      const result = await signIn(identifier, formData.password, authMethod === 'phone');
 
-      // After successful login, fetch user profile to determine role-based redirect
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      // signIn returns { user: { id, email, fullName, role, avatarUrl } } from JWT API
+      const role = result?.user?.role;
+      const redirectTo = searchParams?.get('redirect');
 
-      if (user) {
-        // Check user role from metadata or profiles table
-        const role = user.user_metadata?.role;
-        if (role === 'teacher') {
-          router.push('/teacher-dashboard');
-        } else if (role === 'admin') {
-          router.push('/admin-dashboard');
-        } else {
-          router.push('/student-dashboard');
-        }
+      if (redirectTo && redirectTo.startsWith('/')) {
+        router.push(redirectTo);
+      } else if (role === 'teacher') {
+        router.push('/teacher-dashboard');
+      } else if (role === 'admin') {
+        router.push('/admin-dashboard');
       } else {
-        router.push('/course-marketplace');
+        router.push('/student-dashboard');
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -195,18 +191,8 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
   };
 
   const handleGoogleSignIn = async () => {
-    try {
-      const supabase = createClient();
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4028';
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${appUrl}/auth/callback`,
-        },
-      });
-    } catch (error: any) {
-      setErrors({ general: error.message || "Google orqali kirishda xatolik" });
-    }
+    // Google OAuth hozircha yoqilmagan (JWT bilan ishlatish uchun Google OAuth setup kerak)
+    setErrors({ general: 'Google orqali kirish hozircha mavjud emas. Iltimos email orqali kiring.' });
   };
 
   if (!isHydrated) {

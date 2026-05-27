@@ -1,14 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useRouter, useSearchParams } from 'next/navigation';
 import WelcomeSection from './WelcomeSection';
 import ContinueLearningCard from './ContinueLearningCard';
 import CourseCard from './CourseCard';
 import RecommendedCourseCard from './RecommendedCourseCard';
-import AchievementCard from './AchievementCard';
-import QuizDeadlineCard from './QuizDeadlineCard';
 import CertificateCard from './CertificateCard';
 import SearchBar from './SearchBar';
 import CategoryFilter from './CategoryFilter';
@@ -54,24 +51,6 @@ interface RecommendedCourse {
   duration: string;
 }
 
-interface Achievement {
-  id: string;
-  title: string;
-  description: string;
-  icon: string;
-  earnedDate: string;
-  type: 'certificate' | 'badge' | 'milestone';
-}
-
-interface QuizDeadline {
-  id: string;
-  courseTitle: string;
-  topicTitle: string;
-  dueDate: string;
-  daysRemaining: number;
-  isUrgent: boolean;
-}
-
 interface Certificate {
   id: string;
   courseTitle: string;
@@ -85,27 +64,29 @@ interface Category {
   icon: string;
 }
 
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449';
+
+type DashboardTab = 'continue' | 'my-courses' | 'recommended';
+const VALID_TABS: DashboardTab[] = ['continue', 'my-courses', 'recommended'];
+
 const StudentDashboardInteractive = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = (() => {
+    const t = searchParams?.get('tab');
+    return VALID_TABS.includes(t as DashboardTab) ? (t as DashboardTab) : 'continue';
+  })();
   const [isHydrated, setIsHydrated] = useState(false);
-  const [activeView, setActiveView] = useState<'continue' | 'my-courses' | 'recommended'>('continue');
-  const [userId, setUserId] = useState<string | null>(null);
+  const [activeView, setActiveView] = useState<DashboardTab>(initialTab);
   const [userName, setUserName] = useState('Foydalanuvchi');
-  const [userStats, setUserStats] = useState({ coursesCompleted: 0, certificatesEarned: 0, currentStreak: 0 });
+  const [userStats, setUserStats] = useState({ coursesCompleted: 0, certificatesEarned: 0 });
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [continueLearning, setContinueLearning] = useState<ContinueLearningCourse[]>([]);
   const [myCourses, setMyCourses] = useState<Course[]>([]);
   const [recommended, setRecommended] = useState<RecommendedCourse[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
 
-  const mockAchievements: Achievement[] = [
-    { id: '1', title: 'Birinchi Kurs', description: 'Birinchi kursga yozildingiz', icon: 'TrophyIcon', earnedDate: 'Bugun', type: 'milestone' },
-    { id: '2', title: '7 Kunlik Seriya', description: 'Ketma-ket 7 kun o\'qidingiz', icon: 'FireIcon', earnedDate: 'Bu hafta', type: 'milestone' },
-  ];
-
-  const mockDeadlines: QuizDeadline[] = [];
-
-  const mockCategories: Category[] = [
+  const categories: Category[] = [
     { id: 'programming', name: 'Dasturlash', icon: 'CodeBracketIcon' },
     { id: 'design', name: 'Dizayn', icon: 'PaintBrushIcon' },
     { id: 'business', name: 'Biznes', icon: 'BriefcaseIcon' },
@@ -117,140 +98,108 @@ const StudentDashboardInteractive = () => {
     loadDashboard();
   }, []);
 
+  // URL `?tab=` o'zgarganida active tab'ni yangilash (header link bosilganida)
+  useEffect(() => {
+    const t = searchParams?.get('tab');
+    if (t && VALID_TABS.includes(t as DashboardTab) && t !== activeView) {
+      setActiveView(t as DashboardTab);
+    }
+  }, [searchParams]);
+
   const loadDashboard = async () => {
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      setUserId(user.id);
-
-      // Load user profile
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single();
-
-      if (profile) setUserName(profile.full_name);
-
-      // Load enrolled courses (from enrollments table: student_id)
       setLoadingCourses(true);
-      const { data: enrollments } = await supabase
-        .from('enrollments')
-        .select(`
-          id,
-          progress,
-          enrolled_at,
-          completed_at,
-          is_active,
-          courses (
-            id,
-            title,
-            cover_image,
-            total_duration,
-            user_profiles!teacher_id (full_name)
-          )
-        `)
-        .eq('student_id', user.id)
-        .eq('is_active', true)
-        .order('enrolled_at', { ascending: false });
 
-      if (enrollments) {
-        const inProgress: ContinueLearningCourse[] = [];
-        const allCourses: Course[] = [];
-        let completedCount = 0;
+      const [meRes, dataRes] = await Promise.all([
+        fetch('/api/auth/me', { credentials: 'include' }),
+        fetch('/api/enrollments/my', { credentials: 'include' }),
+      ]);
 
-        enrollments.forEach((e: any) => {
-          const c = e.courses;
-          if (!c) return;
+      if (meRes.ok) {
+        const me = await meRes.json();
+        if (me?.user?.fullName) setUserName(me.user.fullName);
+      }
 
-          const progress = e.progress || 0;
-          if (progress >= 100) completedCount++;
+      if (!dataRes.ok) {
+        if (dataRes.status === 401) {
+          router.push('/login');
+          return;
+        }
+        return;
+      }
 
-          const courseObj: Course = {
+      const data = await dataRes.json();
+
+      const inProgress: ContinueLearningCourse[] = [];
+      const allCourses: Course[] = [];
+
+      (data.enrollments || []).forEach((e: any) => {
+        const c = e.course;
+        const totalTopics = c.totalTopics || 0;
+        const completedTopics = Math.round((totalTopics * (e.progress || 0)) / 100);
+        const courseObj: Course = {
+          id: c.id,
+          title: c.title,
+          instructor: c.teacherName || 'Ustoz',
+          coverImage: c.coverImage || DEFAULT_COVER,
+          coverImageAlt: `${c.title} kursi`,
+          progress: e.progress || 0,
+          lastAccessed: e.enrolledAt
+            ? new Date(e.enrolledAt).toLocaleDateString('uz-UZ')
+            : '—',
+          totalTopics,
+          completedTopics,
+          isCompleted: e.isCompleted,
+        };
+        allCourses.push(courseObj);
+
+        if ((e.progress || 0) > 0 && (e.progress || 0) < 100) {
+          inProgress.push({
             id: c.id,
             title: c.title,
-            instructor: c.user_profiles?.full_name || 'Ustoz',
-            coverImage: c.cover_image || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
+            instructor: c.teacherName || 'Ustoz',
+            coverImage: c.coverImage || DEFAULT_COVER,
             coverImageAlt: `${c.title} kursi`,
-            progress,
-            lastAccessed: e.enrolled_at
-              ? new Date(e.enrolled_at).toLocaleDateString('uz-UZ')
-              : 'Noma\'lum',
-            totalTopics: c.total_duration || 0,
-            completedTopics: Math.round(((c.total_duration || 0) * progress) / 100),
-            isCompleted: progress >= 100,
-          };
-          allCourses.push(courseObj);
+            progress: e.progress,
+            nextTopic: 'Keyingi mavzu',
+            totalTopics,
+            completedTopics,
+          });
+        }
+      });
 
-          if (progress > 0 && progress < 100) {
-            inProgress.push({
-              id: c.id,
-              title: c.title,
-              instructor: c.user_profiles?.full_name || 'Ustoz',
-              coverImage: c.cover_image || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
-              coverImageAlt: `${c.title} kursi`,
-              progress,
-              nextTopic: 'Keyingi mavzu',
-              totalTopics: c.total_duration || 0,
-              completedTopics: Math.round(((c.total_duration || 0) * progress) / 100),
-            });
-          }
-        });
+      setContinueLearning(inProgress.slice(0, 4));
+      setMyCourses(allCourses);
 
-        setContinueLearning(inProgress.slice(0, 4));
-        setMyCourses(allCourses);
-        setUserStats((prev) => ({ ...prev, coursesCompleted: completedCount }));
-      }
-
-      // Load recommended: published courses NOT enrolled in
-      const enrolledIds = (enrollments || []).map((e: any) => e.courses?.id).filter(Boolean);
-      let recQuery = supabase
-        .from('courses')
-        .select(`
-          id, title, cover_image, price_uzs, rating, enrollment_count, language,
-          user_profiles!teacher_id (full_name)
-        `)
-        .eq('is_published', true)
-        .order('rating', { ascending: false })
-        .limit(6);
-
-      if (enrolledIds.length > 0) {
-        recQuery = recQuery.not('id', 'in', `(${enrolledIds.join(',')})`);
-      }
-
-      const { data: recData } = await recQuery;
-      if (recData) {
-        setRecommended(
-          recData.map((c: any) => ({
-            id: c.id,
-            title: c.title,
-            instructor: c.user_profiles?.full_name || 'Ustoz',
-            coverImage: c.cover_image || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
-            coverImageAlt: `${c.title} kursi`,
-            category: 'Kurs',
-            price: c.price_uzs || 0,
-            currency: 'UZS',
-            rating: Number(c.rating) || 0,
-            studentsCount: c.enrollment_count || 0,
-            duration: `${Math.round((c.enrollment_count || 0) / 10)} soat`,
-          }))
-        );
-      }
-
-      // Load completed courses as certificates
-      const completed = (enrollments || []).filter((e: any) => (e.progress || 0) >= 100);
-      setCertificates(
-        completed.map((e: any, i: number) => ({
-          id: e.id,
-          courseTitle: e.courses?.title || 'Kurs',
-          completionDate: e.completed_at
-            ? new Date(e.completed_at).toLocaleDateString('uz-UZ')
-            : new Date(e.enrolled_at).toLocaleDateString('uz-UZ'),
-          certificateNumber: `CERT-${new Date().getFullYear()}-${String(i + 1).padStart(6, '0')}`,
+      setRecommended(
+        (data.recommended || []).map((c: any) => ({
+          id: c.id,
+          title: c.title,
+          instructor: c.teacherName || 'Ustoz',
+          coverImage: c.coverImage || DEFAULT_COVER,
+          coverImageAlt: `${c.title} kursi`,
+          category: c.category || 'Kurs',
+          price: Number(c.priceUzs) || 0,
+          currency: 'UZS',
+          rating: Number(c.rating) || 0,
+          studentsCount: c.enrollmentCount || 0,
+          duration: c.difficultyLevel || '—',
         }))
       );
+
+      setCertificates(
+        (data.certificates || []).map((cert: any) => ({
+          id: cert.id,
+          courseTitle: cert.courseTitle,
+          completionDate: new Date(cert.issuedAt).toLocaleDateString('uz-UZ'),
+          certificateNumber: cert.certificateNumber,
+        }))
+      );
+
+      setUserStats({
+        coursesCompleted: data.stats?.coursesCompleted || 0,
+        certificatesEarned: data.stats?.certificatesEarned || 0,
+      });
     } catch (err) {
       console.error('Dashboard yuklashda xato:', err);
     } finally {
@@ -259,11 +208,8 @@ const StudentDashboardInteractive = () => {
   };
 
   const handleCertificateDownload = (certificateId: string) => {
-    console.log('Sertifikat yuklab olinmoqda:', certificateId);
+    window.open(`/api/certificates/${certificateId}`, '_blank');
   };
-
-  const displayContinueLearning = continueLearning.length > 0 ? continueLearning : [];
-  const displayMyCourses = myCourses;
 
   if (!isHydrated) {
     return (
@@ -293,11 +239,11 @@ const StudentDashboardInteractive = () => {
               stats={{
                 coursesCompleted: userStats.coursesCompleted,
                 certificatesEarned: certificates.length,
-                currentStreak: userStats.currentStreak,
+                currentStreak: 0,
               }}
             />
 
-            <SearchBar onSearch={(q) => console.log('Qidiruv:', q)} />
+            <SearchBar onSearch={(q) => router.push(`/course-marketplace?search=${encodeURIComponent(q)}`)} />
 
             <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-hide">
               {[
@@ -331,7 +277,7 @@ const StudentDashboardInteractive = () => {
                       <div key={i} className="h-48 bg-muted rounded-md animate-pulse"></div>
                     ))}
                   </div>
-                ) : displayContinueLearning.length === 0 ? (
+                ) : continueLearning.length === 0 ? (
                   <div className="bg-card rounded-lg border border-border p-12 text-center">
                     <Icon name="PlayCircleIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-foreground mb-2">Hali boshlangan kurs yo'q</h3>
@@ -349,7 +295,7 @@ const StudentDashboardInteractive = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {displayContinueLearning.map((course) => (
+                    {continueLearning.map((course) => (
                       <ContinueLearningCard key={course.id} course={course} />
                     ))}
                   </div>
@@ -373,7 +319,7 @@ const StudentDashboardInteractive = () => {
                       </div>
                     ))}
                   </div>
-                ) : displayMyCourses.length === 0 ? (
+                ) : myCourses.length === 0 ? (
                   <div className="bg-card rounded-lg border border-border p-12 text-center">
                     <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
                     <h3 className="text-xl font-semibold text-foreground mb-2">Hali kurslar yo'q</h3>
@@ -387,7 +333,7 @@ const StudentDashboardInteractive = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {displayMyCourses.map((course) => (
+                    {myCourses.map((course) => (
                       <CourseCard key={course.id} course={course} />
                     ))}
                   </div>
@@ -402,7 +348,10 @@ const StudentDashboardInteractive = () => {
                   <h2 className="text-2xl font-heading font-bold text-foreground">Tavsiya Etilgan Kurslar</h2>
                 </div>
                 <div className="mb-4">
-                  <CategoryFilter categories={mockCategories} onCategorySelect={(id) => console.log(id)} />
+                  <CategoryFilter
+                    categories={categories}
+                    onCategorySelect={(id) => router.push(`/course-marketplace?category=${id}`)}
+                  />
                 </div>
                 {loadingCourses ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -432,47 +381,33 @@ const StudentDashboardInteractive = () => {
 
             <div className="bg-card rounded-md shadow-warm p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-heading font-semibold text-foreground">Yutuqlar</h3>
-                <Icon name="TrophyIcon" size={20} className="text-accent" />
-              </div>
-              <div className="space-y-3">
-                {mockAchievements.map((achievement) => (
-                  <AchievementCard key={achievement.id} achievement={achievement} />
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-card rounded-md shadow-warm p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-heading font-semibold text-foreground">Test Muddatlari</h3>
-                <Icon name="ClockIcon" size={20} className="text-warning" />
-              </div>
-              {mockDeadlines.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Hozircha muddatli testlar yo'q</p>
-              ) : (
-                <div className="space-y-3">
-                  {mockDeadlines.map((d) => <QuizDeadlineCard key={d.id} deadline={d} />)}
-                </div>
-              )}
-            </div>
-
-            <div className="bg-card rounded-md shadow-warm p-4">
-              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-heading font-semibold text-foreground">Sertifikatlar</h3>
                 <Icon name="AcademicCapIcon" size={20} className="text-primary" />
               </div>
               {certificates.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Hali sertifikat yo'q</p>
-              ) : (
-                <div className="space-y-3">
-                  {certificates.map((cert) => (
-                    <CertificateCard
-                      key={cert.id}
-                      certificate={cert}
-                      onDownload={() => handleCertificateDownload(cert.id)}
-                    />
-                  ))}
+                <div className="text-center py-6">
+                  <Icon name="AcademicCapIcon" size={40} className="text-muted-foreground/40 mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Hali sertifikat yo'q</p>
+                  <p className="text-xs text-muted-foreground mt-1">Kurs tugatganingizda paydo bo'ladi</p>
                 </div>
+              ) : (
+                <>
+                  <div className="space-y-3">
+                    {certificates.slice(0, 2).map((cert) => (
+                      <CertificateCard
+                        key={cert.id}
+                        certificate={cert}
+                        onDownload={() => handleCertificateDownload(cert.id)}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => router.push('/certificates')}
+                    className="w-full mt-4 text-sm text-primary hover:underline font-medium"
+                  >
+                    Hammasini ko'rish ({certificates.length}) →
+                  </button>
+                </>
               )}
             </div>
           </div>

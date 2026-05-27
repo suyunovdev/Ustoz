@@ -23,13 +23,27 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Inline script to apply theme before paint (prevents flash of wrong theme)
+  const themeScript = `
+    (function() {
+      try {
+        var t = localStorage.getItem('ustoz_theme') || 'light';
+        var isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        if (isDark) document.documentElement.classList.add('dark');
+      } catch (e) {}
+    })();
+  `;
+
   return (
-    <html lang="uz">
+    <html lang="uz" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body>
         <AuthProvider>
           {children}
         </AuthProvider>
-</body>
+      </body>
     </html>
   );
 }

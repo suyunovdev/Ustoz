@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 
 interface ClickPrepareRequest {
@@ -24,9 +24,23 @@ interface ClickPrepareResponse {
 }
 
 export async function POST(request: NextRequest) {
+  let body: ClickPrepareRequest;
   try {
-    const body: ClickPrepareRequest = await request.json();
+    body = await request.json();
+  } catch {
+    return NextResponse.json(
+      {
+        click_trans_id: 0,
+        merchant_trans_id: '',
+        merchant_prepare_id: 0,
+        error: -8,
+        error_note: 'Invalid JSON',
+      } as ClickPrepareResponse,
+      { status: 200 }
+    );
+  }
 
+  try {
     // Verify signature
     const secretKey = process.env.CLICK_SECRET_KEY;
     if (!secretKey) {
@@ -36,7 +50,7 @@ export async function POST(request: NextRequest) {
           merchant_trans_id: body.merchant_trans_id,
           merchant_prepare_id: 0,
           error: -8,
-          error_note: 'Server configuration error'
+          error_note: 'Server configuration error',
         } as ClickPrepareResponse,
         { status: 200 }
       );
@@ -57,33 +71,23 @@ export async function POST(request: NextRequest) {
           merchant_trans_id: body.merchant_trans_id,
           merchant_prepare_id: 0,
           error: -1,
-          error_note: 'Invalid signature'
+          error_note: 'Invalid signature',
         } as ClickPrepareResponse,
         { status: 200 }
       );
     }
-
-    const supabase = await createClient();
 
     // Check if transaction exists
-    const { data: existingTransaction, error: fetchError } = await supabase
-      .from('payment_transactions')
-      .select('id, status, amount_uzs, course_id, student_id')
-      .eq('merchant_trans_id', body.merchant_trans_id)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      return NextResponse.json(
-        {
-          click_trans_id: body.click_trans_id,
-          merchant_trans_id: body.merchant_trans_id,
-          merchant_prepare_id: 0,
-          error: -8,
-          error_note: 'Database error'
-        } as ClickPrepareResponse,
-        { status: 200 }
-      );
-    }
+    const existingTransaction = await prisma.paymentTransaction.findUnique({
+      where: { merchantTransId: body.merchant_trans_id },
+      select: {
+        id: true,
+        status: true,
+        amountUzs: true,
+        courseId: true,
+        studentId: true,
+      },
+    });
 
     // Transaction not found
     if (!existingTransaction) {
@@ -93,7 +97,7 @@ export async function POST(request: NextRequest) {
           merchant_trans_id: body.merchant_trans_id,
           merchant_prepare_id: 0,
           error: -5,
-          error_note: 'Transaction not found'
+          error_note: 'Transaction not found',
         } as ClickPrepareResponse,
         { status: 200 }
       );
@@ -105,9 +109,12 @@ export async function POST(request: NextRequest) {
         {
           click_trans_id: body.click_trans_id,
           merchant_trans_id: body.merchant_trans_id,
-          merchant_prepare_id: parseInt(existingTransaction.id.replace(/-/g, '').substring(0, 8), 16),
+          merchant_prepare_id: parseInt(
+            existingTransaction.id.replace(/-/g, '').substring(0, 8),
+            16
+          ),
           error: -4,
-          error_note: 'Already paid'
+          error_note: 'Already paid',
         } as ClickPrepareResponse,
         { status: 200 }
       );
@@ -121,44 +128,45 @@ export async function POST(request: NextRequest) {
           merchant_trans_id: body.merchant_trans_id,
           merchant_prepare_id: 0,
           error: -9,
-          error_note: 'Transaction cancelled'
+          error_note: 'Transaction cancelled',
         } as ClickPrepareResponse,
         { status: 200 }
       );
     }
 
-    // Verify amount
-    if (existingTransaction.amount_uzs !== body.amount) {
+    // Verify amount (BigInt vs incoming number)
+    if (Number(existingTransaction.amountUzs) !== body.amount) {
       return NextResponse.json(
         {
           click_trans_id: body.click_trans_id,
           merchant_trans_id: body.merchant_trans_id,
           merchant_prepare_id: 0,
           error: -2,
-          error_note: 'Incorrect amount'
+          error_note: 'Incorrect amount',
         } as ClickPrepareResponse,
         { status: 200 }
       );
     }
 
     // Update transaction status to processing
-    const { error: updateError } = await supabase
-      .from('payment_transactions')
-      .update({
-        status: 'processing',
-        click_trans_id: body.click_trans_id,
-        click_paydoc_id: body.click_paydoc_id
-      })
-      .eq('id', existingTransaction.id);
-
-    if (updateError) {
+    try {
+      await prisma.paymentTransaction.update({
+        where: { id: existingTransaction.id },
+        data: {
+          status: 'processing',
+          clickTransId: BigInt(body.click_trans_id),
+          clickPaydocId: BigInt(body.click_paydoc_id),
+        },
+      });
+    } catch (updateError) {
+      console.error('Click prepare update error:', updateError);
       return NextResponse.json(
         {
           click_trans_id: body.click_trans_id,
           merchant_trans_id: body.merchant_trans_id,
           merchant_prepare_id: 0,
           error: -8,
-          error_note: 'Failed to update transaction'
+          error_note: 'Failed to update transaction',
         } as ClickPrepareResponse,
         { status: 200 }
       );
@@ -169,9 +177,12 @@ export async function POST(request: NextRequest) {
       {
         click_trans_id: body.click_trans_id,
         merchant_trans_id: body.merchant_trans_id,
-        merchant_prepare_id: parseInt(existingTransaction.id.replace(/-/g, '').substring(0, 8), 16),
+        merchant_prepare_id: parseInt(
+          existingTransaction.id.replace(/-/g, '').substring(0, 8),
+          16
+        ),
         error: 0,
-        error_note: 'Success'
+        error_note: 'Success',
       } as ClickPrepareResponse,
       { status: 200 }
     );
@@ -179,11 +190,11 @@ export async function POST(request: NextRequest) {
     console.error('Click prepare error:', error);
     return NextResponse.json(
       {
-        click_trans_id: 0,
-        merchant_trans_id: '',
+        click_trans_id: body?.click_trans_id ?? 0,
+        merchant_trans_id: body?.merchant_trans_id ?? '',
         merchant_prepare_id: 0,
         error: -8,
-        error_note: 'Internal server error'
+        error_note: 'Internal server error',
       } as ClickPrepareResponse,
       { status: 200 }
     );

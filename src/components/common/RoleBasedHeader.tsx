@@ -3,43 +3,56 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import LanguageSelector from './LanguageSelector';
 import NotificationBell from './NotificationBell';
-import { createClient } from '@/lib/supabase/client';
-
+import UserMenu from './UserMenu';
 interface RoleBasedHeaderProps {
   userRole?: 'teacher' | 'student' | null;
   currentPath?: string;
 }
 
 const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
+  const router = useRouter();
+  const livePathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentTab = searchParams?.get('tab');
+  const activePath = livePathname || currentPath;
+  const isItemActive = (itemPath: string) => {
+    const [itemPathname, itemQuery = ''] = itemPath.split('?');
+    if (activePath !== itemPathname) return false;
+    if (!itemQuery) return !currentTab;
+    const expectedTab = new URLSearchParams(itemQuery).get('tab');
+    return expectedTab === currentTab;
+  };
+
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<'teacher' | 'student' | 'admin' | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    router.push(q ? `/course-marketplace?search=${encodeURIComponent(q)}` : '/course-marketplace');
+  };
 
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      const user = data.user;
-      if (!user) return;
-      setUserId(user.id);
-      const role = user.user_metadata?.role || null;
-      setUserRole(role);
-    });
-
-    // Auth o'zgarishlarini kuzatish (login/logout)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id);
-        setUserRole(session.user.user_metadata?.role || null);
-      } else {
-        setUserId(null);
-        setUserRole(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    let cancelled = false;
+    fetch('/api/auth/me', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.user) return;
+        setUserId(data.user.id);
+        setUserRole(data.user.role || null);
+        setCurrentUser(data.user);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Public navigation (for non-authenticated users)
@@ -52,18 +65,16 @@ const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   // Teacher navigation
   const teacherNavItems = [
     { label: 'Dashboard', path: '/teacher-dashboard', icon: 'HomeIcon' },
-    { label: 'Mening Kurslarim', path: '/teacher-dashboard', icon: 'BookOpenIcon' },
     { label: 'Kurs Yaratish', path: '/course-creation', icon: 'PlusCircleIcon' },
     { label: 'Guruhlar', path: '/group-creation', icon: 'UserGroupIcon' },
-    { label: 'Statistika', path: '/teacher-dashboard', icon: 'ChartBarIcon' },
+    { label: 'Topshiriqlar', path: '/assignment-management', icon: 'ClipboardDocumentListIcon' },
   ];
 
   // Student navigation
   const studentNavItems = [
     { label: 'Dashboard', path: '/student-dashboard', icon: 'HomeIcon' },
     { label: 'Bozor', path: '/course-marketplace', icon: 'ShoppingBagIcon' },
-    { label: 'Mening Kurslarim', path: '/learning-interface', icon: 'AcademicCapIcon' },
-    { label: 'Sertifikatlar', path: '/student-dashboard', icon: 'TrophyIcon' },
+    { label: 'Sertifikatlar', path: '/certificates', icon: 'TrophyIcon' },
   ];
 
   const getNavItems = () => {
@@ -98,47 +109,72 @@ const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
             {navItems.map((item) => {
-              const isActive = currentPath === item.path;
+              const isActive = isItemActive(item.path);
               return (
                 <Link
-                  key={item.path}
+                  key={item.label}
                   href={item.path}
-                  className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-smooth ${
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md transition-smooth ${
                     isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'text-foreground hover:bg-muted hover:-translate-y-0.5'
                   }`}
                 >
-                  <Icon name={item.icon as any} size={20} />
-                  <span className="font-medium">{item.label}</span>
+                  <Icon name={item.icon as any} size={18} />
+                  <span className="text-sm font-medium">{item.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* Right Section */}
-          <div className="flex items-center space-x-4">
-            {userId && <NotificationBell userId={userId} />}
-            <LanguageSelector />
-            
-            {/* Auth Buttons for Public Users */}
-            {!userRole && (
-              <div className="hidden md:flex items-center space-x-2">
-                <Link
-                  href="/login"
-                  className="px-4 py-2 text-foreground hover:bg-muted rounded-md transition-smooth font-medium"
-                >
-                  Kirish
-                </Link>
-                <Link
-                  href="/register"
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md transition-smooth hover:opacity-90 font-medium"
-                >
-                  Ro'yxat
-                </Link>
+          {/* Search Bar (desktop only, only for logged-in users) */}
+          {userRole && (
+            <form onSubmit={handleSearch} className="hidden lg:flex flex-1 max-w-md mx-6">
+              <div className="relative w-full">
+                <Icon
+                  name="MagnifyingGlassIcon"
+                  size={18}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
+                />
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Kurslarni qidirish..."
+                  className="w-full pl-10 pr-4 py-2 bg-muted/50 border border-transparent rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-card focus:border-border transition-smooth"
+                />
               </div>
+            </form>
+          )}
+
+          {/* Right Section */}
+          <div className="flex items-center space-x-3">
+            {userId && <NotificationBell userId={userId} />}
+
+            {/* Logged-in: avatar menu (til + theme + chiqish ichida) */}
+            {currentUser && <UserMenu user={currentUser} />}
+
+            {/* Guest: language selector + Login/Register */}
+            {!userRole && (
+              <>
+                <LanguageSelector />
+                <div className="hidden md:flex items-center space-x-2">
+                  <Link
+                    href="/login"
+                    className="px-4 py-2 text-foreground hover:bg-muted rounded-md transition-smooth font-medium"
+                  >
+                    Kirish
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md transition-smooth hover:opacity-90 font-medium"
+                  >
+                    Ro'yxat
+                  </Link>
+                </div>
+              </>
             )}
-            
+
             <button
               onClick={toggleMobileMenu}
               className="md:hidden p-2 rounded-md text-foreground hover:bg-muted transition-smooth"
@@ -155,10 +191,10 @@ const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
         <div className="md:hidden bg-card border-t border-border">
           <nav className="px-4 py-4 space-y-2">
             {navItems.map((item) => {
-              const isActive = currentPath === item.path;
+              const isActive = isItemActive(item.path);
               return (
                 <Link
-                  key={item.path}
+                  key={item.label}
                   href={item.path}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-md transition-smooth ${

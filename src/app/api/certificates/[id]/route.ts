@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { jsonResponse } from '@/lib/json';
 
-// GET /api/certificates/[id] — sertifikat ma'lumotlari
+// GET /api/certificates/[id] — sertifikat ma'lumotlari (umumiy: verifikatsiya uchun)
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -9,36 +10,51 @@ export async function GET(
   const { id } = await params;
 
   if (!id) {
-    return NextResponse.json({ error: 'ID kiritilmagan' }, { status: 400 });
+    return jsonResponse({ error: 'ID kiritilmagan' }, { status: 400 });
   }
 
-  const supabase = await createClient();
-
-  // UUID bo'yicha yoki certificate_number bo'yicha qidirish
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-  const query = supabase.from('certificates').select(`
-    id,
-    certificate_number,
-    issued_at,
-    verification_url,
-    metadata,
-    student:user_profiles!student_id (full_name, avatar_url),
-    course:courses!course_id (title, thumbnail_url, teacher:user_profiles!teacher_id (full_name))
-  `);
 
-  const { data, error } = uuidRegex.test(id)
-    ? await query.eq('id', id).single()
-    : await query.eq('certificate_number', id.toUpperCase()).single();
+  const certificate = await prisma.certificate.findFirst({
+    where: uuidRegex.test(id)
+      ? { id }
+      : { certificateNumber: id.toUpperCase() },
+    include: {
+      student: { select: { fullName: true, avatarUrl: true } },
+      course: {
+        select: {
+          title: true,
+          coverImage: true,
+          teacher: { select: { fullName: true } },
+        },
+      },
+    },
+  });
 
-  if (error || !data) {
-    return NextResponse.json({ error: 'Sertifikat topilmadi' }, { status: 404 });
+  if (!certificate) {
+    return jsonResponse({ error: 'Sertifikat topilmadi' }, { status: 404 });
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ustoz.uz';
-  const certificate = {
-    ...data,
-    verification_url: `${appUrl}/verify/${data.certificate_number}`,
-  };
 
-  return NextResponse.json({ certificate });
+  return jsonResponse({
+    certificate: {
+      id: certificate.id,
+      certificate_number: certificate.certificateNumber,
+      issued_at: certificate.issuedAt,
+      verification_url: `${appUrl}/verify/${certificate.certificateNumber}`,
+      metadata: certificate.metadata,
+      student: {
+        full_name: certificate.student.fullName,
+        avatar_url: certificate.student.avatarUrl,
+      },
+      course: {
+        title: certificate.course.title,
+        thumbnail_url: certificate.course.coverImage,
+        teacher: {
+          full_name: certificate.course.teacher.fullName,
+        },
+      },
+    },
+  });
 }

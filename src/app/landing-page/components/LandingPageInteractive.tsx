@@ -6,7 +6,6 @@ import Link from 'next/link';
 import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface PopularCourse {
@@ -32,52 +31,35 @@ const LandingPageInteractive = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const supabase = createClient();
-      if (!supabase) return;
-
       try {
-        // Fetch platform statistics
-        const { data: coursesData } = await supabase
-          .from('courses')
-          .select('id', { count: 'exact' });
-        
-        const { data: studentsData } = await supabase
-          .from('user_profiles')
-          .select('id', { count: 'exact' })
-          .eq('role', 'student');
-        
-        const { data: teachersData } = await supabase
-          .from('user_profiles')
-          .select('id', { count: 'exact' })
-          .eq('role', 'teacher');
-
-        setStats({
-          totalCourses: coursesData?.length || 156,
-          activeStudents: studentsData?.length || 2840,
-          successfulTeachers: teachersData?.length || 89,
-          certificatesAwarded: 1250,
+        // Fetch popular courses via JWT API.
+        const res = await fetch('/api/courses?limit=6&sortBy=enrollments', {
+          credentials: 'include'
         });
 
-        // Fetch popular courses
-        const { data: courses } = await supabase
-          .from('courses')
-          .select('id, title, cover_image, price_uzs, teacher_id, user_profiles!teacher_id(full_name)')
-          .eq('status', 'published')
-          .order('created_at', { ascending: false })
-          .limit(3);
+        if (res.ok) {
+          const { courses, pagination } = await res.json();
 
-        if (courses) {
           setPopularCourses(
-            courses.map((course) => ({
-              id: course.id,
-              title: course.title,
-              instructor: (course.user_profiles as any)?.full_name || 'Ustoz',
-              coverImage: course.cover_image || '/assets/images/no_image.png',
-              rating: 4.8,
-              enrollmentCount: 245,
-              price: course.price_uzs || 0,
+            (courses || []).slice(0, 3).map((c: any) => ({
+              id: c.id,
+              title: c.title,
+              instructor: c.teacherName || 'Ustoz',
+              coverImage: c.coverImage || '/assets/images/no_image.png',
+              rating: c.rating || 4.8,
+              enrollmentCount: c.enrollmentCount || 0,
+              price: parseInt(c.priceUzs, 10) || 0,
             }))
           );
+
+          // Platform stats: only totalCourses comes from the API (via pagination).
+          // TODO: add /api/stats endpoint for live user counts; fallback to static defaults.
+          setStats({
+            totalCourses: pagination?.total || 156,
+            activeStudents: 2840,
+            successfulTeachers: 89,
+            certificatesAwarded: 1250,
+          });
         }
       } catch (error) {
         console.error('Error fetching landing page data:', error);

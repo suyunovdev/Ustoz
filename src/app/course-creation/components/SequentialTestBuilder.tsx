@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 
 interface TestQuestion {
@@ -36,7 +35,6 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
     orderIndex: 0
   });
   const [isAdding, setIsAdding] = useState(false);
-  const supabase = createClient();
 
   const startAddingQuestion = () => {
     setEditingQuestion({
@@ -54,39 +52,18 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
     setIsAdding(true);
   };
 
-  const saveQuestion = async () => {
+  const saveQuestion = () => {
     if (!editingQuestion.questionText.trim()) return;
-
+    // Savollar parent ga uzatiladi va parent test'ni butun bo'lib /api/teacher/tests'ga saqlaydi
     const newQuestions = [...questions, editingQuestion];
     onQuestionsChange(newQuestions);
-
-    // Save to database if materialId exists
-    if (materialId) {
-      await supabase.from('test_questions').insert({
-        material_id: materialId,
-        question_text: editingQuestion.questionText,
-        option_a: editingQuestion.optionA,
-        option_b: editingQuestion.optionB,
-        option_c: editingQuestion.optionC,
-        option_d: editingQuestion.optionD,
-        correct_answer: editingQuestion.correctAnswer,
-        explanation: editingQuestion.explanation,
-        order_index: editingQuestion.orderIndex
-      });
-    }
-
     setIsAdding(false);
     setCurrentStep(0);
   };
 
-  const deleteQuestion = async (id: string) => {
-    const filtered = questions.filter(q => q.id !== id);
+  const deleteQuestion = (id: string) => {
+    const filtered = questions.filter((q) => q.id !== id);
     onQuestionsChange(filtered);
-
-    // Delete from database
-    if (!id.startsWith('temp-')) {
-      await supabase.from('test_questions').delete().eq('id', id);
-    }
   };
 
   const nextStep = () => {

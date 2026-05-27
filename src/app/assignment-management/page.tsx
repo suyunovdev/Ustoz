@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import Icon from '@/components/ui/AppIcon';
-import { createClient } from '@/lib/supabase/client';
 
 interface Assignment {
   id: string;
@@ -40,7 +39,6 @@ interface Submission {
 
 const AssignmentManagementInteractive = () => {
   const router = useRouter();
-  const supabase = createClient();
   const [isHydrated, setIsHydrated] = useState(false);
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'grade'>('list');
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -76,131 +74,56 @@ const AssignmentManagementInteractive = () => {
 
   const checkAuthAndLoadData = async () => {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
-        router.push('/login');
+      const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!meRes.ok) {
+        router.push('/login?redirect=/assignment-management');
         return;
       }
-
-      setUserId(user.id);
-      await Promise.all([loadCourses(user.id), loadAssignments(user.id)]);
+      const me = await meRes.json();
+      setUserId(me.user.id);
+      await Promise.all([loadCourses(), loadAssignments()]);
     } catch (err: any) {
       console.error('Auth check error:', err);
-      setError(err.message || 'Failed to authenticate');
+      setError(err.message || 'Autentifikatsiya xatoligi');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadCourses = async (teacherId: string) => {
+  const loadCourses = async () => {
     try {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('id, title')
-        .eq('teacher_id', teacherId)
-        .eq('is_published', true)
-        .order('title');
-
-      if (error) throw error;
-      setCourses(data || []);
+      const res = await fetch('/api/teacher/courses', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      setCourses((data.courses || []).map((c: any) => ({ id: c.id, title: c.title })));
     } catch (err: any) {
       console.error('Error loading courses:', err);
     }
   };
 
-  const loadAssignments = async (teacherId: string) => {
+  const loadAssignments = async () => {
     try {
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from('assignments')
-        .select(`
-          id,
-          title,
-          description,
-          due_date,
-          max_score,
-          file_requirements,
-          course_id,
-          created_at,
-          courses!inner(title)
-        `)
-        .eq('teacher_id', teacherId)
-        .order('due_date', { ascending: false });
-
-      if (assignmentsError) throw assignmentsError;
-
-      // Get submission counts for each assignment
-      const assignmentsWithCounts = await Promise.all(
-        (assignmentsData || []).map(async (assignment) => {
-          const { count: totalCount } = await supabase
-            .from('assignment_submissions')
-            .select('*', { count: 'exact', head: true })
-            .eq('assignment_id', assignment.id);
-
-          const { count: gradedCount } = await supabase
-            .from('assignment_submissions')
-            .select('*', { count: 'exact', head: true })
-            .eq('assignment_id', assignment.id)
-            .not('grade', 'is', null);
-
-          return {
-            id: assignment.id,
-            title: assignment.title,
-            description: assignment.description || '',
-            dueDate: assignment.due_date,
-            maxScore: assignment.max_score,
-            fileRequirements: assignment.file_requirements || '',
-            courseId: assignment.course_id,
-            courseTitle: assignment.courses?.title || '',
-            submissionCount: totalCount || 0,
-            gradedCount: gradedCount || 0,
-            createdAt: assignment.created_at
-          };
-        })
-      );
-
-      setAssignments(assignmentsWithCounts);
+      const res = await fetch('/api/teacher/assignments', { credentials: 'include' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setAssignments(data.assignments || []);
     } catch (err: any) {
       console.error('Error loading assignments:', err);
-      setError(err.message || 'Failed to load assignments');
+      setError(err.message || 'Topshiriqlarni yuklashda xatolik');
     }
   };
 
   const loadSubmissions = async (assignmentId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('assignment_submissions')
-        .select(`
-          id,
-          submission_text,
-          submission_url,
-          submitted_at,
-          grade,
-          feedback,
-          graded_at,
-          user_profiles!assignment_submissions_student_id_fkey(full_name, email)
-        `)
-        .eq('assignment_id', assignmentId)
-        .order('submitted_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedSubmissions: Submission[] = (data || []).map((sub: any) => ({
-        id: sub.id,
-        studentName: sub.user_profiles?.full_name || 'Unknown',
-        studentEmail: sub.user_profiles?.email || '',
-        submittedAt: sub.submitted_at,
-        submissionText: sub.submission_text || '',
-        submissionUrl: sub.submission_url,
-        grade: sub.grade,
-        feedback: sub.feedback,
-        gradedAt: sub.graded_at
-      }));
-
-      setSubmissions(formattedSubmissions);
+      const res = await fetch(`/api/teacher/assignments/${assignmentId}/submissions`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setSubmissions(data.submissions || []);
     } catch (err: any) {
       console.error('Error loading submissions:', err);
-      setError(err.message || 'Failed to load submissions');
+      setError(err.message || 'Topshiriqlarni yuklashda xatolik');
     }
   };
 
@@ -212,36 +135,39 @@ const AssignmentManagementInteractive = () => {
     setError(null);
 
     try {
-      const { error: insertError } = await supabase
-        .from('assignments')
-        .insert({
-          course_id: formData.courseId,
-          teacher_id: userId,
+      const res = await fetch('/api/teacher/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          courseId: formData.courseId,
           title: formData.title,
           description: formData.description,
-          due_date: formData.dueDate,
-          max_score: formData.maxScore,
-          file_requirements: formData.fileRequirements
-        });
+          dueDate: formData.dueDate,
+          maxScore: formData.maxScore,
+          fileRequirements: formData.fileRequirements,
+        }),
+      });
 
-      if (insertError) throw insertError;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `HTTP ${res.status}`);
+      }
 
-      // Reset form
       setFormData({
         courseId: '',
         title: '',
         description: '',
         dueDate: '',
         maxScore: 100,
-        fileRequirements: 'PDF, DOCX, ZIP (max 50MB)'
+        fileRequirements: 'PDF, DOCX, ZIP (max 50MB)',
       });
 
-      // Reload assignments
-      await loadAssignments(userId);
+      await loadAssignments();
       setActiveTab('list');
     } catch (err: any) {
       console.error('Error creating assignment:', err);
-      setError(err.message || 'Failed to create assignment');
+      setError(err.message || 'Topshiriq yaratishda xatolik');
     } finally {
       setSubmitting(false);
     }
@@ -249,33 +175,35 @@ const AssignmentManagementInteractive = () => {
 
   const handleGradeSubmission = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!gradingData || !userId) return;
+    if (!gradingData || !userId || !selectedAssignment) return;
 
     setSubmitting(true);
     setError(null);
 
     try {
-      const { error: updateError } = await supabase
-        .from('assignment_submissions')
-        .update({
-          grade: gradingData.grade,
-          feedback: gradingData.feedback,
-          graded_at: new Date().toISOString(),
-          graded_by: userId
-        })
-        .eq('id', gradingData.submissionId);
+      const res = await fetch(
+        `/api/teacher/assignments/${selectedAssignment.id}/submissions/${gradingData.submissionId}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            grade: gradingData.grade,
+            feedback: gradingData.feedback,
+          }),
+        }
+      );
 
-      if (updateError) throw updateError;
-
-      // Reload submissions
-      if (selectedAssignment) {
-        await loadSubmissions(selectedAssignment.id);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `HTTP ${res.status}`);
       }
 
+      await loadSubmissions(selectedAssignment.id);
       setGradingData(null);
     } catch (err: any) {
       console.error('Error grading submission:', err);
-      setError(err.message || 'Failed to grade submission');
+      setError(err.message || 'Baholashda xatolik');
     } finally {
       setSubmitting(false);
     }

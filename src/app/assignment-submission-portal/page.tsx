@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import Icon from '@/components/ui/AppIcon';
-import { createClient } from '@/lib/supabase/client';
 
 interface Assignment {
   id: string;
@@ -33,7 +32,6 @@ interface Submission {
 
 const AssignmentSubmissionPortalInteractive = () => {
   const router = useRouter();
-  const supabase = createClient();
   const [isHydrated, setIsHydrated] = useState(false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -55,9 +53,15 @@ const AssignmentSubmissionPortalInteractive = () => {
 
   const checkAuthAndLoadData = async () => {
     try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      
-      if (authError || !user) {
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+
+      if (!res.ok) {
+        router.push('/login');
+        return;
+      }
+
+      const { user } = await res.json();
+      if (!user) {
         router.push('/login');
         return;
       }
@@ -72,89 +76,16 @@ const AssignmentSubmissionPortalInteractive = () => {
     }
   };
 
-  const loadAssignments = async (studentId: string) => {
-    try {
-      // Get enrolled courses
-      const { data: enrollments, error: enrollError } = await supabase
-        .from('enrollments')
-        .select('course_id')
-        .eq('student_id', studentId)
-        .eq('is_active', true);
-
-      if (enrollError) throw enrollError;
-
-      const courseIds = enrollments?.map((e) => e.course_id) || [];
-
-      if (courseIds.length === 0) {
-        setAssignments([]);
-        return;
-      }
-
-      // Get assignments for enrolled courses
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from('assignments')
-        .select(`
-          id,
-          title,
-          description,
-          due_date,
-          max_score,
-          file_requirements,
-          course_id,
-          created_at,
-          courses!inner(title),
-          user_profiles!assignments_teacher_id_fkey(full_name)
-        `)
-        .in('course_id', courseIds)
-        .order('due_date', { ascending: true });
-
-      if (assignmentsError) throw assignmentsError;
-
-      const formattedAssignments: Assignment[] = (assignmentsData || []).map((assignment: any) => ({
-        id: assignment.id,
-        title: assignment.title,
-        description: assignment.description || '',
-        dueDate: assignment.due_date,
-        maxScore: assignment.max_score,
-        fileRequirements: assignment.file_requirements || '',
-        courseId: assignment.course_id,
-        courseTitle: assignment.courses?.title || '',
-        teacherName: assignment.user_profiles?.full_name || 'Unknown',
-        createdAt: assignment.created_at
-      }));
-
-      setAssignments(formattedAssignments);
-    } catch (err: any) {
-      console.error('Error loading assignments:', err);
-      setError(err.message || 'Failed to load assignments');
-    }
+  const loadAssignments = async (_studentId: string) => {
+    // TODO: add /api/student/assignments endpoint
+    // Backend endpoint not yet implemented — return empty list gracefully.
+    setAssignments([]);
   };
 
-  const loadSubmissions = async (studentId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('assignment_submissions')
-        .select('*')
-        .eq('student_id', studentId);
-
-      if (error) throw error;
-
-      const formattedSubmissions: Submission[] = (data || []).map((sub) => ({
-        id: sub.id,
-        assignmentId: sub.assignment_id,
-        submissionText: sub.submission_text || '',
-        submissionUrl: sub.submission_url,
-        submittedAt: sub.submitted_at,
-        grade: sub.grade,
-        feedback: sub.feedback,
-        gradedAt: sub.graded_at
-      }));
-
-      setSubmissions(formattedSubmissions);
-    } catch (err: any) {
-      console.error('Error loading submissions:', err);
-      setError(err.message || 'Failed to load submissions');
-    }
+  const loadSubmissions = async (_studentId: string) => {
+    // TODO: add /api/student/submissions endpoint
+    // Backend endpoint not yet implemented — return empty list gracefully.
+    setSubmissions([]);
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -175,88 +106,13 @@ const AssignmentSubmissionPortalInteractive = () => {
     e.preventDefault();
     if (!userId || !selectedAssignment) return;
 
-    setUploading(true);
-    setError(null);
-    setUploadProgress(0);
+    // TODO: add POST /api/assignments/[id]/submit endpoint (with file upload support).
+    alert("Tez orada qo'shiladi");
 
-    try {
-      let fileUrl: string | null = null;
-
-      // Upload file if selected
-      if (selectedFile) {
-        const fileExt = selectedFile.name.split('.').pop();
-        const fileName = `${userId}/${Date.now()}.${fileExt}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('assignment_submissions')
-          .upload(fileName, selectedFile, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) throw uploadError;
-
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('assignment_submissions')
-          .getPublicUrl(fileName);
-
-        fileUrl = publicUrl;
-        setUploadProgress(100);
-      }
-
-      // Check if submission already exists
-      const existingSubmission = submissions.find(
-        (s) => s.assignmentId === selectedAssignment.id
-      );
-
-      if (existingSubmission && existingSubmission.grade !== null) {
-        setError('Bu topshiriq allaqachon baholangan. Qayta topshirish mumkin emas.');
-        setUploading(false);
-        return;
-      }
-
-      if (existingSubmission) {
-        // Update existing submission
-        const { error: updateError } = await supabase
-          .from('assignment_submissions')
-          .update({
-            submission_text: submissionText,
-            submission_url: fileUrl || existingSubmission.submissionUrl,
-            submitted_at: new Date().toISOString()
-          })
-          .eq('id', existingSubmission.id);
-
-        if (updateError) throw updateError;
-      } else {
-        // Create new submission
-        const { error: insertError } = await supabase
-          .from('assignment_submissions')
-          .insert({
-            assignment_id: selectedAssignment.id,
-            student_id: userId,
-            course_id: selectedAssignment.courseId,
-            submission_text: submissionText,
-            submission_url: fileUrl
-          });
-
-        if (insertError) throw insertError;
-      }
-
-      // Reset form
-      setSubmissionText('');
-      setSelectedFile(null);
-      setSelectedAssignment(null);
-
-      // Reload submissions
-      await loadSubmissions(userId);
-    } catch (err: any) {
-      console.error('Error submitting assignment:', err);
-      setError(err.message || 'Failed to submit assignment');
-    } finally {
-      setUploading(false);
-      setUploadProgress(0);
-    }
+    // Reset form
+    setSubmissionText('');
+    setSelectedFile(null);
+    setSelectedAssignment(null);
   };
 
   const getSubmissionForAssignment = (assignmentId: string): Submission | undefined => {

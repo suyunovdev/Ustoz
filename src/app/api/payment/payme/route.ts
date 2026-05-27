@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-
+import { prisma } from '@/lib/prisma';
 
 interface PaymeRequest {
   method: string;
@@ -17,7 +16,7 @@ interface PaymeRequest {
 }
 
 interface PaymeResponse {
-  result?: any;
+  result?: unknown;
   error?: {
     code: number;
     message: string;
@@ -26,14 +25,19 @@ interface PaymeResponse {
   id: number;
 }
 
-function createPaymeError(code: number, message: string, id: number, data?: string): NextResponse {
+function createPaymeError(
+  code: number,
+  message: string,
+  id: number,
+  data?: string
+): NextResponse {
   return NextResponse.json({
     error: {
       code,
       message,
-      data
+      data,
     },
-    id
+    id,
   } as PaymeResponse);
 }
 
@@ -65,7 +69,6 @@ export async function POST(request: NextRequest) {
     }
 
     const body: PaymeRequest = await request.json();
-    const supabase = await createClient();
 
     switch (body.method) {
       case 'CheckPerformTransaction': {
@@ -76,44 +79,43 @@ export async function POST(request: NextRequest) {
           return createPaymeError(-31050, 'Order not found', body.id);
         }
 
-        // Get transaction
-        const { data: transaction, error } = await supabase
-          .from('payment_transactions')
-          .select('id, status, amount_uzs, student_id, course_id')
-          .eq('merchant_trans_id', orderId)
-          .single();
+        const transaction = await prisma.paymentTransaction.findUnique({
+          where: { merchantTransId: orderId },
+          select: {
+            id: true,
+            status: true,
+            amountUzs: true,
+            studentId: true,
+            courseId: true,
+          },
+        });
 
-        if (error || !transaction) {
+        if (!transaction) {
           return createPaymeError(-31050, 'Order not found', body.id);
         }
 
-        // Check if already paid
         if (transaction.status === 'completed') {
           return createPaymeError(-31051, 'Order already paid', body.id);
         }
 
-        // Check if cancelled
         if (transaction.status === 'cancelled') {
           return createPaymeError(-31099, 'Order cancelled', body.id);
         }
 
-        // Verify amount (Payme sends amount in tiyin, we store in som)
-        const expectedAmount = transaction.amount_uzs * 100;
+        // Payme sends amount in tiyin, DB stores in som
+        const expectedAmount = Number(transaction.amountUzs) * 100;
         if (amount !== expectedAmount) {
           return createPaymeError(-31001, 'Incorrect amount', body.id);
         }
 
         return NextResponse.json({
-          result: {
-            allow: true
-          },
-          id: body.id
+          result: { allow: true },
+          id: body.id,
         } as PaymeResponse);
       }
 
       case 'CreateTransaction': {
         const orderId = body.params.account?.order_id;
-        const amount = body.params.amount;
         const transactionId = body.params.id;
         const time = body.params.time;
 
@@ -121,45 +123,51 @@ export async function POST(request: NextRequest) {
           return createPaymeError(-31050, 'Order not found', body.id);
         }
 
-        // Get transaction
-        const { data: transaction, error } = await supabase
-          .from('payment_transactions')
-          .select('id, status, amount_uzs, payme_transaction_id')
-          .eq('merchant_trans_id', orderId)
-          .single();
+        const transaction = await prisma.paymentTransaction.findUnique({
+          where: { merchantTransId: orderId },
+          select: {
+            id: true,
+            status: true,
+            amountUzs: true,
+            paymeTransactionId: true,
+          },
+        });
 
-        if (error || !transaction) {
+        if (!transaction) {
           return createPaymeError(-31050, 'Order not found', body.id);
         }
 
-        // Check if transaction already exists with different ID
-        if (transaction.payme_transaction_id && transaction.payme_transaction_id !== transactionId) {
+        // Existing payme tx with different ID -> conflict
+        if (
+          transaction.paymeTransactionId &&
+          transaction.paymeTransactionId !== transactionId
+        ) {
           return createPaymeError(-31099, 'Transaction already exists', body.id);
         }
 
-        // If already processing with same ID, return existing
-        if (transaction.payme_transaction_id === transactionId) {
+        // Already processing with same id -> return existing
+        if (transaction.paymeTransactionId === transactionId) {
           return NextResponse.json({
             result: {
               create_time: time,
               transaction: transaction.id,
-              state: transaction.status === 'completed' ? 2 : 1
+              state: transaction.status === 'completed' ? 2 : 1,
             },
-            id: body.id
+            id: body.id,
           } as PaymeResponse);
         }
 
-        // Update transaction
-        const { error: updateError } = await supabase
-          .from('payment_transactions')
-          .update({
-            status: 'processing',
-            payme_transaction_id: transactionId,
-            payme_time: time
-          })
-          .eq('id', transaction.id);
-
-        if (updateError) {
+        try {
+          await prisma.paymentTransaction.update({
+            where: { id: transaction.id },
+            data: {
+              status: 'processing',
+              paymeTransactionId: transactionId,
+              paymeTime: time ? BigInt(time) : null,
+            },
+          });
+        } catch (updateError) {
+          console.error('Payme CreateTransaction update error:', updateError);
           return createPaymeError(-31008, 'Failed to create transaction', body.id);
         }
 
@@ -167,9 +175,9 @@ export async function POST(request: NextRequest) {
           result: {
             create_time: time,
             transaction: transaction.id,
-            state: 1
+            state: 1,
           },
-          id: body.id
+          id: body.id,
         } as PaymeResponse);
       }
 
@@ -180,40 +188,39 @@ export async function POST(request: NextRequest) {
           return createPaymeError(-31003, 'Transaction not found', body.id);
         }
 
-        // Get transaction by payme_transaction_id
-        const { data: transaction, error } = await supabase
-          .from('payment_transactions')
-          .select('id, status, payme_time')
-          .eq('payme_transaction_id', transactionId)
-          .single();
+        const transaction = await prisma.paymentTransaction.findFirst({
+          where: { paymeTransactionId: transactionId },
+          select: { id: true, status: true, paymeTime: true, completedAt: true },
+        });
 
-        if (error || !transaction) {
+        if (!transaction) {
           return createPaymeError(-31003, 'Transaction not found', body.id);
         }
 
-        // Check if already completed
         if (transaction.status === 'completed') {
           return NextResponse.json({
             result: {
               transaction: transaction.id,
-              perform_time: Date.now(),
-              state: 2
+              perform_time: transaction.completedAt
+                ? transaction.completedAt.getTime()
+                : Date.now(),
+              state: 2,
             },
-            id: body.id
+            id: body.id,
           } as PaymeResponse);
         }
 
-        // Mark as completed (trigger will auto-enroll)
         const performTime = Date.now();
-        const { error: updateError } = await supabase
-          .from('payment_transactions')
-          .update({
-            status: 'completed',
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', transaction.id);
-
-        if (updateError) {
+        try {
+          await prisma.paymentTransaction.update({
+            where: { id: transaction.id },
+            data: {
+              status: 'completed',
+              completedAt: new Date(performTime),
+            },
+          });
+        } catch (updateError) {
+          console.error('Payme PerformTransaction update error:', updateError);
           return createPaymeError(-31008, 'Failed to perform transaction', body.id);
         }
 
@@ -221,9 +228,9 @@ export async function POST(request: NextRequest) {
           result: {
             transaction: transaction.id,
             perform_time: performTime,
-            state: 2
+            state: 2,
           },
-          id: body.id
+          id: body.id,
         } as PaymeResponse);
       }
 
@@ -235,41 +242,40 @@ export async function POST(request: NextRequest) {
           return createPaymeError(-31003, 'Transaction not found', body.id);
         }
 
-        // Get transaction
-        const { data: transaction, error } = await supabase
-          .from('payment_transactions')
-          .select('id, status, payme_time')
-          .eq('payme_transaction_id', transactionId)
-          .single();
+        const transaction = await prisma.paymentTransaction.findFirst({
+          where: { paymeTransactionId: transactionId },
+          select: { id: true, status: true, cancelledAt: true },
+        });
 
-        if (error || !transaction) {
+        if (!transaction) {
           return createPaymeError(-31003, 'Transaction not found', body.id);
         }
 
-        // If already cancelled
         if (transaction.status === 'cancelled') {
           return NextResponse.json({
             result: {
               transaction: transaction.id,
-              cancel_time: Date.now(),
-              state: -1
+              cancel_time: transaction.cancelledAt
+                ? transaction.cancelledAt.getTime()
+                : Date.now(),
+              state: -1,
             },
-            id: body.id
+            id: body.id,
           } as PaymeResponse);
         }
 
-        // Cancel transaction
         const cancelTime = Date.now();
-        const { error: updateError } = await supabase
-          .from('payment_transactions')
-          .update({
-            status: 'cancelled',
-            cancelled_at: new Date().toISOString(),
-            error_message: `Cancelled by Payme. Reason: ${reason}`
-          })
-          .eq('id', transaction.id);
-
-        if (updateError) {
+        try {
+          await prisma.paymentTransaction.update({
+            where: { id: transaction.id },
+            data: {
+              status: 'cancelled',
+              cancelledAt: new Date(cancelTime),
+              errorMessage: `Cancelled by Payme. Reason: ${reason}`,
+            },
+          });
+        } catch (updateError) {
+          console.error('Payme CancelTransaction update error:', updateError);
           return createPaymeError(-31008, 'Failed to cancel transaction', body.id);
         }
 
@@ -277,9 +283,9 @@ export async function POST(request: NextRequest) {
           result: {
             transaction: transaction.id,
             cancel_time: cancelTime,
-            state: -1
+            state: -1,
           },
-          id: body.id
+          id: body.id,
         } as PaymeResponse);
       }
 
@@ -290,14 +296,18 @@ export async function POST(request: NextRequest) {
           return createPaymeError(-31003, 'Transaction not found', body.id);
         }
 
-        // Get transaction
-        const { data: transaction, error } = await supabase
-          .from('payment_transactions')
-          .select('id, status, payme_time, completed_at, cancelled_at')
-          .eq('payme_transaction_id', transactionId)
-          .single();
+        const transaction = await prisma.paymentTransaction.findFirst({
+          where: { paymeTransactionId: transactionId },
+          select: {
+            id: true,
+            status: true,
+            paymeTime: true,
+            completedAt: true,
+            cancelledAt: true,
+          },
+        });
 
-        if (error || !transaction) {
+        if (!transaction) {
           return createPaymeError(-31003, 'Transaction not found', body.id);
         }
 
@@ -307,14 +317,18 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json({
           result: {
-            create_time: transaction.payme_time || Date.now(),
-            perform_time: transaction.completed_at ? new Date(transaction.completed_at).getTime() : 0,
-            cancel_time: transaction.cancelled_at ? new Date(transaction.cancelled_at).getTime() : 0,
+            create_time: transaction.paymeTime ? Number(transaction.paymeTime) : Date.now(),
+            perform_time: transaction.completedAt
+              ? transaction.completedAt.getTime()
+              : 0,
+            cancel_time: transaction.cancelledAt
+              ? transaction.cancelledAt.getTime()
+              : 0,
             transaction: transaction.id,
             state,
-            reason: null
+            reason: null,
           },
-          id: body.id
+          id: body.id,
         } as PaymeResponse);
       }
 

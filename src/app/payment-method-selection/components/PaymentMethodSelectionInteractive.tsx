@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Course {
@@ -56,22 +55,31 @@ export default function PaymentMethodSelectionInteractive() {
   const fetchCourse = async () => {
     try {
       setLoading(true);
-      const supabase = createClient();
 
-      const { data, error } = await supabase
-        .from('courses')
-        .select('id, title, price_uzs, cover_image')
-        .eq('id', courseId)
-        .single();
+      const response = await fetch(`/api/courses/${courseId}`, {
+        credentials: 'include'
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        throw new Error(errBody.error || 'Kurs topilmadi');
+      }
 
-      if (!data) {
+      const { course: c } = await response.json();
+
+      if (!c) {
         setError('Kurs topilmadi');
         return;
       }
 
-      setCourse(data);
+      setCourse({
+        id: c.id,
+        title: c.title,
+        price_uzs: parseInt(c.priceUzs, 10) || 0,
+        cover_image: c.coverImage || '',
+        instructor_name: c.teacher?.fullName,
+        instructor_image: c.teacher?.avatarUrl
+      });
     } catch (err: any) {
       console.error('Error fetching course:', err);
       setError(err.message || 'Kursni yuklashda xatolik');
@@ -89,12 +97,15 @@ export default function PaymentMethodSelectionInteractive() {
 
       const response = await fetch('/api/payment/initiate', {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           courseId: course.id,
-          paymentMethod: selectedMethod
+          paymentMethod: selectedMethod,
+          amount: course.price_uzs,
+          currency: 'UZS'
         })
       });
 

@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 
 interface UploadedFile {
@@ -34,7 +33,6 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
-  const supabase = createClient();
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' B';
@@ -66,51 +64,17 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
 
       try {
         const fileType = getFileType(file);
-        const fileName = `${teacherId}/${Date.now()}-${file.name}`;
-        
-        // Upload to Supabase Storage
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('course-content')
-          .upload(fileName, file, {
-            cacheControl: '3600',
-            upsert: false,
-            onUploadProgress: (progress) => {
-              const percentage = (progress.loaded / progress.total) * 100;
-              setUploadProgress(prev => ({ ...prev, [fileId]: percentage }));
-            }
-          });
 
-        if (uploadError) throw uploadError;
+        // TODO: implement S3/MinIO upload
+        // Local-only preview URL — does NOT persist across page reloads.
+        const publicUrl = URL.createObjectURL(file);
 
-        // Get public URL
-        const { data: { publicUrl } } = supabase.storage
-          .from('course-content')
-          .getPublicUrl(fileName);
+        // Simulate upload progress so the UI feels responsive.
+        setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
 
-        // Create database record
-        const { data: contentData, error: dbError } = await supabase
-          .from('content_materials')
-          .insert({
-            teacher_id: teacherId,
-            title: file.name,
-            content_type: fileType,
-            file_url: publicUrl,
-            file_name: file.name,
-            file_size: file.size,
-            mime_type: file.type,
-            watermark_enabled: watermarkConfig.enabled && fileType === 'video',
-            watermark_text: watermarkConfig.enabled ? watermarkConfig.text : null,
-            watermark_opacity: watermarkConfig.enabled ? watermarkConfig.opacity : null,
-            watermark_position: watermarkConfig.enabled ? watermarkConfig.position : null,
-            moderation_status: 'pending'
-          })
-          .select()
-          .single();
-
-        if (dbError) throw dbError;
-
+        // TODO: add POST /api/teacher/materials endpoint and persist via JWT-authenticated fetch
         const newFile: UploadedFile = {
-          id: contentData.id,
+          id: fileId,
           name: file.name,
           type: fileType,
           size: formatFileSize(file.size),
@@ -136,7 +100,7 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
     if (newUploadedFiles.length > 0) {
       onFileUpload(newUploadedFiles);
     }
-  }, [teacherId, watermarkConfig, supabase, onFileUpload]);
+  }, [teacherId, watermarkConfig, onFileUpload]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();

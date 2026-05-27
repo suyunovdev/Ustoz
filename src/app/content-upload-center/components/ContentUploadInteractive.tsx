@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 import FileLibraryPanel from './FileLibraryPanel';
 import UploadArea from './UploadArea';
@@ -51,7 +50,6 @@ const ContentUploadInteractive = () => {
   const [externalLinks, setExternalLinks] = useState<ExternalLink[]>([]);
   const [teacherId, setTeacherId] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     setIsHydrated(true);
@@ -60,7 +58,14 @@ const ContentUploadInteractive = () => {
 
   const loadUserData = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Fetch current user via JWT-based session endpoint
+      const res = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!res.ok) {
+        window.location.href = '/login';
+        return;
+      }
+      const payload = await res.json();
+      const user = payload?.user;
       if (!user) {
         window.location.href = '/login';
         return;
@@ -68,45 +73,34 @@ const ContentUploadInteractive = () => {
 
       setTeacherId(user.id);
 
-      // Load uploaded files
-      const { data: materials } = await supabase
-        .from('content_materials')
-        .select('*')
-        .eq('teacher_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (materials) {
-        const files: UploadedFile[] = materials.map(m => ({
-          id: m.id,
-          name: m.file_name,
-          type: m.content_type,
-          size: formatFileSize(m.file_size),
-          uploadDate: new Date(m.created_at).toISOString().split('T')[0],
-          status: m.moderation_status,
-          watermarkEnabled: m.watermark_enabled,
-          url: m.file_url
-        }));
-        setUploadedFiles(files);
+      // TODO: add /api/teacher/materials endpoint
+      // Fallback: read previously cached materials from localStorage so the UI isn't empty
+      try {
+        const cachedMaterials =
+          typeof window !== 'undefined'
+            ? JSON.parse(localStorage.getItem(`content_materials:${user.id}`) || '[]')
+            : [];
+        if (Array.isArray(cachedMaterials)) {
+          setUploadedFiles(cachedMaterials as UploadedFile[]);
+        }
+      } catch (e) {
+        console.warn('Failed to read cached materials from localStorage:', e);
+        setUploadedFiles([]);
       }
 
-      // Load external links
-      const { data: links } = await supabase
-        .from('external_links')
-        .select('*')
-        .eq('teacher_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (links) {
-        const externalLinksData: ExternalLink[] = links.map(l => ({
-          id: l.id,
-          type: l.link_type,
-          url: l.url,
-          title: l.title,
-          description: l.description,
-          addedDate: new Date(l.created_at).toISOString().split('T')[0],
-          status: l.moderation_status
-        }));
-        setExternalLinks(externalLinksData);
+      // TODO: add /api/teacher/external-links endpoint
+      // Fallback: read cached external links from localStorage
+      try {
+        const cachedLinks =
+          typeof window !== 'undefined'
+            ? JSON.parse(localStorage.getItem(`external_links:${user.id}`) || '[]')
+            : [];
+        if (Array.isArray(cachedLinks)) {
+          setExternalLinks(cachedLinks as ExternalLink[]);
+        }
+      } catch (e) {
+        console.warn('Failed to read cached external links from localStorage:', e);
+        setExternalLinks([]);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -133,20 +127,40 @@ const ContentUploadInteractive = () => {
     );
   }
 
+  const persistMaterials = (files: UploadedFile[]) => {
+    // TODO: add /api/teacher/materials endpoint and POST/DELETE here
+    try {
+      if (typeof window !== 'undefined' && teacherId) {
+        localStorage.setItem(`content_materials:${teacherId}`, JSON.stringify(files));
+      }
+    } catch (e) {
+      console.warn('Failed to persist materials to localStorage:', e);
+    }
+  };
+
+  const persistLinks = (links: ExternalLink[]) => {
+    // TODO: add /api/teacher/external-links endpoint and POST/DELETE here
+    try {
+      if (typeof window !== 'undefined' && teacherId) {
+        localStorage.setItem(`external_links:${teacherId}`, JSON.stringify(links));
+      }
+    } catch (e) {
+      console.warn('Failed to persist external links to localStorage:', e);
+    }
+  };
+
   const handleFileUpload = (files: UploadedFile[]) => {
-    setUploadedFiles([...uploadedFiles, ...files]);
+    const next = [...uploadedFiles, ...files];
+    setUploadedFiles(next);
+    persistMaterials(next);
   };
 
   const handleFileDelete = async (fileId: string) => {
+    // TODO: add DELETE /api/teacher/materials/[id] endpoint
     try {
-      const { error } = await supabase
-        .from('content_materials')
-        .delete()
-        .eq('id', fileId);
-
-      if (error) throw error;
-
-      setUploadedFiles(uploadedFiles.filter(f => f.id !== fileId));
+      const next = uploadedFiles.filter(f => f.id !== fileId);
+      setUploadedFiles(next);
+      persistMaterials(next);
     } catch (error) {
       console.error('Error deleting file:', error);
     }
@@ -157,11 +171,15 @@ const ContentUploadInteractive = () => {
   };
 
   const handleLinkAdd = (link: ExternalLink) => {
-    setExternalLinks([...externalLinks, link]);
+    const next = [...externalLinks, link];
+    setExternalLinks(next);
+    persistLinks(next);
   };
 
   const handleLinkDelete = (linkId: string) => {
-    setExternalLinks(externalLinks.filter(l => l.id !== linkId));
+    const next = externalLinks.filter(l => l.id !== linkId);
+    setExternalLinks(next);
+    persistLinks(next);
   };
 
   const sections = [

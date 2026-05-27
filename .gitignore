@@ -39,6 +39,9 @@ jest-test-results.json
 .vscode/
 .idea/
 
+# Claude Code settings (personal)
+.claude/
+
 # Optional: if using TurboRepo or monorepo
 turbo/
 /src/generated/prisma

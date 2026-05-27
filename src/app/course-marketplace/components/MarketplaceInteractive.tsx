@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import CategoryChips from './CategoryChips';
 import FilterPanel from './FilterPanel';
@@ -50,9 +50,10 @@ interface FilterOptions {
 }
 
 const MarketplaceInteractive = () => {
+  const searchParams = useSearchParams();
   const [isHydrated, setIsHydrated] = useState(false);
-  const [activeCategory, setActiveCategory] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState(searchParams?.get('category') || 'all');
+  const [searchQuery, setSearchQuery] = useState(searchParams?.get('search') || '');
   const [currentSort, setCurrentSort] = useState('popularity');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [wishlistedCourses, setWishlistedCourses] = useState<string[]>([]);
@@ -84,46 +85,26 @@ const MarketplaceInteractive = () => {
   const fetchCourses = async () => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('courses')
-        .select(`
-          id,
-          title,
-          cover_image,
-          price_uzs,
-          price_usd,
-          rating,
-          review_count,
-          enrollment_count,
-          difficulty_level,
-          language,
-          category,
-          is_published,
-          user_profiles!teacher_id (
-            full_name,
-            avatar_url
-          )
-        `)
-        .eq('is_published', true)
-        .order('enrollment_count', { ascending: false });
+      const res = await fetch('/api/courses?limit=50&sortBy=enrollments', {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
 
-      if (error) throw error;
-
-      const mapped: Course[] = (data || []).map((c: any) => ({
+      const mapped: Course[] = (data.courses || []).map((c: any) => ({
         id: c.id,
         title: c.title,
-        instructor: c.user_profiles?.full_name || "Ustoz",
-        instructorImage: c.user_profiles?.avatar_url || 'https://img.rocket.new/generatedImages/rocket_gen_img_19acf6093-1763297372321.png',
-        instructorImageAlt: `${c.user_profiles?.full_name || 'Ustoz'} rasmi`,
-        coverImage: c.cover_image || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
+        instructor: c.teacherName || 'Ustoz',
+        instructorImage: c.teacherAvatar || 'https://img.rocket.new/generatedImages/rocket_gen_img_19acf6093-1763297372321.png',
+        instructorImageAlt: `${c.teacherName || 'Ustoz'} rasmi`,
+        coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
         coverImageAlt: `${c.title} kursi`,
         rating: Number(c.rating) || 0,
-        reviewCount: c.review_count || 0,
-        price: c.price_uzs || 0,
+        reviewCount: c.reviewCount || 0,
+        price: Number(c.priceUzs) || 0,
         currency: 'UZS',
-        enrollmentCount: c.enrollment_count || 0,
-        difficulty: c.difficulty_level || 'Beginner',
+        enrollmentCount: c.enrollmentCount || 0,
+        difficulty: c.difficultyLevel || 'Beginner',
         language: c.language || 'uz',
         category: c.category || 'other',
       }));

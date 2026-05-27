@@ -9,7 +9,6 @@ import QuizBuilder from './QuizBuilder';
 import PublishingControls from './PublishingControls';
 import Icon from '@/components/ui/AppIcon';
 import ContentUploadManager from './ContentUploadManager';
-import { createClient } from '@/lib/supabase/client';
 
 interface Topic {
   id: string;
@@ -169,28 +168,17 @@ const CourseCreationInteractive = () => {
     ));
   };
 
-  // Save course draft to Supabase
+  // Save course draft via JWT API
   const saveCourseToDatabase = async (status: 'draft' | 'submitted') => {
-    const supabase = createClient();
-    if (!supabase) return null;
-
     setIsSaving(true);
     setSaveError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setSaveError('Iltimos, avval tizimga kiring');
-        return null;
-      }
-
-      // Valid ENUM values for target_audience
       const validTargetAudiences = ['school_students', 'university_students', 'independent_learners'];
-      // Valid ENUM values for subject_category
       const validSubjectCategories = [
         'mathematics', 'physics', 'chemistry', 'biology', 'geometry', 'algebra',
         'informatics', 'uzbek_language', 'english_language', 'russian_language',
-        'history', 'geography', 'law', 'programming', 'web_development',
+        'history', 'geography', 'programming', 'web_development',
         'mobile_development', 'data_science', 'artificial_intelligence',
         'business_management', 'entrepreneurship', 'marketing', 'finance',
         'design', 'other'
@@ -204,74 +192,55 @@ const CourseCreationInteractive = () => {
         ? metadata.subjectCategory
         : 'other';
 
-      const coursePayload = {
-        teacher_id: user.id,
+      const topicsPayload = topics.map((t) => ({
+        title: t.title,
+        duration: t.duration,
+        content: t.content,
+        hasQuiz: t.hasQuiz,
+      }));
+
+      const coursePayload: any = {
         title: metadata.title || 'Nomsiz kurs',
         description: metadata.description || '',
         category: metadata.category || 'general',
-        target_audience: targetAudience,
-        subject_category: subjectCategory,
-        grade_level: metadata.gradeLevel ? parseInt(metadata.gradeLevel) : null,
-        price_usd: parseFloat(metadata.priceUSD) || 0,
-        price_uzs: parseInt(metadata.priceUZS) || 0,
-        cover_image: metadata.coverImage || null,
+        targetAudience,
+        subjectCategory,
+        gradeLevel: metadata.gradeLevel ? parseInt(metadata.gradeLevel) : null,
+        priceUzs: String(parseInt(metadata.priceUZS) || 0),
+        coverImage: metadata.coverImage || null,
         language: metadata.language || 'uz',
-        is_published: status === 'submitted' ? true : false,
-        updated_at: new Date().toISOString(),
+        isPublished: status === 'submitted',
       };
 
       let savedCourseId = courseDbId;
 
       if (courseDbId) {
-        // Update existing course
-        const { error } = await supabase
-          .from('courses')
-          .update(coursePayload)
-          .eq('id', courseDbId);
-        if (error) throw error;
-      } else {
-        // Create new course
-        const { data, error } = await supabase
-          .from('courses')
-          .insert(coursePayload)
-          .select('id')
-          .single();
-        if (error) throw error;
-        savedCourseId = data.id;
-        setCourseDbId(data.id);
-      }
-
-      // Save topics
-      if (savedCourseId && topics.length > 0) {
-        for (const topic of topics) {
-          const topicPayload = {
-            course_id: savedCourseId,
-            title: topic.title,
-            order_index: topic.order,
-            duration: topic.duration,
-            content: topic.content,
-            has_quiz: topic.hasQuiz,
-            updated_at: new Date().toISOString(),
-          };
-
-          if (topic.dbId) {
-            await supabase
-              .from('course_topics')
-              .update(topicPayload)
-              .eq('id', topic.dbId);
-          } else {
-            const { data: topicData } = await supabase
-              .from('course_topics')
-              .insert(topicPayload)
-              .select('id')
-              .single();
-            if (topicData) {
-              setTopics(prev => prev.map(t =>
-                t.id === topic.id ? { ...t, dbId: topicData.id } : t
-              ));
-            }
-          }
+        // PATCH existing course
+        const res = await fetch(`/api/teacher/courses/${courseDbId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ ...coursePayload, topics: topicsPayload }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err?.error || `Update failed (${res.status})`);
         }
+      } else {
+        // POST new course
+        const res = await fetch('/api/teacher/courses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ ...coursePayload, topics: topicsPayload }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err?.error || `Create failed (${res.status})`);
+        }
+        const data = await res.json();
+        savedCourseId = data.course.id;
+        setCourseDbId(savedCourseId);
       }
 
       return savedCourseId;

@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 import VideoPlayer from './VideoPlayer';
 import CourseNavigation from './CourseNavigation';
 import InteractiveTranscript from './InteractiveTranscript';
@@ -65,84 +64,66 @@ const LearningInterfaceInteractive = () => {
   const loadCourse = async (id: string) => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-
-      // Check auth
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push('/login');
+      // Check auth via JWT
+      const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!meRes.ok) {
+        router.push('/login?redirect=/learning-interface?courseId=' + id);
         return;
       }
-      setUserId(user.id);
+      const me = await meRes.json();
+      setUserId(me.user.id);
 
-      // Check enrollment
-      const { data: enrollment } = await supabase
-        .from('enrollments')
-        .select('id, progress')
-        .eq('student_id', user.id)
-        .eq('course_id', id)
-        .single();
+      // Load course details (includes topics + isEnrolled check)
+      const courseRes = await fetch(`/api/courses/${id}`, { credentials: 'include' });
+      if (!courseRes.ok) {
+        router.push('/course-marketplace');
+        return;
+      }
+      const { course } = await courseRes.json();
 
-      if (!enrollment) {
+      if (!course.isEnrolled) {
         router.push(`/course-details?courseId=${id}`);
         return;
       }
-      setEnrollmentProgress(enrollment.progress || 0);
 
-      // Load course title
-      const { data: courseData } = await supabase
-        .from('courses')
-        .select('title')
-        .eq('id', id)
-        .single();
-      if (courseData) setCourseTitle(courseData.title);
+      setCourseTitle(course.title);
 
-      // Load topics
-      const { data: topics } = await supabase
-        .from('course_topics')
-        .select('id, title, topic_order, has_quiz, file_url, description')
-        .eq('course_id', id)
-        .order('topic_order', { ascending: true });
+      // Get current progress
+      const progRes = await fetch(`/api/progress?courseId=${id}`, { credentials: 'include' });
+      if (progRes.ok) {
+        const prog = await progRes.json();
+        setEnrollmentProgress(prog.progress || 0);
+      }
 
-      if (!topics || topics.length === 0) {
-        // No topics yet
+      const topics = course.topics || [];
+      if (topics.length === 0) {
         setSections([]);
-        setIsLoading(false);
         return;
       }
 
-      // Load quiz completions for this student
-      const { data: completions } = await supabase
-        .from('quiz_completions')
-        .select('quiz_id')
-        .eq('student_id', user.id)
-        .eq('course_id', id);
+      // Completed topics derived from progress percentage (proportional)
+      const progressPct = Number(course.progress || 0);
+      const completedCountApprox = Math.round((topics.length * progressPct) / 100);
 
-      const completedQuizIds = new Set((completions || []).map((q: any) => q.quiz_id));
-
-      // Map topics into sections (all under one section if no section data)
       const mappedTopics: Topic[] = topics.map((t: any, i: number) => ({
         id: t.id,
         title: t.title,
-        duration: '—',
-        isCompleted: completedQuizIds.has(t.id),
-        isCurrent: i === 0,
-        videoUrl: t.file_url || '',
+        duration: t.duration || '—',
+        isCompleted: i < completedCountApprox,
+        isCurrent: i === completedCountApprox,
+        videoUrl: t.content || '',
       }));
 
-      const section: Section = {
-        id: 'section-main',
-        title: courseData?.title || 'Kurs mavzulari',
-        topics: mappedTopics,
-      };
+      setSections([
+        {
+          id: 'section-main',
+          title: course.title,
+          topics: mappedTopics,
+        },
+      ]);
 
-      setSections([section]);
-
-      // Set first uncompleted topic as current
-      const firstUncompleted = mappedTopics.find((t) => !t.isCompleted) || mappedTopics[0];
-      if (firstUncompleted) {
-        setCurrentTopic({ ...firstUncompleted, isCurrent: true });
-      }
+      const firstCurrent = mappedTopics.find((t) => t.isCurrent) || mappedTopics[0];
+      if (firstCurrent) setCurrentTopic(firstCurrent);
     } catch (err) {
       console.error('Kurs yuklanmadi:', err);
     } finally {
@@ -153,36 +134,27 @@ const LearningInterfaceInteractive = () => {
   const handleTopicComplete = async (topicId: string) => {
     if (!userId || !courseId) return;
     try {
-      const supabase = createClient();
+      // Calculate new progress based on completed topics in local state
+      const allTopics = sections.flatMap((s) => s.topics);
+      const completedCount =
+        allTopics.filter((t) => t.isCompleted || t.id === topicId).length;
+      const newProgress = Math.round((completedCount / allTopics.length) * 100);
 
-      // Mark topic completed via quiz_completions
-      await supabase.from('quiz_completions').upsert({
-        student_id: userId,
-        course_id: courseId,
-        quiz_id: topicId,
-        score: 100,
-        passed: true,
+      // Update progress via JWT API
+      await fetch('/api/progress', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ courseId, progress: newProgress }),
       });
 
-      // Update sections state
+      // Update local state
       setSections((prev) =>
         prev.map((s) => ({
           ...s,
           topics: s.topics.map((t) => (t.id === topicId ? { ...t, isCompleted: true } : t)),
         }))
       );
-
-      // Recalculate and update progress
-      const allTopics = sections.flatMap((s) => s.topics);
-      const completedCount = allTopics.filter((t) => t.isCompleted || t.id === topicId).length;
-      const newProgress = Math.round((completedCount / allTopics.length) * 100);
-
-      await supabase
-        .from('enrollments')
-        .update({ progress: newProgress })
-        .eq('student_id', userId)
-        .eq('course_id', courseId);
-
       setEnrollmentProgress(newProgress);
     } catch (err) {
       console.error('Mavzu tugallanmadi:', err);

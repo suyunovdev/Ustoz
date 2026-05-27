@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 
 interface FileAttachment {
@@ -24,7 +23,6 @@ const ContentUploadManager = ({ materialId, onFilesChange, files }: ContentUploa
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [externalLink, setExternalLink] = useState('');
   const [showLinkModal, setShowLinkModal] = useState(false);
-  const supabase = createClient();
 
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + ' B';
@@ -45,44 +43,16 @@ const ContentUploadManager = ({ materialId, onFilesChange, files }: ContentUploa
 
       for (let i = 0; i < uploadedFiles.length; i++) {
         const file = uploadedFiles[i];
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = `course-materials/${fileName}`;
-
-        let fileUrl = '';
-
-        try {
-          // Try uploading to Supabase Storage
-          const { data, error } = await supabase.storage
-            .from('course-content')
-            .upload(filePath, file, {
-              cacheControl: '3600',
-              upsert: false
-            });
-
-          if (error) {
-            // If bucket doesn't exist or other storage error, use local object URL as fallback
-            console.warn('Supabase storage upload failed, using local URL:', error.message);
-            fileUrl = URL.createObjectURL(file);
-          } else {
-            // Get public URL from Supabase
-            const { data: { publicUrl } } = supabase.storage
-              .from('course-content')
-              .getPublicUrl(filePath);
-            fileUrl = publicUrl;
-          }
-        } catch (storageErr) {
-          // Fallback to local object URL
-          console.warn('Storage error, using local URL:', storageErr);
-          fileUrl = URL.createObjectURL(file);
-        }
+        // TODO: production'da fayl yuklash API (multipart) qo'shilishi kerak (S3/MinIO).
+        // Hozircha local object URL ishlatamiz — fayl brauzer sessiyasida ko'rinadi.
+        const fileUrl = URL.createObjectURL(file);
 
         newFiles.push({
           id: `file-${Date.now()}-${i}`,
           name: file.name,
           size: formatFileSize(file.size),
           type: file.type,
-          url: fileUrl
+          url: fileUrl,
         });
 
         setUploadProgress(((i + 1) / uploadedFiles.length) * 100);
@@ -139,17 +109,12 @@ const ContentUploadManager = ({ materialId, onFilesChange, files }: ContentUploa
     return 'LinkIcon';
   };
 
-  const deleteFile = async (file: FileAttachment) => {
-    // If it's a Supabase storage file, delete from storage
-    if (file.url.includes('supabase') && file.url.includes('course-content')) {
+  const deleteFile = (file: FileAttachment) => {
+    // Local object URL'ni revoke qilamiz (xotira tozalash)
+    if (file.url.startsWith('blob:')) {
       try {
-        const path = file.url.split('/course-content/')[1];
-        if (path) {
-          await supabase.storage.from('course-content').remove([path]);
-        }
-      } catch (err) {
-        console.warn('Could not delete from storage:', err);
-      }
+        URL.revokeObjectURL(file.url);
+      } catch {}
     }
     onFilesChange(files.filter((f) => f.id !== file.id));
   };

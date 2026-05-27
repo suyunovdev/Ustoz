@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import TransactionList from './TransactionList';
 import FilterPanel from './FilterPanel';
@@ -58,30 +57,10 @@ export default function TransactionHistoryInteractive() {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-      const supabase = createClient();
 
-      const { data, error } = await supabase
-        .from('payment_transactions')
-        .select(`
-          id,
-          course_id,
-          amount_uzs,
-          payment_method,
-          status,
-          merchant_trans_id,
-          created_at,
-          completed_at,
-          courses (
-            title,
-            teacher_id
-          )
-        `)
-        .eq('student_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setTransactions(data || []);
+      // TODO: add /api/payments/my endpoint
+      // Backend endpoint not yet implemented — return empty list gracefully.
+      setTransactions([]);
       setError('');
     } catch (err: any) {
       console.error('Error fetching transactions:', err);

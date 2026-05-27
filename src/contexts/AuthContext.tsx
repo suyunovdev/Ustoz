@@ -3,7 +3,6 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
 
 const AuthContext = createContext<any>({});
 
@@ -15,147 +14,118 @@ export const useAuth = () => {
   return context;
 };
 
+async function apiPost(url: string, body: any) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    credentials: 'include',
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(data?.error || `Request failed (${res.status})`);
+  }
+  return data;
+}
+
+async function apiGet(url: string) {
+  const res = await fetch(url, { credentials: 'include' });
+  if (res.status === 401) return null;
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.error || `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
   const [session, setSession] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+
+  const refreshUser = async () => {
+    try {
+      const data = await apiGet('/api/auth/me');
+      if (data?.user) {
+        setUser(data.user);
+        setSession({ user: data.user });
+      } else {
+        setUser(null);
+        setSession(null);
+      }
+    } catch (err) {
+      console.error('refreshUser error:', err);
+      setUser(null);
+      setSession(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Guard against SSR
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
-
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    // Listen for auth changes
-    const {
-      data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    refreshUser();
   }, []);
 
-  // Email/Password Sign Up
-  const signUp = async (email: string, password: string, metadata?: any) => {
-    if (!supabase) throw new Error('Supabase client not initialized');
-    
-    try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4028';
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${appUrl}/auth/callback`,
-          data: {
-            full_name: metadata?.fullName || '',
-            role: metadata?.role || 'student',
-            avatar_url: metadata?.avatarUrl || ''
-          }
-        }
-      });
-      
-      if (error) {
-        console.error('Supabase signUp error:', error);
-        throw error;
-      }
-      
-      return data;
-    } catch (error: any) {
-      console.error('SignUp error:', error);
-      throw error;
-    }
+  // Sign Up flow: emailni tekshirib OTP yuboradi. User OTP'ni verify qilganda yaratiladi.
+  // Form bu funksiyani chaqiradi, keyin OTP step ochiladi.
+  const signUp = async (email: string, _password: string, _metadata?: any) => {
+    const data = await apiPost('/api/auth/send-otp', { email, type: 'signup' });
+    // session yo'q — RegistrationForm OTP step'ni ochadi. devOtp dev rejimida qaytadi.
+    return { user: { email }, session: null, devOtp: data?.devOtp, emailDelivered: data?.emailDelivered };
   };
 
-  // Send OTP via Resend email service (6-digit code)
+  // Send OTP via Resend (server-side route)
   const sendEmailOtp = async (email: string, type: 'signup' | 'password_reset' = 'signup') => {
-    const res = await fetch('/api/auth/send-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, type }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
+    const data = await apiPost('/api/auth/send-otp', { email, type });
+    return { devOtp: data?.devOtp, emailDelivered: data?.emailDelivered };
   };
 
-  // Verify email OTP token via custom otp_codes table
-  const verifyEmailOtp = async (email: string, token: string) => {
-    const res = await fetch('/api/auth/verify-otp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, otp: token }),
+  // Verify email OTP. Signup kontekstida signupData ni ham yuboradi → user yaratiladi va session cookie qo'yiladi.
+  const verifyEmailOtp = async (
+    email: string,
+    token: string,
+    signupData?: { fullName: string; password: string; role: string }
+  ) => {
+    const data = await apiPost('/api/auth/verify-otp', {
+      email,
+      otp: token,
+      ...(signupData || {}),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'OTP verification failed');
+    if (data?.user) {
+      setUser(data.user);
+      setSession({ user: data.user });
+    }
     return data;
   };
 
-  // Email/Password Sign In
-  const signIn = async (identifier: string, password: string, isPhone: boolean = false) => {
-    if (!supabase) throw new Error('Supabase client not initialized');
-    
-    if (isPhone) {
-      // Phone authentication
-      const { data, error } = await supabase.auth.signInWithPassword({
-        phone: identifier,
-        password
-      });
-      if (error) throw error;
-      return data;
-    } else {
-      // Email authentication
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: identifier,
-        password
-      });
-      if (error) throw error;
-      return data;
-    }
+  // Email/Password Sign In via JWT API
+  const signIn = async (identifier: string, password: string, _isPhone: boolean = false) => {
+    const data = await apiPost('/api/auth/login', { email: identifier, password });
+    setUser(data.user);
+    setSession({ user: data.user });
+    return data;
   };
 
   // Sign Out
   const signOut = async () => {
-    if (!supabase) throw new Error('Supabase client not initialized');
-    
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    await apiPost('/api/auth/logout', {});
+    setUser(null);
+    setSession(null);
   };
 
   // Get Current User
   const getCurrentUser = async () => {
-    if (!supabase) throw new Error('Supabase client not initialized');
-    
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error) throw error;
-    return user;
+    const data = await apiGet('/api/auth/me');
+    return data?.user || null;
   };
 
-  // Check if Email is Verified
-  const isEmailVerified = () => {
-    return !!user?.email_confirmed_at;
-  };
+  // Email verification (handled inside register flow via OTP)
+  const isEmailVerified = () => !!user;
 
-  // Get User Profile from Database
+  // Get User Profile (already returned from /api/auth/me)
   const getUserProfile = async () => {
-    if (!user) return null;
-    const { data, error } = await supabase
-      .from('user_profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    if (error) throw error;
-    return data;
+    const data = await apiGet('/api/auth/me');
+    return data?.user || null;
   };
 
   const value = {
@@ -170,6 +140,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     getUserProfile,
     sendEmailOtp,
     verifyEmailOtp,
+    refreshUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

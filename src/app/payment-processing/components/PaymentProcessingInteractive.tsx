@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 
 interface Transaction {
@@ -26,7 +25,6 @@ const PaymentProcessingInteractive = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const supabase = createClient();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -111,25 +109,19 @@ const PaymentProcessingInteractive = () => {
 
   const loadTransaction = async () => {
     try {
-      const { data: transactionData, error: transactionError } = await supabase
-        .from('payment_transactions')
-        .select('*')
-        .eq('id', transactionId)
-        .single();
-
-      if (transactionError) throw transactionError;
-      setTransaction(transactionData);
-
-      // Load course details
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select('id, title')
-        .eq('id', transactionData.course_id)
-        .single();
-
-      if (courseError) throw courseError;
-      setCourse(courseData);
-
+      // TODO: add /api/payments/[id] endpoint for status polling.
+      // For now, transaction state comes from URL params (set in the initial effect).
+      // If a transaction is present and a course_id is known, refresh course title.
+      const cid = transaction?.course_id || courseId;
+      if (cid) {
+        const response = await fetch(`/api/courses/${cid}`, {
+          credentials: 'include'
+        });
+        if (response.ok) {
+          const { course: c } = await response.json();
+          if (c) setCourse({ id: c.id, title: c.title });
+        }
+      }
     } catch (err: any) {
       console.error('Error loading transaction:', err);
     } finally {

@@ -47,6 +47,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Signup uchun: email bandligini tekshirish
+    if (type === 'signup') {
+      const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+      if (existing) {
+        return NextResponse.json(
+          { error: 'Bu email allaqachon ro\'yxatdan o\'tgan' },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Password reset uchun: email mavjudligini tekshirish
+    if (type === 'password_reset') {
+      const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+      if (!existing) {
+        return NextResponse.json(
+          { error: 'Bu email tizimda topilmadi' },
+          { status: 404 }
+        );
+      }
+    }
+
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 daqiqa
 
@@ -57,16 +79,20 @@ export async function POST(req: NextRequest) {
     });
 
     // Email yuborish
+    const isDev = process.env.NODE_ENV !== 'production';
     const resendKey = process.env.RESEND_API_KEY;
+    let emailDelivered = false;
+
     if (resendKey && !resendKey.startsWith('your-')) {
-      await fetch('https://api.resend.com/emails', {
+      const fromAddress = process.env.RESEND_FROM || 'Ustoz <onboarding@resend.dev>';
+      const resp = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${resendKey}`,
         },
         body: JSON.stringify({
-          from: 'Ustoz <noreply@ustoz.uz>',
+          from: fromAddress,
           to: [normalizedEmail],
           subject: `Ustoz — Tasdiqlash kodi: ${otp}`,
           html: `
@@ -79,12 +105,24 @@ export async function POST(req: NextRequest) {
           `,
         }),
       });
+      if (!resp.ok) {
+        const errBody = await resp.text();
+        console.error(`[resend] ${resp.status}:`, errBody);
+        console.log(`[DEV OTP fallback] ${normalizedEmail} → ${otp}`);
+      } else {
+        emailDelivered = true;
+        console.log(`[resend] OTP sent to ${normalizedEmail}`);
+      }
     } else {
-      // Development rejimi: consolega chiqar
       console.log(`[DEV OTP] ${normalizedEmail} → ${otp}`);
     }
 
-    return NextResponse.json({ success: true });
+    // Dev rejimida OTP'ni response'da qaytaramiz (faqat development, prod'da NEVER)
+    const responseBody: any = { success: true, emailDelivered };
+    if (isDev) {
+      responseBody.devOtp = otp;
+    }
+    return NextResponse.json(responseBody);
   } catch (err) {
     console.error('[auth/send-otp]', err);
     return NextResponse.json({ error: 'Server xatosi' }, { status: 500 });

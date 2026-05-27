@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 
 interface ExternalLink {
@@ -30,36 +29,22 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
     description: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const supabase = createClient();
 
   const handleAddLink = useCallback(async () => {
     if (!newLink.url || !newLink.title || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
-      const { data, error } = await supabase
-        .from('external_links')
-        .insert({
-          teacher_id: teacherId,
-          link_type: newLink.type,
-          url: newLink.url,
-          title: newLink.title,
-          description: newLink.description || '',
-          moderation_status: 'pending'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
+      // TODO: add POST /api/teacher/external-links endpoint and call it via JWT-authenticated fetch.
+      // For now we build the link locally; persistence (localStorage) is handled by the parent.
       const link: ExternalLink = {
-        id: data.id,
-        type: data.link_type,
-        url: data.url,
-        title: data.title,
-        description: data.description,
-        addedDate: new Date(data.created_at).toISOString().split('T')[0],
-        status: data.moderation_status
+        id: `link-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        type: (newLink.type as ExternalLink['type']) || 'other',
+        url: newLink.url!,
+        title: newLink.title!,
+        description: newLink.description || '',
+        addedDate: new Date().toISOString().split('T')[0],
+        status: 'pending'
       };
 
       onLinkAdd(link);
@@ -70,22 +55,16 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
     } finally {
       setIsSubmitting(false);
     }
-  }, [newLink, teacherId, supabase, onLinkAdd, isSubmitting]);
+  }, [newLink, teacherId, onLinkAdd, isSubmitting]);
 
   const handleDeleteLink = useCallback(async (linkId: string) => {
     try {
-      const { error } = await supabase
-        .from('external_links')
-        .delete()
-        .eq('id', linkId);
-
-      if (error) throw error;
-
+      // TODO: add DELETE /api/teacher/external-links/[id] endpoint
       onLinkDelete(linkId);
     } catch (error) {
       console.error('Error deleting link:', error);
     }
-  }, [supabase, onLinkDelete]);
+  }, [onLinkDelete]);
 
   const getLinkIcon = (type: string) => {
     const icons = {

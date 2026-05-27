@@ -3,7 +3,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 
 import QuestionDisplay from './QuestionDisplay';
 import ProgressIndicator from './ProgressIndicator';
@@ -83,43 +82,36 @@ const QuizInterfaceInteractive = () => {
   const loadQuiz = async (id: string) => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
+      // Auth check via JWT
+      const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+      if (!meRes.ok) {
+        router.push('/login');
+        return;
+      }
+      const me = await meRes.json();
+      setUserId(me.user.id);
 
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { router.push('/login'); return; }
-      setUserId(user.id);
+      // Load test + questions
+      const res = await fetch(`/api/tests/${id}`, { credentials: 'include' });
+      if (!res.ok) {
+        router.push('/student-dashboard');
+        return;
+      }
+      const { test } = await res.json();
 
-      // Load test
-      const { data: test, error } = await supabase
-        .from('course_tests')
-        .select('id, title, description, passing_score')
-        .eq('id', id)
-        .single();
-
-      if (error || !test) {
+      if (!test || !test.questions || test.questions.length === 0) {
         router.push('/student-dashboard');
         return;
       }
 
-      // Load questions
-      const { data: qs } = await supabase
-        .from('test_questions')
-        .select('id, question_text, option_a, option_b, option_c, option_d, correct_answer, explanation, question_order')
-        .eq('test_id', id)
-        .order('question_order', { ascending: true });
-
-      if (!qs || qs.length === 0) {
-        router.push('/student-dashboard');
-        return;
-      }
-
-      const mapped: QuizQuestion[] = qs.map((q: any) => ({
+      const mapped: QuizQuestion[] = test.questions.map((q: any) => ({
         id: q.id,
         type: 'multiple-choice',
-        question: q.question_text,
-        options: [q.option_a, q.option_b, q.option_c, q.option_d],
-        correctAnswer: ['A', 'B', 'C', 'D'].indexOf(q.correct_answer),
-        explanation: q.explanation || '',
+        question: q.questionText,
+        options: [q.optionA, q.optionB, q.optionC, q.optionD],
+        // correctAnswer client'ga yuborilmaydi — backend tekshiradi
+        correctAnswer: -1,
+        explanation: '',
         points: 10,
         topic: test.title,
       }));
@@ -132,7 +124,7 @@ const QuizInterfaceInteractive = () => {
         totalQuestions: mapped.length,
         totalPoints: mapped.length * 10,
         timeLimit: 3600,
-        passingScore: test.passing_score || 80,
+        passingScore: test.passingScore || 80,
       });
       setTimeRemaining(3600);
     } catch (err) {
@@ -157,45 +149,48 @@ const QuizInterfaceInteractive = () => {
   const handleSubmit = useCallback(async () => {
     if (!quizConfig || !userId || !testId) return;
 
-    let correct = 0;
-    questions.forEach((q, i) => {
-      if (answers[i]?.answer === q.correctAnswer) correct++;
-    });
-
-    const finalScore = Math.round((correct / questions.length) * 100);
-    setScore(finalScore);
-    setQuizState('results');
-
     try {
-      const supabase = createClient();
-      await supabase.from('quiz_completions').upsert({
-        student_id: userId,
-        course_id: courseId || null,
-        quiz_id: testId,
-        score: finalScore,
-        passed: finalScore >= (quizConfig.passingScore || 80),
+      // Server tomonida tekshirish va saqlash
+      const indexToLetter = ['A', 'B', 'C', 'D'];
+      const payloadAnswers = answers.map((a) => ({
+        questionId: a.questionId,
+        answer: typeof a.answer === 'number' ? indexToLetter[a.answer] : a.answer,
+      }));
+
+      const res = await fetch(`/api/tests/${testId}/submit`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ answers: payloadAnswers, courseId: courseId || null }),
       });
 
-      // Update enrollment progress if courseId provided
-      if (courseId) {
-        const { data: enrollment } = await supabase
-          .from('enrollments')
-          .select('progress')
-          .eq('student_id', userId)
-          .eq('course_id', courseId)
-          .single();
+      if (res.ok) {
+        const result = await res.json();
+        setScore(result.percentage);
 
-        if (enrollment && finalScore >= (quizConfig.passingScore || 80)) {
-          const newProgress = Math.min((enrollment.progress || 0) + 10, 100);
-          await supabase
-            .from('enrollments')
-            .update({ progress: newProgress })
-            .eq('student_id', userId)
-            .eq('course_id', courseId);
-        }
+        // Backend details bilan questions ni yangilash (correct answer + explanation)
+        const detailsById = new Map((result.details || []).map((d: any) => [d.questionId, d]));
+        setQuestions((prev) =>
+          prev.map((q) => {
+            const d: any = detailsById.get(q.id);
+            if (!d) return q;
+            const correctIdx = ['A', 'B', 'C', 'D'].indexOf(d.correctAnswer);
+            return {
+              ...q,
+              correctAnswer: correctIdx,
+              explanation: d.explanation || '',
+            };
+          })
+        );
+      } else {
+        // Lokal hisoblab natijani ko'rsatish (offline)
+        const correct = questions.filter((q, i) => answers[i]?.answer === q.correctAnswer).length;
+        setScore(Math.round((correct / questions.length) * 100));
       }
     } catch (err) {
       console.error('Natija saqlanmadi:', err);
+    } finally {
+      setQuizState('results');
     }
   }, [quizConfig, userId, testId, courseId, questions, answers]);
 

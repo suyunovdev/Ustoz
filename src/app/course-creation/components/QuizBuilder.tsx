@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 
 interface QuizQuestion {
@@ -23,7 +22,7 @@ interface QuizBuilderProps {
 const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, testId }: QuizBuilderProps) => {
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const supabase = createClient();
+  const [currentTestId, setCurrentTestId] = useState<string | undefined>(testId);
 
   const addQuestion = () => {
     const newQuestion: QuizQuestion = {
@@ -65,61 +64,46 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
 
     setIsSaving(true);
     try {
-      // Create or update test
-      const testData = {
-        teacher_id: teacherId,
-        title: topicTitle || 'Untitled Test',
-        description: `Test for ${topicTitle}`,
-        passing_score: 80,
-        moderation_status: 'pending'
-      };
-
-      let currentTestId = testId;
-
-      if (!currentTestId) {
-        const { data: newTest, error: testError } = await supabase
-          .from('course_tests')
-          .insert(testData)
-          .select()
-          .single();
-
-        if (testError) throw testError;
-        currentTestId = newTest.id;
-      }
-
-      // Delete existing questions for this test
-      await supabase
-        .from('test_questions')
-        .delete()
-        .eq('test_id', currentTestId);
-
-      // Insert new questions
-      const questionsData = questions.map((q, index) => ({
-        test_id: currentTestId,
-        question_order: index + 1,
-        question_text: q.question,
-        option_a: q.options[0],
-        option_b: q.options[1],
-        option_c: q.options[2],
-        option_d: q.options[3],
-        correct_answer: q.correctAnswer,
-        explanation: q.explanation
+      const letterByIndex = ['A', 'B', 'C', 'D'];
+      const payloadQuestions = questions.map((q) => ({
+        questionText: q.question,
+        optionA: q.options[0],
+        optionB: q.options[1],
+        optionC: q.options[2],
+        optionD: q.options[3],
+        correctAnswer: letterByIndex[q.correctAnswer] || 'A',
+        explanation: q.explanation,
       }));
 
-      const { error: questionsError } = await supabase
-        .from('test_questions')
-        .insert(questionsData);
+      const res = await fetch('/api/teacher/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          testId: currentTestId,
+          title: topicTitle || 'Untitled Test',
+          description: `Test for ${topicTitle}`,
+          passingScore: 80,
+          questions: payloadQuestions,
+        }),
+      });
 
-      if (questionsError) throw questionsError;
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `Save failed (${res.status})`);
+      }
 
-      alert('Test muvaffaqiyatli saqlandi va moderatsiyaga yuborildi!');
-    } catch (error) {
+      const data = await res.json();
+      if (data.test?.id) setCurrentTestId(data.test.id);
+
+      alert('Test muvaffaqiyatli saqlandi!');
+    } catch (error: any) {
       console.error('Error saving test:', error);
-      alert('Xatolik yuz berdi. Iltimos qaytadan urinib ko\'ring.');
+      alert(error.message || 'Xatolik yuz berdi. Iltimos qaytadan urinib ko\'ring.');
     } finally {
       setIsSaving(false);
     }
-  }, [questions, teacherId, topicTitle, testId, supabase, isSaving]);
+  }, [questions, topicTitle, currentTestId, isSaving]);
 
   const canAddMore = questions.length < 15;
   const meetsMinimum = questions.length >= 5;

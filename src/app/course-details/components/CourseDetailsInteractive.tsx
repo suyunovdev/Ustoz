@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
 
 import Icon from '@/components/ui/AppIcon';
 import CourseHeroSection from './CourseHeroSection';
@@ -94,103 +93,84 @@ const CourseDetailsInteractive = () => {
   const loadCourse = async (id: string) => {
     setIsLoading(true);
     try {
-      const supabase = createClient();
-
-      // Load course details
-      const { data: c, error } = await supabase
-        .from('courses')
-        .select(`
-          id, title, description, cover_image, price_usd, price_uzs,
-          rating, review_count, enrollment_count, difficulty_level,
-          language, total_duration, is_published, created_at,
-          user_profiles!teacher_id (
-            id, full_name, avatar_url
-          )
-        `)
-        .eq('id', id)
-        .single();
-
-      if (error || !c) {
+      const res = await fetch(`/api/courses/${id}`, { credentials: 'include' });
+      if (!res.ok) {
+        router.push('/course-marketplace');
+        return;
+      }
+      const { course: c } = await res.json();
+      if (!c) {
         router.push('/course-marketplace');
         return;
       }
 
-      // Load instructor's course count
-      const { count: coursesCount } = await supabase
-        .from('courses')
-        .select('id', { count: 'exact', head: true })
-        .eq('teacher_id', (c.user_profiles as any)?.id)
-        .eq('is_published', true);
+      const teacher = c.teacher || {};
+      const reviewsData = c.reviews || [];
+      const topics = c.topics || [];
 
       const mapped: CourseDetails = {
         id: c.id,
         title: c.title,
         subtitle: c.description?.split('.')[0] || c.title,
-        coverImage: c.cover_image || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
+        coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
         coverImageAlt: `${c.title} kursi`,
         instructor: {
-          name: (c.user_profiles as any)?.full_name || 'Ustoz',
-          image: (c.user_profiles as any)?.avatar_url || 'https://img.rocket.new/generatedImages/rocket_gen_img_1f9f88657-1763292682460.png',
-          imageAlt: `${(c.user_profiles as any)?.full_name || 'Ustoz'} rasmi`,
+          name: teacher.fullName || 'Ustoz',
+          image: teacher.avatarUrl || 'https://img.rocket.new/generatedImages/rocket_gen_img_1f9f88657-1763292682460.png',
+          imageAlt: `${teacher.fullName || 'Ustoz'} rasmi`,
           rating: Number(c.rating) || 0,
-          studentsCount: c.enrollment_count || 0,
-          coursesCount: coursesCount || 0,
-          bio: `${(c.user_profiles as any)?.full_name || 'Ustoz'} — tajribali o'qituvchi.`,
+          studentsCount: c.enrollmentCount || 0,
+          coursesCount: 0,
+          bio: teacher.bio || `${teacher.fullName || 'Ustoz'} — tajribali o'qituvchi.`,
         },
         pricing: {
-          usd: Number(c.price_usd) || 0,
-          uzs: Number(c.price_uzs) || 0,
+          usd: Number(c.priceUsd) || 0,
+          uzs: Number(c.priceUzs) || 0,
         },
         rating: Number(c.rating) || 0,
-        reviewCount: c.review_count || 0,
-        enrollmentCount: c.enrollment_count || 0,
+        reviewCount: c.reviewCount || 0,
+        enrollmentCount: c.enrollmentCount || 0,
         description: c.description || '',
         learningObjectives: [],
         prerequisites: [],
         hasCertificate: true,
         language: c.language || 'uz',
-        lastUpdated: c.created_at ? new Date(c.created_at).toLocaleDateString('uz-UZ') : '',
-        totalDuration: `${c.total_duration || 0} soat`,
-        level: c.difficulty_level || 'Boshlang\'ich',
+        lastUpdated: c.createdAt ? new Date(c.createdAt).toLocaleDateString('uz-UZ') : '',
+        totalDuration: `${c.totalDuration || 0} soat`,
+        level: c.difficultyLevel || "Boshlang'ich",
       };
       setCourse(mapped);
 
-      // Load curriculum (course_topics grouped by section)
-      const { data: topics } = await supabase
-        .from('course_topics')
-        .select('id, title, description, topic_order, has_quiz')
-        .eq('course_id', id)
-        .order('topic_order', { ascending: true });
-
-      if (topics && topics.length > 0) {
-        // Group into one section if no section data
+      if (topics.length > 0) {
         const section: CurriculumSection = {
           id: 'section-1',
           title: 'Kurs Mavzulari',
           topics: topics.map((t: any, i: number) => ({
             id: t.id,
             title: t.title,
-            duration: '—',
-            hasQuiz: t.has_quiz || false,
+            duration: t.duration || '—',
+            hasQuiz: t.hasQuiz || false,
             hasPreview: i === 0,
-            isLocked: i > 0,
+            isLocked: i > 0 && !c.isEnrolled,
           })),
         };
         setCurriculum([section]);
       }
 
-      // Check enrollment
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: enrollment } = await supabase
-          .from('enrollments')
-          .select('id')
-          .eq('student_id', user.id)
-          .eq('course_id', id)
-          .single();
-        setIsEnrolled(!!enrollment);
-      }
+      setReviews(
+        reviewsData.map((r: any) => ({
+          id: r.id,
+          userName: r.student?.fullName || 'Foydalanuvchi',
+          userImage: r.student?.avatarUrl || '',
+          userImageAlt: r.student?.fullName || '',
+          rating: r.rating,
+          date: new Date(r.createdAt).toLocaleDateString('uz-UZ'),
+          comment: r.comment || '',
+          helpful: r.helpfulCount || 0,
+        }))
+      );
 
+      setIsEnrolled(!!c.isEnrolled);
     } catch (err) {
       console.error('Kurs yuklanmadi:', err);
     } finally {
@@ -204,12 +184,38 @@ const CourseDetailsInteractive = () => {
     );
   };
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (!course) return;
     if (isEnrolled) {
       router.push(`/learning-interface?courseId=${course.id}`);
       return;
     }
+
+    // Bepul kurs — to'g'ridan-to'g'ri enroll
+    if (course.pricing.uzs === 0) {
+      setIsPurchasing(true);
+      try {
+        const res = await fetch(`/api/courses/${course.id}/enroll`, {
+          method: 'POST',
+          credentials: 'include',
+        });
+        if (res.status === 401) {
+          router.push(`/login?redirect=/course-details?courseId=${course.id}`);
+          return;
+        }
+        if (res.ok) {
+          setIsEnrolled(true);
+          router.push(`/learning-interface?courseId=${course.id}`);
+        }
+      } catch (err) {
+        console.error('Enroll xato:', err);
+      } finally {
+        setIsPurchasing(false);
+      }
+      return;
+    }
+
+    // Pulli kurs — payment sahifasiga
     const courseData = {
       id: course.id,
       title: course.title,

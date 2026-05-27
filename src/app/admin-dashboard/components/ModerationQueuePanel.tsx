@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 
 interface ModerationItem {
@@ -24,9 +23,8 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
   const [stats, setStats] = useState({
     pending: 0,
     underReview: 0,
-    avgReviewTime: '2h 15m'
+    avgReviewTime: '0h 0m'
   });
-  const supabase = createClient();
 
   useEffect(() => {
     loadModerationQueue();
@@ -35,34 +33,11 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
   const loadModerationQueue = async () => {
     setIsLoading(true);
     try {
-      const { data: queueData } = await supabase
-        .from('moderation_queue')
-        .select(`
-          *,
-          course_materials!inner(
-            title,
-            content_type
-          )
-        `)
-        .in('status', ['submitted', 'under_review'])
-        .order('submitted_at', { ascending: true })
-        .limit(expanded ? 50 : 5);
-
-      const pending = queueData?.filter(item => item.status === 'submitted').length || 0;
-      const underReview = queueData?.filter(item => item.status === 'under_review').length || 0;
-
-      setStats({ pending, underReview, avgReviewTime: '2h 15m' });
-
-      const formattedItems = queueData?.map(item => ({
-        id: item.id,
-        material_id: item.material_id,
-        status: item.status,
-        submitted_at: item.submitted_at,
-        title: (item as any).course_materials?.title || 'Noma\'lum',
-        content_type: (item as any).course_materials?.content_type || 'document'
-      })) || [];
-
-      setItems(formattedItems);
+      // TODO: add /api/admin/moderation-queue endpoint that joins
+      //       moderation_queue with course_materials and returns
+      //       { items: [...], stats: { pending, underReview, avgReviewTime } }
+      setItems([]);
+      setStats({ pending: 0, underReview: 0, avgReviewTime: '0h 0m' });
     } catch (error) {
       console.error('Error loading moderation queue:', error);
     } finally {
@@ -121,7 +96,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse">
+            <div key={`mod-skeleton-${i}`} className="animate-pulse">
               <div className="h-16 bg-muted rounded-md" />
             </div>
           ))}

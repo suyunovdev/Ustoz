@@ -2,16 +2,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 
 interface Course {
   id: string;
   title: string;
-  teacher_id: string;
+  teacher_id?: string;
   moderation_status: string;
   created_at: string;
-  content_type: string;
+  content_type?: string;
 }
 
 const CourseOversightPanel = () => {
@@ -24,7 +23,6 @@ const CourseOversightPanel = () => {
     pending: 0,
     rejected: 0
   });
-  const supabase = createClient();
 
   useEffect(() => {
     loadCourses();
@@ -33,35 +31,45 @@ const CourseOversightPanel = () => {
   const loadCourses = async () => {
     setIsLoading(true);
     try {
-      // Load statistics
-      const { data: allCourses } = await supabase
-        .from('course_materials')
-        .select('moderation_status');
+      // /api/courses currently returns only published (approved) courses.
+      // TODO: add /api/admin/courses endpoint with moderation_status filter
+      //       (pending / rejected / draft) for full admin oversight.
+      const res = await fetch('/api/courses?limit=50', { credentials: 'include' });
 
-      const total = allCourses?.length || 0;
-      const approved = allCourses?.filter(c => c.moderation_status === 'approved').length || 0;
-      const pending = allCourses?.filter(c => c.moderation_status === 'pending').length || 0;
-      const rejected = allCourses?.filter(c => c.moderation_status === 'rejected').length || 0;
-
-      setStats({ total, approved, pending, rejected });
-
-      // Load courses based on filter
-      let query = supabase
-        .from('course_materials')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(20);
-
-      if (filterStatus !== 'all') {
-        query = query.eq('moderation_status', filterStatus);
+      if (!res.ok) {
+        setCourses([]);
+        setStats({ total: 0, approved: 0, pending: 0, rejected: 0 });
+        return;
       }
 
-      const { data, error } = await query;
+      const data = await res.json();
+      const apiCourses = Array.isArray(data?.courses) ? data.courses : [];
+      const totalFromApi = data?.pagination?.total ?? apiCourses.length;
 
-      if (error) throw error;
-      setCourses(data || []);
+      const normalized: Course[] = apiCourses.map((c: any) => ({
+        id: c.id,
+        title: c.title,
+        teacher_id: c.teacherId,
+        moderation_status: 'approved', // /api/courses only returns published items
+        created_at: c.createdAt,
+        content_type: c.category
+      }));
+
+      setStats({
+        total: totalFromApi,
+        approved: totalFromApi,
+        pending: 0, // TODO: needs /api/admin/courses
+        rejected: 0 // TODO: needs /api/admin/courses
+      });
+
+      if (filterStatus === 'all' || filterStatus === 'approved') {
+        setCourses(normalized);
+      } else {
+        setCourses([]);
+      }
     } catch (error) {
       console.error('Error loading courses:', error);
+      setCourses([]);
     } finally {
       setIsLoading(false);
     }
@@ -146,7 +154,7 @@ const CourseOversightPanel = () => {
         {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse">
+              <div key={`course-skeleton-${i}`} className="animate-pulse">
                 <div className="h-16 bg-muted rounded-md" />
               </div>
             ))}
@@ -172,7 +180,7 @@ const CourseOversightPanel = () => {
                     <div>
                       <h4 className="font-heading font-semibold text-foreground">{course.title}</h4>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(course.created_at).toLocaleDateString('uz-UZ')}
+                        {course.created_at ? new Date(course.created_at).toLocaleDateString('uz-UZ') : ''}
                       </p>
                     </div>
                   </div>

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import ContentList from './ContentList';
 import PreviewPanel from './PreviewPanel';
@@ -28,6 +28,7 @@ interface ContentItem {
 }
 
 const ModerationDashboardInteractive = () => {
+  const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
   const [stats, setStats] = useState<ModerationStats>({
     pending: 0,
@@ -40,7 +41,6 @@ const ModerationDashboardInteractive = () => {
   const [filterType, setFilterType] = useState<'all' | 'material' | 'link' | 'test'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'approved' | 'rejected'>('pending');
   const [isLoading, setIsLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     setIsHydrated(true);
@@ -50,137 +50,28 @@ const ModerationDashboardInteractive = () => {
   const loadModerationData = async () => {
     setIsLoading(true);
     try {
-      // Load statistics
-      const { data: materials } = await supabase
-        .from('content_materials')
-        .select('moderation_status');
+      // Verify admin auth via JWT
+      const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+      if (meRes.status === 401) {
+        router.push('/login');
+        return;
+      }
 
-      const { data: links } = await supabase
-        .from('external_links')
-        .select('moderation_status');
-
-      const { data: tests } = await supabase
-        .from('course_tests')
-        .select('moderation_status');
-
-      const allItems = [...(materials || []), ...(links || []), ...(tests || [])];
-      const pending = allItems.filter(item => item?.moderation_status === 'pending').length;
-      const approved = allItems.filter(item => item?.moderation_status === 'approved').length;
-      const rejected = allItems.filter(item => item?.moderation_status === 'rejected').length;
-
+      // TODO: add /api/admin/moderation endpoint that returns
+      //       { items: [...mat/link/test...], stats: { pending, approved, rejected, avgReviewTime } }
+      //       with ?type=material|link|test&status=pending|approved|rejected filters.
       setStats({
-        pending,
-        approved,
-        rejected,
-        avgReviewTime: '2h 15m'
+        pending: 0,
+        approved: 0,
+        rejected: 0,
+        avgReviewTime: '0h 0m'
       });
-
-      // Load content items based on filters
-      const items: ContentItem[] = [];
-
-      if (filterType === 'all' || filterType === 'material') {
-        const query = supabase
-          .from('content_materials')
-          .select(`
-            id,
-            title,
-            content_type,
-            file_url,
-            file_size,
-            submitted_at,
-            moderation_status,
-            teacher_id
-          `);
-
-        if (filterStatus !== 'all') {
-          query.eq('moderation_status', filterStatus);
-        }
-
-        const { data: materialsData } = await query.order('submitted_at', { ascending: false });
-
-        materialsData?.forEach(item => {
-          items.push({
-            id: item.id,
-            type: 'material',
-            title: item.title,
-            teacherName: 'Teacher',
-            submittedAt: item.submitted_at,
-            status: item.moderation_status,
-            contentType: item.content_type,
-            url: item.file_url,
-            fileSize: item.file_size
-          });
-        });
-      }
-
-      if (filterType === 'all' || filterType === 'link') {
-        const query = supabase
-          .from('external_links')
-          .select(`
-            id,
-            title,
-            url,
-            link_type,
-            submitted_at,
-            moderation_status,
-            teacher_id
-          `);
-
-        if (filterStatus !== 'all') {
-          query.eq('moderation_status', filterStatus);
-        }
-
-        const { data: linksData } = await query.order('submitted_at', { ascending: false });
-
-        linksData?.forEach(item => {
-          items.push({
-            id: item.id,
-            type: 'link',
-            title: item.title,
-            teacherName: 'Teacher',
-            submittedAt: item.submitted_at,
-            status: item.moderation_status,
-            contentType: item.link_type,
-            url: item.url
-          });
-        });
-      }
-
-      if (filterType === 'all' || filterType === 'test') {
-        const query = supabase
-          .from('course_tests')
-          .select(`
-            id,
-            title,
-            submitted_at,
-            moderation_status,
-            teacher_id
-          `);
-
-        if (filterStatus !== 'all') {
-          query.eq('moderation_status', filterStatus);
-        }
-
-        const { data: testsData } = await query.order('submitted_at', { ascending: false });
-
-        testsData?.forEach(item => {
-          items.push({
-            id: item.id,
-            type: 'test',
-            title: item.title,
-            teacherName: 'Teacher',
-            submittedAt: item.submitted_at,
-            status: item.moderation_status
-          });
-        });
-      }
-
-      setContentItems(items);
-      if (items.length > 0 && !selectedItem) {
-        setSelectedItem(items[0]);
-      }
+      setContentItems([]);
+      setSelectedItem(null);
     } catch (error) {
       console.error('Error loading moderation data:', error);
+      setContentItems([]);
+      setStats({ pending: 0, approved: 0, rejected: 0, avgReviewTime: '0h 0m' });
     } finally {
       setIsLoading(false);
     }
@@ -188,27 +79,15 @@ const ModerationDashboardInteractive = () => {
 
   const handleReview = async (itemId: string, itemType: string, decision: 'approved' | 'rejected', notes?: string) => {
     try {
-      const tableName = itemType === 'material' ? 'content_materials' :
-                        itemType === 'link' ? 'external_links' : 'course_tests';
-
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { error } = await supabase
-        .from(tableName)
-        .update({
-          moderation_status: decision,
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user.id,
-          rejection_reason: decision === 'rejected' ? notes : null
-        })
-        .eq('id', itemId);
-
-      if (error) throw error;
-
-      // Reload data
-      await loadModerationData();
-      alert(`Kontent ${decision === 'approved' ? 'tasdiqlandi' : 'rad etildi'}!`);
+      // TODO: add /api/admin/moderation/[type]/[id] PATCH endpoint that updates
+      //       moderation_status, reviewed_at, reviewed_by, rejection_reason.
+      console.warn('Moderation review endpoint not implemented yet:', {
+        itemId,
+        itemType,
+        decision,
+        notes
+      });
+      alert("Bu funksiya tez orada qo'shiladi");
     } catch (error) {
       console.error('Error reviewing content:', error);
       alert('Xatolik yuz berdi. Iltimos qaytadan urinib ko\'ring.');
@@ -303,7 +182,7 @@ const ModerationDashboardInteractive = () => {
                   { value: 'test', label: 'Testlar' }
                 ].map((type) => (
                   <button
-                    key={type.value}
+                    key={`type-${type.value}`}
                     onClick={() => setFilterType(type.value as any)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-smooth ${
                       filterType === type.value
@@ -326,7 +205,7 @@ const ModerationDashboardInteractive = () => {
                   { value: 'rejected', label: 'Rad etilgan' }
                 ].map((status) => (
                   <button
-                    key={status.value}
+                    key={`status-${status.value}`}
                     onClick={() => setFilterStatus(status.value as any)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-smooth ${
                       filterStatus === status.value

@@ -96,7 +96,6 @@ model User {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   profile  UserProfile?
-  otpCodes OtpCode[]
 
   @@map("users")
 }
@@ -528,8 +527,6 @@ model OtpCode {
   verified  Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
-
-  user User? @relation(fields: [email], references: [email])
 
   @@map("otp_codes")
 }

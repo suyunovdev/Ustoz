@@ -6,7 +6,6 @@ import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
 
 import { useAuth } from '@/contexts/AuthContext';
-import { createClient } from '@/lib/supabase/client';
 
 interface FormData {
   fullName: string;
@@ -42,7 +41,6 @@ interface PasswordStrength {
 const RegistrationForm = () => {
   const router = useRouter();
   const { signUp, signIn, sendEmailOtp, verifyEmailOtp } = useAuth();
-  const supabase = createClient();
   const [isHydrated, setIsHydrated] = useState(false);
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [formData, setFormData] = useState<FormData>({
@@ -80,6 +78,9 @@ const RegistrationForm = () => {
   // Store password temporarily for post-OTP sign-in
   const [registeredPassword, setRegisteredPassword] = useState('');
   const [registeredRole, setRegisteredRole] = useState<'teacher' | 'student' | ''>('');
+  // Dev mode: OTP shown if email delivery failed
+  const [devOtp, setDevOtp] = useState<string | null>(null);
+  const [emailDelivered, setEmailDelivered] = useState(true);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -230,15 +231,8 @@ const RegistrationForm = () => {
   };
 
   const handleGoogleSignUp = async () => {
-    try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4028';
-      await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: `${appUrl}/auth/callback` },
-      });
-    } catch (error: any) {
-      setErrors({ submit: error.message || "Google orqali kirishda xatolik" });
-    }
+    // Google OAuth hozircha yoqilmagan
+    setErrors({ submit: 'Google orqali ro\'yxatdan o\'tish hozircha mavjud emas. Iltimos email orqali davom eting.' });
   };
 
   // Verify OTP code and then sign the user in
@@ -252,22 +246,25 @@ const RegistrationForm = () => {
     setErrors({});
 
     try {
-      // Verify OTP against our custom otp_codes table
-      await verifyEmailOtp(registeredEmail || formData.email, otpCode);
+      // Verify OTP — backend OTP'ni tekshiradi va user yaratadi (session cookie qo'yadi)
+      const result = await verifyEmailOtp(
+        registeredEmail || formData.email,
+        otpCode,
+        {
+          fullName: formData.fullName,
+          password: registeredPassword || formData.password,
+          role: registeredRole || formData.role,
+        }
+      );
 
-      // OTP verified — now sign the user in with their credentials
-      // This creates a real Supabase session
-      try {
-        await signIn(registeredEmail || formData.email, registeredPassword);
-        // Redirect based on role
-        if (registeredRole === 'teacher') {
+      // Session cookie set by verify-otp — redirect by role
+      if (result?.user) {
+        if ((registeredRole || formData.role) === 'teacher') {
           router.push('/teacher-dashboard');
         } else {
           router.push('/student-dashboard');
         }
-      } catch (signInErr: any) {
-        // If email confirmation is still required by Supabase, redirect to login
-        // with a success message so user can sign in after confirming email
+      } else {
         router.push('/login?registered=true&email=' + encodeURIComponent(registeredEmail || formData.email));
       }
     } catch (error: any) {
@@ -286,7 +283,9 @@ const RegistrationForm = () => {
     setErrors({});
 
     try {
-      await sendEmailOtp(registeredEmail || formData.email);
+      const result = await sendEmailOtp(registeredEmail || formData.email);
+      setDevOtp(result?.devOtp || null);
+      setEmailDelivered(!!result?.emailDelivered);
       setResendCooldown(60);
     } catch (error: any) {
       setErrors({ otp: error.message || "Kod yuborishda xatolik" });
@@ -317,12 +316,9 @@ const RegistrationForm = () => {
         setRegisteredRole(formData.role);
 
         if (!result.session) {
-          // Email confirmation required — send our custom OTP
-          try {
-            await sendEmailOtp(emailToVerify);
-          } catch (otpErr: any) {
-            console.warn('OTP send warning:', otpErr.message);
-          }
+          // signUp() allaqachon send-otp chaqirdi — qayta yubormaymiz
+          setDevOtp(result.devOtp || null);
+          setEmailDelivered(!!result.emailDelivered);
           setShowOtpStep(true);
           setResendCooldown(60);
         } else {
@@ -466,12 +462,41 @@ const RegistrationForm = () => {
             <span>Orqaga qaytish</span>
           </button>
 
+          {/* Dev mode: OTP ko'rsatish (faqat email yuborilmagan bo'lsa) */}
+          {devOtp && !emailDelivered && (
+            <div className="p-4 bg-warning/10 rounded-md border-2 border-warning/40">
+              <div className="flex items-start space-x-3">
+                <Icon name="ExclamationTriangleIcon" size={20} className="text-warning flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground mb-1">
+                    Dev rejimi — email yuborilmadi
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Resend free plan faqat verified email'ga yuboradi. Test uchun kod:
+                  </p>
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setOtpCode(devOtp)}
+                      className="inline-block text-3xl font-bold tracking-[0.5em] text-warning bg-card px-4 py-2 rounded-md border border-warning/30 hover:bg-warning/5 transition-smooth cursor-pointer"
+                      title="Bosing — avtomatik to'ldiriladi"
+                    >
+                      {devOtp}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Info box */}
           <div className="p-4 bg-secondary/10 rounded-md border border-secondary/20">
             <div className="flex items-start space-x-3">
               <Icon name="InformationCircleIcon" size={20} className="text-secondary flex-shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">
-                Spam papkasini ham tekshiring. Kod 10 daqiqa davomida amal qiladi.
+                {emailDelivered
+                  ? 'Spam papkasini ham tekshiring. Kod 10 daqiqa davomida amal qiladi.'
+                  : 'Kod 10 daqiqa davomida amal qiladi.'}
               </p>
             </div>
           </div>

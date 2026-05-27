@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { createClient } from '@/lib/supabase/client';
 import Icon from '@/components/ui/AppIcon';
 
 interface Transaction {
@@ -33,7 +32,6 @@ const PaymentSuccessInteractive = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const supabase = createClient();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -61,45 +59,49 @@ const PaymentSuccessInteractive = () => {
     try {
       setLoading(true);
 
-      // Load transaction details
-      const { data: transactionData, error: transactionError } = await supabase
-        .from('payment_transactions')
-        .select('*')
-        .eq('id', transactionId)
-        .eq('status', 'completed')
-        .single();
+      // TODO: add /api/payments/[id] endpoint for fetching transaction by id.
+      // For now we read query params passed from the payment flow.
+      const courseIdParam = searchParams.get('course_id');
+      const amountParam = searchParams.get('amount');
+      const paymentMethodParam = searchParams.get('payment_method');
 
-      if (transactionError) {
-        console.error('Transaction error:', transactionError);
+      if (!courseIdParam) {
         router.push('/student-dashboard');
         return;
       }
 
-      setTransaction(transactionData);
+      setTransaction({
+        id: transactionId || '',
+        course_id: courseIdParam,
+        payment_method: paymentMethodParam || 'click',
+        amount_uzs: amountParam ? parseInt(amountParam, 10) : 0,
+        status: 'completed',
+        merchant_trans_id: transactionId || '',
+        created_at: new Date().toISOString(),
+        completed_at: new Date().toISOString()
+      });
 
-      // Load course details
-      const { data: courseData, error: courseError } = await supabase
-        .from('courses')
-        .select('id, title, cover_image, user_profiles!teacher_id(full_name)')
-        .eq('id', transactionData.course_id)
-        .single();
-
-      if (courseError) throw courseError;
-      setCourse(courseData);
-
-      // Load enrollment details
-      const { data: enrollmentData, error: enrollmentError } = await supabase
-        .from('enrollments')
-        .select('enrolled_at, is_active')
-        .eq('student_id', user.id)
-        .eq('course_id', transactionData.course_id)
-        .single();
-
-      if (enrollmentError) {
-        console.error('Enrollment error:', enrollmentError);
-      } else {
-        setEnrollment(enrollmentData);
+      // Load course details via JWT API
+      const courseRes = await fetch(`/api/courses/${courseIdParam}`, {
+        credentials: 'include'
+      });
+      if (courseRes.ok) {
+        const { course: c } = await courseRes.json();
+        if (c) {
+          setCourse({
+            id: c.id,
+            title: c.title,
+            cover_image: c.coverImage,
+            // Keep user_profiles shape for the receipt generator.
+            ...({
+              user_profiles: { full_name: c.teacher?.fullName || 'Ustoz' }
+            } as any)
+          });
+        }
       }
+
+      // TODO: add /api/student/enrollments endpoint for enrollment metadata.
+      // Skipping enrollment fetch — UI handles missing enrollment gracefully.
     } catch (err: any) {
       console.error('Error loading success data:', err);
     } finally {

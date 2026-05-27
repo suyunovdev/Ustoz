@@ -7,7 +7,6 @@ import GroupMetadataForm from './GroupMetadataForm';
 import StudentSelectionPanel from './StudentSelectionPanel';
 import GroupBalancingPanel from './GroupBalancingPanel';
 import GroupReviewPanel from './GroupReviewPanel';
-import { createClient } from '@/lib/supabase/client';
 
 interface Student {
   id: string;
@@ -129,44 +128,32 @@ const GroupCreationInteractive = () => {
   const loadGroups = async () => {
     setLoadingGroups(true);
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        // Try to load from Supabase
-        const { data, error } = await supabase
-          .from('groups')
-          .select('*')
-          .eq('teacher_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (!error && data) {
-          setSavedGroups(data.map((g: any) => ({
+      const res = await fetch('/api/teacher/groups', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setSavedGroups(
+          (data.groups || []).map((g: any) => ({
             id: g.id,
             name: g.name,
             description: g.description || '',
-            courseId: g.course_id || '',
-            studentCount: g.student_count || 0,
-            createdAt: g.created_at,
-            balancingStrategy: g.balancing_strategy || 'performance'
-          })));
-          setLoadingGroups(false);
-          return;
-        }
+            courseId: g.courseId || '',
+            studentCount: g.memberCount || 0,
+            createdAt: g.createdAt,
+            balancingStrategy: 'performance',
+          }))
+        );
+        setLoadingGroups(false);
+        return;
       }
     } catch (err) {
-      console.warn('Could not load groups from DB:', err);
+      console.warn('Could not load groups from API:', err);
     }
 
-    // Load from localStorage as fallback
+    // Fallback: localStorage
     try {
       const stored = localStorage.getItem('ustoz_groups');
-      if (stored) {
-        setSavedGroups(JSON.parse(stored));
-      }
-    } catch (e) {
-      // ignore
-    }
+      if (stored) setSavedGroups(JSON.parse(stored));
+    } catch {}
     setLoadingGroups(false);
   };
 
@@ -215,22 +202,22 @@ const GroupCreationInteractive = () => {
       balancingStrategy: metadata.balancingStrategy
     };
 
-    // Try to save to Supabase
+    // Save via JWT API
     try {
-      const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        await supabase.from('groups').insert({
-          teacher_id: user.id,
+      await fetch('/api/teacher/groups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
           name: metadata.name,
           description: metadata.description,
-          course_id: metadata.courseId || null,
-          student_count: selectedStudents.length,
-          balancing_strategy: metadata.balancingStrategy,
-        });
-      }
+          courseId: metadata.courseId || null,
+          maxMembers: 30,
+          studentIds: selectedStudents,
+        }),
+      });
     } catch (err) {
-      console.warn('Could not save group to DB:', err);
+      console.warn('Could not save group to API:', err);
     }
 
     // Always save to localStorage as fallback
