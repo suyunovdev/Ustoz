@@ -1,45 +1,63 @@
-// @ts-nocheck
-import { NextRequest } from 'next/server';
-import { getSessionFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { jsonResponse } from '@/lib/json';
+/**
+ * PATCH /api/teacher/assignments/[id]/submissions/[subId]
+ *
+ * Body (grade): { grade: number, feedback?: string, applyLatePenalty?: boolean }
+ * Body (return): { action: 'return', feedback: string }
+ */
 
-// PATCH /api/teacher/assignments/[id]/submissions/[subId] — baholash
+import type { NextRequest } from 'next/server';
+import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
+import { jsonResponse } from '@/lib/json';
+import {
+  gradeSubmission,
+  returnForRevision,
+  SubmissionNotFoundError,
+  AssignmentAccessDeniedError,
+  AssignmentNotFoundError,
+} from '@/lib/services/assignment.service';
+import { ValidationError } from '@/lib/errors';
+
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string; subId: string }> }
+  { params }: { params: Promise<{ subId: string }> },
 ) {
-  const session = await getSessionFromRequest(req);
-  if (!session) return jsonResponse({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 });
-  if (session.role !== 'teacher' && session.role !== 'admin') {
-    return jsonResponse({ error: 'Ruxsat yo\'q' }, { status: 403 });
+  try {
+    const session = await requireTeacherOrAdmin(req);
+    const { subId } = await params;
+
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      throw new ValidationError("JSON formatida xato");
+    }
+    const b = (body ?? {}) as Record<string, unknown>;
+
+    if (b.action === 'return') {
+      const feedback = typeof b.feedback === 'string' ? b.feedback : '';
+      const updated = await returnForRevision(subId, session.sub, feedback);
+      return jsonResponse({ submission: updated });
+    }
+
+    if (typeof b.grade !== 'number') {
+      throw new ValidationError("grade majburiy");
+    }
+    const updated = await gradeSubmission(subId, session.sub, {
+      grade: b.grade,
+      feedback: typeof b.feedback === 'string' ? b.feedback : undefined,
+      applyLatePenalty: typeof b.applyLatePenalty === 'boolean' ? b.applyLatePenalty : false,
+    });
+    return jsonResponse({ submission: updated });
+  } catch (err) {
+    if (err instanceof SubmissionNotFoundError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 404 });
+    }
+    if (err instanceof AssignmentNotFoundError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 404 });
+    }
+    if (err instanceof AssignmentAccessDeniedError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 403 });
+    }
+    return errorResponse(err);
   }
-
-  const { id, subId } = await params;
-  const { grade, feedback } = await req.json();
-
-  // Owner tekshirish
-  const assignment = await prisma.assignment.findFirst({
-    where: { id, teacherId: session.sub },
-  });
-  if (!assignment) return jsonResponse({ error: 'Topshiriq topilmadi' }, { status: 404 });
-
-  if (grade !== undefined && (grade < 0 || grade > assignment.maxScore)) {
-    return jsonResponse(
-      { error: `Ball 0 va ${assignment.maxScore} oralig'ida bo'lishi kerak` },
-      { status: 400 }
-    );
-  }
-
-  const updated = await prisma.assignmentSubmission.update({
-    where: { id: subId },
-    data: {
-      ...(grade !== undefined && { grade: Number(grade) }),
-      ...(feedback !== undefined && { feedback }),
-      gradedAt: new Date(),
-      gradedBy: session.sub,
-    },
-  });
-
-  return jsonResponse({ submission: updated });
 }

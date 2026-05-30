@@ -103,14 +103,37 @@ model User {
 // ==================== USER PROFILES ====================
 
 model UserProfile {
-  id        String   @id @db.Uuid
-  email     String   @unique
-  fullName  String   @map("full_name")
-  role      UserRole @default(student)
-  avatarUrl String?  @map("avatar_url")
-  bio       String?
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id          String    @id @db.Uuid
+  email       String    @unique
+  fullName    String    @map("full_name")
+  role        UserRole  @default(student)
+  avatarUrl   String?   @map("avatar_url")
+  bio         String?
+  isActive    Boolean   @default(true) @map("is_active")
+  deletedAt   DateTime? @map("deleted_at")
+  lastLoginAt DateTime? @map("last_login_at")
+  // Payout settings (teacher pul yechib olishi uchun)
+  payoutBankName       String? @map("payout_bank_name")
+  payoutAccountNumber  String? @map("payout_account_number")
+  payoutRecipientName  String? @map("payout_recipient_name")
+  payoutCardNumber     String? @map("payout_card_number")
+  // Public profile + sozlamalar
+  headline             String?
+  expertise            String[] @default([])
+  // { website?, twitter?, linkedin?, telegram?, instagram?, youtube? }
+  socialLinks          Json     @default("{}") @map("social_links")
+  // Per-type email/in-app preferences
+  notificationPrefs    Json     @default("{}") @map("notification_prefs")
+  // Account deletion request
+  deletionRequestedAt  DateTime? @map("deletion_requested_at")
+  deletionReason       String?   @map("deletion_reason")
+  // Referral system
+  referralCode         String?   @unique @map("referral_code") @db.VarChar(12)
+  referredById         String?   @map("referred_by_id") @db.Uuid
+  referralClicks       Int       @default(0) @map("referral_clicks")
+  referredAt           DateTime? @map("referred_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   user User @relation(fields: [id], references: [id], onDelete: Cascade)
 
@@ -123,17 +146,40 @@ model UserProfile {
   submissions       AssignmentSubmission[] @relation("StudentSubmissions")
   gradedSubmissions AssignmentSubmission[] @relation("GraderSubmissions")
   quizCompletions   QuizCompletion[]
+  testAttempts      TestAttempt[]
   topicCompletions  TopicCompletion[]
   activities        StudentActivity[]
-  certificates      Certificate[]
+  certificates       Certificate[]
+  issuedCertificates Certificate[]          @relation("IssuedCertificates")
+  revokedCertificates Certificate[]         @relation("RevokedCertificates")
   courseReviews     CourseReview[]
+  helpfulVotes      ReviewHelpfulVote[]    @relation("HelpfulVotes")
   contentMaterials  ContentMaterial[]
+  materialViews     MaterialView[]
+  materialVersions  MaterialVersion[]
   externalLinks     ExternalLink[]
   groups            Group[]
+  groupMemberships  GroupMember[]          @relation("StudentGroupMemberships")
   courseTests       CourseTest[]
   courseMaterials   CourseMaterial[]
   moderationReviews ModerationQueue[]
   moderationHistory ModerationHistory[]
+  auditLogs         AuditLog[]         @relation("AdminActions")
+  emailCampaigns    EmailCampaign[]    @relation("CreatedCampaigns")
+  teacherApplications TeacherApplication[] @relation("UserApplications")
+  supportTickets      SupportTicket[]     @relation("UserTickets")
+  assignedTickets     SupportTicket[]     @relation("AssignedTickets")
+  ticketMessages      SupportTicketMessage[] @relation("TicketAuthor")
+  withdrawals         TeacherWithdrawal[]    @relation("TeacherWithdrawals")
+  processedWithdrawals TeacherWithdrawal[]   @relation("ProcessedWithdrawals")
+  teacherConversations Conversation[]        @relation("TeacherConversations")
+  studentConversations Conversation[]        @relation("StudentConversations")
+  sentDirectMessages   DirectMessage[]       @relation("SentDirectMessages")
+  // Referral
+  referredBy           UserProfile?           @relation("ReferralChain", fields: [referredById], references: [id], onDelete: SetNull)
+  referredUsers        UserProfile[]          @relation("ReferralChain")
+  referralEarnings     ReferralEarning[]      @relation("ReferralEarner")
+  referralAttributions ReferralEarning[]      @relation("ReferredPayer")
 
   @@map("user_profiles")
 }
@@ -162,6 +208,23 @@ model Course {
   rating          Decimal         @default(0) @db.Decimal(3, 2)
   reviewCount     Int             @default(0) @map("review_count")
   isPublished     Boolean         @default(false) @map("is_published")
+  // Admin moderation flow:
+  //   draft     → teacher hali yakunlamagan
+  //   submitted → review uchun yuborilgan
+  //   under_review → admin ko'rib chiqyapti
+  //   approved  → admin tasdiqladi (marketplace'da ko'rinadi)
+  //   rejected  → admin rad etdi (sabab adminFeedback'da)
+  //   revision_requested → kichik o'zgartirish kerak
+  moderationStatus ModerationStatus @default(draft) @map("moderation_status")
+  adminFeedback   String?         @map("admin_feedback")
+  // Marketplace'da yuqorida ko'rsatish uchun
+  isFeatured      Boolean         @default(false) @map("is_featured")
+  // Admin reviewer va vaqtlar
+  reviewedById    String?         @map("reviewed_by_id") @db.Uuid
+  reviewedAt      DateTime?       @map("reviewed_at")
+  // Soft delete
+  suspendedAt     DateTime?       @map("suspended_at")
+  suspendReason   String?         @map("suspend_reason")
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt @map("updated_at")
   publishedAt     DateTime?       @map("published_at")
@@ -181,12 +244,16 @@ model Course {
   reviews          CourseReview[]
   groups           Group[]
   topicCompletions TopicCompletion[]
+  conversations    Conversation[]
+  referralEarnings ReferralEarning[]
 
   @@index([teacherId])
   @@index([isPublished])
   @@index([targetAudience])
   @@index([subjectCategory])
   @@index([categoryId])
+  @@index([moderationStatus])
+  @@index([isFeatured])
   @@map("courses")
 }
 
@@ -213,22 +280,33 @@ model Category {
 // ==================== COURSE TOPICS ====================
 
 model CourseTopic {
-  id         String   @id @default(uuid()) @db.Uuid
-  courseId   String   @map("course_id") @db.Uuid
-  title      String
-  orderIndex Int      @default(1) @map("order_index")
-  duration   String   @default("0 min")
-  content    String   @default("")
-  hasQuiz    Boolean  @default(false) @map("has_quiz")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  courseId      String   @map("course_id") @db.Uuid
+  title         String
+  description   String?
+  videoUrl      String?  @map("video_url")
+  orderIndex    Int      @default(1) @map("order_index")
+  duration      String   @default("0 min")
+  content       String   @default("")
+  hasQuiz       Boolean  @default(false) @map("has_quiz")
+  // Lead magnet — bepul ko'rish mumkin (kursga yozilmagan ham ko'radi)
+  isFreePreview Boolean  @default(false) @map("is_free_preview")
+  // Tartib bilan ochiladi (oldingisi tugamasa, bu ochilmaydi)
+  isLocked      Boolean  @default(false) @map("is_locked")
+  // Sub-bo'lim — masalan "1-bo'lim: Asoslar"
+  moduleTitle   String?  @map("module_title")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   course           Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
   contentMaterials ContentMaterial[]
   externalLinks    ExternalLink[]
   completions      TopicCompletion[]
+  tests            CourseTest[]
+  assignments      Assignment[]
 
   @@index([courseId])
+  @@index([courseId, orderIndex])
   @@map("course_topics")
 }
 
@@ -322,14 +400,127 @@ model PaymentTransaction {
   updatedAt            DateTime          @updatedAt @map("updated_at")
   completedAt          DateTime?         @map("completed_at")
   cancelledAt          DateTime?         @map("cancelled_at")
+  // Refund metadata — admin tomonidan qaytarilganda to'ldiriladi
+  refundedAt           DateTime?         @map("refunded_at")
+  refundReason         String?           @map("refund_reason")
+  refundedById         String?           @map("refunded_by_id") @db.Uuid
 
   student UserProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
   course  Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  referralEarning ReferralEarning?
 
   @@index([studentId])
   @@index([courseId])
   @@index([status])
+  @@index([createdAt])
   @@map("payment_transactions")
+}
+
+// ==================== DIRECT MESSAGES ====================
+// Teacher ↔ Student 1-1 yozishmalar (har juftlik uchun bitta thread)
+model Conversation {
+  id                    String   @id @default(uuid()) @db.Uuid
+  teacherId             String   @map("teacher_id") @db.Uuid
+  studentId             String   @map("student_id") @db.Uuid
+  // Ixtiyoriy — kursdan ochilgan suhbat bo'lsa
+  courseId              String?  @map("course_id") @db.Uuid
+  lastMessageAt         DateTime @default(now()) @map("last_message_at")
+  lastMessagePreview    String?  @map("last_message_preview")
+  lastMessageSenderId   String?  @map("last_message_sender_id") @db.Uuid
+  // Denormalized — inbox uchun
+  teacherUnreadCount    Int      @default(0) @map("teacher_unread_count")
+  studentUnreadCount    Int      @default(0) @map("student_unread_count")
+  createdAt             DateTime @default(now()) @map("created_at")
+
+  teacher  UserProfile     @relation("TeacherConversations", fields: [teacherId], references: [id], onDelete: Cascade)
+  student  UserProfile     @relation("StudentConversations", fields: [studentId], references: [id], onDelete: Cascade)
+  course   Course?         @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  messages DirectMessage[]
+
+  @@unique([teacherId, studentId])
+  @@index([teacherId, lastMessageAt(sort: Desc)])
+  @@index([studentId, lastMessageAt(sort: Desc)])
+  @@map("conversations")
+}
+
+model DirectMessage {
+  id             String    @id @default(uuid()) @db.Uuid
+  conversationId String    @map("conversation_id") @db.Uuid
+  senderId       String    @map("sender_id") @db.Uuid
+  body           String
+  readAt         DateTime? @map("read_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       UserProfile  @relation("SentDirectMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("direct_messages")
+}
+
+// ==================== REFERRAL EARNINGS ====================
+// Har referred talaba kurs sotib olganda referrer'ga commission yoziladi.
+//
+// status flow:
+//   pending → paid (admin/system tomonidan to'langan)
+//           → cancelled (refund qilingan asl to'lov)
+model ReferralEarning {
+  id                  String   @id @default(uuid()) @db.Uuid
+  referrerId          String   @map("referrer_id") @db.Uuid
+  referredUserId      String   @map("referred_user_id") @db.Uuid
+  sourceTransactionId String?  @unique @map("source_transaction_id") @db.Uuid
+  courseId            String?  @map("course_id") @db.Uuid
+  amountUzs           BigInt   @map("amount_uzs")
+  commissionPct       Int      @default(10) @map("commission_pct")
+  // 'pending' | 'paid' | 'cancelled'
+  status              String   @default("pending")
+  createdAt           DateTime @default(now()) @map("created_at")
+  paidAt              DateTime? @map("paid_at")
+
+  referrer          UserProfile         @relation("ReferralEarner", fields: [referrerId], references: [id], onDelete: Cascade)
+  referredUser      UserProfile         @relation("ReferredPayer", fields: [referredUserId], references: [id], onDelete: Cascade)
+  sourceTransaction PaymentTransaction? @relation(fields: [sourceTransactionId], references: [id], onDelete: SetNull)
+  course            Course?             @relation(fields: [courseId], references: [id], onDelete: SetNull)
+
+  @@index([referrerId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("referral_earnings")
+}
+
+// ==================== TEACHER WITHDRAWALS ====================
+// Teacher tomonidan pul yechib olish so'rovi.
+// Status flow: pending → processing → completed (admin tomonidan)
+//                pending → rejected (admin) | cancelled (teacher)
+model TeacherWithdrawal {
+  id                  String    @id @default(uuid()) @db.Uuid
+  teacherId           String    @map("teacher_id") @db.Uuid
+  amountUzs           BigInt    @map("amount_uzs")
+  // 'pending' | 'processing' | 'completed' | 'rejected' | 'cancelled'
+  status              String    @default("pending")
+  // 'bank_transfer' | 'card'
+  method              String    @default("bank_transfer")
+  bankName            String?   @map("bank_name")
+  bankAccountNumber   String?   @map("bank_account_number")
+  cardNumber          String?   @map("card_number")
+  recipientName       String?   @map("recipient_name")
+  note                String?
+  adminNote           String?   @map("admin_note")
+  rejectionReason     String?   @map("rejection_reason")
+  processedById       String?   @map("processed_by_id") @db.Uuid
+  requestedAt         DateTime  @default(now()) @map("requested_at")
+  processedAt         DateTime? @map("processed_at")
+  completedAt         DateTime? @map("completed_at")
+  cancelledAt         DateTime? @map("cancelled_at")
+
+  teacher   UserProfile  @relation("TeacherWithdrawals", fields: [teacherId], references: [id], onDelete: Cascade)
+  processor UserProfile? @relation("ProcessedWithdrawals", fields: [processedById], references: [id], onDelete: SetNull)
+
+  @@index([teacherId])
+  @@index([status])
+  @@index([requestedAt])
+  @@map("teacher_withdrawals")
 }
 
 // ==================== COURSE TESTS ====================
@@ -338,9 +529,20 @@ model CourseTest {
   id               String           @id @default(uuid()) @db.Uuid
   teacherId        String           @map("teacher_id") @db.Uuid
   courseId         String?          @map("course_id") @db.Uuid
+  // Mavzu testi — null bo'lsa kurs umumiy testi
+  topicId          String?          @map("topic_id") @db.Uuid
   title            String
   description      String?
   passingScore     Int              @default(80) @map("passing_score")
+  // 0 = vaqt cheklanmagan
+  timeLimitSec     Int?             @map("time_limit_sec")
+  // 0 = cheksiz urinish
+  allowedAttempts  Int              @default(0) @map("allowed_attempts")
+  // 'draft' | 'published' | 'archived'
+  status           String           @default("draft")
+  randomizeQuestions Boolean        @default(false) @map("randomize_questions")
+  showCorrectAnswers Boolean        @default(true) @map("show_correct_answers")
+  totalPoints      Int              @default(0) @map("total_points")
   moderationStatus ModerationStatus @default(draft) @map("moderation_status")
   submittedAt      DateTime         @default(now()) @map("submitted_at")
   reviewedAt       DateTime?        @map("reviewed_at")
@@ -349,10 +551,14 @@ model CourseTest {
 
   teacher   UserProfile    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   course    Course?        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  topic     CourseTopic?   @relation(fields: [topicId], references: [id], onDelete: SetNull)
   questions TestQuestion[]
+  attempts  TestAttempt[]
 
   @@index([teacherId])
   @@index([courseId])
+  @@index([topicId])
+  @@index([status])
   @@map("course_tests")
 }
 
@@ -361,11 +567,22 @@ model TestQuestion {
   testId        String   @map("test_id") @db.Uuid
   questionOrder Int      @map("question_order")
   questionText  String   @map("question_text")
-  optionA       String   @map("option_a")
-  optionB       String   @map("option_b")
-  optionC       String   @map("option_c")
-  optionD       String   @map("option_d")
-  correctAnswer String   @map("correct_answer")
+  // 'single' | 'multiple' | 'true_false' | 'text'
+  questionType  String   @default("single") @map("question_type")
+  // Variant turi 'single'/'multiple'/'true_false' bo'lsa — JSON:
+  //   [{text: string, isCorrect: boolean}, ...]
+  // 'text' bo'lsa — null
+  options       Json?
+  // 'multiple' uchun — bir nechta to'g'ri javob: ['option1', 'option2']
+  // 'text' uchun — qabul qilinadigan javoblar: ['javob1', 'javob2']
+  correctAnswers Json?   @map("correct_answers")
+  points        Int      @default(1)
+  // Legacy A/B/C/D (yangi questions options'da, eski A/B/C/D'da)
+  optionA       String?  @map("option_a")
+  optionB       String?  @map("option_b")
+  optionC       String?  @map("option_c")
+  optionD       String?  @map("option_d")
+  correctAnswer String?  @map("correct_answer")
   explanation   String?
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
@@ -376,31 +593,105 @@ model TestQuestion {
   @@map("test_questions")
 }
 
+// Talaba testni topshirgan vaqti
+model TestAttempt {
+  id            String    @id @default(uuid()) @db.Uuid
+  testId        String    @map("test_id") @db.Uuid
+  studentId     String    @map("student_id") @db.Uuid
+  attemptNumber Int       @map("attempt_number")
+  startedAt     DateTime  @default(now()) @map("started_at")
+  submittedAt   DateTime? @map("submitted_at")
+  score         Int       @default(0)
+  maxScore      Int       @default(0) @map("max_score")
+  percentage    Decimal   @default(0) @db.Decimal(5, 2)
+  passed        Boolean   @default(false)
+  // { questionId: answer } — answer string yoki string[]
+  answers       Json      @default("{}")
+  // 'in_progress' | 'submitted' | 'expired'
+  status        String    @default("in_progress")
+
+  test    CourseTest  @relation(fields: [testId], references: [id], onDelete: Cascade)
+  student UserProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([testId])
+  @@index([studentId])
+  @@index([testId, studentId])
+  @@index([submittedAt])
+  @@map("test_attempts")
+}
+
 // ==================== CONTENT MATERIALS ====================
 
 model ContentMaterial {
-  id           String   @id @default(uuid()) @db.Uuid
-  teacherId    String   @map("teacher_id") @db.Uuid
-  courseId     String?  @map("course_id") @db.Uuid
-  topicId      String?  @map("topic_id") @db.Uuid
-  title        String
-  description  String?
-  fileUrl      String?  @map("file_url")
-  fileName     String?  @map("file_name")
-  fileSize     BigInt?  @map("file_size")
-  fileType     String?  @map("file_type")
-  materialType String   @default("file") @map("material_type")
-  status       String   @default("active")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(uuid()) @db.Uuid
+  teacherId      String   @map("teacher_id") @db.Uuid
+  courseId       String?  @map("course_id") @db.Uuid
+  topicId        String?  @map("topic_id") @db.Uuid
+  title          String
+  description    String?
+  fileUrl        String?  @map("file_url")
+  fileName       String?  @map("file_name")
+  fileSize       BigInt?  @map("file_size")
+  fileType       String?  @map("file_type")
+  materialType   String   @default("file") @map("material_type")
+  status         String   @default("active")
+  // Statistika va versionlash
+  viewCount      Int      @default(0) @map("view_count")
+  // 'external' (foydalanuvchi URL) yoki 'r2' (Cloudflare R2'da yuklangan)
+  storageType    String   @default("external") @map("storage_type")
+  r2Key          String?  @map("r2_key")
+  currentVersion Int      @default(1) @map("current_version")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
-  teacher UserProfile  @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  course  Course?      @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  topic   CourseTopic? @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  teacher  UserProfile       @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  course   Course?           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  topic    CourseTopic?      @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  views    MaterialView[]
+  versions MaterialVersion[]
 
   @@index([teacherId])
   @@index([courseId])
   @@map("content_materials")
+}
+
+// Har material ko'rilganda yoziladi — analytics, anti-abuse, watch time
+model MaterialView {
+  id         String   @id @default(uuid()) @db.Uuid
+  materialId String   @map("material_id") @db.Uuid
+  studentId  String?  @map("student_id") @db.Uuid
+  watchSec   Int?     @map("watch_sec")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  material ContentMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  student  UserProfile?    @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@index([materialId])
+  @@index([materialId, createdAt])
+  @@index([studentId])
+  @@map("material_views")
+}
+
+// Material file replace tarixi
+model MaterialVersion {
+  id           String   @id @default(uuid()) @db.Uuid
+  materialId   String   @map("material_id") @db.Uuid
+  version      Int
+  fileUrl      String?  @map("file_url")
+  fileName     String?  @map("file_name")
+  fileSize     BigInt?  @map("file_size")
+  fileType     String?  @map("file_type")
+  materialType String?  @map("material_type")
+  replacedAt   DateTime @default(now()) @map("replaced_at")
+  replacedBy   String   @map("replaced_by") @db.Uuid
+
+  material ContentMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+  replacer UserProfile     @relation(fields: [replacedBy], references: [id], onDelete: Cascade)
+
+  @@unique([materialId, version])
+  @@index([materialId])
+  @@map("material_versions")
 }
 
 model ExternalLink {
@@ -427,21 +718,32 @@ model ExternalLink {
 // ==================== GROUPS ====================
 
 model Group {
-  id          String   @id @default(uuid()) @db.Uuid
-  teacherId   String   @map("teacher_id") @db.Uuid
-  name        String
-  description String?
-  courseId    String?  @map("course_id") @db.Uuid
-  maxMembers  Int      @default(30) @map("max_members")
-  status      String   @default("active")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(uuid()) @db.Uuid
+  teacherId     String   @map("teacher_id") @db.Uuid
+  name          String
+  description   String?
+  courseId      String?  @map("course_id") @db.Uuid
+  maxMembers    Int      @default(30) @map("max_members")
+  // 'active' | 'archived'
+  status        String   @default("active")
+  // Live darslarga link (Zoom/Google Meet)
+  meetingUrl    String?  @map("meeting_url")
+  // Dars jadvali matn shaklida ("Du-Pa 19:00, Sha 10:00")
+  scheduleNote  String?  @map("schedule_note")
+  // UI badge rangi: blue | green | red | yellow | purple | orange | pink
+  color         String   @default("blue")
+  // Denormalized — tez ko'rsatish uchun
+  memberCount   Int      @default(0) @map("member_count")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   teacher UserProfile   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   course  Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
   members GroupMember[]
 
   @@index([teacherId])
+  @@index([courseId])
+  @@index([status])
   @@map("groups")
 }
 
@@ -450,9 +752,11 @@ model GroupMember {
   studentId String   @map("student_id") @db.Uuid
   joinedAt  DateTime @default(now()) @map("joined_at")
 
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  group   Group       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  student UserProfile @relation("StudentGroupMemberships", fields: [studentId], references: [id], onDelete: Cascade)
 
   @@id([groupId, studentId])
+  @@index([studentId])
   @@map("group_members")
 }
 
@@ -487,20 +791,36 @@ model Assignment {
   id               String   @id @default(uuid()) @db.Uuid
   courseId         String   @map("course_id") @db.Uuid
   teacherId        String   @map("teacher_id") @db.Uuid
+  topicId          String?  @map("topic_id") @db.Uuid
   title            String
   description      String?
+  // Boy formatdagi yo'riqnoma (markdown)
+  instructions     String?
   dueDate          DateTime @map("due_date")
   maxScore         Int      @default(100) @map("max_score")
   fileRequirements String?  @map("file_requirements")
+  // 'text' | 'file' | 'url' | 'any'
+  submissionType   String   @default("any") @map("submission_type")
+  // 'draft' | 'published' | 'archived'
+  status           String   @default("draft")
+  allowLateSubmission   Boolean @default(false) @map("allow_late_submission")
+  // Vaqtidan keyin topshirilsa, qancha % ayriladi (0-100)
+  latePenaltyPercent    Int     @default(0) @map("late_penalty_percent")
+  // Submitted submission count (denormalized)
+  submissionCount       Int     @default(0) @map("submission_count")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
   course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
   teacher     UserProfile            @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  topic       CourseTopic?           @relation(fields: [topicId], references: [id], onDelete: SetNull)
   submissions AssignmentSubmission[]
 
   @@index([courseId])
   @@index([teacherId])
+  @@index([topicId])
+  @@index([status])
+  @@index([dueDate])
   @@map("assignments")
 }
 
@@ -511,7 +831,14 @@ model AssignmentSubmission {
   assignmentId   String    @map("assignment_id") @db.Uuid
   submissionUrl  String?   @map("submission_url")
   submissionText String?   @map("submission_text")
+  // JSON: [{ fileUrl, fileName, fileSize, fileType }]
+  attachments    Json      @default("[]")
+  // 'submitted' | 'graded' | 'returned' | 'late'
+  status         String    @default("submitted")
+  isLate         Boolean   @default(false) @map("is_late")
+  revisionNumber Int       @default(1) @map("revision_number")
   submittedAt    DateTime  @default(now()) @map("submitted_at")
+  updatedAt      DateTime  @default(now()) @updatedAt @map("updated_at")
   grade          Int?
   feedback       String?
   gradedAt       DateTime? @map("graded_at")
@@ -523,6 +850,8 @@ model AssignmentSubmission {
 
   @@index([studentId])
   @@index([assignmentId])
+  @@index([status])
+  @@index([assignmentId, studentId])
   @@map("assignment_submissions")
 }
 
@@ -549,44 +878,90 @@ model QuizCompletion {
 // ==================== CERTIFICATES ====================
 
 model Certificate {
-  id                String   @id @default(uuid()) @db.Uuid
-  studentId         String   @map("student_id") @db.Uuid
-  courseId          String   @map("course_id") @db.Uuid
-  certificateNumber String   @unique @map("certificate_number") @db.VarChar(20)
-  issuedAt          DateTime @default(now()) @map("issued_at")
-  verificationUrl   String?  @map("verification_url")
-  metadata          Json     @default("{}")
-  createdAt         DateTime @default(now()) @map("created_at")
+  id                  String   @id @default(uuid()) @db.Uuid
+  studentId           String   @map("student_id") @db.Uuid
+  courseId            String   @map("course_id") @db.Uuid
+  certificateNumber   String   @unique @map("certificate_number") @db.VarChar(20)
+  issuedAt            DateTime @default(now()) @map("issued_at")
+  verificationUrl     String?  @map("verification_url")
+  metadata            Json     @default("{}")
+  // Snapshot ma'lumotlari — kurs/talaba/teacher o'zgartirilsa ham sertifikat o'zgarmaydi
+  studentNameSnapshot String?  @map("student_name_snapshot")
+  courseTitleSnapshot String?  @map("course_title_snapshot")
+  teacherNameSnapshot String?  @map("teacher_name_snapshot")
+  finalGrade          Int?     @map("final_grade")
+  completionPercent   Int      @default(100) @map("completion_percent")
+  // 'active' | 'revoked'
+  status              String   @default("active")
+  // 'auto' (sistem) | 'manual' (teacher) | 'admin'
+  issueSource         String   @default("auto") @map("issue_source")
+  issuedById          String?  @map("issued_by_id") @db.Uuid
+  revokedAt           DateTime? @map("revoked_at")
+  revokeReason        String?   @map("revoke_reason")
+  revokedById         String?   @map("revoked_by_id") @db.Uuid
+  createdAt           DateTime @default(now()) @map("created_at")
 
-  student UserProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  course  Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student     UserProfile  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  issuer      UserProfile? @relation("IssuedCertificates", fields: [issuedById], references: [id], onDelete: SetNull)
+  revoker     UserProfile? @relation("RevokedCertificates", fields: [revokedById], references: [id], onDelete: SetNull)
 
   @@unique([studentId, courseId])
   @@index([studentId])
   @@index([courseId])
+  @@index([status])
+  @@index([issuedAt])
   @@map("certificates")
 }
 
 // ==================== COURSE REVIEWS ====================
 
 model CourseReview {
-  id                 String   @id @default(uuid()) @db.Uuid
-  courseId           String   @map("course_id") @db.Uuid
-  studentId          String   @map("student_id") @db.Uuid
+  id                 String    @id @default(uuid()) @db.Uuid
+  courseId           String    @map("course_id") @db.Uuid
+  studentId          String    @map("student_id") @db.Uuid
   rating             Int
   comment            String?
-  isVerifiedPurchase Boolean  @default(true) @map("is_verified_purchase")
-  helpfulCount       Int      @default(0) @map("helpful_count")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  isVerifiedPurchase Boolean   @default(true) @map("is_verified_purchase")
+  helpfulCount       Int       @default(0) @map("helpful_count")
+  // Teacher reply
+  teacherReply         String?   @map("teacher_reply")
+  teacherReplyAt       DateTime? @map("teacher_reply_at")
+  teacherReplyEditedAt DateTime? @map("teacher_reply_edited_at")
+  // Admin moderation
+  hiddenAt           DateTime? @map("hidden_at")
+  hideReason         String?   @map("hide_reason")
+  hiddenById         String?   @map("hidden_by_id") @db.Uuid
+  reportCount        Int       @default(0) @map("report_count")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
 
-  course  Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  student UserProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course        Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  student       UserProfile          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  helpfulVotes  ReviewHelpfulVote[]
 
   @@unique([courseId, studentId])
   @@index([courseId])
   @@index([studentId])
+  @@index([hiddenAt])
+  @@index([reportCount])
+  @@index([rating])
+  @@index([createdAt])
   @@map("course_reviews")
+}
+
+// Kim sharhni "foydali" deb belgilagani (per-user tracking)
+model ReviewHelpfulVote {
+  reviewId  String   @map("review_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  review CourseReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   UserProfile  @relation("HelpfulVotes", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([reviewId, userId])
+  @@index([userId])
+  @@map("review_helpful_votes")
 }
 
 // ==================== OTP CODES ====================
@@ -667,4 +1042,137 @@ model ModerationHistory {
   reviewer UserProfile?   @relation(fields: [reviewerId], references: [id], onDelete: SetNull)
 
   @@map("moderation_history")
+}
+
+// Support ticket — talaba (yoki teacher) admin'ga so'rov yuboradi.
+//
+// status flow:
+//   open → in_progress → waiting_user (talaba javobini kutmoqdamiz)
+//                      → resolved → closed
+//
+// priority: low | normal | high | urgent
+model SupportTicket {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  subject      String
+  category     String   // "billing" | "technical" | "course" | "account" | "other"
+  status       String   @default("open")
+  priority     String   @default("normal")
+  assignedToId String?  @map("assigned_to_id") @db.Uuid
+  // Oxirgi xabarni kim yubordi: admin yoki user — UI sorting uchun
+  lastMessageAt   DateTime @default(now()) @map("last_message_at")
+  lastMessageById String   @map("last_message_by_id") @db.Uuid
+  closedAt     DateTime? @map("closed_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user       UserProfile @relation("UserTickets", fields: [userId], references: [id], onDelete: Cascade)
+  assignedTo UserProfile? @relation("AssignedTickets", fields: [assignedToId], references: [id], onDelete: SetNull)
+  messages   SupportTicketMessage[]
+
+  @@index([userId, createdAt])
+  @@index([status, lastMessageAt])
+  @@index([assignedToId])
+  @@map("support_tickets")
+}
+
+model SupportTicketMessage {
+  id           String   @id @default(uuid()) @db.Uuid
+  ticketId     String   @map("ticket_id") @db.Uuid
+  authorId     String   @map("author_id") @db.Uuid
+  isAdminReply Boolean  @map("is_admin_reply")
+  body         String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author UserProfile   @relation("TicketAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([ticketId, createdAt])
+  @@map("support_ticket_messages")
+}
+
+// Teacher application — user o'qituvchi bo'lishga ariza beradi.
+//
+// status flow:
+//   pending → under_review → approved (user.role → teacher)
+//                          → rejected (user.role o'zgarmaydi)
+model TeacherApplication {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  status       String   @default("pending") // pending | under_review | approved | rejected
+  fullName     String   @map("full_name")
+  email        String
+  phone        String?
+  expertise    String   // qaysi sohada — texnologiya, til, biznes, ...
+  bio          String
+  motivation   String   // nima uchun o'qituvchi bo'lmoqchi
+  experience   String?  // tajriba (kasbiy)
+  sampleUrl    String?  @map("sample_url") // namuna ish/portfolio
+  // Admin review
+  reviewedById String?  @map("reviewed_by_id") @db.Uuid
+  reviewedAt   DateTime? @map("reviewed_at")
+  feedback     String?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user UserProfile @relation("UserApplications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("teacher_applications")
+}
+
+// Email campaign — admin broadcast xabar yuborish.
+//
+// status flow:
+//   draft → sending → completed (yoki failed)
+//
+// recipientFilter (JSON):
+//   { type: 'all_users' }                       — barcha foydalanuvchilar
+//   { type: 'by_role', roles: ['student',...] } — rollar bo'yicha
+//   { type: 'by_course', courseIds: [...] }     — ma'lum kurslarga yozilganlar
+//   { type: 'manual', emails: [...] }           — qo'lda kiritilgan email'lar
+model EmailCampaign {
+  id              String   @id @default(uuid()) @db.Uuid
+  subject         String
+  bodyHtml        String   @map("body_html")
+  bodyText        String?  @map("body_text")
+  recipientFilter Json     @map("recipient_filter")
+  status          String   @default("draft") // draft | sending | completed | failed
+  totalRecipients Int      @default(0) @map("total_recipients")
+  sentCount       Int      @default(0) @map("sent_count")
+  failedCount     Int      @default(0) @map("failed_count")
+  errorSummary    String?  @map("error_summary")
+  createdById     String   @map("created_by_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+  startedAt       DateTime? @map("started_at")
+  completedAt     DateTime? @map("completed_at")
+
+  createdBy UserProfile @relation("CreatedCampaigns", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById, createdAt])
+  @@index([status])
+  @@map("email_campaigns")
+}
+
+// Admin action audit trail — har qaysi sezgir amal log qilinadi.
+// action: "user.suspend" | "user.activate" | "user.role_change" | "course.approve" | "course.reject" | ...
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  adminId    String   @map("admin_id") @db.Uuid
+  action     String
+  targetType String   @map("target_type")
+  targetId   String?  @map("target_id") @db.Uuid
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  admin UserProfile @relation("AdminActions", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId, createdAt])
+  @@index([targetType, targetId])
+  @@index([action])
+  @@map("audit_logs")
 }

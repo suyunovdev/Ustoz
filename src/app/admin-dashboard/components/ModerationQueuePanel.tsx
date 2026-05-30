@@ -1,145 +1,522 @@
-// @ts-nocheck
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
-
-interface ModerationItem {
-  id: string;
-  material_id: string;
-  status: string;
-  submitted_at: string;
-  title?: string;
-  content_type?: string;
-}
+import ConfirmModal from '@/components/common/ConfirmModal';
+import { toast } from '@/components/common/Toaster';
+import {
+  useAdminModeration,
+  type ModerationQueueItemDTO,
+  type ModerationStatusDTO,
+} from '@/hooks/queries/useAdminModeration';
+import { useModerateMaterialMutation } from '@/hooks/mutations/useModerateMaterialMutation';
 
 interface ModerationQueuePanelProps {
   expanded?: boolean;
 }
 
-const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) => {
-  const [items, setItems] = useState<ModerationItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [stats, setStats] = useState({
-    pending: 0,
-    underReview: 0,
-    avgReviewTime: '0h 0m'
+type StatusFilter = ModerationStatusDTO | 'all';
+
+const STATUS_TABS: { id: StatusFilter; label: string }[] = [
+  { id: 'submitted', label: 'Yangi' },
+  { id: 'under_review', label: "Ko'rib chiqilmoqda" },
+  { id: 'revision_requested', label: "O'zgartirish" },
+  { id: 'approved', label: 'Tasdiqlangan' },
+  { id: 'rejected', label: 'Rad etilgan' },
+  { id: 'all', label: 'Barchasi' },
+];
+
+const STATUS_BADGE: Record<ModerationStatusDTO, { label: string; color: string }> = {
+  draft: { label: 'Qoralama', color: 'bg-muted text-muted-foreground' },
+  submitted: { label: 'Yangi', color: 'bg-warning/10 text-warning' },
+  under_review: { label: "Ko'rib chiqilmoqda", color: 'bg-secondary/10 text-secondary' },
+  approved: { label: 'Tasdiqlangan', color: 'bg-success/10 text-success' },
+  rejected: { label: 'Rad etilgan', color: 'bg-destructive/10 text-destructive' },
+  revision_requested: { label: "O'zgartirish so'ralgan", color: 'bg-primary/10 text-primary' },
+};
+
+const CONTENT_TYPE_ICON: Record<string, string> = {
+  document: 'DocumentTextIcon',
+  video: 'VideoCameraIcon',
+  audio: 'MusicalNoteIcon',
+  external_link: 'LinkIcon',
+};
+
+type PendingAction =
+  | { item: ModerationQueueItemDTO; type: 'start_review' }
+  | { item: ModerationQueueItemDTO; type: 'approve' }
+  | { item: ModerationQueueItemDTO; type: 'reject' }
+  | { item: ModerationQueueItemDTO; type: 'request_revision' };
+
+function formatDateTime(iso: string | null): string {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleString('uz-UZ', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
   });
+}
+
+const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) => {
+  const [status, setStatus] = useState<StatusFilter>('submitted');
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [openItem, setOpenItem] = useState<string | null>(null);
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const [feedback, setFeedback] = useState('');
 
   useEffect(() => {
-    loadModerationQueue();
-  }, []);
+    const t = setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => clearTimeout(t);
+  }, [searchInput]);
 
-  const loadModerationQueue = async () => {
-    setIsLoading(true);
-    try {
-      // TODO: add /api/admin/moderation-queue endpoint that joins
-      //       moderation_queue with course_materials and returns
-      //       { items: [...], stats: { pending, underReview, avgReviewTime } }
-      setItems([]);
-      setStats({ pending: 0, underReview: 0, avgReviewTime: '0h 0m' });
-    } catch (error) {
-      console.error('Error loading moderation queue:', error);
-    } finally {
-      setIsLoading(false);
+  const { data, isLoading, isFetching, error, refetch } = useAdminModeration({
+    status,
+    search: search || undefined,
+    // expanded=false (Overview tab'da) — faqat top 5 ta yangi
+    limit: expanded ? 20 : 5,
+  });
+
+  const mutation = useModerateMaterialMutation();
+
+  const items = data?.items ?? [];
+  const stats = data?.stats;
+
+  useEffect(() => {
+    if (pending) setFeedback('');
+  }, [pending]);
+
+  const modalProps = useMemo(() => {
+    if (!pending) return null;
+    const t = pending.item.material.title;
+    switch (pending.type) {
+      case 'start_review':
+        return {
+          title: "Ko'rib chiqishni boshlash",
+          message: `"${t}" materialining ko'rib chiqilishini boshlaymizmi?`,
+          confirmLabel: 'Boshlash',
+          variant: 'default' as const,
+          requireFeedback: false,
+        };
+      case 'approve':
+        return {
+          title: 'Materialni tasdiqlash',
+          message: `"${t}" material tasdiqlanadi va kursda ko'rinadi.`,
+          confirmLabel: 'Tasdiqlash',
+          variant: 'default' as const,
+          requireFeedback: false,
+        };
+      case 'reject':
+        return {
+          title: 'Materialni rad etish',
+          message: `"${t}" material rad etiladi. Sabab kerak.`,
+          confirmLabel: 'Rad etish',
+          variant: 'danger' as const,
+          requireFeedback: true,
+        };
+      case 'request_revision':
+        return {
+          title: "O'zgartirish so'rash",
+          message: `"${t}" material uchun teacher'ga aniq izoh yozing.`,
+          confirmLabel: "So'rov yuborish",
+          variant: 'default' as const,
+          requireFeedback: true,
+        };
     }
-  };
+  }, [pending]);
 
-  const getContentTypeIcon = (type: string) => {
-    const icons = {
-      document: 'DocumentTextIcon',
-      video: 'VideoCameraIcon',
-      audio: 'MusicalNoteIcon',
-      external_link: 'LinkIcon'
+  const handleConfirm = () => {
+    if (!pending || !modalProps) return;
+    if (modalProps.requireFeedback && feedback.trim().length < 5) {
+      toast.error("Sabab kamida 5 belgi");
+      return;
+    }
+    const messages = {
+      start_review: "Ko'rib chiqish boshlandi",
+      approve: 'Material tasdiqlandi',
+      reject: 'Material rad etildi',
+      request_revision: "O'zgartirish so'rovi yuborildi",
     };
-    return icons[type as keyof typeof icons] || 'DocumentIcon';
+
+    const variables =
+      pending.type === 'start_review'
+        ? { queueId: pending.item.id, action: 'start_review' as const }
+        : pending.type === 'approve'
+        ? {
+            queueId: pending.item.id,
+            action: 'approve' as const,
+            feedback: feedback || undefined,
+          }
+        : pending.type === 'reject'
+        ? { queueId: pending.item.id, action: 'reject' as const, feedback }
+        : { queueId: pending.item.id, action: 'request_revision' as const, feedback };
+
+    mutation.mutate(variables, {
+      onSuccess: () => {
+        toast.success(messages[pending.type]);
+        setPending(null);
+      },
+      onError: (err) => toast.error(err.message),
+    });
   };
 
-  const getStatusBadge = (status: string) => {
-    const config = {
-      submitted: { label: 'Yuborilgan', color: 'bg-warning/10 text-warning' },
-      under_review: { label: 'Ko\'rib chiqilmoqda', color: 'bg-secondary/10 text-secondary' }
-    };
-    return config[status as keyof typeof config] || config.submitted;
-  };
+  // ─── Overview compact mode (expanded=false) ──────────────────────────────
+  if (!expanded) {
+    return (
+      <div className="bg-card rounded-md shadow-warm p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-heading font-semibold text-foreground">
+            Moderatsiya navbati
+          </h3>
+          {stats && stats.submitted > 0 && (
+            <span className="px-2 py-0.5 bg-warning/10 text-warning text-xs rounded-full">
+              {stats.submitted} yangi
+            </span>
+          )}
+        </div>
 
+        {stats && (
+          <div className="grid grid-cols-3 gap-3 mb-4 text-center">
+            <div className="p-3 bg-warning/10 rounded-md">
+              <p className="text-xs text-muted-foreground">Kutilmoqda</p>
+              <p className="text-xl font-heading font-bold text-warning">{stats.submitted}</p>
+            </div>
+            <div className="p-3 bg-secondary/10 rounded-md">
+              <p className="text-xs text-muted-foreground">Ko'rilmoqda</p>
+              <p className="text-xl font-heading font-bold text-secondary">{stats.under_review}</p>
+            </div>
+            <div className="p-3 bg-muted rounded-md">
+              <p className="text-xs text-muted-foreground">O'rtacha</p>
+              <p className="text-xl font-heading font-bold text-foreground">
+                {stats.avgReviewMinutes > 0 ? `${stats.avgReviewMinutes}m` : '—'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse h-12 bg-muted rounded-md" />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-6">
+            <Icon name="CheckCircleIcon" size={32} className="text-success mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Navbat bo'sh</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.slice(0, 5).map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center gap-3 p-2 hover:bg-muted/40 rounded-md transition-smooth"
+              >
+                <Icon
+                  name={CONTENT_TYPE_ICON[item.material.contentType ?? ''] ?? 'DocumentIcon'}
+                  size={18}
+                  className="text-primary shrink-0"
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {item.material.title}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {item.material.teacher.fullName}
+                  </p>
+                </div>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[item.status].color}`}
+                >
+                  {STATUS_BADGE[item.status].label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─── Expanded mode (moderation tab) ──────────────────────────────────────
   return (
-    <div className="bg-card rounded-md shadow-warm p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-xl font-heading font-semibold text-foreground">
-          Moderatsiya navbati
-        </h3>
-        {!expanded && (
-          <button className="text-primary hover:text-primary/80 text-sm font-medium">
-            Barchasini ko'rish
-          </button>
+    <div className="space-y-6">
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <StatCard label="Yangi" value={stats.submitted} icon="ClockIcon" color="text-warning" />
+          <StatCard label="Ko'rilmoqda" value={stats.under_review} icon="EyeIcon" color="text-secondary" />
+          <StatCard label="O'zgartirish" value={stats.revision_requested} icon="ArrowPathIcon" color="text-primary" />
+          <StatCard label="Tasdiqlangan" value={stats.approved} icon="CheckCircleIcon" color="text-success" />
+          <StatCard label="Rad etilgan" value={stats.rejected} icon="XCircleIcon" color="text-destructive" />
+        </div>
+      )}
+
+      <div className="bg-card rounded-md shadow-warm p-4">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+          <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 flex-1">
+            {STATUS_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setStatus(tab.id)}
+                className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-smooth ${
+                  status === tab.id
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-muted text-foreground hover:bg-muted/80'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="relative flex-1 lg:flex-none">
+            <Icon
+              name="MagnifyingGlassIcon"
+              size={18}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Material yoki teacher..."
+              className="pl-9 pr-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full lg:w-64"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-card rounded-md shadow-warm p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-heading font-semibold text-foreground">
+            Materiallar ({data?.total ?? 0})
+          </h3>
+          {isFetching && !isLoading && (
+            <span className="text-xs text-muted-foreground">Yangilanmoqda...</span>
+          )}
+        </div>
+
+        {error && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
+            <span>Xato: {error.message}</span>
+            <button onClick={() => refetch()} className="underline text-xs">
+              Qayta urinish
+            </button>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse h-24 bg-muted rounded-md" />
+            ))}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="text-center py-12">
+            <Icon name="CheckCircleIcon" size={48} className="text-success mx-auto mb-4" />
+            <p className="text-muted-foreground">Bu filterda materiallar yo'q</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {items.map((item) => {
+              const isOpen = openItem === item.id;
+              const badge = STATUS_BADGE[item.status];
+              const iconName = CONTENT_TYPE_ICON[item.material.contentType ?? ''] ?? 'DocumentIcon';
+              const canTakeAction =
+                item.status === 'submitted' || item.status === 'under_review';
+              return (
+                <div
+                  key={item.id}
+                  className="border border-border rounded-md hover:bg-muted/30 transition-smooth"
+                >
+                  <button
+                    onClick={() => setOpenItem(isOpen ? null : item.id)}
+                    className="w-full text-left p-4 flex items-start gap-3"
+                  >
+                    <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-md shrink-0">
+                      <Icon name={iconName} size={20} className="text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <h4 className="font-heading font-semibold text-foreground truncate">
+                          {item.material.title}
+                        </h4>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
+                        >
+                          {badge.label}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {item.material.teacher.fullName}
+                        {item.material.course && ` · ${item.material.course.title}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        📅 {formatDateTime(item.submittedAt)}
+                      </p>
+                    </div>
+                    <Icon
+                      name={isOpen ? 'ChevronUpIcon' : 'ChevronDownIcon'}
+                      size={18}
+                      className="text-muted-foreground shrink-0 mt-1"
+                    />
+                  </button>
+
+                  {isOpen && (
+                    <div className="px-4 pb-4 pt-0 border-t border-border space-y-3 text-sm">
+                      {item.material.description && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">📝 Tavsif</p>
+                          <p className="whitespace-pre-wrap">{item.material.description}</p>
+                        </div>
+                      )}
+
+                      {(item.material.fileUrl || item.material.externalLink) && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">🔗 Manba</p>
+                          <a
+                            href={item.material.fileUrl ?? item.material.externalLink ?? '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary underline break-all"
+                          >
+                            Materialni ochish ({item.material.fileFormat ?? item.material.contentType ?? 'link'})
+                          </a>
+                        </div>
+                      )}
+
+                      {item.feedback && (
+                        <div>
+                          <p className="text-xs text-muted-foreground mb-1">💬 Avvalgi izoh</p>
+                          <div className="p-2 bg-muted/50 rounded border-l-2 border-primary">
+                            {item.feedback}
+                          </div>
+                        </div>
+                      )}
+
+                      {item.reviewer && item.reviewedAt && (
+                        <p className="text-xs text-muted-foreground">
+                          ✓ {item.reviewer.fullName} tomonidan {formatDateTime(item.reviewedAt)}'da
+                        </p>
+                      )}
+
+                      {canTakeAction && (
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          {item.status === 'submitted' && (
+                            <button
+                              onClick={() => setPending({ item, type: 'start_review' })}
+                              className="text-xs px-3 py-1.5 rounded-md border border-secondary/30 text-secondary hover:bg-secondary/10 transition-smooth flex items-center gap-1"
+                            >
+                              <Icon name="EyeIcon" size={14} />
+                              Boshlash
+                            </button>
+                          )}
+                          <button
+                            onClick={() => setPending({ item, type: 'approve' })}
+                            className="text-xs px-3 py-1.5 rounded-md border border-success/30 text-success hover:bg-success/10 transition-smooth flex items-center gap-1"
+                          >
+                            <Icon name="CheckCircleIcon" size={14} />
+                            Tasdiqlash
+                          </button>
+                          <button
+                            onClick={() => setPending({ item, type: 'request_revision' })}
+                            className="text-xs px-3 py-1.5 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-smooth flex items-center gap-1"
+                          >
+                            <Icon name="ArrowPathIcon" size={14} />
+                            O'zgartirish
+                          </button>
+                          <button
+                            onClick={() => setPending({ item, type: 'reject' })}
+                            className="text-xs px-3 py-1.5 rounded-md border border-destructive/30 text-destructive hover:bg-destructive/10 transition-smooth flex items-center gap-1"
+                          >
+                            <Icon name="XCircleIcon" size={14} />
+                            Rad etish
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="p-4 bg-warning/10 rounded-md">
-          <p className="text-sm text-muted-foreground mb-1">Kutilmoqda</p>
-          <p className="text-2xl font-heading font-bold text-warning">{stats.pending}</p>
-        </div>
-        <div className="p-4 bg-secondary/10 rounded-md">
-          <p className="text-sm text-muted-foreground mb-1">Ko'rib chiqilmoqda</p>
-          <p className="text-2xl font-heading font-bold text-secondary">{stats.underReview}</p>
-        </div>
-        <div className="p-4 bg-muted rounded-md">
-          <p className="text-sm text-muted-foreground mb-1">O'rtacha vaqt</p>
-          <p className="text-2xl font-heading font-bold text-foreground">{stats.avgReviewTime}</p>
-        </div>
-      </div>
-
-      {/* Queue List */}
-      {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={`mod-skeleton-${i}`} className="animate-pulse">
-              <div className="h-16 bg-muted rounded-md" />
-            </div>
-          ))}
-        </div>
-      ) : items.length === 0 ? (
-        <div className="text-center py-8">
-          <Icon name="CheckCircleIcon" size={48} className="text-success mx-auto mb-4" />
-          <p className="text-muted-foreground">Moderatsiya navbati bo'sh</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {items.map((item) => {
-            const statusBadge = getStatusBadge(item.status);
-            return (
-              <div
-                key={item.id}
-                className="flex items-center justify-between p-4 border border-border rounded-md hover:bg-muted transition-smooth"
-              >
-                <div className="flex items-center space-x-3">
-                  <Icon name={getContentTypeIcon(item.content_type || 'document') as any} size={20} className="text-primary" />
-                  <div>
-                    <h4 className="font-heading font-semibold text-foreground">{item.title}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(item.submitted_at).toLocaleDateString('uz-UZ')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
-                    {statusBadge.label}
-                  </span>
-                  <button className="p-2 hover:bg-primary/10 rounded-md transition-smooth">
-                    <Icon name="EyeIcon" size={18} className="text-primary" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+      {modalProps && pending && (
+        <ConfirmModal
+          open={true}
+          title={modalProps.title}
+          message={modalProps.message}
+          confirmLabel={modalProps.confirmLabel}
+          variant={modalProps.variant}
+          isLoading={mutation.isPending}
+          onConfirm={handleConfirm}
+          onCancel={() => !mutation.isPending && setPending(null)}
+        />
+      )}
+      {modalProps?.requireFeedback && pending && (
+        <FeedbackOverlay
+          label="Sabab / izoh (kamida 5 belgi)"
+          value={feedback}
+          onChange={setFeedback}
+        />
       )}
     </div>
   );
 };
+
+function StatCard({
+  label,
+  value,
+  icon,
+  color,
+}: {
+  label: string;
+  value: number;
+  icon: string;
+  color: string;
+}) {
+  return (
+    <div className="bg-card rounded-md shadow-warm p-4">
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-xs text-muted-foreground">{label}</p>
+        <Icon name={icon} size={18} className={color} />
+      </div>
+      <p className={`text-2xl font-heading font-bold ${color}`}>{value}</p>
+    </div>
+  );
+}
+
+function FeedbackOverlay({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div
+      className="fixed left-1/2 -translate-x-1/2 z-[210] w-full max-w-md pointer-events-none"
+      style={{ bottom: '30%' }}
+    >
+      <div className="bg-card border border-border rounded-md shadow-warm-lg p-3 mx-4 pointer-events-auto">
+        <label className="block text-xs text-muted-foreground mb-1">{label}</label>
+        <textarea
+          autoFocus
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+          className="w-full p-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+          placeholder="Yozing..."
+        />
+      </div>
+    </div>
+  );
+}
 
 export default ModerationQueuePanel;

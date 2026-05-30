@@ -1,47 +1,44 @@
-// @ts-nocheck
-import { NextRequest } from 'next/server';
-import { getSessionFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { jsonResponse } from '@/lib/json';
+/**
+ * GET /api/teacher/assignments/[id]/submissions
+ * Vazifaga topshirilgan ishlar (status filter ixtiyoriy)
+ */
 
-// GET /api/teacher/assignments/[id]/submissions
+import type { NextRequest } from 'next/server';
+import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
+import { jsonResponse } from '@/lib/json';
+import {
+  listSubmissionsForTeacher,
+  AssignmentAccessDeniedError,
+} from '@/lib/services/assignment.service';
+import type { SubmissionStatus } from '@/lib/repositories';
+
+const VALID_STATUS: ReadonlyArray<SubmissionStatus> = [
+  'submitted',
+  'graded',
+  'returned',
+  'late',
+];
+
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await getSessionFromRequest(req);
-  if (!session) return jsonResponse({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 });
-  if (session.role !== 'teacher' && session.role !== 'admin') {
-    return jsonResponse({ error: 'Ruxsat yo\'q' }, { status: 403 });
+  try {
+    const session = await requireTeacherOrAdmin(req);
+    const { id } = await params;
+    const { searchParams } = new URL(req.url);
+    const statusParam = searchParams.get('status');
+    const status =
+      statusParam && VALID_STATUS.includes(statusParam as SubmissionStatus)
+        ? (statusParam as SubmissionStatus)
+        : undefined;
+
+    const submissions = await listSubmissionsForTeacher(id, session.sub, { status });
+    return jsonResponse({ submissions });
+  } catch (err) {
+    if (err instanceof AssignmentAccessDeniedError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 403 });
+    }
+    return errorResponse(err);
   }
-
-  const { id } = await params;
-
-  // Owner tekshirish
-  const assignment = await prisma.assignment.findFirst({
-    where: { id, teacherId: session.sub },
-  });
-  if (!assignment) return jsonResponse({ error: 'Topshiriq topilmadi' }, { status: 404 });
-
-  const submissions = await prisma.assignmentSubmission.findMany({
-    where: { assignmentId: id },
-    include: {
-      student: { select: { fullName: true, email: true } },
-    },
-    orderBy: { submittedAt: 'desc' },
-  });
-
-  return jsonResponse({
-    submissions: submissions.map((s) => ({
-      id: s.id,
-      studentName: s.student?.fullName || 'Noma\'lum',
-      studentEmail: s.student?.email || '',
-      submittedAt: s.submittedAt,
-      submissionText: s.submissionText || '',
-      submissionUrl: s.submissionUrl,
-      grade: s.grade,
-      feedback: s.feedback,
-      gradedAt: s.gradedAt,
-    })),
-  });
 }

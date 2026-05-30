@@ -37,6 +37,44 @@ export class CourseNotFoundError extends ServiceError {
   }
 }
 
+export class UserNotFoundError extends ServiceError {
+  constructor(userId: string) {
+    super(`User not found: ${userId}`, 'USER_NOT_FOUND');
+  }
+}
+
+export class UnauthorizedError extends ServiceError {
+  constructor(message = 'Autentifikatsiya talab qilinadi') {
+    super(message, 'UNAUTHORIZED');
+  }
+}
+
+export class ForbiddenError extends ServiceError {
+  constructor(message = "Bu amal uchun ruxsat yo'q") {
+    super(message, 'FORBIDDEN');
+  }
+}
+
+export class ValidationError extends ServiceError {
+  constructor(message: string) {
+    super(message, 'VALIDATION_ERROR');
+  }
+}
+
+/** Admin o'zini suspend/role change qilmoqchi bo'lsa */
+export class SelfActionError extends ServiceError {
+  constructor() {
+    super("O'z hisobingizga bu amalni qo'llab bo'lmaydi", 'SELF_ACTION_NOT_ALLOWED');
+  }
+}
+
+/** Oxirgi admin role'ini o'zgartirmoqchi yoki suspend qilmoqchi bo'lsa */
+export class LastAdminError extends ServiceError {
+  constructor() {
+    super("Oxirgi adminni o'zgartirib bo'lmaydi", 'LAST_ADMIN_PROTECTED');
+  }
+}
+
 /** Type guard — route handler'larda ishlatish uchun */
 export function isServiceError(err: unknown): err is ServiceError {
   return err instanceof ServiceError;

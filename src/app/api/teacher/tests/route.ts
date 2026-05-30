@@ -1,134 +1,76 @@
-// @ts-nocheck
-import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+/**
+ * GET  /api/teacher/tests?courseId=&topicId=&status=  — teacher testlari
+ * POST /api/teacher/tests                              — yangi test yaratish
+ */
 
-// GET /api/teacher/tests
+import type { NextRequest } from 'next/server';
+import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
+import { jsonResponse } from '@/lib/json';
+import {
+  createTest,
+  listTeacherTests,
+  CourseAccessDeniedError,
+} from '@/lib/services/test.service';
+import { ValidationError } from '@/lib/errors';
+import type { TestStatus } from '@/lib/repositories';
+
 export async function GET(req: NextRequest) {
-  const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 });
-  if (session.role !== 'teacher' && session.role !== 'admin') {
-    return NextResponse.json({ error: 'Ruxsat yo\'q' }, { status: 403 });
+  try {
+    const session = await requireTeacherOrAdmin(req);
+    const { searchParams } = new URL(req.url);
+    const courseId = searchParams.get('courseId') ?? undefined;
+    const topicId = searchParams.get('topicId') ?? undefined;
+    const status = searchParams.get('status') as TestStatus | null;
+    const tests = await listTeacherTests(session.sub, {
+      courseId,
+      topicId,
+      status: status ?? undefined,
+    });
+    return jsonResponse({ tests });
+  } catch (err) {
+    return errorResponse(err);
   }
-
-  const tests = await prisma.courseTest.findMany({
-    where: { teacherId: session.sub },
-    include: {
-      course: { select: { title: true } },
-      _count: { select: { questions: true } },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  return NextResponse.json({
-    tests: tests.map(t => ({
-      id: t.id,
-      title: t.title,
-      description: t.description,
-      courseTitle: t.course?.title,
-      courseId: t.courseId,
-      passingScore: t.passingScore,
-      questionCount: t._count.questions,
-      moderationStatus: t.moderationStatus,
-      createdAt: t.createdAt,
-    })),
-  });
 }
 
-// POST /api/teacher/tests — Test saqlash
 export async function POST(req: NextRequest) {
-  const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 });
-  if (session.role !== 'teacher' && session.role !== 'admin') {
-    return NextResponse.json({ error: 'Ruxsat yo\'q' }, { status: 403 });
-  }
-
-  const { testId, title, description, courseId, passingScore = 80, questions } = await req.json();
-
-  if (!title || !questions?.length) {
-    return NextResponse.json({ error: 'Sarlavha va savollar majburiy' }, { status: 400 });
-  }
-
-  // Savollarni tekshirish
-  for (const q of questions) {
-    if (!q.questionText || !q.optionA || !q.optionB || !q.optionC || !q.optionD || !q.correctAnswer) {
-      return NextResponse.json({ error: 'Barcha savol maydonlari to\'ldirilishi kerak' }, { status: 400 });
+  try {
+    const session = await requireTeacherOrAdmin(req);
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      throw new ValidationError("JSON formatida xato");
     }
-    if (!['A', 'B', 'C', 'D'].includes(q.correctAnswer)) {
-      return NextResponse.json({ error: 'To\'g\'ri javob A, B, C yoki D bo\'lishi kerak' }, { status: 400 });
+    if (!body || typeof body !== 'object') throw new ValidationError("Body bo'sh");
+    const b = body as Record<string, unknown>;
+
+    const courseId = typeof b.courseId === 'string' ? b.courseId : '';
+    if (!courseId) throw new ValidationError("courseId majburiy");
+
+    const test = await createTest(session.sub, {
+      courseId,
+      topicId: typeof b.topicId === 'string' ? b.topicId : null,
+      title: typeof b.title === 'string' ? b.title : '',
+      description: typeof b.description === 'string' ? b.description : undefined,
+      passingScore: typeof b.passingScore === 'number' ? b.passingScore : undefined,
+      timeLimitSec:
+        typeof b.timeLimitSec === 'number'
+          ? b.timeLimitSec
+          : b.timeLimitSec === null
+          ? null
+          : undefined,
+      allowedAttempts: typeof b.allowedAttempts === 'number' ? b.allowedAttempts : undefined,
+      randomizeQuestions:
+        typeof b.randomizeQuestions === 'boolean' ? b.randomizeQuestions : undefined,
+      showCorrectAnswers:
+        typeof b.showCorrectAnswers === 'boolean' ? b.showCorrectAnswers : undefined,
+    });
+
+    return jsonResponse({ test }, { status: 201 });
+  } catch (err) {
+    if (err instanceof CourseAccessDeniedError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 403 });
     }
+    return errorResponse(err);
   }
-
-  let test;
-
-  if (testId) {
-    // Mavjud testni yangilash
-    const existing = await prisma.courseTest.findFirst({
-      where: { id: testId, teacherId: session.sub },
-    });
-    if (!existing) return NextResponse.json({ error: 'Test topilmadi' }, { status: 404 });
-
-    await prisma.testQuestion.deleteMany({ where: { testId } });
-
-    test = await prisma.courseTest.update({
-      where: { id: testId },
-      data: {
-        title,
-        description,
-        courseId: courseId || null,
-        passingScore,
-        questions: {
-          createMany: {
-            data: questions.map((q: any, i: number) => ({
-              questionOrder: i + 1,
-              questionText: q.questionText,
-              optionA: q.optionA,
-              optionB: q.optionB,
-              optionC: q.optionC,
-              optionD: q.optionD,
-              correctAnswer: q.correctAnswer,
-              explanation: q.explanation || null,
-            })),
-          },
-        },
-      },
-      include: { questions: true },
-    });
-  } else {
-    // Yangi test yaratish
-    test = await prisma.courseTest.create({
-      data: {
-        teacherId: session.sub,
-        title,
-        description,
-        courseId: courseId || null,
-        passingScore,
-        questions: {
-          createMany: {
-            data: questions.map((q: any, i: number) => ({
-              questionOrder: i + 1,
-              questionText: q.questionText,
-              optionA: q.optionA,
-              optionB: q.optionB,
-              optionC: q.optionC,
-              optionD: q.optionD,
-              correctAnswer: q.correctAnswer,
-              explanation: q.explanation || null,
-            })),
-          },
-        },
-      },
-      include: { questions: true },
-    });
-  }
-
-  // courseId berilgan bo'lsa — courseTopic.has_quiz yangilash
-  if (courseId) {
-    await prisma.course.update({
-      where: { id: courseId },
-      data: {},
-    });
-  }
-
-  return NextResponse.json({ test }, { status: testId ? 200 : 201 });
 }

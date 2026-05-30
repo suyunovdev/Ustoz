@@ -1,498 +1,699 @@
-// @ts-nocheck
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
-import DashboardNavigation from '@/components/common/DashboardNavigation';
-import MetricsCard from './MetricsCard';
-import CourseCard from './CourseCard';
-import AnalyticsPanel from './AnalyticsPanel';
-import EarningsPanel from './EarningsPanel';
+import { useEffect, useMemo, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import ConfirmModal from '@/components/common/ConfirmModal';
+import { toast } from '@/components/common/Toaster';
+import { type TeacherTabId } from './TeacherSidebar';
+import MetricsCard from './MetricsCard';
+import {
+  useTeacherDashboard,
+  type TeacherDashboardCourse,
+  type ModerationStatusDTO,
+} from '@/hooks/queries/useTeacherDashboard';
+import {
+  useArchiveCourseMutation,
+  useUnarchiveCourseMutation,
+  useDeleteCourseMutation,
+  useDuplicateCourseMutation,
+} from '@/hooks/mutations/useTeacherCourseMutations';
 
-interface DashboardCourse {
-  id: string;
-  title: string;
-  coverImage: string | null;
-  isPublished: boolean;
-  priceUzs: string;
-  enrollmentCount: number;
-  rating: number;
-  reviewCount: number;
-  createdAt: string;
+const VALID_TABS: ReadonlyArray<TeacherTabId> = [
+  'overview',
+  'courses',
+  'students',
+  'groups',
+  'assignments',
+  'tests',
+  'analytics',
+  'earnings',
+  'reviews',
+];
+
+const TAB_TITLES: Record<TeacherTabId, { title: string; subtitle: string }> = {
+  overview: { title: "Umumiy ko'rinish", subtitle: 'Bugungi holat va kurslar' },
+  courses: { title: 'Kurslarim', subtitle: 'Barcha kurslar va statusi' },
+  students: { title: 'Talabalarim', subtitle: "Yozilgan talabalar ro'yxati" },
+  groups: { title: 'Guruhlar', subtitle: 'Talabalar guruhlari' },
+  assignments: { title: 'Topshiriqlar', subtitle: 'Uy vazifalari' },
+  tests: { title: 'Testlar', subtitle: 'Quiz va testlar' },
+  analytics: { title: 'Tahlil', subtitle: 'Daromad va faollik' },
+  earnings: { title: 'Daromad', subtitle: "To'lov tarixi va withdraw" },
+  reviews: { title: 'Sharhlar', subtitle: 'Talaba sharhlari' },
+  certificates: { title: 'Sertifikatlar', subtitle: 'Berilgan sertifikatlar' },
+  messages: { title: 'Xabarlar', subtitle: 'Talabalar bilan aloqa' },
+};
+
+const STATUS_BADGE: Record<ModerationStatusDTO, { label: string; color: string }> = {
+  draft: { label: 'Qoralama', color: 'bg-muted text-muted-foreground' },
+  submitted: { label: 'Yuborilgan', color: 'bg-warning/10 text-warning' },
+  under_review: { label: "Ko'rib chiqilmoqda", color: 'bg-secondary/10 text-secondary' },
+  approved: { label: 'Tasdiqlangan', color: 'bg-success/10 text-success' },
+  rejected: { label: 'Rad etilgan', color: 'bg-destructive/10 text-destructive' },
+  revision_requested: {
+    label: "O'zgartirish so'ralgan",
+    color: 'bg-primary/10 text-primary',
+  },
+};
+
+function formatUzs(uzs: string | number): string {
+  const n = typeof uzs === 'string' ? Number(uzs) : uzs;
+  if (!Number.isFinite(n) || n === 0) return "0 so'm";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M so'm`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K so'm`;
+  return `${n.toLocaleString('uz-UZ')} so'm`;
 }
 
-interface Transaction {
-  id: string;
-  studentName: string;
-  courseTitle: string;
-  amountUzs: string;
-  createdAt: string;
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('uz-UZ');
 }
 
-interface DashboardData {
-  courses: DashboardCourse[];
-  stats: {
-    totalCourses: number;
-    publishedCourses: number;
-    pendingCourses: number;
-    totalEnrollments: number;
-    totalRevenueUzs: string;
-  };
-  monthlyRevenue: { month: string; revenue: number; enrollments: number }[];
-  recentTransactions: Transaction[];
-  topCourses: { id: string; title: string; enrollmentCount: number; rating: number }[];
-}
+type PendingAction =
+  | { type: 'archive'; course: TeacherDashboardCourse }
+  | { type: 'unarchive'; course: TeacherDashboardCourse }
+  | { type: 'delete'; course: TeacherDashboardCourse }
+  | { type: 'duplicate'; course: TeacherDashboardCourse };
 
 const TeacherDashboardInteractive = () => {
   const router = useRouter();
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<DashboardData | null>(null);
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams?.get('tab');
+  const initialTab: TeacherTabId = VALID_TABS.includes(tabFromUrl as TeacherTabId)
+    ? (tabFromUrl as TeacherTabId)
+    : 'overview';
+
+  const [activeTab, setActiveTab] = useState<TeacherTabId>(initialTab);
+  const [pending, setPending] = useState<PendingAction | null>(null);
+
+  // URL ?tab=... o'zgarganda activeTab'ni yangilash
+  useEffect(() => {
+    if (VALID_TABS.includes(tabFromUrl as TeacherTabId)) {
+      setActiveTab(tabFromUrl as TeacherTabId);
+    } else if (!tabFromUrl) {
+      setActiveTab('overview');
+    }
+  }, [tabFromUrl]);
 
   useEffect(() => {
-    setIsHydrated(true);
-  }, []);
+    if (tabFromUrl && VALID_TABS.includes(tabFromUrl as TeacherTabId)) {
+      setActiveTab(tabFromUrl as TeacherTabId);
+    } else if (!tabFromUrl) {
+      setActiveTab('overview');
+    }
+  }, [tabFromUrl]);
 
-  // Dashboard ma'lumotlarini API dan olish
-  useEffect(() => {
-    if (!isHydrated) return;
+  const handleTabChange = (tabId: TeacherTabId) => {
+    setActiveTab(tabId);
+    const url = tabId === 'overview' ? '/teacher-dashboard' : `/teacher-dashboard?tab=${tabId}`;
+    router.replace(url, { scroll: false });
+  };
 
-    const fetchDashboard = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch('/api/teacher/dashboard');
-        if (res.status === 401) {
-          router.push('/login');
-          return;
-        }
-        if (res.status === 403) {
-          router.push('/unauthorized');
-          return;
-        }
-        if (!res.ok) throw new Error('Ma\'lumotlarni yuklashda xatolik');
-        const json = await res.json();
-        setData(json);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Xatolik yuz berdi');
-      } finally {
-        setLoading(false);
-      }
+  const { data, isLoading, error, refetch } = useTeacherDashboard();
+
+  const archiveMut = useArchiveCourseMutation();
+  const unarchiveMut = useUnarchiveCourseMutation();
+  const deleteMut = useDeleteCourseMutation();
+  const duplicateMut = useDuplicateCourseMutation();
+
+  const mutationPending =
+    archiveMut.isPending ||
+    unarchiveMut.isPending ||
+    deleteMut.isPending ||
+    duplicateMut.isPending;
+
+  const modalProps = useMemo(() => {
+    if (!pending) return null;
+    const title = pending.course.title;
+    switch (pending.type) {
+      case 'archive':
+        return {
+          title: 'Kursni arxivlash',
+          message: `"${title}" kursi marketplace'dan yashiriladi (talabalar ko'rmaydi). Qaytarish mumkin.`,
+          confirmLabel: 'Arxivlash',
+          variant: 'default' as const,
+        };
+      case 'unarchive':
+        return {
+          title: 'Kursni faollashtirish',
+          message: `"${title}" kursi yana ko'rinarli bo'ladi.`,
+          confirmLabel: 'Faollashtirish',
+          variant: 'default' as const,
+        };
+      case 'delete':
+        return {
+          title: "Kursni o'chirish",
+          message: `"${title}" kursini butunlay o'chiramizmi? Bu amalni qaytarib bo'lmaydi.`,
+          confirmLabel: "O'chirish",
+          variant: 'danger' as const,
+        };
+      case 'duplicate':
+        return {
+          title: 'Kursni nusxalash',
+          message: `"${title}" asosida yangi qoralama yaratiladi (barcha mavzular bilan).`,
+          confirmLabel: 'Nusxalash',
+          variant: 'default' as const,
+        };
+    }
+  }, [pending]);
+
+  const handleConfirm = () => {
+    if (!pending) return;
+    const courseId = pending.course.id;
+    const messages: Record<PendingAction['type'], string> = {
+      archive: 'Kurs arxivlandi',
+      unarchive: 'Kurs faollashtirildi',
+      delete: "Kurs o'chirildi",
+      duplicate: 'Nusxa yaratildi',
     };
+    const onSuccess = () => {
+      toast.success(messages[pending.type]);
+      setPending(null);
+    };
+    const onError = (err: Error) => toast.error(err.message);
 
-    fetchDashboard();
-  }, [isHydrated, router]);
-
-  const handleCreateCourse = () => router.push('/course-creation');
-  const handleCreateTest = () => router.push('/sequential-test-builder');
-  const handleContentUpload = () => router.push('/content-upload-center');
-  const handleCreateGroup = () => router.push('/group-creation');
-  const handleEditCourse = (courseId: string) => router.push(`/course-creation?edit=${courseId}`);
-
-  const handleArchiveCourse = async (courseId: string) => {
-    if (!confirm('Kursni arxivlashni tasdiqlaysizmi?')) return;
-    try {
-      const res = await fetch(`/api/teacher/courses/${courseId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ isPublished: false }),
-      });
-      if (res.ok) {
-        setData(prev => prev ? {
-          ...prev,
-          courses: prev.courses.map(c => c.id === courseId ? { ...c, isPublished: false } : c),
-        } : null);
-      }
-    } catch (err) {
-      console.error('Archive error:', err);
-    }
+    if (pending.type === 'archive') archiveMut.mutate(courseId, { onSuccess, onError });
+    if (pending.type === 'unarchive') unarchiveMut.mutate(courseId, { onSuccess, onError });
+    if (pending.type === 'delete') deleteMut.mutate(courseId, { onSuccess, onError });
+    if (pending.type === 'duplicate') duplicateMut.mutate(courseId, { onSuccess, onError });
   };
 
-  const handleDeleteCourse = async (courseId: string) => {
-    if (!confirm('Kursni o\'chirishni tasdiqlaysizmi? Bu amalni qaytarib bo\'lmaydi!')) return;
-    try {
-      const res = await fetch(`/api/teacher/courses/${courseId}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (res.ok) {
-        setData(prev => prev ? {
-          ...prev,
-          courses: prev.courses.filter(c => c.id !== courseId),
-          stats: { ...prev.stats, totalCourses: prev.stats.totalCourses - 1 },
-        } : null);
-      } else {
-        alert(json.error || 'O\'chirishda xatolik');
-      }
-    } catch (err) {
-      console.error('Delete error:', err);
-    }
-  };
-
-  const handleWithdraw = () => setShowWithdrawModal(true);
-  const handleTabChange = (tabId: string) => setActiveTab(tabId);
-
-  // Skeleton loader
-  if (!isHydrated) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="h-16 bg-card" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="animate-pulse space-y-6">
-            <div className="h-32 bg-muted rounded-md" />
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-muted rounded-md" />)}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Daromad formatlash
-  const formatRevenue = (uzs: string | undefined) => {
-    if (!uzs) return '0';
-    const num = Number(uzs);
-    if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M so'm`;
-    if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K so'm`;
-    return `${num} so'm`;
-  };
-
-  const stats = data?.stats;
-  const courses = data?.courses || [];
-  const monthlyRevenue = data?.monthlyRevenue || [];
-  const transactions = data?.recentTransactions || [];
-
-  // AnalyticsPanel uchun ma'lumotlar
-  const revenueData = monthlyRevenue.map(m => ({
-    month: m.month,
-    revenue: m.revenue / 100,
-    students: m.enrollments,
-  }));
-
-  const topCourses = (data?.topCourses || []).map(c => ({
-    name: c.title,
-    students: c.enrollmentCount,
-    revenue: 0,
-    completion: 0,
-  }));
-
-  const studentEngagement = [
-    { day: 'Dush', activeStudents: 0, quizCompletions: 0, submissions: 0 },
-    { day: 'Sesh', activeStudents: 0, quizCompletions: 0, submissions: 0 },
-    { day: 'Chor', activeStudents: 0, quizCompletions: 0, submissions: 0 },
-    { day: 'Pay', activeStudents: 0, quizCompletions: 0, submissions: 0 },
-    { day: 'Jum', activeStudents: 0, quizCompletions: 0, submissions: 0 },
-  ];
+  const headerInfo = TAB_TITLES[activeTab];
+  const courses = data?.courses ?? [];
+  const needsAttention = data?.needsAttention ?? [];
 
   return (
-    <div className="min-h-screen bg-background">
-      <RoleBasedHeader userRole="teacher" currentPath="/teacher-dashboard" />
-
-      <main className="pt-20 pb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-heading font-bold text-foreground">O'qituvchi paneli</h2>
-              <p className="text-muted-foreground mt-1">Kurslaringizni boshqaring va tahlil qiling</p>
-            </div>
-            <div className="flex items-center space-x-3 mt-4 md:mt-0">
-              <button
-                onClick={handleContentUpload}
-                className="flex items-center space-x-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-md font-medium transition-smooth hover:opacity-90"
-              >
-                <Icon name="ArrowUpTrayIcon" size={20} />
-                <span className="hidden sm:inline">Kontent yuklash</span>
-              </button>
-              <button
-                onClick={handleCreateTest}
-                className="flex items-center space-x-2 px-4 py-2 bg-accent text-accent-foreground rounded-md font-medium transition-smooth hover:opacity-90"
-              >
-                <Icon name="AcademicCapIcon" size={20} />
-                <span className="hidden sm:inline">Test yaratish</span>
-              </button>
-              <button
-                onClick={handleCreateGroup}
-                className="flex items-center space-x-2 px-4 py-2 bg-purple-500 text-white rounded-md font-medium transition-smooth hover:bg-purple-600"
-              >
-                <Icon name="UserGroupIcon" size={20} />
-                <span className="hidden sm:inline">Guruh yaratish</span>
-              </button>
-              <button
-                onClick={handleCreateCourse}
-                className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium transition-smooth hover:bg-primary/90 hover:-translate-y-0.5 shadow-warm"
-              >
-                <Icon name="PlusCircleIcon" size={20} />
-                <span>Yangi kurs yaratish</span>
-              </button>
-            </div>
+    <main className="p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6 hidden md:block">
+            <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground mb-1">
+              {headerInfo.title}
+            </h1>
+            <p className="text-muted-foreground text-sm">{headerInfo.subtitle}</p>
           </div>
 
-          {/* Error */}
           {error && (
-            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive">
-              {error}
+            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive flex items-center justify-between">
+              <span>Xato: {error.message}</span>
+              <button onClick={() => refetch()} className="underline text-xs">
+                Qayta urinish
+              </button>
             </div>
           )}
 
-          {/* Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <MetricsCard
-              title="Umumiy daromad"
-              value={formatRevenue(stats?.totalRevenueUzs)}
-              icon="CurrencyDollarIcon"
-              subtitle="Jami to'lovlar"
-            />
-            <MetricsCard
-              title="Faol kurslar"
-              value={loading ? '—' : String(stats?.publishedCourses ?? 0)}
-              icon="BookOpenIcon"
-              subtitle={`${stats?.pendingCourses ?? 0} arxivda`}
-            />
-            <MetricsCard
-              title="Jami talabalar"
-              value={loading ? '—' : String(stats?.totalEnrollments ?? 0)}
-              icon="UserGroupIcon"
-            />
-            <MetricsCard
-              title="Jami kurslar"
-              value={loading ? '—' : String(stats?.totalCourses ?? 0)}
-              icon="ClockIcon"
-              subtitle="Barcha kurslar"
-            />
-          </div>
+          {/* Moderation feedback banners (Overview va Courses tab'da) */}
+          {(activeTab === 'overview' || activeTab === 'courses') && (
+            <NeedsAttentionBanner items={needsAttention} onGoToCourses={() => handleTabChange('courses')} />
+          )}
 
-          {/* Tabs */}
-          <div className="mb-8">
-            <DashboardNavigation
-              userRole="teacher"
-              activeTab={activeTab}
-              onTabChange={handleTabChange}
-            />
-          </div>
-
-          {/* Tab: Overview */}
           {activeTab === 'overview' && (
-            <div className="space-y-8">
-              <div className="bg-card rounded-md shadow-warm p-6">
-                <h2 className="text-xl font-heading font-semibold text-foreground mb-4">
-                  Tezkor ko'rsatkichlar
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="p-4 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground mb-1">Bugungi daromad</p>
-                    <p className="text-2xl font-heading font-bold text-foreground">
-                      {monthlyRevenue.length > 0
-                        ? formatRevenue(String(monthlyRevenue[monthlyRevenue.length - 1]?.revenue || 0))
-                        : '0 so\'m'}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground mb-1">Jami talabalar</p>
-                    <p className="text-2xl font-heading font-bold text-foreground">
-                      {stats?.totalEnrollments ?? 0}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground mb-1">Faol kurslar</p>
-                    <p className="text-2xl font-heading font-bold text-foreground">
-                      {stats?.publishedCourses ?? 0}
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <OverviewTab data={data} isLoading={isLoading} onCreateCourse={() => router.push('/course-creation')} />
+          )}
 
-              {/* Courses Grid */}
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-heading font-bold text-foreground">Mening Kurslarim</h2>
-                  <button
-                    onClick={handleCreateCourse}
-                    className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                  >
-                    <Icon name="PlusIcon" size={20} />
-                    <span>Yangi Kurs</span>
-                  </button>
-                </div>
+          {activeTab === 'courses' && (
+            <CoursesTab
+              courses={courses}
+              isLoading={isLoading}
+              onAction={setPending}
+              onCreate={() => router.push('/course-creation')}
+              onEdit={(id) => router.push(`/course-creation?edit=${id}`)}
+            />
+          )}
 
-                {loading ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-card rounded-lg border border-border p-4 animate-pulse">
-                        <div className="w-full h-40 bg-muted rounded-md mb-4" />
-                        <div className="h-6 bg-muted rounded mb-2" />
-                        <div className="h-4 bg-muted rounded w-2/3" />
-                      </div>
-                    ))}
-                  </div>
-                ) : courses.length === 0 ? (
-                  <div className="bg-card rounded-lg border border-border p-12 text-center">
-                    <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Hali kurslar yo'q</h3>
-                    <p className="text-muted-foreground mb-6">Birinchi kursingizni yarating</p>
-                    <button
-                      onClick={handleCreateCourse}
-                      className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
-                    >
-                      Kurs Yaratish
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {courses.map(course => (
-                      <CourseCard
-                        key={course.id}
-                        course={{
-                          id: course.id,
-                          title: course.title,
-                          thumbnail: course.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
-                          thumbnailAlt: course.title,
-                          enrolledStudents: course.enrollmentCount,
-                          status: course.isPublished ? 'approved' : 'pending',
-                          revenue: 0,
-                          rating: Number(course.rating),
-                          totalRatings: course.reviewCount,
-                        }}
-                        onEdit={() => handleEditCourse(course.id)}
-                        onArchive={() => handleArchiveCourse(course.id)}
-                      />
-                    ))}
-                  </div>
+          {activeTab === 'earnings' && <EarningsTab data={data} isLoading={isLoading} />}
+
+          {activeTab !== 'overview' &&
+            activeTab !== 'courses' &&
+            activeTab !== 'earnings' && <ComingSoonPlaceholder tab={activeTab} />}
+        </div>
+      {modalProps && pending && (
+        <ConfirmModal
+          open={true}
+          title={modalProps.title}
+          message={modalProps.message}
+          confirmLabel={modalProps.confirmLabel}
+          variant={modalProps.variant}
+          isLoading={mutationPending}
+          onConfirm={handleConfirm}
+          onCancel={() => !mutationPending && setPending(null)}
+        />
+      )}
+    </main>
+  );
+};
+
+// ─── Sub-komponentlar ─────────────────────────────────────────────────────
+
+function NeedsAttentionBanner({
+  items,
+  onGoToCourses,
+}: {
+  items: Array<{ type: string; courseId: string; courseTitle: string; feedback: string | null }>;
+  onGoToCourses: () => void;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div className="mb-6 p-4 bg-warning/10 border border-warning/30 rounded-md">
+      <div className="flex items-start gap-3">
+        <Icon name="ExclamationTriangleIcon" size={24} className="text-warning shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <h3 className="font-heading font-semibold text-foreground">
+            Diqqat talab qiladigan kurslar ({items.length})
+          </h3>
+          <div className="mt-2 space-y-2">
+            {items.slice(0, 3).map((it) => (
+              <div key={it.courseId} className="text-sm">
+                <p className="text-foreground">
+                  <strong>{it.courseTitle}</strong> —{' '}
+                  <span className="text-destructive">
+                    {it.type === 'rejected' ? 'Rad etilgan' : "O'zgartirish so'ralgan"}
+                  </span>
+                </p>
+                {it.feedback && (
+                  <p className="text-xs text-muted-foreground mt-1 pl-2 border-l-2 border-warning">
+                    Admin: {it.feedback}
+                  </p>
                 )}
               </div>
-            </div>
-          )}
-
-          {/* Tab: Courses */}
-          {activeTab === 'courses' && (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-heading font-semibold text-foreground">
-                  Barcha kurslar ({courses.length})
-                </h2>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={handleCreateCourse}
-                    className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-                  >
-                    + Yangi kurs
-                  </button>
-                </div>
-              </div>
-              {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="bg-card rounded-lg border border-border p-4 animate-pulse h-48" />
-                  ))}
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {courses.map(course => (
-                    <CourseCard
-                      key={course.id}
-                      course={{
-                        id: course.id,
-                        title: course.title,
-                        thumbnail: course.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
-                        thumbnailAlt: course.title,
-                        enrolledStudents: course.enrollmentCount,
-                        status: course.isPublished ? 'approved' : 'pending',
-                        revenue: 0,
-                        rating: Number(course.rating),
-                        totalRatings: course.reviewCount,
-                      }}
-                      onEdit={() => handleEditCourse(course.id)}
-                      onArchive={() => handleArchiveCourse(course.id)}
-                      onDelete={() => handleDeleteCourse(course.id)}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Tab: Analytics */}
-          {activeTab === 'analytics' && (
-            <AnalyticsPanel
-              revenueData={revenueData}
-              topCourses={topCourses}
-              studentEngagement={studentEngagement}
-            />
-          )}
-
-          {/* Tab: Earnings */}
-          {activeTab === 'earnings' && (
-            <EarningsPanel
-              currentBalance={0}
-              totalEarnings={Number(stats?.totalRevenueUzs ?? 0)}
-              pendingPayouts={0}
-              transactions={transactions.map(t => ({
-                id: t.id,
-                date: new Date(t.createdAt).toLocaleDateString('uz-UZ'),
-                amount: Number(t.amountUzs),
-                status: 'completed' as const,
-                courseName: t.courseTitle,
-              }))}
-              onWithdraw={handleWithdraw}
-            />
+            ))}
+          </div>
+          {items.length > 3 && (
+            <button onClick={onGoToCourses} className="mt-2 text-xs text-primary underline">
+              Yana {items.length - 3} ta — barchasini ko'rish
+            </button>
           )}
         </div>
-      </main>
+      </div>
+    </div>
+  );
+}
 
-      {/* Withdraw Modal */}
-      {showWithdrawModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
-          <div className="bg-card rounded-md shadow-warm-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-heading font-semibold text-foreground">
-                Pulni yechib olish
-              </h3>
-              <button
-                onClick={() => setShowWithdrawModal(false)}
-                className="p-2 rounded-md hover:bg-muted transition-smooth"
+function OverviewTab({
+  data,
+  isLoading,
+  onCreateCourse,
+}: {
+  data: ReturnType<typeof useTeacherDashboard>['data'];
+  isLoading: boolean;
+  onCreateCourse: () => void;
+}) {
+  const stats = data?.stats;
+  const topCourses = data?.topCourses ?? [];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricsCard
+          title="Umumiy daromad"
+          value={isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0')}
+          icon="CurrencyDollarIcon"
+          subtitle="Barcha kurslardan"
+        />
+        <MetricsCard
+          title="Faol kurslar"
+          value={isLoading ? '—' : String(stats?.publishedCourses ?? 0)}
+          icon="BookOpenIcon"
+          subtitle={`${stats?.draftCourses ?? 0} qoralama`}
+        />
+        <MetricsCard
+          title="Jami talabalar"
+          value={isLoading ? '—' : String(stats?.totalEnrollments ?? 0)}
+          icon="UserGroupIcon"
+          subtitle={`O'rtacha reyting: ${(stats?.avgRating ?? 0).toFixed(1)} ⭐`}
+        />
+        <MetricsCard
+          title="Moderatsiyada"
+          value={isLoading ? '—' : String(stats?.underReviewCourses ?? 0)}
+          icon="ClockIcon"
+          subtitle={`${stats?.rejectedCourses ?? 0} rad etilgan`}
+        />
+      </div>
+
+      <div className="bg-card rounded-md shadow-warm p-6">
+        <h3 className="text-xl font-heading font-semibold text-foreground mb-4">
+          Top kurslar (daromad bo'yicha)
+        </h3>
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse h-12 bg-muted rounded-md" />
+            ))}
+          </div>
+        ) : topCourses.length === 0 ? (
+          <div className="text-center py-8">
+            <Icon name="BookOpenIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground mb-3">Hozircha kurslar yo'q</p>
+            <button
+              onClick={onCreateCourse}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth text-sm font-medium"
+            >
+              Birinchi kursni yarating
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {topCourses.map((c, idx) => (
+              <div
+                key={c.id}
+                className="flex items-center justify-between p-3 rounded-md hover:bg-muted/40"
               >
-                <Icon name="XMarkIcon" size={24} />
-              </button>
-            </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Mavjud balans
-                </label>
-                <div className="px-4 py-3 bg-muted rounded-md">
-                  <p className="text-2xl font-heading font-bold text-foreground">
-                    {formatRevenue(stats?.totalRevenueUzs)}
-                  </p>
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="text-2xl font-heading font-bold text-muted-foreground w-8">
+                    #{idx + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-medium text-foreground truncate">{c.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {c.enrollmentCount} talaba · ⭐ {c.rating.toFixed(1)}
+                    </p>
+                  </div>
+                </div>
+                <span className="text-sm font-semibold text-success shrink-0">
+                  {formatUzs(c.revenueUzs)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="bg-card rounded-md shadow-warm p-6">
+        <h3 className="text-xl font-heading font-semibold text-foreground mb-4">
+          Oxirgi to'lovlar
+        </h3>
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse h-12 bg-muted rounded-md" />
+            ))}
+          </div>
+        ) : (data?.recentTransactions.length ?? 0) === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Hozircha to'lovlar yo'q</p>
+        ) : (
+          <div className="space-y-2">
+            {data?.recentTransactions.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center justify-between p-3 border border-border rounded-md"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground truncate">{t.studentName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{t.courseTitle}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-semibold text-success">{formatUzs(t.amountUzs)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(t.createdAt)}</p>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Yechib olish miqdori (so'm)
-                </label>
-                <input
-                  type="number"
-                  placeholder="0"
-                  className="w-full px-4 py-3 border border-border rounded-md text-foreground bg-card focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div className="p-4 bg-muted rounded-md">
-                <p className="text-sm text-muted-foreground">
-                  To'lov 3-5 ish kuni ichida sizning bank hisobingizga o'tkaziladi.
-                </p>
-              </div>
-              <button className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-medium transition-smooth hover:bg-primary/90">
-                Tasdiqlash
-              </button>
-            </div>
+            ))}
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CoursesTab({
+  courses,
+  isLoading,
+  onAction,
+  onCreate,
+  onEdit,
+}: {
+  courses: TeacherDashboardCourse[];
+  isLoading: boolean;
+  onAction: (a: PendingAction) => void;
+  onCreate: () => void;
+  onEdit: (id: string) => void;
+}) {
+  const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">{courses.length} ta kurs</p>
+        <button
+          onClick={onCreate}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth flex items-center gap-2 text-sm font-medium"
+        >
+          <Icon name="PlusIcon" size={18} />
+          Yangi kurs
+        </button>
+      </div>
+
+      {isLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="animate-pulse bg-card h-64 rounded-md" />
+          ))}
+        </div>
+      ) : courses.length === 0 ? (
+        <div className="bg-card rounded-md shadow-warm p-12 text-center">
+          <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-foreground mb-2">Hali kurslar yo'q</h3>
+          <p className="text-muted-foreground mb-6">Birinchi kursingizni yarating</p>
+          <button
+            onClick={onCreate}
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
+          >
+            Kurs yaratish
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {courses.map((course) => {
+            const badge = STATUS_BADGE[course.moderationStatus];
+            const menuOpen = openMenuFor === course.id;
+            return (
+              <div
+                key={course.id}
+                className="bg-card rounded-md shadow-warm overflow-hidden border border-border hover:shadow-warm-md transition-smooth"
+              >
+                <div className="relative h-32 bg-muted">
+                  {course.coverImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={course.coverImage}
+                      alt={course.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Icon name="BookOpenIcon" size={32} className="text-muted-foreground" />
+                    </div>
+                  )}
+                  <span
+                    className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
+                  >
+                    {badge.label}
+                  </span>
+                </div>
+                <div className="p-4">
+                  <h4 className="font-heading font-semibold text-foreground line-clamp-2 mb-2">
+                    {course.title}
+                  </h4>
+
+                  {course.adminFeedback && course.moderationStatus === 'rejected' && (
+                    <div className="mb-2 p-2 bg-destructive/10 rounded text-xs text-destructive border-l-2 border-destructive">
+                      <strong>Admin:</strong> {course.adminFeedback}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-3">
+                    <div>👥 {course.enrollmentCount} talaba</div>
+                    <div>⭐ {course.rating.toFixed(1)} ({course.reviewCount})</div>
+                    <div>📚 {course.topicCount} mavzu</div>
+                    <div>📅 {formatDate(course.createdAt)}</div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-3 border-t border-border">
+                    <span className="text-sm font-semibold text-success">
+                      {formatUzs(course.revenueUzs)}
+                    </span>
+                    <div className="relative">
+                      <button
+                        onClick={() => setOpenMenuFor(menuOpen ? null : course.id)}
+                        className="p-1.5 hover:bg-muted rounded transition-smooth"
+                        aria-label="Amallar"
+                      >
+                        <Icon name="EllipsisVerticalIcon" size={18} className="text-muted-foreground" />
+                      </button>
+                      {menuOpen && (
+                        <>
+                          <div className="fixed inset-0 z-10" onClick={() => setOpenMenuFor(null)} />
+                          <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-md shadow-warm-lg z-20 py-1">
+                            <MenuItem
+                              icon="ListBulletIcon"
+                              label="Mavzular"
+                              color="text-primary"
+                              onClick={() => {
+                                setOpenMenuFor(null);
+                                window.location.href = `/teacher-dashboard/courses/${course.id}`;
+                              }}
+                            />
+                            <MenuItem
+                              icon="PencilIcon"
+                              label="Tahrirlash"
+                              onClick={() => {
+                                setOpenMenuFor(null);
+                                onEdit(course.id);
+                              }}
+                            />
+                            <MenuItem
+                              icon="DocumentDuplicateIcon"
+                              label="Nusxalash"
+                              onClick={() => {
+                                setOpenMenuFor(null);
+                                onAction({ type: 'duplicate', course });
+                              }}
+                            />
+                            {course.isPublished ? (
+                              <MenuItem
+                                icon="ArchiveBoxIcon"
+                                label="Arxivlash"
+                                onClick={() => {
+                                  setOpenMenuFor(null);
+                                  onAction({ type: 'archive', course });
+                                }}
+                              />
+                            ) : (
+                              <MenuItem
+                                icon="PlayCircleIcon"
+                                label="Faollashtirish"
+                                color="text-success"
+                                onClick={() => {
+                                  setOpenMenuFor(null);
+                                  onAction({ type: 'unarchive', course });
+                                }}
+                              />
+                            )}
+                            <div className="border-t border-border my-1" />
+                            <MenuItem
+                              icon="TrashIcon"
+                              label="O'chirish"
+                              color="text-destructive"
+                              onClick={() => {
+                                setOpenMenuFor(null);
+                                onAction({ type: 'delete', course });
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
-};
+}
+
+function MenuItem({
+  icon,
+  label,
+  color = 'text-foreground',
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  color?: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-3 py-2 text-sm hover:bg-muted flex items-center gap-2 ${color}`}
+    >
+      <Icon name={icon} size={16} />
+      {label}
+    </button>
+  );
+}
+
+function EarningsTab({
+  data,
+  isLoading,
+}: {
+  data: ReturnType<typeof useTeacherDashboard>['data'];
+  isLoading: boolean;
+}) {
+  const stats = data?.stats;
+  const transactions = data?.recentTransactions ?? [];
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-card rounded-md shadow-warm p-6">
+          <p className="text-sm text-muted-foreground mb-1">Joriy balans</p>
+          <p className="text-3xl font-heading font-bold text-foreground">
+            {isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0')}
+          </p>
+        </div>
+        <div className="bg-card rounded-md shadow-warm p-6">
+          <p className="text-sm text-muted-foreground mb-1">Kutilayotgan to'lov</p>
+          <p className="text-3xl font-heading font-bold text-foreground">0 so'm</p>
+          <p className="text-xs text-muted-foreground mt-1">(Withdraw flow keyingi phase'da)</p>
+        </div>
+        <div className="bg-card rounded-md shadow-warm p-6 flex items-center justify-center">
+          <button
+            disabled
+            className="w-full px-6 py-3 bg-muted text-muted-foreground rounded-md cursor-not-allowed font-medium"
+          >
+            Pulni yechib olish (Tez orada)
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-card rounded-md shadow-warm p-6">
+        <h3 className="text-xl font-heading font-semibold text-foreground mb-4">
+          To'lov tarixi
+        </h3>
+        {isLoading ? (
+          <div className="space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse h-12 bg-muted rounded-md" />
+            ))}
+          </div>
+        ) : transactions.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-6">Hozircha to'lovlar yo'q</p>
+        ) : (
+          <div className="space-y-2">
+            {transactions.map((t) => (
+              <div
+                key={t.id}
+                className="flex items-center justify-between p-3 border border-border rounded-md"
+              >
+                <div className="min-w-0">
+                  <p className="font-medium text-foreground truncate">{t.studentName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{t.courseTitle}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-semibold text-success">{formatUzs(t.amountUzs)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(t.createdAt)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ComingSoonPlaceholder({ tab }: { tab: TeacherTabId }) {
+  return (
+    <div className="bg-card rounded-md shadow-warm p-12 text-center">
+      <Icon name="RocketLaunchIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
+      <h3 className="text-xl font-heading font-semibold text-foreground mb-2">Tez orada</h3>
+      <p className="text-muted-foreground">
+        Bu bo'lim ({tab}) keyingi iteratsiyalarda qo'shiladi.
+      </p>
+    </div>
+  );
+}
 
 export default TeacherDashboardInteractive;

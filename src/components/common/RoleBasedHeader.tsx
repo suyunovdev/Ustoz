@@ -58,9 +58,11 @@ const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
     { label: 'Sertifikatlar', path: '/certificates', icon: 'TrophyIcon' },
   ];
 
+  // Admin uchun header'da nav link'lar yo'q — admin paneli ichida tab'lar bor.
+  // Faqat logo + UserMenu ko'rinadi.
   const getNavItems = () => {
+    if (userRole === 'admin') return [];
     if (userRole === 'teacher') return teacherNavItems;
-    if (userRole === 'admin') return teacherNavItems; // Admin ham teacher nav ko'radi
     if (userRole === 'student') return studentNavItems;
     return publicNavItems;
   };
@@ -76,7 +78,18 @@ const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href={userRole === 'teacher' || userRole === 'admin' ? '/teacher-dashboard' : userRole === 'student' ? '/student-dashboard' : '/landing-page'} className="flex items-center space-x-2 transition-smooth hover:opacity-80">
+          <Link
+            href={
+              userRole === 'admin'
+                ? '/admin-dashboard'
+                : userRole === 'teacher'
+                ? '/teacher-dashboard'
+                : userRole === 'student'
+                ? '/student-dashboard'
+                : '/landing-page'
+            }
+            className="flex items-center space-x-2 transition-smooth hover:opacity-80"
+          >
             <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-md">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" className="text-primary-foreground" />

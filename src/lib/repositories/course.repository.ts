@@ -3,7 +3,9 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import type { Prisma } from '@/generated/prisma/client';
+import type { Prisma, ModerationStatus } from '@/generated/prisma/client';
+
+type PrismaLike = Prisma.TransactionClient | typeof prisma;
 
 const courseInclude = {
   categoryRel: { select: { id: true, name: true, slug: true } },
@@ -12,6 +14,16 @@ const courseInclude = {
 
 export type CourseWithCategoryAndTeacher = Prisma.CourseGetPayload<{
   include: typeof courseInclude;
+}>;
+
+const adminCourseInclude = {
+  categoryRel: { select: { id: true, name: true, slug: true } },
+  teacher: { select: { id: true, fullName: true, email: true, avatarUrl: true } },
+  _count: { select: { enrollments: true, topics: true, reviews: true } },
+} satisfies Prisma.CourseInclude;
+
+export type CourseWithAdminInfo = Prisma.CourseGetPayload<{
+  include: typeof adminCourseInclude;
 }>;
 
 export async function findPublishedByCategoriesExcluding(
@@ -122,4 +134,182 @@ export async function findSimilarByEnrollment(
     ORDER BY overlap DESC
     LIMIT ${limit}
   `;
+}
+
+// ─── Admin queries ─────────────────────────────────────────────────────────
+
+export interface AdminCourseFilters {
+  status?: ModerationStatus | 'all';
+  search?: string;
+  featuredOnly?: boolean;
+  suspendedOnly?: boolean;
+  limit?: number;
+  cursor?: string | null;
+}
+
+export async function findAllForAdmin(
+  filters: AdminCourseFilters = {},
+): Promise<CourseWithAdminInfo[]> {
+  const {
+    status,
+    search,
+    featuredOnly,
+    suspendedOnly,
+    limit = 20,
+    cursor,
+  } = filters;
+
+  const where: Prisma.CourseWhereInput = {
+    ...(status && status !== 'all' ? { moderationStatus: status } : {}),
+    ...(search
+      ? {
+          OR: [
+            { title: { contains: search, mode: 'insensitive' } },
+            { description: { contains: search, mode: 'insensitive' } },
+          ],
+        }
+      : {}),
+    ...(featuredOnly ? { isFeatured: true } : {}),
+    ...(suspendedOnly ? { suspendedAt: { not: null } } : {}),
+  };
+
+  return prisma.course.findMany({
+    where,
+    include: adminCourseInclude,
+    orderBy: { createdAt: 'desc' },
+    take: limit + 1, // +1 — hasMore aniqlash
+    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+  });
+}
+
+export async function countForAdmin(
+  filters: Pick<AdminCourseFilters, 'status' | 'search' | 'featuredOnly' | 'suspendedOnly'> = {},
+): Promise<number> {
+  return prisma.course.count({
+    where: {
+      ...(filters.status && filters.status !== 'all'
+        ? { moderationStatus: filters.status }
+        : {}),
+      ...(filters.search
+        ? {
+            OR: [
+              { title: { contains: filters.search, mode: 'insensitive' } },
+              { description: { contains: filters.search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+      ...(filters.featuredOnly ? { isFeatured: true } : {}),
+      ...(filters.suspendedOnly ? { suspendedAt: { not: null } } : {}),
+    },
+  });
+}
+
+export async function statusCountsForAdmin(): Promise<{
+  total: number;
+  draft: number;
+  submitted: number;
+  under_review: number;
+  approved: number;
+  rejected: number;
+  revision_requested: number;
+  featured: number;
+  suspended: number;
+}> {
+  const grouped = await prisma.course.groupBy({
+    by: ['moderationStatus'],
+    _count: { _all: true },
+  });
+
+  const counts = {
+    total: 0,
+    draft: 0,
+    submitted: 0,
+    under_review: 0,
+    approved: 0,
+    rejected: 0,
+    revision_requested: 0,
+    featured: 0,
+    suspended: 0,
+  };
+
+  for (const row of grouped) {
+    counts[row.moderationStatus] = row._count._all;
+    counts.total += row._count._all;
+  }
+
+  const [featured, suspended] = await Promise.all([
+    prisma.course.count({ where: { isFeatured: true } }),
+    prisma.course.count({ where: { suspendedAt: { not: null } } }),
+  ]);
+  counts.featured = featured;
+  counts.suspended = suspended;
+  return counts;
+}
+
+export async function findByIdForAdmin(
+  courseId: string,
+): Promise<CourseWithAdminInfo | null> {
+  return prisma.course.findUnique({
+    where: { id: courseId },
+    include: adminCourseInclude,
+  });
+}
+
+export async function updateModerationStatus(
+  courseId: string,
+  data: {
+    status: ModerationStatus;
+    feedback?: string | null;
+    reviewedById: string;
+    publishOnApproval?: boolean;
+  },
+  tx?: Prisma.TransactionClient,
+): Promise<CourseWithAdminInfo> {
+  const client: PrismaLike = tx ?? prisma;
+  const now = new Date();
+  return client.course.update({
+    where: { id: courseId },
+    data: {
+      moderationStatus: data.status,
+      adminFeedback: data.feedback ?? null,
+      reviewedById: data.reviewedById,
+      reviewedAt: now,
+      ...(data.status === 'approved' && data.publishOnApproval !== false
+        ? { isPublished: true, publishedAt: now }
+        : {}),
+      ...(data.status === 'rejected' ? { isPublished: false } : {}),
+    },
+    include: adminCourseInclude,
+  });
+}
+
+export async function setFeatured(
+  courseId: string,
+  isFeatured: boolean,
+  tx?: Prisma.TransactionClient,
+): Promise<CourseWithAdminInfo> {
+  const client: PrismaLike = tx ?? prisma;
+  return client.course.update({
+    where: { id: courseId },
+    data: { isFeatured },
+    include: adminCourseInclude,
+  });
+}
+
+export async function setSuspended(
+  courseId: string,
+  data: { suspendedAt: Date | null; reason?: string | null },
+  tx?: Prisma.TransactionClient,
+): Promise<CourseWithAdminInfo> {
+  const client: PrismaLike = tx ?? prisma;
+  return client.course.update({
+    where: { id: courseId },
+    data: {
+      suspendedAt: data.suspendedAt,
+      suspendReason: data.reason ?? null,
+      // Suspend qilinganda marketplace'dan yashirinadi
+      ...(data.suspendedAt !== null ? { isPublished: false } : {}),
+    },
+    include: adminCourseInclude,
+  });
 }

@@ -11,6 +11,9 @@ const PUBLIC_ROUTES = [
   '/course-marketplace',
   '/certificate',
   '/verify',
+  '/teachers',
+  '/help',
+  '/r',
   '/',
 ];
 

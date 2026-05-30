@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { signToken, createSessionCookie } from '@/lib/auth';
+import { attributeOnSignup } from '@/lib/services/referral.service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -53,6 +54,16 @@ export async function POST(req: NextRequest) {
       },
       include: { profile: true },
     });
+
+    // Referral attribution (agar cookie'da ref_code bo'lsa)
+    const refCode = req.cookies.get('ref_code')?.value;
+    if (refCode) {
+      try {
+        await attributeOnSignup(user.id, refCode);
+      } catch {
+        // silent — referral xato signup'ni buzmasin
+      }
+    }
 
     // Session token yaratish
     const token = await signToken({

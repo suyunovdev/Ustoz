@@ -1,170 +1,173 @@
-// @ts-nocheck
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import AdminSidebar, { type AdminTabId } from './AdminSidebar';
 
-// Dynamic imports to reduce initial bundle size
-const PlatformMetrics = dynamic(() => import('./PlatformMetrics'), {
-  loading: () => <div className="animate-pulse bg-card rounded-md h-32" />
-});
-const UserManagementPanel = dynamic(() => import('./UserManagementPanel'), {
-  loading: () => <div className="animate-pulse bg-card rounded-md h-96" />
-});
-const CourseOversightPanel = dynamic(() => import('./CourseOversightPanel'), {
-  loading: () => <div className="animate-pulse bg-card rounded-md h-96" />
-});
-const ModerationQueuePanel = dynamic(() => import('./ModerationQueuePanel'), {
-  loading: () => <div className="animate-pulse bg-card rounded-md h-96" />
-});
-const AnalyticsCharts = dynamic(() => import('./AnalyticsCharts'), {
-  loading: () => <div className="animate-pulse bg-card rounded-md h-96" />
-});
-const SystemHealthPanel = dynamic(() => import('./SystemHealthPanel'), {
-  loading: () => <div className="animate-pulse bg-card rounded-md h-96" />
-});
+// Yengil panellar — to'g'ridan-to'g'ri import (dynamic chunk overhead'isiz).
+// Faqat ko'p og'ir kutubxonalar (Recharts) — AnalyticsCharts bo'lsa, uni
+// dynamic qilishimiz mumkin. Hozircha bularning hammasi <10KB.
+import PlatformMetrics from './PlatformMetrics';
+import UserManagementPanel from './UserManagementPanel';
+import TeacherApplicationsPanel from './TeacherApplicationsPanel';
+import CourseOversightPanel from './CourseOversightPanel';
+import ReviewsPanel from './ReviewsPanel';
+import PaymentsPanel from './PaymentsPanel';
+import CampaignsPanel from './CampaignsPanel';
+import ModerationQueuePanel from './ModerationQueuePanel';
+import SupportTicketsPanel from './SupportTicketsPanel';
+import AuditLogPanel from './AuditLogPanel';
+import SystemHealthPanel from './SystemHealthPanel';
+import AnalyticsCharts from './AnalyticsCharts';
 
-interface PlatformStats {
-  totalUsers: number;
-  activeCourses: number;
-  totalRevenue: number;
-  systemHealth: number;
-  userGrowth: number;
-  courseGrowth: number;
-  revenueGrowth: number;
-}
+const VALID_TABS: ReadonlyArray<AdminTabId> = [
+  'overview',
+  'users',
+  'teacher_applications',
+  'courses',
+  'reviews',
+  'payments',
+  'campaigns',
+  'moderation',
+  'tickets',
+  'audit_log',
+  'analytics',
+  'system',
+];
+
+const TAB_TITLES: Record<AdminTabId, { title: string; subtitle: string }> = {
+  overview: {
+    title: "Umumiy ko'rinish",
+    subtitle: 'Platformaning umumiy koʻrsatkichlari',
+  },
+  users: {
+    title: 'Foydalanuvchilar',
+    subtitle: 'Foydalanuvchilarni boshqarish va rollar',
+  },
+  teacher_applications: {
+    title: "O'qituvchi arizalari",
+    subtitle: "Yangi o'qituvchilarni ko'rib chiqish va tasdiqlash",
+  },
+  courses: {
+    title: 'Kurslar',
+    subtitle: 'Barcha kurslarni nazorat qilish',
+  },
+  reviews: {
+    title: 'Sharhlar',
+    subtitle: 'Talabalar sharhlari va spam moderatsiyasi',
+  },
+  payments: {
+    title: "To'lovlar",
+    subtitle: "Tranzaksiyalar va daromad boshqaruvi",
+  },
+  campaigns: {
+    title: "Email yuborish",
+    subtitle: "Broadcast email kampaniyalari",
+  },
+  moderation: {
+    title: 'Moderatsiya',
+    subtitle: 'Kontentni tasdiqlash va rad etish',
+  },
+  tickets: {
+    title: "Yordam so'rovlari",
+    subtitle: 'Foydalanuvchi support ticket\'lari',
+  },
+  audit_log: {
+    title: 'Audit log',
+    subtitle: 'Admin amallarining to\'liq tarixi (kim, qachon, nima qildi)',
+  },
+  analytics: {
+    title: 'Tahlil',
+    subtitle: 'Platforma tahlili va statistikasi',
+  },
+  system: {
+    title: 'Tizim holati',
+    subtitle: 'Server va xizmatlar monitoringi',
+  },
+};
 
 const AdminDashboardInteractive = () => {
   const router = useRouter();
-  const [isHydrated, setIsHydrated] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [stats, setStats] = useState<PlatformStats>({
-    totalUsers: 0,
-    activeCourses: 0,
-    totalRevenue: 0,
-    systemHealth: 100,
-    userGrowth: 0,
-    courseGrowth: 0,
-    revenueGrowth: 0
-  });
-  const [isLoading, setIsLoading] = useState(true);
+  const searchParams = useSearchParams();
+  const tabFromUrl = searchParams?.get('tab');
+  const initialTab: AdminTabId = VALID_TABS.includes(tabFromUrl as AdminTabId)
+    ? (tabFromUrl as AdminTabId)
+    : 'overview';
+
+  const [activeTab, setActiveTab] = useState<AdminTabId>(initialTab);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
-    setIsHydrated(true);
-    loadPlatformData();
-  }, []);
-
-  const loadPlatformData = async () => {
-    setIsLoading(true);
-    try {
-      // Check auth first
-      const meRes = await fetch('/api/auth/me', { credentials: 'include' });
-      if (meRes.status === 401) {
-        router.push('/login');
-        return;
-      }
-
-      // Load active courses count from the public courses API
-      let activeCourses = 0;
-      try {
-        const coursesRes = await fetch('/api/courses?limit=50', { credentials: 'include' });
-        if (coursesRes.ok) {
-          const data = await coursesRes.json();
-          activeCourses = data?.pagination?.total ?? (data?.courses?.length || 0);
-        }
-      } catch (err) {
-        console.warn('Failed to load courses count:', err);
-      }
-
-      // TODO: add /api/admin/stats endpoint for totalUsers / revenue / system metrics
-      setStats({
-        totalUsers: 0,
-        activeCourses,
-        totalRevenue: 0,
-        systemHealth: 98,
-        userGrowth: 0,
-        courseGrowth: 0,
-        revenueGrowth: 0
-      });
-    } catch (error) {
-      console.error('Error loading platform data:', error);
-    } finally {
-      setIsLoading(false);
+    if (tabFromUrl && VALID_TABS.includes(tabFromUrl as AdminTabId)) {
+      setActiveTab(tabFromUrl as AdminTabId);
+    } else if (!tabFromUrl) {
+      setActiveTab('overview');
     }
+  }, [tabFromUrl]);
+
+  const handleTabChange = (tabId: AdminTabId) => {
+    setActiveTab(tabId);
+    const url =
+      tabId === 'overview' ? '/admin-dashboard' : `/admin-dashboard?tab=${tabId}`;
+    router.replace(url, { scroll: false });
   };
 
-  const tabs = [
-    { id: 'overview', label: 'Umumiy ko\'rinish', icon: 'HomeIcon' },
-    { id: 'users', label: 'Foydalanuvchilar', icon: 'UserGroupIcon' },
-    { id: 'courses', label: 'Kurslar', icon: 'BookOpenIcon' },
-    { id: 'moderation', label: 'Moderatsiya', icon: 'ShieldCheckIcon' },
-    { id: 'analytics', label: 'Tahlil', icon: 'ChartBarIcon' },
-    { id: 'system', label: 'Tizim', icon: 'CogIcon' }
-  ];
-
-  if (!isHydrated) {
-    return null;
-  }
+  const headerInfo = TAB_TITLES[activeTab];
 
   return (
     <div className="min-h-screen bg-background">
-      <RoleBasedHeader userRole="teacher" currentPath="/admin-dashboard" />
+      <AdminSidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        mobileOpen={mobileNavOpen}
+        onMobileClose={() => setMobileNavOpen(false)}
+      />
 
-      <main className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+      {/* Mobile top bar */}
+      <div className="md:hidden sticky top-0 z-30 bg-card border-b border-border flex items-center justify-between px-4 h-14">
+        <button
+          onClick={() => setMobileNavOpen(true)}
+          className="p-2 -ml-2 rounded-md hover:bg-muted transition-smooth"
+          aria-label="Menyu"
+        >
+          <Icon name="Bars3Icon" size={24} />
+        </button>
+        <p className="font-heading font-semibold text-foreground">{headerInfo.title}</p>
+        <div className="w-9" />
+      </div>
+
+      <main className="md:ml-60 p-4 sm:p-6 lg:p-8">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
-              Admin paneli
+          <div className="mb-6 hidden md:block">
+            <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground mb-1">
+              {headerInfo.title}
             </h1>
-            <p className="text-muted-foreground">
-              Platformani boshqaring va tizim holatini kuzating
-            </p>
+            <p className="text-muted-foreground text-sm">{headerInfo.subtitle}</p>
           </div>
 
-          {/* Tab Navigation */}
-          <div className="bg-card rounded-md shadow-warm p-2 mb-6">
-            <div className="flex items-center space-x-2 overflow-x-auto">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={`tab-${tab.id}`}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center space-x-2 px-4 py-3 rounded-md transition-smooth whitespace-nowrap ${
-                      isActive
-                        ? 'bg-primary text-primary-foreground shadow-warm'
-                        : 'text-foreground hover:bg-muted hover:-translate-y-0.5'
-                    }`}
-                  >
-                    <Icon name={tab.icon as any} size={20} />
-                    <span className="font-medium">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Content */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              <PlatformMetrics stats={stats} isLoading={isLoading} />
+              <PlatformMetrics />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <ModerationQueuePanel />
-                <SystemHealthPanel systemHealth={stats.systemHealth} />
+                <SystemHealthPanel />
               </div>
               <AnalyticsCharts />
             </div>
           )}
 
           {activeTab === 'users' && <UserManagementPanel />}
+          {activeTab === 'teacher_applications' && <TeacherApplicationsPanel />}
           {activeTab === 'courses' && <CourseOversightPanel />}
+          {activeTab === 'reviews' && <ReviewsPanel />}
+          {activeTab === 'payments' && <PaymentsPanel />}
+          {activeTab === 'campaigns' && <CampaignsPanel />}
           {activeTab === 'moderation' && <ModerationQueuePanel expanded />}
+          {activeTab === 'tickets' && <SupportTicketsPanel />}
+          {activeTab === 'audit_log' && <AuditLogPanel />}
           {activeTab === 'analytics' && <AnalyticsCharts expanded />}
-          {activeTab === 'system' && <SystemHealthPanel systemHealth={stats.systemHealth} expanded />}
+          {activeTab === 'system' && <SystemHealthPanel expanded />}
         </div>
       </main>
     </div>

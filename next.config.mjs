@@ -17,6 +17,19 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
 
+  // Tree-shake katta paket'lar — har bir icon/component'ni alohida import qiladi
+  experimental: {
+    optimizePackageImports: [
+      '@heroicons/react',
+      '@tanstack/react-query',
+      'recharts',
+    ],
+  },
+
+  // Prisma client'ni server bundle'ga qo'shmaslik — node_modules'dan to'g'ridan-to'g'ri
+  // Bu generated TS graph'ni RSC bundle'iga kiritmaydi.
+  serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg'],
+
   images: {
     remotePatterns: [
       {

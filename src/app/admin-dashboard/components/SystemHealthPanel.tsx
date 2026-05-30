@@ -1,28 +1,47 @@
-// @ts-nocheck
 'use client';
 
-import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 
 interface SystemHealthPanelProps {
-  systemHealth: number;
+  systemHealth?: number;
+  /** Future: expanded view (per-tab vs overview). Hozircha ishlatilmaydi. */
   expanded?: boolean;
 }
 
-const SystemHealthPanel = ({ systemHealth, expanded = false }: SystemHealthPanelPanelProps) => {
-  const [healthMetrics, setHealthMetrics] = useState({
-    serverStatus: 'online',
-    databasePerformance: 95,
-    apiResponseTime: 145,
-    storageUsage: 68,
-    activeConnections: 234,
-    errorRate: 0.2
-  });
+interface HealthMetrics {
+  serverStatus: 'online' | 'offline' | 'degraded';
+  databasePerformance: number;
+  apiResponseTime: number;
+  storageUsage: number;
+  activeConnections: number;
+  errorRate: number;
+}
 
-  const [alerts, setAlerts] = useState([
-    { id: '1', type: 'info', message: 'Tizim yangilanishi mavjud', time: '10 daqiqa oldin' },
-    { id: '2', type: 'success', message: 'Backup muvaffaqiyatli yakunlandi', time: '2 soat oldin' }
-  ]);
+interface Alert {
+  id: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  message: string;
+  time: string;
+}
+
+// TODO: replace with /api/admin/health real data (Phase 4)
+const MOCK_METRICS: HealthMetrics = {
+  serverStatus: 'online',
+  databasePerformance: 95,
+  apiResponseTime: 145,
+  storageUsage: 68,
+  activeConnections: 234,
+  errorRate: 0.2,
+};
+
+const MOCK_ALERTS: Alert[] = [
+  { id: '1', type: 'info', message: 'Tizim yangilanishi mavjud', time: '10 daqiqa oldin' },
+  { id: '2', type: 'success', message: 'Backup muvaffaqiyatli yakunlandi', time: '2 soat oldin' },
+];
+
+const SystemHealthPanel = ({ systemHealth = 98 }: SystemHealthPanelProps) => {
+  const healthMetrics = MOCK_METRICS;
+  const alerts = MOCK_ALERTS;
 
   const getHealthColor = (value: number) => {
     if (value >= 95) return 'text-success';
