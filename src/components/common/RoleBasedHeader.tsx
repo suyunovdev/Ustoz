@@ -1,7 +1,7 @@
 // @ts-nocheck
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
@@ -14,7 +14,17 @@ interface RoleBasedHeaderProps {
   currentPath?: string;
 }
 
-const RoleBasedHeader = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
+// Next.js 15: useSearchParams() Suspense boundary ichida bo'lishi kerak
+// Wrapper sifatida — sahifalar SSG bo'lishi mumkin
+const RoleBasedHeader = (props: RoleBasedHeaderProps) => {
+  return (
+    <Suspense fallback={null}>
+      <RoleBasedHeaderInner {...props} />
+    </Suspense>
+  );
+};
+
+const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   const livePathname = usePathname();
   const searchParams = useSearchParams();
   const currentTab = searchParams?.get('tab');
