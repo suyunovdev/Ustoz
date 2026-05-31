@@ -114,7 +114,9 @@ const ContentUploadManager = ({ materialId, onFilesChange, files }: ContentUploa
     if (file.url.startsWith('blob:')) {
       try {
         URL.revokeObjectURL(file.url);
-      } catch {}
+      } catch {
+        // blob URL revoke xatosi — ignore
+      }
     }
     onFilesChange(files.filter((f) => f.id !== file.id));
   };

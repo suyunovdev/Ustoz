@@ -24,8 +24,12 @@ export async function GET(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code: normalized }),
-    }).catch(() => {});
-  } catch {}
+    }).catch(() => {
+      // silent fetch error
+    });
+  } catch {
+    // silent — track-click xato redirect'ni buzmasin
+  }
 
   // Redirect with cookie
   const baseUrl = new URL(req.url);

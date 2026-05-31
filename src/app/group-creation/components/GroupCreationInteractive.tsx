@@ -153,7 +153,9 @@ const GroupCreationInteractive = () => {
     try {
       const stored = localStorage.getItem('ustoz_groups');
       if (stored) setSavedGroups(JSON.parse(stored));
-    } catch {}
+    } catch {
+      // localStorage parse xatosi — ignore
+    }
     setLoadingGroups(false);
   };
 

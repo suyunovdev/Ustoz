@@ -75,7 +75,9 @@ export async function POST(req: NextRequest) {
       if (refCode) {
         try {
           await attributeOnSignup(user.id, refCode);
-        } catch {}
+        } catch {
+          // silent — referral xato signup'ni buzmasin
+        }
       }
 
       const token = await signToken({ sub: user.id, email: user.email, role: user.role });
