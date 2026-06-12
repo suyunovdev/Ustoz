@@ -24,21 +24,42 @@ export async function POST(
     );
   }
 
-  // Allaqachon enrolled ekanini tekshirish
-  const existing = await prisma.enrollment.findFirst({
-    where: { studentId: session.sub, courseId },
-  });
-  if (existing) return jsonResponse({ message: 'Allaqachon yozilgansiz' });
+  // Enrollment yaratish + counter inkrementi — atomik.
+  // Refund'dan keyin qayta enrollment qilingan holatda counter ikki marta oshmaydi.
+  try {
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.enrollment.findUnique({
+        where: { studentId_courseId: { studentId: session.sub, courseId } },
+        select: { id: true, isActive: true },
+      });
 
-  const enrollment = await prisma.enrollment.create({
-    data: { studentId: session.sub, courseId },
-  });
+      // Allaqachon faol enrollment bor — hech narsa qilmaymiz
+      if (existing?.isActive) {
+        return { enrollment: existing, alreadyEnrolled: true as const };
+      }
 
-  // enrollmentCount yangilash
-  await prisma.course.update({
-    where: { id: courseId },
-    data: { enrollmentCount: { increment: 1 } },
-  });
+      // Yangi yoki noaktiv (refund'dan keyin) — upsert
+      const enrollment = await tx.enrollment.upsert({
+        where: { studentId_courseId: { studentId: session.sub, courseId } },
+        create: { studentId: session.sub, courseId, isActive: true },
+        update: { isActive: true },
+      });
 
-  return jsonResponse({ enrollment }, { status: 201 });
+      // Faqat yangi yoki reaktivatsiya holatida counter oshadi
+      await tx.course.update({
+        where: { id: courseId },
+        data: { enrollmentCount: { increment: 1 } },
+      });
+
+      return { enrollment, alreadyEnrolled: false as const };
+    });
+
+    if (result.alreadyEnrolled) {
+      return jsonResponse({ message: 'Allaqachon yozilgansiz', enrollment: result.enrollment });
+    }
+    return jsonResponse({ enrollment: result.enrollment }, { status: 201 });
+  } catch (err) {
+    console.error('[POST /api/courses/[id]/enroll]', err);
+    return jsonResponse({ error: 'Yozilishda xato yuz berdi' }, { status: 500 });
+  }
 }

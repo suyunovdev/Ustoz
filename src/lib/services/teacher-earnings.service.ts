@@ -10,6 +10,7 @@
  *   - Bank/card ma'lumotlari to'liq bo'lishi shart
  */
 
+import { prisma } from '@/lib/prisma';
 import {
   earningsRepo,
   type WithdrawalRow,
@@ -155,37 +156,55 @@ export async function requestWithdrawal(
       throw new ValidationError("Karta raqami 16 raqamdan iborat bo'lishi kerak");
     }
   }
-  if (!input.recipientName?.trim()) {
+  const recipientName = input.recipientName?.trim();
+  if (!recipientName) {
     throw new ValidationError("Qabul qiluvchi ism-familiyasi majburiy");
   }
-
-  // Balance check
-  const balance = await earningsRepo.getBalance(teacherId);
-  if (amount > balance.availableUzs) {
-    throw new InsufficientBalanceError();
-  }
-
-  // Bitta pending bor-yo'qligi
-  const existing = await earningsRepo.listTeacherWithdrawals(teacherId, {
-    status: 'pending',
-    limit: 1,
-  });
-  if (existing.length > 0) throw new PendingWithdrawalExistsError();
 
   // Card number mask (faqat oxirgi 4 raqam saqlanadi)
   const cardMasked = input.cardNumber
     ? '****' + input.cardNumber.replace(/\D/g, '').slice(-4)
     : null;
 
-  const withdrawal = await earningsRepo.createWithdrawal({
-    teacherId,
-    amountUzs: amount,
-    method: input.method,
-    bankName: input.bankName?.trim() ?? null,
-    bankAccountNumber: input.bankAccountNumber?.trim() ?? null,
-    cardNumber: cardMasked,
-    recipientName: input.recipientName.trim(),
-    note: input.note?.trim() ?? null,
+  // Race condition'dan himoyalanish:
+  // Teacher profile qatorini FOR UPDATE bilan qulflab,
+  // pending tekshiruvi + create bitta transaction ichida bajariladi.
+  // Bu bir vaqtning o'zida ikkita pending withdrawal yaratilishini imkonsiz qiladi.
+  const withdrawal = await prisma.$transaction(async (tx) => {
+    // 1. Teacher profile row'ni qulflash
+    await tx.$queryRaw`
+      SELECT id FROM user_profiles
+      WHERE id = ${teacherId}::uuid
+      FOR UPDATE
+    `;
+
+    // 2. Balance qulflangan tx ichida hisoblanadi (refundlar bilan birga)
+    const balance = await earningsRepo.getBalance(teacherId);
+    if (amount > balance.availableUzs) {
+      throw new InsufficientBalanceError();
+    }
+
+    // 3. Pending withdrawal mavjudligi (qulf ostida)
+    const pending = await tx.teacherWithdrawal.findFirst({
+      where: { teacherId, status: 'pending' },
+      select: { id: true },
+    });
+    if (pending) throw new PendingWithdrawalExistsError();
+
+    // 4. Yangi withdrawal
+    return tx.teacherWithdrawal.create({
+      data: {
+        teacherId,
+        amountUzs: amount,
+        method: input.method,
+        bankName: input.bankName?.trim() ?? null,
+        bankAccountNumber: input.bankAccountNumber?.trim() ?? null,
+        cardNumber: cardMasked,
+        recipientName,
+        note: input.note?.trim() ?? null,
+        status: 'pending',
+      },
+    });
   });
 
   return serializeWithdrawal(withdrawal);

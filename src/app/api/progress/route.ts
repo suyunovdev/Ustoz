@@ -3,6 +3,7 @@ import { getSessionFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 // GET /api/progress?courseId=xxx
+// Faqat o'qib olish — studentId har doim session.sub'dan olinadi.
 export async function GET(req: NextRequest) {
   const session = await getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 });
@@ -10,8 +11,9 @@ export async function GET(req: NextRequest) {
   const courseId = req.nextUrl.searchParams.get('courseId');
   if (!courseId) return NextResponse.json({ error: 'courseId talab qilinadi' }, { status: 400 });
 
-  const enrollment = await prisma.enrollment.findFirst({
-    where: { studentId: session.sub, courseId },
+  // Unique kompozit kalit orqali izlash — boshqa student'ning yozuvini olish imkonsiz.
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { studentId_courseId: { studentId: session.sub, courseId } },
   });
 
   if (!enrollment) return NextResponse.json({ error: 'Kurs topilmadi' }, { status: 404 });
@@ -24,31 +26,22 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// PATCH /api/progress
-export async function PATCH(req: NextRequest) {
-  const session = await getSessionFromRequest(req);
-  if (!session) return NextResponse.json({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 });
-
-  const { courseId, progress } = await req.json();
-  if (!courseId || progress === undefined) {
-    return NextResponse.json({ error: 'courseId va progress talab qilinadi' }, { status: 400 });
-  }
-
-  const progressNum = Math.min(100, Math.max(0, Number(progress)));
-  const enrollment = await prisma.enrollment.findFirst({ where: { studentId: session.sub, courseId } });
-  if (!enrollment) return NextResponse.json({ error: 'Enrollment topilmadi' }, { status: 404 });
-
-  if (progressNum <= enrollment.progress) {
-    return NextResponse.json({ progress: enrollment.progress });
-  }
-
-  const updated = await prisma.enrollment.update({
-    where: { id: enrollment.id },
-    data: {
-      progress: progressNum,
-      completedAt: progressNum === 100 ? new Date() : enrollment.completedAt,
+// PATCH /api/progress — OLIB TASHLANGAN (xavfsizlik sababi).
+//
+// Avval client to'g'ridan-to'g'ri progress qiymatini yuborishi mumkin edi —
+// bu student'ga topic tugatmasdan 100% qo'yib, sertifikat olish imkonini berardi.
+//
+// Endi progress yagona joydan yangilanadi:
+//   - POST /api/topics/[id]/complete  — topic tamomlash
+//   - POST /api/tests/[id]/submit     — test passlash (birinchi marta +10%)
+// Source of truth: topic_completions jadvali.
+export async function PATCH() {
+  return NextResponse.json(
+    {
+      error:
+        "Bu endpoint olib tashlangan. Progress'ni topic_completions yoki test submit orqali yangilang.",
+      code: 'ENDPOINT_REMOVED',
     },
-  });
-
-  return NextResponse.json({ progress: updated.progress, completedAt: updated.completedAt });
+    { status: 410 },
+  );
 }
