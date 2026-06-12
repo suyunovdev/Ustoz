@@ -1,0 +1,90 @@
+{
+  "common": {
+    "loading": "Yuklanmoqda...",
+    "error": "Xatolik yuz berdi",
+    "save": "Saqlash",
+    "cancel": "Bekor qilish",
+    "delete": "O'chirish",
+    "edit": "Tahrirlash",
+    "search": "Qidirish",
+    "back": "Orqaga",
+    "next": "Keyingisi",
+    "previous": "Oldingisi",
+    "submit": "Yuborish",
+    "close": "Yopish",
+    "confirm": "Tasdiqlash",
+    "yes": "Ha",
+    "no": "Yo'q",
+    "all": "Hammasi",
+    "none": "Hech biri",
+    "noData": "Ma'lumot yo'q"
+  },
+  "auth": {
+    "login": "Kirish",
+    "logout": "Chiqish",
+    "register": "Ro'yxatdan o'tish",
+    "email": "Elektron pochta",
+    "password": "Parol",
+    "forgotPassword": "Parolni unutdingizmi?",
+    "resetPassword": "Parolni tiklash",
+    "fullName": "To'liq ism",
+    "loginSuccess": "Muvaffaqiyatli kirdingiz",
+    "logoutSuccess": "Tizimdan chiqdingiz",
+    "invalidCredentials": "Email yoki parol noto'g'ri"
+  },
+  "nav": {
+    "home": "Bosh sahifa",
+    "courses": "Kurslar",
+    "dashboard": "Dashboard",
+    "profile": "Profil",
+    "messages": "Xabarlar",
+    "notifications": "Bildirishnomalar",
+    "settings": "Sozlamalar",
+    "help": "Yordam",
+    "about": "Haqida"
+  },
+  "courses": {
+    "marketplace": "Kurslar bozori",
+    "myCourses": "Mening kurslarim",
+    "createCourse": "Kurs yaratish",
+    "courseDetails": "Kurs tafsilotlari",
+    "enroll": "Yozilish",
+    "enrolled": "Yozilgansiz",
+    "price": "Narx",
+    "free": "Bepul",
+    "rating": "Baho",
+    "students": "O'quvchilar",
+    "lessons": "Darslar",
+    "duration": "Davomiyligi",
+    "certificate": "Sertifikat",
+    "progress": "Jarayon",
+    "completed": "Tugatildi",
+    "continue": "Davom ettirish"
+  },
+  "dashboard": {
+    "welcome": "Xush kelibsiz",
+    "totalCourses": "Jami kurslar",
+    "activeStudents": "Faol o'quvchilar",
+    "certificates": "Sertifikatlar",
+    "earnings": "Daromad",
+    "recentActivity": "So'nggi faollik",
+    "streak": "Ketma-ketlik",
+    "recommendations": "Tavsiyalar"
+  },
+  "payment": {
+    "paymentMethod": "To'lov usuli",
+    "processing": "To'lov jarayonda...",
+    "success": "To'lov muvaffaqiyatli!",
+    "failed": "To'lov muvaffaqiyatsiz",
+    "cancelled": "To'lov bekor qilindi",
+    "history": "To'lov tarixi",
+    "amount": "Summa"
+  },
+  "admin": {
+    "dashboard": "Admin panel",
+    "users": "Foydalanuvchilar",
+    "moderation": "Moderatsiya",
+    "systemHealth": "Tizim holati",
+    "auditLog": "Audit jurnal"
+  }
+}

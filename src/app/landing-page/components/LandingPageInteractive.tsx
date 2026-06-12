@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -41,7 +40,7 @@ const LandingPageInteractive = () => {
           const { courses, pagination } = await res.json();
 
           setPopularCourses(
-            (courses || []).slice(0, 3).map((c: any) => ({
+            (courses || []).slice(0, 3).map((c: Record<string, string | number>) => ({
               id: c.id,
               title: c.title,
               instructor: c.teacherName || 'Ustoz',
@@ -52,14 +51,21 @@ const LandingPageInteractive = () => {
             }))
           );
 
-          // Platform stats: only totalCourses comes from the API (via pagination).
-          // TODO: add /api/stats endpoint for live user counts; fallback to static defaults.
-          setStats({
-            totalCourses: pagination?.total || 156,
-            activeStudents: 2840,
-            successfulTeachers: 89,
-            certificatesAwarded: 1250,
-          });
+          // Platform stats from dedicated endpoint
+          try {
+            const statsRes = await fetch('/api/stats');
+            if (statsRes.ok) {
+              const statsData = await statsRes.json();
+              setStats({
+                totalCourses: statsData.totalCourses || pagination?.total || 0,
+                activeStudents: statsData.activeStudents || 0,
+                successfulTeachers: statsData.successfulTeachers || 0,
+                certificatesAwarded: statsData.certificatesAwarded || 0,
+              });
+            }
+          } catch {
+            setStats({ totalCourses: pagination?.total || 0, activeStudents: 0, successfulTeachers: 0, certificatesAwarded: 0 });
+          }
         }
       } catch (error) {
         console.error('Error fetching landing page data:', error);
@@ -205,7 +211,7 @@ const LandingPageInteractive = () => {
                     <Icon name="CheckCircleIcon" size={24} className="text-success mr-3 flex-shrink-0" variant="solid" />
                     <div>
                       <div className="font-medium">Turli Xil Kurslar</div>
-                      <div className="text-sm text-muted-foreground">Matematika, dasturlash, tillar va ko'plab yo'nalishlar</div>
+                      <div className="text-sm text-muted-foreground">Maktab fanlari, tillar, san'at, hunarmandchilik, sport, tibbiyot, biznes va boshqa o'nlab yo'nalishlar</div>
                     </div>
                   </li>
                   <li className="flex items-start">

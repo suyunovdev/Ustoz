@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -82,9 +81,9 @@ const AssignmentManagementInteractive = () => {
       const me = await meRes.json();
       setUserId(me.user.id);
       await Promise.all([loadCourses(), loadAssignments()]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Auth check error:', err);
-      setError(err.message || 'Autentifikatsiya xatoligi');
+      setError(err instanceof Error ? err.message : 'Autentifikatsiya xatoligi');
     } finally {
       setLoading(false);
     }
@@ -95,8 +94,8 @@ const AssignmentManagementInteractive = () => {
       const res = await fetch('/api/teacher/courses', { credentials: 'include' });
       if (!res.ok) return;
       const data = await res.json();
-      setCourses((data.courses || []).map((c: any) => ({ id: c.id, title: c.title })));
-    } catch (err: any) {
+      setCourses((data.courses || []).map((c: { id: string; title: string }) => ({ id: c.id, title: c.title })));
+    } catch (err: unknown) {
       console.error('Error loading courses:', err);
     }
   };
@@ -107,9 +106,9 @@ const AssignmentManagementInteractive = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setAssignments(data.assignments || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading assignments:', err);
-      setError(err.message || 'Topshiriqlarni yuklashda xatolik');
+      setError(err instanceof Error ? err.message : 'Topshiriqlarni yuklashda xatolik');
     }
   };
 
@@ -121,9 +120,9 @@ const AssignmentManagementInteractive = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setSubmissions(data.submissions || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading submissions:', err);
-      setError(err.message || 'Topshiriqlarni yuklashda xatolik');
+      setError(err instanceof Error ? err.message : 'Topshiriqlarni yuklashda xatolik');
     }
   };
 
@@ -165,9 +164,9 @@ const AssignmentManagementInteractive = () => {
 
       await loadAssignments();
       setActiveTab('list');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating assignment:', err);
-      setError(err.message || 'Topshiriq yaratishda xatolik');
+      setError(err instanceof Error ? err.message : 'Topshiriq yaratishda xatolik');
     } finally {
       setSubmitting(false);
     }
@@ -201,9 +200,9 @@ const AssignmentManagementInteractive = () => {
 
       await loadSubmissions(selectedAssignment.id);
       setGradingData(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error grading submission:', err);
-      setError(err.message || 'Baholashda xatolik');
+      setError(err instanceof Error ? err.message : 'Baholashda xatolik');
     } finally {
       setSubmitting(false);
     }

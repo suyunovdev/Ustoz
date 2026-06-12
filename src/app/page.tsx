@@ -11,7 +11,7 @@ export default function RootPage() {
   useEffect(() => {
     if (loading) return;
     if (user) {
-      const role = user?.user_metadata?.role;
+      const role = user?.role;
       if (role === 'teacher') {
         router?.replace('/teacher-dashboard');
       } else if (role === 'admin') {

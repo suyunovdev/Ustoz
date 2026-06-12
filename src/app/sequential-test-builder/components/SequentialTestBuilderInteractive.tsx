@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -157,14 +156,14 @@ const SequentialTestBuilderInteractive = () => {
               return (
                 <button
                   key={section.id}
-                  onClick={() => setActiveSection(section.id as any)}
+                  onClick={() => setActiveSection(section.id as typeof activeSection)}
                   className={`flex items-center space-x-2 px-4 py-3 rounded-md transition-smooth whitespace-nowrap ${
                     isActive
                       ? 'bg-primary text-primary-foreground shadow-warm'
                       : 'text-foreground hover:bg-muted'
                   }`}
                 >
-                  <Icon name={section.icon as any} size={20} />
+                  <Icon name={section.icon} size={20} />
                   <span className="font-medium">{section.label}</span>
                 </button>
               );

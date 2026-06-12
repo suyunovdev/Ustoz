@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -175,15 +174,15 @@ const ModerationDashboardInteractive = () => {
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-foreground">Turi:</span>
               <div className="flex items-center space-x-2">
-                {[
-                  { value: 'all', label: 'Barchasi' },
-                  { value: 'material', label: 'Materiallar' },
-                  { value: 'link', label: 'Havolalar' },
-                  { value: 'test', label: 'Testlar' }
-                ].map((type) => (
+                {([
+                  { value: 'all' as const, label: 'Barchasi' },
+                  { value: 'material' as const, label: 'Materiallar' },
+                  { value: 'link' as const, label: 'Havolalar' },
+                  { value: 'test' as const, label: 'Testlar' }
+                ]).map((type) => (
                   <button
                     key={`type-${type.value}`}
-                    onClick={() => setFilterType(type.value as any)}
+                    onClick={() => setFilterType(type.value)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-smooth ${
                       filterType === type.value
                         ? 'bg-primary text-primary-foreground'
@@ -198,15 +197,15 @@ const ModerationDashboardInteractive = () => {
             <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-foreground">Status:</span>
               <div className="flex items-center space-x-2">
-                {[
-                  { value: 'all', label: 'Barchasi' },
-                  { value: 'pending', label: 'Kutilmoqda' },
-                  { value: 'approved', label: 'Tasdiqlangan' },
-                  { value: 'rejected', label: 'Rad etilgan' }
-                ].map((status) => (
+                {([
+                  { value: 'all' as const, label: 'Barchasi' },
+                  { value: 'pending' as const, label: 'Kutilmoqda' },
+                  { value: 'approved' as const, label: 'Tasdiqlangan' },
+                  { value: 'rejected' as const, label: 'Rad etilgan' }
+                ]).map((status) => (
                   <button
                     key={`status-${status.value}`}
-                    onClick={() => setFilterStatus(status.value as any)}
+                    onClick={() => setFilterStatus(status.value)}
                     className={`px-3 py-1.5 rounded-md text-sm font-medium transition-smooth ${
                       filterStatus === status.value
                         ? 'bg-primary text-primary-foreground'

@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import type { Locale } from '@/lib/i18n';
 
 interface Language {
   code: string;
@@ -15,12 +17,13 @@ interface LanguageSelectorProps {
   onLanguageChange?: (languageCode: string) => void;
 }
 
-const LanguageSelector = ({ 
+const LanguageSelector = ({
   defaultLanguage = 'uz',
-  onLanguageChange 
+  onLanguageChange
 }: LanguageSelectorProps) => {
+  const { locale, setLocale } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(defaultLanguage);
+  const [selectedLanguage, setSelectedLanguage] = useState(locale || defaultLanguage);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const languages: Language[] = [
@@ -57,6 +60,7 @@ const LanguageSelector = ({
 
   const handleLanguageSelect = (languageCode: string) => {
     setSelectedLanguage(languageCode);
+    setLocale(languageCode as Locale);
     setIsOpen(false);
     if (onLanguageChange) {
       onLanguageChange(languageCode);

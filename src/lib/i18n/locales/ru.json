@@ -1,0 +1,90 @@
+{
+  "common": {
+    "loading": "Загрузка...",
+    "error": "Произошла ошибка",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "delete": "Удалить",
+    "edit": "Редактировать",
+    "search": "Поиск",
+    "back": "Назад",
+    "next": "Далее",
+    "previous": "Предыдущий",
+    "submit": "Отправить",
+    "close": "Закрыть",
+    "confirm": "Подтвердить",
+    "yes": "Да",
+    "no": "Нет",
+    "all": "Все",
+    "none": "Ничего",
+    "noData": "Нет данных"
+  },
+  "auth": {
+    "login": "Войти",
+    "logout": "Выйти",
+    "register": "Регистрация",
+    "email": "Электронная почта",
+    "password": "Пароль",
+    "forgotPassword": "Забыли пароль?",
+    "resetPassword": "Сбросить пароль",
+    "fullName": "Полное имя",
+    "loginSuccess": "Вы успешно вошли",
+    "logoutSuccess": "Вы вышли из системы",
+    "invalidCredentials": "Неверный email или пароль"
+  },
+  "nav": {
+    "home": "Главная",
+    "courses": "Курсы",
+    "dashboard": "Панель",
+    "profile": "Профиль",
+    "messages": "Сообщения",
+    "notifications": "Уведомления",
+    "settings": "Настройки",
+    "help": "Помощь",
+    "about": "О нас"
+  },
+  "courses": {
+    "marketplace": "Маркетплейс курсов",
+    "myCourses": "Мои курсы",
+    "createCourse": "Создать курс",
+    "courseDetails": "Детали курса",
+    "enroll": "Записаться",
+    "enrolled": "Вы записаны",
+    "price": "Цена",
+    "free": "Бесплатно",
+    "rating": "Рейтинг",
+    "students": "Студенты",
+    "lessons": "Уроки",
+    "duration": "Длительность",
+    "certificate": "Сертификат",
+    "progress": "Прогресс",
+    "completed": "Завершено",
+    "continue": "Продолжить"
+  },
+  "dashboard": {
+    "welcome": "Добро пожаловать",
+    "totalCourses": "Всего курсов",
+    "activeStudents": "Активные студенты",
+    "certificates": "Сертификаты",
+    "earnings": "Доход",
+    "recentActivity": "Последняя активность",
+    "streak": "Серия",
+    "recommendations": "Рекомендации"
+  },
+  "payment": {
+    "paymentMethod": "Способ оплаты",
+    "processing": "Оплата обрабатывается...",
+    "success": "Оплата прошла успешно!",
+    "failed": "Оплата не прошла",
+    "cancelled": "Оплата отменена",
+    "history": "История платежей",
+    "amount": "Сумма"
+  },
+  "admin": {
+    "dashboard": "Админ панель",
+    "users": "Пользователи",
+    "moderation": "Модерация",
+    "systemHealth": "Состояние системы",
+    "auditLog": "Журнал аудита"
+  }
+}

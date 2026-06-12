@@ -1,5 +1,9 @@
-// @ts-nocheck
 import { NextRequest } from 'next/server';
+
+interface SubmittedAnswer {
+  questionId: string;
+  answer: string;
+}
 import { getSessionFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
@@ -16,7 +20,7 @@ export async function POST(
   }
 
   const { id: testId } = await params;
-  const { answers = [], courseId } = await req.json();
+  const { answers = [], courseId }: { answers: SubmittedAnswer[]; courseId?: string } = await req.json();
 
   const test = await prisma.courseTest.findUnique({
     where: { id: testId },
@@ -28,7 +32,7 @@ export async function POST(
 
   const questionById = new Map(test.questions.map((q) => [q.id, q]));
   let correctCount = 0;
-  const details = answers.map((a: any) => {
+  const details = answers.map((a: SubmittedAnswer) => {
     const q = questionById.get(a.questionId);
     const isCorrect = !!q && q.correctAnswer === a.answer;
     if (isCorrect) correctCount++;

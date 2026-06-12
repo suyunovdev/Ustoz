@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -68,24 +67,28 @@ const AssignmentSubmissionPortalInteractive = () => {
 
       setUserId(user.id);
       await Promise.all([loadAssignments(user.id), loadSubmissions(user.id)]);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Auth check error:', err);
-      setError(err.message || 'Failed to authenticate');
+      setError(err instanceof Error ? err.message : 'Failed to authenticate');
     } finally {
       setLoading(false);
     }
   };
 
   const loadAssignments = async (_studentId: string) => {
-    // TODO: add /api/student/assignments endpoint
-    // Backend endpoint not yet implemented — return empty list gracefully.
-    setAssignments([]);
+    try {
+      const res = await fetch('/api/assignments/my', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      setAssignments(data.assignments || []);
+      setSubmissions(data.submissions || []);
+    } catch (err) {
+      console.error('Error loading assignments:', err);
+    }
   };
 
   const loadSubmissions = async (_studentId: string) => {
-    // TODO: add /api/student/submissions endpoint
-    // Backend endpoint not yet implemented — return empty list gracefully.
-    setSubmissions([]);
+    // Submissions are loaded together with assignments in loadAssignments
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

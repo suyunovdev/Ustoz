@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -104,7 +103,7 @@ const QuizInterfaceInteractive = () => {
         return;
       }
 
-      const mapped: QuizQuestion[] = test.questions.map((q: any) => ({
+      const mapped: QuizQuestion[] = test.questions.map((q: { id: string; questionText: string; optionA: string; optionB: string; optionC: string; optionD: string }) => ({
         id: q.id,
         type: 'multiple-choice',
         question: q.questionText,
@@ -169,10 +168,10 @@ const QuizInterfaceInteractive = () => {
         setScore(result.percentage);
 
         // Backend details bilan questions ni yangilash (correct answer + explanation)
-        const detailsById = new Map((result.details || []).map((d: any) => [d.questionId, d]));
+        const detailsById = new Map((result.details || []).map((d: { questionId: string; correctAnswer: string; explanation?: string }) => [d.questionId, d]));
         setQuestions((prev) =>
           prev.map((q) => {
-            const d: any = detailsById.get(q.id);
+            const d = detailsById.get(q.id);
             if (!d) return q;
             const correctIdx = ['A', 'B', 'C', 'D'].indexOf(d.correctAnswer);
             return {

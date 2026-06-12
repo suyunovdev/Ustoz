@@ -1,0 +1,90 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "submit": "Submit",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No",
+    "all": "All",
+    "none": "None",
+    "noData": "No data"
+  },
+  "auth": {
+    "login": "Sign in",
+    "logout": "Sign out",
+    "register": "Sign up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "fullName": "Full name",
+    "loginSuccess": "Successfully signed in",
+    "logoutSuccess": "Signed out",
+    "invalidCredentials": "Invalid email or password"
+  },
+  "nav": {
+    "home": "Home",
+    "courses": "Courses",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "messages": "Messages",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "help": "Help",
+    "about": "About"
+  },
+  "courses": {
+    "marketplace": "Course Marketplace",
+    "myCourses": "My Courses",
+    "createCourse": "Create Course",
+    "courseDetails": "Course Details",
+    "enroll": "Enroll",
+    "enrolled": "Enrolled",
+    "price": "Price",
+    "free": "Free",
+    "rating": "Rating",
+    "students": "Students",
+    "lessons": "Lessons",
+    "duration": "Duration",
+    "certificate": "Certificate",
+    "progress": "Progress",
+    "completed": "Completed",
+    "continue": "Continue"
+  },
+  "dashboard": {
+    "welcome": "Welcome",
+    "totalCourses": "Total Courses",
+    "activeStudents": "Active Students",
+    "certificates": "Certificates",
+    "earnings": "Earnings",
+    "recentActivity": "Recent Activity",
+    "streak": "Streak",
+    "recommendations": "Recommendations"
+  },
+  "payment": {
+    "paymentMethod": "Payment Method",
+    "processing": "Processing payment...",
+    "success": "Payment successful!",
+    "failed": "Payment failed",
+    "cancelled": "Payment cancelled",
+    "history": "Payment History",
+    "amount": "Amount"
+  },
+  "admin": {
+    "dashboard": "Admin Dashboard",
+    "users": "Users",
+    "moderation": "Moderation",
+    "systemHealth": "System Health",
+    "auditLog": "Audit Log"
+  }
+}

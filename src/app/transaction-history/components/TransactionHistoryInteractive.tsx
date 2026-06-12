@@ -57,14 +57,19 @@ export default function TransactionHistoryInteractive() {
   const fetchTransactions = async () => {
     try {
       setLoading(true);
-
-      // TODO: add /api/payments/my endpoint
-      // Backend endpoint not yet implemented — return empty list gracefully.
-      setTransactions([]);
+      const res = await fetch('/api/payments/my', { credentials: 'include' });
+      if (!res.ok) throw new Error('To\'lovlar tarixini yuklashda xatolik');
+      const data = await res.json();
+      setTransactions(
+        (data.transactions || []).map((t: Record<string, unknown>) => ({
+          ...t,
+          amount_uzs: Number(t.amount_uzs),
+        }))
+      );
       setError('');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error fetching transactions:', err);
-      setError(err.message || "To'lovlar tarixini yuklashda xatolik");
+      setError(err instanceof Error ? err.message : "To'lovlar tarixini yuklashda xatolik");
     } finally {
       setLoading(false);
     }

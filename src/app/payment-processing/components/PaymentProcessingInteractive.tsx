@@ -109,20 +109,23 @@ const PaymentProcessingInteractive = () => {
 
   const loadTransaction = async () => {
     try {
-      // TODO: add /api/payments/[id] endpoint for status polling.
-      // For now, transaction state comes from URL params (set in the initial effect).
-      // If a transaction is present and a course_id is known, refresh course title.
-      const cid = transaction?.course_id || courseId;
-      if (cid) {
-        const response = await fetch(`/api/courses/${cid}`, {
-          credentials: 'include'
-        });
-        if (response.ok) {
-          const { course: c } = await response.json();
-          if (c) setCourse({ id: c.id, title: c.title });
+      if (!transactionId) return;
+      const res = await fetch(`/api/payment/status/${transactionId}`, {
+        credentials: 'include',
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.transaction) {
+          setTransaction({
+            ...data.transaction,
+            amount_uzs: parseInt(data.transaction.amount_uzs),
+          });
+        }
+        if (data.course) {
+          setCourse(data.course);
         }
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error loading transaction:', err);
     } finally {
       setLoading(false);

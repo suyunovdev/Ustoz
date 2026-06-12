@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -182,7 +181,7 @@ const ContentUploadInteractive = () => {
     persistLinks(next);
   };
 
-  const sections = [
+  const sections: { id: 'upload' | 'watermark' | 'links'; label: string; icon: string }[] = [
     { id: 'upload', label: 'Yuklash', icon: 'ArrowUpTrayIcon' },
     { id: 'watermark', label: 'Watermark', icon: 'ShieldCheckIcon' },
     { id: 'links', label: 'Tashqi havolalar', icon: 'LinkIcon' }
@@ -230,14 +229,14 @@ const ContentUploadInteractive = () => {
                   return (
                     <button
                       key={section.id}
-                      onClick={() => setActiveSection(section.id as any)}
+                      onClick={() => setActiveSection(section.id)}
                       className={`flex items-center space-x-2 px-4 py-3 rounded-md transition-smooth whitespace-nowrap ${
                         isActive
                           ? 'bg-primary text-primary-foreground shadow-warm'
                           : 'text-foreground hover:bg-muted'
                       }`}
                     >
-                      <Icon name={section.icon as any} size={20} />
+                      <Icon name={section.icon} size={20} />
                       <span className="font-medium">{section.label}</span>
                     </button>
                   );

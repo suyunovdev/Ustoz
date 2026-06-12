@@ -1,5 +1,4 @@
-// @ts-nocheck
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';

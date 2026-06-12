@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -13,14 +12,42 @@ interface ContentItem {
   fileSize?: number;
 }
 
+interface TestQuestion {
+  id?: string;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: number;
+  explanation?: string;
+}
+
+interface LinkDetails {
+  title: string;
+  description?: string;
+  url: string;
+  link_type: string;
+}
+
+interface MaterialDetails {
+  title: string;
+  description?: string;
+  content_type: string;
+  file_size?: number;
+  watermark_enabled?: boolean;
+  watermark_text?: string;
+  file_url?: string;
+}
+
 interface PreviewPanelProps {
   item: ContentItem;
 }
 
 const PreviewPanel = ({ item }: PreviewPanelProps) => {
-  const [testQuestions, setTestQuestions] = useState<any[]>([]);
-  const [linkDetails, setLinkDetails] = useState<any>(null);
-  const [materialDetails, setMaterialDetails] = useState<any>(null);
+  const [testQuestions, setTestQuestions] = useState<TestQuestion[]>([]);
+  const [linkDetails, setLinkDetails] = useState<LinkDetails | null>(null);
+  const [materialDetails, setMaterialDetails] = useState<MaterialDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -30,15 +57,18 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
   const loadItemDetails = async () => {
     setIsLoading(true);
     try {
-      // TODO: add /api/admin/moderation/preview/[type]/[id] endpoint that returns
-      //       the detail payload for materials, external_links, or course_tests
-      //       (with test_questions for tests).
+      const res = await fetch(`/api/admin/moderation/preview/${item.type}/${item.id}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error('Preview yuklanmadi');
+      const data = await res.json();
+
       if (item.type === 'test') {
-        setTestQuestions([]);
+        setTestQuestions(data.questions || []);
       } else if (item.type === 'link') {
-        setLinkDetails(null);
+        setLinkDetails(data);
       } else if (item.type === 'material') {
-        setMaterialDetails(null);
+        setMaterialDetails(data);
       }
     } catch (error) {
       console.error('Error loading item details:', error);

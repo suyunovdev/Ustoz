@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
+import { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
 
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const maxPrice = searchParams.get('maxPrice');
   const sortBy = searchParams.get('sortBy') || 'createdAt';
 
-  const where: any = { isPublished: true };
+  const where: Prisma.CourseWhereInput = { isPublished: true };
   if (search) {
     where.OR = [
       { title: { contains: search, mode: 'insensitive' } },
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     if (maxPrice) where.priceUzs.lte = BigInt(maxPrice);
   }
 
-  const orderBy: any = {};
+  const orderBy: Prisma.CourseOrderByWithRelationInput = {};
   if (sortBy === 'rating') orderBy.rating = 'desc';
   else if (sortBy === 'price_asc') orderBy.priceUzs = 'asc';
   else if (sortBy === 'price_desc') orderBy.priceUzs = 'desc';

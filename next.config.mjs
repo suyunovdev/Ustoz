@@ -50,10 +50,6 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '*.supabase.co',
-      },
-      {
-        protocol: 'https',
         hostname: '*.r2.cloudflarestorage.com',
       },
     ],
@@ -81,11 +77,11 @@ const nextConfig = {
         key: 'Content-Security-Policy',
         value: [
           "default-src 'self'",
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.supabase.co",
+          "script-src 'self' 'unsafe-inline'",
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
           "font-src 'self' data: https://fonts.gstatic.com",
           "img-src 'self' data: blob: https:",
-          "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.resend.com https://my.click.uz https://checkout.paycom.uz https://fonts.googleapis.com https://fonts.gstatic.com",
+          "connect-src 'self' https://api.resend.com https://my.click.uz https://checkout.paycom.uz https://fonts.googleapis.com https://fonts.gstatic.com https://*.r2.cloudflarestorage.com",
           "media-src 'self' https://*.cloudflarestream.com blob:",
           "frame-src 'self' https://customer-*.cloudflarestream.com",
         ].join('; '),

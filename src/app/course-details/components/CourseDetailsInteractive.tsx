@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -145,7 +144,7 @@ const CourseDetailsInteractive = () => {
         const section: CurriculumSection = {
           id: 'section-1',
           title: 'Kurs Mavzulari',
-          topics: topics.map((t: any, i: number) => ({
+          topics: topics.map((t: Record<string, string | boolean>, i: number) => ({
             id: t.id,
             title: t.title,
             duration: t.duration || '—',
@@ -158,7 +157,7 @@ const CourseDetailsInteractive = () => {
       }
 
       setReviews(
-        reviewsData.map((r: any) => ({
+        reviewsData.map((r: { id: string; student?: { fullName?: string; avatarUrl?: string }; rating: number; createdAt: string; comment?: string; helpfulCount?: number }) => ({
           id: r.id,
           userName: r.student?.fullName || 'Foydalanuvchi',
           userImage: r.student?.avatarUrl || '',

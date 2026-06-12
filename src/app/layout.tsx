@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata, Viewport } from 'next';
 import '../styles/index.css';
 import { AuthProvider } from '@/contexts/AuthContext';
+import { I18nProvider } from '@/contexts/I18nContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { Toaster } from '@/components/common/Toaster';
 
@@ -74,10 +75,12 @@ export default function RootLayout({
       </head>
       <body>
         <AuthProvider>
-          <QueryProvider>
-            {children}
-            <Toaster />
-          </QueryProvider>
+          <I18nProvider>
+            <QueryProvider>
+              {children}
+              <Toaster />
+            </QueryProvider>
+          </I18nProvider>
         </AuthProvider>
       </body>
     </html>

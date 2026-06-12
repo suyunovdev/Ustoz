@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -199,7 +198,7 @@ const CourseCreationInteractive = () => {
         hasQuiz: t.hasQuiz,
       }));
 
-      const coursePayload: any = {
+      const coursePayload: Record<string, string | number | boolean | null> = {
         title: metadata.title || 'Nomsiz kurs',
         description: metadata.description || '',
         category: metadata.category || 'general',
@@ -244,8 +243,8 @@ const CourseCreationInteractive = () => {
       }
 
       return savedCourseId;
-    } catch (err: any) {
-      setSaveError(err.message || 'Saqlashda xatolik yuz berdi');
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : 'Saqlashda xatolik yuz berdi');
       return null;
     } finally {
       setIsSaving(false);
@@ -473,7 +472,7 @@ const CourseCreationInteractive = () => {
             className="w-full flex items-center justify-between px-4 py-3 bg-card rounded-md shadow-warm"
           >
             <div className="flex items-center space-x-3">
-              <Icon name={sections.find(s => s.id === activeSection)?.icon as any} size={20} />
+              <Icon name={sections.find(s => s.id === activeSection)?.icon || ''} size={20} />
               <span className="font-medium text-foreground">
                 {sections.find(s => s.id === activeSection)?.label}
               </span>
@@ -487,7 +486,7 @@ const CourseCreationInteractive = () => {
                 <button
                   key={section.id}
                   onClick={() => {
-                    handleSectionChange(section.id as any);
+                    handleSectionChange(section.id as typeof activeSection);
                     setIsMobileMenuOpen(false);
                   }}
                   className={`w-full text-left px-4 py-3 transition-smooth border-b border-border last:border-b-0 ${
@@ -497,7 +496,7 @@ const CourseCreationInteractive = () => {
                   }`}
                 >
                   <div className="flex items-center space-x-3 mb-1">
-                    <Icon name={section.icon as any} size={20} />
+                    <Icon name={section.icon} size={20} />
                     <span className="font-medium">{section.label}</span>
                   </div>
                   <p className="text-xs opacity-90 ml-8">{section.description}</p>
@@ -560,7 +559,7 @@ const CourseCreationInteractive = () => {
               {sections.map((section) => (
                 <button
                   key={section.id}
-                  onClick={() => handleSectionChange(section.id as any)}
+                  onClick={() => handleSectionChange(section.id as typeof activeSection)}
                   className={`w-full text-left px-6 py-4 rounded-md transition-smooth border-2 ${
                     activeSection === section.id
                       ? 'bg-primary text-primary-foreground border-primary shadow-warm'
@@ -571,7 +570,7 @@ const CourseCreationInteractive = () => {
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                       activeSection === section.id ? 'bg-primary-foreground/20' : 'bg-muted'
                     }`}>
-                      <Icon name={section.icon as any} size={20} />
+                      <Icon name={section.icon} size={20} />
                     </div>
                     <div className="flex-1">
                       <div className="font-heading font-semibold mb-1">{section.label}</div>

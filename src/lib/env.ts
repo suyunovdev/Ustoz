@@ -4,8 +4,6 @@
  */
 
 const requiredServerEnvVars = [
-  'NEXT_PUBLIC_SUPABASE_URL',
-  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'NEXT_PUBLIC_APP_URL',
   'CLICK_MERCHANT_ID',
   'CLICK_SERVICE_ID',
@@ -36,8 +34,6 @@ export function validateEnv(): void {
 }
 
 export const env = {
-  supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  supabaseAnonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   appUrl: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4028',
   clickMerchantId: process.env.CLICK_MERCHANT_ID || '',
   clickServiceId: process.env.CLICK_SERVICE_ID || '',

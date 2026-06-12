@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -117,7 +116,7 @@ const LearningInterfaceInteractive = () => {
         return;
       }
 
-      const mappedTopics: Topic[] = topics.map((t: any) => ({
+      const mappedTopics: Topic[] = topics.map((t: Record<string, string>) => ({
         id: t.id,
         title: t.title,
         duration: t.duration || '—',

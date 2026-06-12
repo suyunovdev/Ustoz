@@ -1,4 +1,3 @@
-// @ts-nocheck
 'use client';
 
 import { Suspense, useState } from 'react';
@@ -124,7 +123,7 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
                       : 'text-foreground hover:bg-muted hover:-translate-y-0.5'
                   }`}
                 >
-                  <Icon name={item.icon as any} size={18} />
+                  <Icon name={item.icon} size={18} />
                   <span className="text-sm font-medium">{item.label}</span>
                 </Link>
               );
@@ -187,7 +186,7 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
                       : 'text-foreground hover:bg-muted'
                   }`}
                 >
-                  <Icon name={item.icon as any} size={20} />
+                  <Icon name={item.icon} size={20} />
                   <span className="font-medium">{item.label}</span>
                 </Link>
               );

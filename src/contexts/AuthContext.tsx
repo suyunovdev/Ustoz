@@ -1,10 +1,48 @@
-// @ts-nocheck
-
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
 
-const AuthContext = createContext<any>({});
+export interface AuthUser {
+  id: string;
+  email: string;
+  fullName?: string;
+  role: 'student' | 'teacher' | 'admin';
+  avatarUrl?: string | null;
+  bio?: string | null;
+}
+
+interface AuthSession {
+  user: AuthUser;
+}
+
+interface SignUpResult {
+  user: { email: string };
+  session: null;
+  devOtp?: string;
+  emailDelivered?: boolean;
+}
+
+interface OtpResult {
+  devOtp?: string;
+  emailDelivered?: boolean;
+}
+
+interface AuthContextValue {
+  user: AuthUser | null;
+  session: AuthSession | null;
+  loading: boolean;
+  signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<SignUpResult>;
+  signIn: (identifier: string, password: string, isPhone?: boolean) => Promise<{ user: AuthUser }>;
+  signOut: () => Promise<void>;
+  getCurrentUser: () => Promise<AuthUser | null>;
+  isEmailVerified: () => boolean;
+  getUserProfile: () => Promise<AuthUser | null>;
+  sendEmailOtp: (email: string, type?: 'signup' | 'password_reset') => Promise<OtpResult>;
+  verifyEmailOtp: (email: string, token: string, signupData?: { fullName: string; password: string; role: string }) => Promise<{ user?: AuthUser }>;
+  refreshUser: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -14,7 +52,7 @@ export const useAuth = () => {
   return context;
 };
 
-async function apiPost(url: string, body: any) {
+async function apiPost(url: string, body: Record<string, unknown>) {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -39,8 +77,8 @@ async function apiGet(url: string) {
 }
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<any>(null);
-  const [session, setSession] = useState<any>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refreshUser = async () => {
@@ -68,7 +106,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Sign Up flow: emailni tekshirib OTP yuboradi. User OTP'ni verify qilganda yaratiladi.
   // Form bu funksiyani chaqiradi, keyin OTP step ochiladi.
-  const signUp = async (email: string, _password: string, _metadata?: any) => {
+  const signUp = async (email: string, _password: string, _metadata?: Record<string, unknown>): Promise<SignUpResult> => {
     const data = await apiPost('/api/auth/send-otp', { email, type: 'signup' });
     // session yo'q — RegistrationForm OTP step'ni ochadi. devOtp dev rejimida qaytadi.
     return { user: { email }, session: null, devOtp: data?.devOtp, emailDelivered: data?.emailDelivered };
@@ -128,7 +166,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return data?.user || null;
   };
 
-  const value = {
+  const value: AuthContextValue = {
     user,
     session,
     loading,
