@@ -45,11 +45,27 @@ export async function POST(
   const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
   const passed = percentage >= (test.passingScore || 80);
 
-  // Save quiz completion
+  const cid = courseId || test.courseId || '';
+  const passingThreshold = test.passingScore || 80;
+
+  // Avval shu test bo'yicha allaqachon passed urinish bormi tekshirish
+  // (bypass'ni oldini olish — bir testni 10 marta passlab progress'ni 100%'ga ko'tarib bo'lmasin)
+  const alreadyPassed = passed
+    ? await prisma.quizCompletion.findFirst({
+        where: {
+          studentId: session.sub,
+          quizId: testId,
+          percentage: { gte: passingThreshold },
+        },
+        select: { id: true },
+      })
+    : null;
+
+  // Quiz completion'ni saqlash (har urinish saqlanadi)
   await prisma.quizCompletion.create({
     data: {
       studentId: session.sub,
-      courseId: courseId || test.courseId || '',
+      courseId: cid,
       quizId: testId,
       score: correctCount,
       maxScore: totalQuestions,
@@ -57,9 +73,8 @@ export async function POST(
     },
   });
 
-  // If passed and courseId provided, bump enrollment progress by 10 (max 100)
-  if (passed && (courseId || test.courseId)) {
-    const cid = courseId || test.courseId;
+  // Progress oshirilsin — faqat BIRINCHI passed urinishda
+  if (passed && !alreadyPassed && cid) {
     const enrollment = await prisma.enrollment.findFirst({
       where: { studentId: session.sub, courseId: cid },
     });

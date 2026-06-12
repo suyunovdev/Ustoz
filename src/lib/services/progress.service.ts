@@ -19,6 +19,7 @@ import {
   activityRepo,
 } from '@/lib/repositories';
 import { EnrollmentNotFoundError, TopicNotFoundError } from '@/lib/errors';
+import { maybeAutoIssue } from './certificate.service';
 
 // TODO: pino logger — hozircha console.log
 const log = (event: string, payload?: Record<string, unknown>) => {
@@ -119,13 +120,34 @@ export async function markTopicComplete(
       );
     }
 
-    return { progress, isCourseCompleted, wasAlreadyCompleted };
+    return { progress, isCourseCompleted, wasAlreadyCompleted, courseId };
   });
 
   log('markTopicComplete:end', result);
 
-  // TODO(certificate.service): kurs 100% tugatilganda sertifikat yaratish.
-  return result;
+  // Kurs birinchi marta 100% tugaganda — sertifikat avtomatik berish.
+  // Transaction'dan tashqarida chaqiramiz (idempotent, alohida xato bo'lsa progress saqlanadi).
+  if (result.isCourseCompleted) {
+    try {
+      const cert = await maybeAutoIssue(studentId, result.courseId);
+      if (cert) {
+        log('markTopicComplete:certificate_issued', {
+          certificateId: cert.id,
+          number: cert.certificateNumber,
+          created: cert.created,
+        });
+      }
+    } catch (err) {
+      // Sertifikat berishdagi xato progress'ni buzmasin — log qilamiz va davom etamiz.
+      log('markTopicComplete:certificate_error', {
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  // Tashqi shartnomada courseId yo'q edi — uni qaytarmaymiz
+  const { courseId: _omit, ...publicResult } = result;
+  return publicResult;
 }
 
 /**

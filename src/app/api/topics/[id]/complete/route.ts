@@ -55,10 +55,8 @@ export async function POST(
   try {
     const result = await markTopicComplete(session.sub, topicId);
 
-    // TODO(certificate.service): kurs 100% bo'lsa va birinchi marta — sertifikat yarat.
-    //   if (result.isCourseCompleted) {
-    //     await createForCompletion({ studentId: session.sub, topicId });
-    //   }
+    // Kurs 100% tugaganda sertifikat avtomatik beriladi (progress.service.ts ichida).
+    // UI'da modal ko'rsatish uchun belgilab qaytaramiz.
     const shouldShowCertificateModal = result.isCourseCompleted;
 
     return jsonResponse({

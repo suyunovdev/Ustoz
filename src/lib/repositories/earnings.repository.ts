@@ -2,12 +2,15 @@
  * Earnings repository — teacher daromad va withdrawals.
  *
  * Balans hisoblash:
- *   gross        = SUM(completed payments)
- *   refunded     = SUM(refunded payments)
- *   netRevenue   = (gross - refunded) × (1 - platformFee)
+ *   gross        = SUM(completed payments)              ← refund qilingan emas
+ *   refunded     = SUM(refunded payments)               ← faqat ko'rsatish uchun
+ *   netRevenue   = gross × (1 - platformFee)
  *   withdrawn    = SUM(completed withdrawals)
  *   pending      = SUM(pending + processing withdrawals)
  *   available    = netRevenue - withdrawn - pending
+ *
+ * MUHIM: Refund qilingan tranzaksiya status'i 'completed' dan 'refunded' ga o'zgaradi,
+ * shuning uchun `gross` query'da avtomatik chiqib ketadi. Qo'shimcha ayirish KERAK EMAS.
  *
  * platformFee — env-dan o'qiladi (default 15%)
  */
@@ -61,12 +64,12 @@ export async function getBalance(teacherId: string): Promise<TeacherBalance> {
   `;
   const r = rows[0];
 
-  const grossNet = r.gross - r.refunded;
+  // gross allaqachon refund'larni hisobga olmaydi (status='completed' filtri)
   const platformFeeUzs =
-    grossNet > BigInt(0)
-      ? (grossNet * BigInt(Math.round(PLATFORM_FEE_PCT * 100))) / BigInt(10000)
+    r.gross > BigInt(0)
+      ? (r.gross * BigInt(Math.round(PLATFORM_FEE_PCT * 100))) / BigInt(10000)
       : BigInt(0);
-  const netRevenueUzs = grossNet - platformFeeUzs;
+  const netRevenueUzs = r.gross - platformFeeUzs;
   const available = netRevenueUzs - r.withdrawn - r.pending;
 
   return {
