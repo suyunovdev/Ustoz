@@ -89,7 +89,10 @@ function mapErrorCodeToStatus(code: string): number {
     case 'COURSE_NOT_FOUND':
       return 404;
     case 'VALIDATION_ERROR':
+    case 'INVALID_STATUS_TRANSITION':
       return 400;
+    case 'CONFLICT':
+      return 409;
     default:
       return 500;
   }

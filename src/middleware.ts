@@ -13,6 +13,7 @@ const PUBLIC_ROUTES = [
   '/verify',
   '/teachers',
   '/help',
+  '/unauthorized',
   '/r',
   '/',
 ];

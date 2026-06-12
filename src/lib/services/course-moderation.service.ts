@@ -29,6 +29,23 @@ const VALID_STATUSES: ReadonlyArray<ModerationStatus> = [
   'revision_requested',
 ];
 
+// State machine: qaysi statusdan qaysi target statusga o'tish ruxsat etiladi.
+// approve/reject/request_revision faqat "tekshirishga jo'natilgan" yoki
+// "qayta ko'rib chiqishga qaytarilgan" kurslarga qo'llaniladi.
+const REVIEWABLE_STATUSES: ReadonlyArray<ModerationStatus> = [
+  'submitted',
+  'under_review',
+  'revision_requested',
+];
+
+export class InvalidStatusTransitionError extends Error {
+  code = 'INVALID_STATUS_TRANSITION';
+  constructor(current: string, target: string) {
+    super(`Status o'tishi noto'g'ri: "${current}" -> "${target}"`);
+    this.name = 'InvalidStatusTransitionError';
+  }
+}
+
 export interface ListCoursesResult {
   courses: CourseWithAdminInfo[];
   total: number;
@@ -69,6 +86,14 @@ export async function approveCourse(
 ): Promise<CourseWithAdminInfo> {
   const target = await courseRepo.findByIdForAdmin(courseId);
   if (!target) throw new CourseNotFoundError(courseId);
+
+  // Idempotent: allaqachon approved bo'lsa, audit log yozmasdan qaytaramiz
+  if (target.moderationStatus === 'approved') return target;
+
+  // State machine: faqat reviewable statuslardan approved'ga o'tish mumkin
+  if (!REVIEWABLE_STATUSES.includes(target.moderationStatus)) {
+    throw new InvalidStatusTransitionError(target.moderationStatus, 'approved');
+  }
 
   return prisma.$transaction(async (tx) => {
     const updated = await courseRepo.updateModerationStatus(
@@ -111,6 +136,15 @@ export async function rejectCourse(
   const target = await courseRepo.findByIdForAdmin(courseId);
   if (!target) throw new CourseNotFoundError(courseId);
 
+  // Idempotent: allaqachon rejected
+  if (target.moderationStatus === 'rejected') return target;
+
+  // State machine: reject faqat reviewable yoki approved (post-publish moderation) holatdan
+  const allowedFrom: ReadonlyArray<ModerationStatus> = [...REVIEWABLE_STATUSES, 'approved'];
+  if (!allowedFrom.includes(target.moderationStatus)) {
+    throw new InvalidStatusTransitionError(target.moderationStatus, 'rejected');
+  }
+
   return prisma.$transaction(async (tx) => {
     const updated = await courseRepo.updateModerationStatus(
       courseId,
@@ -147,6 +181,15 @@ export async function requestRevision(
   }
   const target = await courseRepo.findByIdForAdmin(courseId);
   if (!target) throw new CourseNotFoundError(courseId);
+
+  // Idempotent
+  if (target.moderationStatus === 'revision_requested') return target;
+
+  // State machine: revision faqat submitted/under_review dan
+  const allowedFrom: ReadonlyArray<ModerationStatus> = ['submitted', 'under_review'];
+  if (!allowedFrom.includes(target.moderationStatus)) {
+    throw new InvalidStatusTransitionError(target.moderationStatus, 'revision_requested');
+  }
 
   return prisma.$transaction(async (tx) => {
     const updated = await courseRepo.updateModerationStatus(

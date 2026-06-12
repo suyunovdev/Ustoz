@@ -89,6 +89,12 @@ export async function activateUser(
   userId: string,
   request?: NextRequest,
 ): Promise<AdminUserRow> {
+  // Self-action himoyasi (suspend/role_change kabi).
+  // Admin o'zining account'ini suspend qila olmaydi - shuning uchun u
+  // o'zini activate qilish holatiga ham tushmasligi kerak. Bu izchillik
+  // uchun va auditda noaniq audit log'larning oldini olish uchun.
+  if (adminId === userId) throw new SelfActionError();
+
   const target = await userRepo.findById(userId);
   if (!target) throw new UserNotFoundError(userId);
   if (target.isActive) {
