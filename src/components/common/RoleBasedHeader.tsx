@@ -8,6 +8,8 @@ import LanguageSelector from './LanguageSelector';
 import NotificationBell from './NotificationBell';
 import UserMenu from './UserMenu';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
+
 interface RoleBasedHeaderProps {
   userRole?: 'teacher' | 'student' | null;
   currentPath?: string;
@@ -41,39 +43,32 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   // AuthContext app shell darajasida bitta marta yuklanadi. Navigatsiya paytida
   // qayta mount qilinmaydi, shuning uchun user ma'lumoti darrov tayyor turadi.
   const { user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
   const currentUser = user;
   const userId = user?.id || null;
   const userRole: 'teacher' | 'student' | 'admin' | null = user?.role || null;
 
-  // Public navigation (for non-authenticated users)
-  const publicNavItems = [
-    { label: 'Bosh Sahifa', path: '/landing-page', icon: 'HomeIcon' },
-    { label: 'Kurslar', path: '/course-marketplace', icon: 'BookOpenIcon' },
-    { label: 'Biz Haqimizda', path: '/about-page', icon: 'InformationCircleIcon' },
-  ];
-
+  // Public: nav yo'q — faqat logo + til + kirish/register (kurslar va about landing ichida)
   // Teacher navigation
   const teacherNavItems = [
-    { label: 'Dashboard', path: '/teacher-dashboard', icon: 'HomeIcon' },
-    { label: 'Kurs Yaratish', path: '/course-creation', icon: 'PlusCircleIcon' },
-    { label: 'Guruhlar', path: '/group-creation', icon: 'UserGroupIcon' },
-    { label: 'Topshiriqlar', path: '/assignment-management', icon: 'ClipboardDocumentListIcon' },
+    { label: t('nav.dashboard'), path: '/teacher-dashboard', icon: 'HomeIcon' },
+    { label: t('courses.createCourse'), path: '/course-creation', icon: 'PlusCircleIcon' },
+    { label: t('nav.groups'), path: '/group-creation', icon: 'UserGroupIcon' },
+    { label: t('nav.assignments'), path: '/assignment-management', icon: 'ClipboardDocumentListIcon' },
   ];
 
   // Student navigation
   const studentNavItems = [
-    { label: 'Dashboard', path: '/student-dashboard', icon: 'HomeIcon' },
-    { label: 'Bozor', path: '/course-marketplace', icon: 'ShoppingBagIcon' },
-    { label: 'Sertifikatlar', path: '/certificates', icon: 'TrophyIcon' },
+    { label: t('nav.dashboard'), path: '/student-dashboard', icon: 'HomeIcon' },
+    { label: t('courses.marketplace'), path: '/course-marketplace', icon: 'ShoppingBagIcon' },
+    { label: t('dashboard.certificates'), path: '/certificates', icon: 'TrophyIcon' },
   ];
 
-  // Admin uchun header'da nav link'lar yo'q — admin paneli ichida tab'lar bor.
-  // Faqat logo + UserMenu ko'rinadi.
   const getNavItems = () => {
     if (userRole === 'admin') return [];
     if (userRole === 'teacher') return teacherNavItems;
     if (userRole === 'student') return studentNavItems;
-    return publicNavItems;
+    return []; // public — nav yo'q
   };
 
   const navItems = getNavItems();
@@ -146,13 +141,13 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
                     href="/login"
                     className="px-4 py-2 text-foreground hover:bg-muted rounded-md transition-smooth font-medium"
                   >
-                    Kirish
+                    {t('auth.login')}
                   </Link>
                   <Link
                     href="/register"
                     className="px-4 py-2 bg-primary text-primary-foreground rounded-md transition-smooth hover:opacity-90 font-medium"
                   >
-                    Ro'yxat
+                    {t('auth.register')}
                   </Link>
                 </div>
               </>
@@ -200,14 +195,14 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center justify-center px-4 py-3 text-foreground hover:bg-muted rounded-md transition-smooth font-medium"
                 >
-                  Kirish
+                  {t('auth.login')}
                 </Link>
                 <Link
                   href="/register"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center justify-center px-4 py-3 bg-primary text-primary-foreground rounded-md transition-smooth hover:opacity-90 font-medium"
                 >
-                  Ro'yxatdan O'tish
+                  {t('auth.register')}
                 </Link>
               </div>
             )}

@@ -96,15 +96,6 @@ const nextConfig = {
     ];
   },
 
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/course-marketplace',
-        permanent: false,
-      },
-    ];
-  },
 };
 
 export default withBundleAnalyzer(nextConfig);
