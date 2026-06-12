@@ -2,9 +2,28 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || 'ustoz-fallback-secret'
-);
+function resolveJwtSecret(): Uint8Array {
+  const raw = process.env.JWT_SECRET;
+  if (raw && raw.length >= 32) {
+    return new TextEncoder().encode(raw);
+  }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      'JWT_SECRET muhit o\'zgaruvchisi o\'rnatilmagan yoki juda qisqa (kamida 32 belgi). ' +
+        'Production muhit uchun majburiy.',
+    );
+  }
+  // Dev rejimda barqaror, lekin hardcoded bo'lmagan kalit ishlatamiz.
+  // Eslatma: bu faqat lokal development uchun.
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[auth] JWT_SECRET o\'rnatilmagan — dev fallback kalit ishlatilmoqda. ' +
+      'Production uchun JWT_SECRET (>=32 belgi) sozlang.',
+  );
+  return new TextEncoder().encode('dev-only-insecure-secret-do-not-use-in-prod');
+}
+
+const JWT_SECRET = resolveJwtSecret();
 
 export const COOKIE_NAME = 'ustoz_session';
 

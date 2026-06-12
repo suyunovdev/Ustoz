@@ -96,10 +96,18 @@ export async function processRefund(
     );
 
     // 2) Enrollment'ni deaktivatsiya qilish (kurs ro'yxatidan olib tashlanadi)
-    await tx.enrollment.updateMany({
+    const deactivated = await tx.enrollment.updateMany({
       where: { studentId: target.studentId, courseId: target.courseId, isActive: true },
       data: { isActive: false },
     });
+
+    // 2a) Course enrollment counter dekrementi (faqat haqiqatda deaktivatsiya bo'lganda)
+    if (deactivated.count > 0) {
+      await tx.course.update({
+        where: { id: target.courseId },
+        data: { enrollmentCount: { decrement: deactivated.count } },
+      });
+    }
 
     // 3) Audit log
     await auditLog(

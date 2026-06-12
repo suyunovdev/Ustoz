@@ -190,7 +190,14 @@ export async function POST(request: NextRequest) {
 
         const transaction = await prisma.paymentTransaction.findFirst({
           where: { paymeTransactionId: transactionId },
-          select: { id: true, status: true, paymeTime: true, completedAt: true },
+          select: {
+            id: true,
+            status: true,
+            paymeTime: true,
+            completedAt: true,
+            studentId: true,
+            courseId: true,
+          },
         });
 
         if (!transaction) {
@@ -212,12 +219,51 @@ export async function POST(request: NextRequest) {
 
         const performTime = Date.now();
         try {
-          await prisma.paymentTransaction.update({
-            where: { id: transaction.id },
-            data: {
-              status: 'completed',
-              completedAt: new Date(performTime),
-            },
+          // Tranzaksiyani completed qilish + enrollment yaratish — atomik
+          await prisma.$transaction(async (tx) => {
+            await tx.paymentTransaction.update({
+              where: { id: transaction.id },
+              data: {
+                status: 'completed',
+                completedAt: new Date(performTime),
+              },
+            });
+
+            const existing = await tx.enrollment.findUnique({
+              where: {
+                studentId_courseId: {
+                  studentId: transaction.studentId,
+                  courseId: transaction.courseId,
+                },
+              },
+              select: { isActive: true },
+            });
+
+            const shouldIncrement = !existing || !existing.isActive;
+
+            await tx.enrollment.upsert({
+              where: {
+                studentId_courseId: {
+                  studentId: transaction.studentId,
+                  courseId: transaction.courseId,
+                },
+              },
+              create: {
+                studentId: transaction.studentId,
+                courseId: transaction.courseId,
+                isActive: true,
+              },
+              update: {
+                isActive: true,
+              },
+            });
+
+            if (shouldIncrement) {
+              await tx.course.update({
+                where: { id: transaction.courseId },
+                data: { enrollmentCount: { increment: 1 } },
+              });
+            }
           });
         } catch (updateError) {
           console.error('Payme PerformTransaction update error:', updateError);

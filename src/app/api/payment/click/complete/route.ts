@@ -81,7 +81,13 @@ export async function POST(request: NextRequest) {
     // Get transaction
     const transaction = await prisma.paymentTransaction.findUnique({
       where: { merchantTransId: body.merchant_trans_id },
-      select: { id: true, status: true, amountUzs: true },
+      select: {
+        id: true,
+        status: true,
+        amountUzs: true,
+        studentId: true,
+        courseId: true,
+      },
     });
 
     if (!transaction) {
@@ -154,16 +160,56 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mark as completed
+    // Mark as completed va enrollment yaratish — atomik
     try {
-      await prisma.paymentTransaction.update({
-        where: { id: transaction.id },
-        data: {
-          status: 'completed',
-          completedAt: new Date(),
-          gatewayTransactionId: body.click_trans_id.toString(),
-          gatewayPaymentId: body.click_paydoc_id.toString(),
-        },
+      await prisma.$transaction(async (tx) => {
+        await tx.paymentTransaction.update({
+          where: { id: transaction.id },
+          data: {
+            status: 'completed',
+            completedAt: new Date(),
+            gatewayTransactionId: body.click_trans_id.toString(),
+            gatewayPaymentId: body.click_paydoc_id.toString(),
+          },
+        });
+
+        // Mavjud enrollment'ni topish — counter inkrementi qarori uchun
+        const existing = await tx.enrollment.findUnique({
+          where: {
+            studentId_courseId: {
+              studentId: transaction.studentId,
+              courseId: transaction.courseId,
+            },
+          },
+          select: { isActive: true },
+        });
+
+        // Faqat yangi yoki noaktiv enrollment bo'lsa counter oshiriladi
+        const shouldIncrement = !existing || !existing.isActive;
+
+        await tx.enrollment.upsert({
+          where: {
+            studentId_courseId: {
+              studentId: transaction.studentId,
+              courseId: transaction.courseId,
+            },
+          },
+          create: {
+            studentId: transaction.studentId,
+            courseId: transaction.courseId,
+            isActive: true,
+          },
+          update: {
+            isActive: true,
+          },
+        });
+
+        if (shouldIncrement) {
+          await tx.course.update({
+            where: { id: transaction.courseId },
+            data: { enrollmentCount: { increment: 1 } },
+          });
+        }
       });
     } catch (updateError) {
       console.error('Click complete update error:', updateError);
