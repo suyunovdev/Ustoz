@@ -4,13 +4,13 @@
  */
 
 import type { NextRequest } from 'next/server';
-import { requireAuth, errorResponse } from '@/lib/auth-helpers';
+import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { listMy } from '@/lib/services/certificate.service';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth(req);
+    const session = await requireStudent(req);
     const certificates = await listMy(session.sub);
     return jsonResponse({ certificates });
   } catch (err) {

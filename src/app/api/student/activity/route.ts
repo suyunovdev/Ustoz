@@ -14,31 +14,24 @@
  */
 
 import { NextRequest } from 'next/server';
-import { getSessionFromRequest } from '@/lib/auth';
+import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { getActivityCalendar } from '@/lib/services/streak.service';
 import { jsonResponse } from '@/lib/json';
 
 export async function GET(req: NextRequest) {
-  const session = await getSessionFromRequest(req);
-  if (!session) {
-    return jsonResponse(
-      { error: 'Autentifikatsiya talab qilinadi' },
-      { status: 401 },
-    );
-  }
-
-  const daysParam = req.nextUrl.searchParams.get('days');
-  const parsed = Number(daysParam);
-  const days = Math.min(
-    Math.max(Number.isFinite(parsed) && parsed > 0 ? parsed : 90, 1),
-    365,
-  );
-
   try {
+    const session = await requireStudent(req);
+
+    const daysParam = req.nextUrl.searchParams.get('days');
+    const parsed = Number(daysParam);
+    const days = Math.min(
+      Math.max(Number.isFinite(parsed) && parsed > 0 ? parsed : 90, 1),
+      365,
+    );
+
     const activities = await getActivityCalendar(session.sub, days);
     return jsonResponse({ days, activities });
   } catch (err) {
-    console.error('[GET /api/student/activity]', err);
-    return jsonResponse({ error: 'Server xatosi' }, { status: 500 });
+    return errorResponse(err);
   }
 }

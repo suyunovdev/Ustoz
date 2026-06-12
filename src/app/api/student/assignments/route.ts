@@ -6,13 +6,13 @@
  */
 
 import type { NextRequest } from 'next/server';
-import { requireAuth, errorResponse } from '@/lib/auth-helpers';
+import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth(req);
+    const session = await requireStudent(req);
 
     // Talaba qaysi kurslarga yozilgan
     const enrollments = await prisma.enrollment.findMany({

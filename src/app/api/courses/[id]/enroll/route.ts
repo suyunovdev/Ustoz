@@ -1,15 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/auth';
+import { NextRequest } from 'next/server';
+import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
 
 // POST /api/courses/[id]/enroll — Kursga yozilish (bepul kurslar uchun)
+// Faqat student roli — teacher/admin bepul kursga yozila olmaydi
+// (xohlasalar, alohida student account ochishlari kerak).
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSessionFromRequest(req);
-  if (!session) return jsonResponse({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 });
+  let session;
+  try {
+    session = await requireStudent(req);
+  } catch (err) {
+    return errorResponse(err);
+  }
 
   const { id: courseId } = await params;
 

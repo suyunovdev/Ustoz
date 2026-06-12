@@ -43,6 +43,20 @@ export async function requireTeacherOrAdmin(req: NextRequest): Promise<JWTPayloa
 }
 
 /**
+ * Faqat student rolidagi foydalanuvchilar uchun.
+ * Talabaga oid endpoint'lar: enrollment, progress, sertifikat, tavsiyalar.
+ * Teacher/Admin bu endpoint'larga kira olmasligi kerak —
+ * agar ular o'rganmoqchi bo'lsa, alohida student account ochsin.
+ */
+export async function requireStudent(req: NextRequest): Promise<JWTPayload> {
+  const session = await requireAuth(req);
+  if (session.role !== 'student') {
+    throw new ForbiddenError('Faqat talabalar uchun');
+  }
+  return session;
+}
+
+/**
  * Request'dan IP olish (Vercel/proxy uchun forwarded header'ni hurmat qiladi).
  */
 export function getClientIp(req: NextRequest): string | null {
