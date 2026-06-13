@@ -198,7 +198,10 @@
     "since": "С 2023 года",
     "trustDataProtection": "Защита данных",
     "trustSecurePayment": "Безопасная оплата",
-    "trustQualityGuarantee": "Гарантия качества"
+    "trustQualityGuarantee": "Гарантия качества",
+    "cookieText": "Мы используем файлы cookie на нашем сайте. Продолжая использование сайта, вы соглашаетесь с нашей политикой cookie.",
+    "cookieAccept": "Принять",
+    "cookieDecline": "Отклонить"
   },
   "admin": {
     "dashboard": "Админ панель",

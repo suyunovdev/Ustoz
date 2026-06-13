@@ -198,7 +198,10 @@
     "since": "2023-yildan beri",
     "trustDataProtection": "Ma'lumotlar himoyasi",
     "trustSecurePayment": "Xavfsiz to'lov",
-    "trustQualityGuarantee": "Sifat kafolati"
+    "trustQualityGuarantee": "Sifat kafolati",
+    "cookieText": "Biz saytimizda cookie fayllaridan foydalanamiz. Saytdan foydalanishni davom ettirib, siz cookie siyosatimizga rozilik bildirasiz.",
+    "cookieAccept": "Qabul qilish",
+    "cookieDecline": "Rad etish"
   },
   "admin": {
     "dashboard": "Admin panel",

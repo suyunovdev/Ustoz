@@ -198,7 +198,10 @@
     "since": "Since 2023",
     "trustDataProtection": "Data Protection",
     "trustSecurePayment": "Secure Payment",
-    "trustQualityGuarantee": "Quality Guarantee"
+    "trustQualityGuarantee": "Quality Guarantee",
+    "cookieText": "We use cookies on our site. By continuing to use the site, you agree to our cookie policy.",
+    "cookieAccept": "Accept",
+    "cookieDecline": "Decline"
   },
   "admin": {
     "dashboard": "Admin Dashboard",
