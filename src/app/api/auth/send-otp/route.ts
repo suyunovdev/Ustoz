@@ -85,40 +85,45 @@ export async function POST(req: NextRequest) {
 
     if (resendKey && !resendKey.startsWith('your-')) {
       const fromAddress = process.env.RESEND_FROM || 'Ustoz <onboarding@resend.dev>';
-      const resp = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${resendKey}`,
-        },
-        body: JSON.stringify({
-          from: fromAddress,
-          to: [normalizedEmail],
-          subject: `Ustoz — Tasdiqlash kodi: ${otp}`,
-          html: `
-            <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:20px;">
-              <h2 style="color:#7c3aed;">Ustoz platformasi</h2>
-              <p>Sizning tasdiqlash kodingiz:</p>
-              <div style="font-size:40px;font-weight:bold;letter-spacing:10px;color:#7c3aed;padding:20px 0;">${otp}</div>
-              <p style="color:#6b7280;">Kod 10 daqiqa ichida amal qiladi.</p>
-            </div>
-          `,
-        }),
-      });
-      if (!resp.ok) {
-        const errBody = await resp.text();
-        console.error(`[resend] ${resp.status}:`, errBody);
-        console.log(`[DEV OTP fallback] ${normalizedEmail} → ${otp}`);
-      } else {
-        emailDelivered = true;
-        console.log(`[resend] OTP sent to ${normalizedEmail}`);
+      try {
+        const resp = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${resendKey}`,
+          },
+          body: JSON.stringify({
+            from: fromAddress,
+            to: [normalizedEmail],
+            subject: `Ustoz — Tasdiqlash kodi: ${otp}`,
+            html: `
+              <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:20px;">
+                <h2 style="color:#0f4c75;">Ustoz platformasi</h2>
+                <p>Sizning tasdiqlash kodingiz:</p>
+                <div style="font-size:40px;font-weight:bold;letter-spacing:10px;color:#0f4c75;padding:20px 0;">${otp}</div>
+                <p style="color:#6b7280;">Kod 10 daqiqa ichida amal qiladi.</p>
+                <p style="color:#9ca3af;font-size:12px;">Agar siz bu kodni so'ramagan bo'lsangiz, bu xabarni e'tiborsiz qoldiring.</p>
+              </div>
+            `,
+          }),
+        });
+        if (resp.ok) {
+          emailDelivered = true;
+          console.log(`[resend] OTP sent to ${normalizedEmail}`);
+        } else {
+          const errBody = await resp.text();
+          console.error(`[resend] ${resp.status}:`, errBody);
+        }
+      } catch (err) {
+        console.error('[resend] fetch error:', err);
       }
-    } else {
-      console.log(`[DEV OTP] ${normalizedEmail} → ${otp}`);
     }
 
-    // Dev rejimida OTP'ni response'da qaytaramiz (faqat development, prod'da NEVER)
-    const responseBody: any = { success: true, emailDelivered };
+    // OTP ni log qilish — Vercel logs'da ko'rish uchun (production debugging)
+    // Haqiqiy production'da bu olib tashlanadi
+    console.log(`[OTP] ${normalizedEmail} → ${otp} (delivered: ${emailDelivered})`);
+
+    const responseBody: Record<string, unknown> = { success: true, emailDelivered };
     if (isDev) {
       responseBody.devOtp = otp;
     }
