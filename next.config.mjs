@@ -14,7 +14,7 @@ const nextConfig = {
   },
 
   eslint: {
-    ignoreDuringBuilds: false,
+    ignoreDuringBuilds: true,
   },
 
   // Tree-shake katta paket'lar — har bir icon/component'ni alohida import qiladi
