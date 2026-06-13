@@ -67,7 +67,7 @@ export async function GET(
         option_b: q.optionB,
         option_c: q.optionC,
         option_d: q.optionD,
-        correct_answer: ['A', 'B', 'C', 'D'].indexOf(q.correctAnswer),
+        correct_answer: ['A', 'B', 'C', 'D'].indexOf(q.correctAnswer ?? ''),
         explanation: q.explanation,
       })),
     });
