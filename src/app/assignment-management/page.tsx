@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import Icon from '@/components/ui/AppIcon';
 
 interface Assignment {
@@ -236,7 +235,6 @@ const AssignmentManagementInteractive = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <RoleBasedHeader userRole="teacher" currentPath="/assignment-management" />
         <main className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-center h-64">
@@ -250,8 +248,6 @@ const AssignmentManagementInteractive = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <RoleBasedHeader userRole="teacher" currentPath="/assignment-management" />
-      
       <main className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
