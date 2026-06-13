@@ -6,6 +6,7 @@ import { I18nProvider } from '@/contexts/I18nContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { Toaster } from '@/components/common/Toaster';
 import CookieConsent from '@/components/common/CookieConsent';
+import { CookieConsentProvider } from '@/contexts/CookieConsentContext';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -77,11 +78,13 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <I18nProvider>
-            <QueryProvider>
-              {children}
-              <Toaster />
-              <CookieConsent />
-            </QueryProvider>
+            <CookieConsentProvider>
+              <QueryProvider>
+                {children}
+                <Toaster />
+                <CookieConsent />
+              </QueryProvider>
+            </CookieConsentProvider>
           </I18nProvider>
         </AuthProvider>
       </body>

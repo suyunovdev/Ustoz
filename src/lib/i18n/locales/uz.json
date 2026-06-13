@@ -210,7 +210,8 @@
     "cookieAnalyticsDesc": "Sayt qanday ishlatilishini tushunish va yaxshilash uchun",
     "cookieMarketing": "Marketing",
     "cookieMarketingDesc": "Sizga mos kurslarni tavsiya qilish uchun",
-    "cookieRequired": "Shart"
+    "cookieRequired": "Shart",
+    "cookieSavePreferences": "Tanlovni saqlash"
   },
   "admin": {
     "dashboard": "Admin panel",

@@ -210,7 +210,8 @@
     "cookieAnalyticsDesc": "To understand and improve how the site is used",
     "cookieMarketing": "Marketing",
     "cookieMarketingDesc": "To recommend suitable courses for you",
-    "cookieRequired": "Required"
+    "cookieRequired": "Required",
+    "cookieSavePreferences": "Save preferences"
   },
   "admin": {
     "dashboard": "Admin Dashboard",

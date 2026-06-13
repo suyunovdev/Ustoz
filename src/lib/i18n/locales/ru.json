@@ -210,7 +210,8 @@
     "cookieAnalyticsDesc": "Для понимания и улучшения использования сайта",
     "cookieMarketing": "Маркетинг",
     "cookieMarketingDesc": "Для рекомендации подходящих курсов",
-    "cookieRequired": "Обязательно"
+    "cookieRequired": "Обязательно",
+    "cookieSavePreferences": "Сохранить выбор"
   },
   "admin": {
     "dashboard": "Админ панель",
