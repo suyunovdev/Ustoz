@@ -343,9 +343,7 @@ const AboutPageInteractive = () => {
               <div>
                 <h4 className="font-heading font-bold mb-4">O'qituvchilar</h4>
                 <ul className="space-y-2 text-sm">
-                  <li><Link href="/register?role=teacher" className="text-muted-foreground hover:text-primary transition-smooth">O'qituvchi Bo'lish</Link></li>
-                  <li><Link href="/course-creation" className="text-muted-foreground hover:text-primary transition-smooth">Kurs Yaratish</Link></li>
-                  <li><Link href="/teacher-dashboard" className="text-muted-foreground hover:text-primary transition-smooth">Dashboard</Link></li>
+                  <li><Link href="/register?role=teacher" className="text-muted-foreground hover:text-primary transition-smooth">O&apos;qituvchi Bo&apos;lish</Link></li>
                 </ul>
               </div>
 

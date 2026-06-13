@@ -17,7 +17,7 @@ export default function RootPage() {
       } else if (role === 'admin') {
         router?.replace('/admin-dashboard');
       } else {
-        router?.replace('/course-marketplace');
+        router?.replace('/student-dashboard');
       }
     } else {
       router?.replace('/landing-page');

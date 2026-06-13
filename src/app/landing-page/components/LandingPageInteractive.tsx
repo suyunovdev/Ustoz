@@ -830,7 +830,6 @@ const LandingPageInteractive = () => {
                 <h4 className="font-heading font-bold mb-4">{t('landing.footerTeachers')}</h4>
                 <ul className="space-y-2 text-sm">
                   <li><Link href="/register?role=teacher" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerBecomeTeacher')}</Link></li>
-                  <li><Link href="/course-creation" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerCreateCourse')}</Link></li>
                 </ul>
               </div>
               <div>
