@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     ];
   }
   if (category) where.category = category;
-  if (targetAudience) where.targetAudience = targetAudience;
+  if (targetAudience) where.targetAudience = targetAudience as Prisma.EnumTargetAudienceFilter<"Course">;
   if (minPrice || maxPrice) {
     where.priceUzs = {};
     if (minPrice) where.priceUzs.gte = BigInt(minPrice);
