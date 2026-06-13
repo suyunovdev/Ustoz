@@ -199,9 +199,18 @@
     "trustDataProtection": "Защита данных",
     "trustSecurePayment": "Безопасная оплата",
     "trustQualityGuarantee": "Гарантия качества",
-    "cookieText": "Мы используем файлы cookie на нашем сайте. Продолжая использование сайта, вы соглашаетесь с нашей политикой cookie.",
-    "cookieAccept": "Принять",
-    "cookieDecline": "Отклонить"
+    "cookieText": "Мы используем файлы cookie на нашем сайте. Они помогают улучшать платформу, обеспечивать безопасность и создавать удобный опыт для вас.",
+    "cookieAccept": "Принять все",
+    "cookieDecline": "Отклонить",
+    "cookieEssentialOnly": "Только необходимые",
+    "cookieDetails": "Подробнее",
+    "cookieEssential": "Необходимые",
+    "cookieEssentialDesc": "Для работы сайта: сессия, аутентификация, безопасность",
+    "cookieAnalytics": "Аналитика",
+    "cookieAnalyticsDesc": "Для понимания и улучшения использования сайта",
+    "cookieMarketing": "Маркетинг",
+    "cookieMarketingDesc": "Для рекомендации подходящих курсов",
+    "cookieRequired": "Обязательно"
   },
   "admin": {
     "dashboard": "Админ панель",

@@ -199,9 +199,18 @@
     "trustDataProtection": "Ma'lumotlar himoyasi",
     "trustSecurePayment": "Xavfsiz to'lov",
     "trustQualityGuarantee": "Sifat kafolati",
-    "cookieText": "Biz saytimizda cookie fayllaridan foydalanamiz. Saytdan foydalanishni davom ettirib, siz cookie siyosatimizga rozilik bildirasiz.",
-    "cookieAccept": "Qabul qilish",
-    "cookieDecline": "Rad etish"
+    "cookieText": "Biz saytimizda cookie fayllaridan foydalanamiz. Ular platformani yaxshilash, xavfsizlikni ta'minlash va sizga qulay tajriba yaratish uchun xizmat qiladi.",
+    "cookieAccept": "Hammasini qabul qilish",
+    "cookieDecline": "Rad etish",
+    "cookieEssentialOnly": "Faqat zaruriy",
+    "cookieDetails": "Batafsil ko'rish",
+    "cookieEssential": "Zaruriy",
+    "cookieEssentialDesc": "Sayt ishlashi uchun kerak: sessiya, autentifikatsiya, xavfsizlik",
+    "cookieAnalytics": "Analitika",
+    "cookieAnalyticsDesc": "Sayt qanday ishlatilishini tushunish va yaxshilash uchun",
+    "cookieMarketing": "Marketing",
+    "cookieMarketingDesc": "Sizga mos kurslarni tavsiya qilish uchun",
+    "cookieRequired": "Shart"
   },
   "admin": {
     "dashboard": "Admin panel",

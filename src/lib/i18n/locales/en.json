@@ -199,9 +199,18 @@
     "trustDataProtection": "Data Protection",
     "trustSecurePayment": "Secure Payment",
     "trustQualityGuarantee": "Quality Guarantee",
-    "cookieText": "We use cookies on our site. By continuing to use the site, you agree to our cookie policy.",
-    "cookieAccept": "Accept",
-    "cookieDecline": "Decline"
+    "cookieText": "We use cookies on our site. They help improve the platform, ensure security, and create a better experience for you.",
+    "cookieAccept": "Accept all",
+    "cookieDecline": "Decline",
+    "cookieEssentialOnly": "Essential only",
+    "cookieDetails": "View details",
+    "cookieEssential": "Essential",
+    "cookieEssentialDesc": "Required for site operation: session, authentication, security",
+    "cookieAnalytics": "Analytics",
+    "cookieAnalyticsDesc": "To understand and improve how the site is used",
+    "cookieMarketing": "Marketing",
+    "cookieMarketingDesc": "To recommend suitable courses for you",
+    "cookieRequired": "Required"
   },
   "admin": {
     "dashboard": "Admin Dashboard",
