@@ -297,8 +297,12 @@ const LearningInterfaceInteractive = () => {
             {currentTopic?.videoUrl ? (
               <VideoPlayer
                 videoUrl={currentTopic.videoUrl}
+                title={currentTopic.title}
+                currentTime={currentTime}
                 onTimeUpdate={setCurrentTime}
                 playbackSpeed={playbackSpeed}
+                onSpeedChange={setPlaybackSpeed}
+                onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
@@ -375,16 +379,16 @@ const LearningInterfaceInteractive = () => {
 
           <div className="flex-1 overflow-y-auto p-4">
             {activePanel === 'transcript' && (
-              <InteractiveTranscript transcript={[]} currentTime={currentTime} onSeek={setCurrentTime} />
+              <InteractiveTranscript segments={[]} currentTime={currentTime} onSeek={setCurrentTime} />
             )}
             {activePanel === 'notes' && (
-              <NoteTaking notes={notes} onAddNote={handleAddNote} currentTime={currentTime} />
+              <NoteTaking notes={notes} onAddNote={handleAddNote} currentTime={currentTime} onSeek={setCurrentTime} />
             )}
             {activePanel === 'discussion' && (
-              <DiscussionPanel topicId={currentTopic?.id || ''} userId={userId || ''} />
+              <DiscussionPanel topicId={currentTopic?.id || ''} />
             )}
             {activePanel === 'resources' && (
-              <ResourceDownloads resources={[]} />
+              <ResourceDownloads topicId={currentTopic?.id || ''} />
             )}
           </div>
         </div>
@@ -398,7 +402,7 @@ const LearningInterfaceInteractive = () => {
             <CourseNavigation
               sections={sections}
               currentTopicId={currentTopic?.id || ''}
-              onTopicSelect={handleTopicSelect}
+              onTopicChange={handleTopicSelect}
             />
           </div>
         )}

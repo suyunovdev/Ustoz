@@ -168,7 +168,7 @@ const QuizInterfaceInteractive = () => {
         setScore(result.percentage);
 
         // Backend details bilan questions ni yangilash (correct answer + explanation)
-        const detailsById = new Map((result.details || []).map((d: { questionId: string; correctAnswer: string; explanation?: string }) => [d.questionId, d]));
+        const detailsById = new Map<string, { questionId: string; correctAnswer: string; explanation?: string }>((result.details || []).map((d: { questionId: string; correctAnswer: string; explanation?: string }) => [d.questionId, d]));
         setQuestions((prev) =>
           prev.map((q) => {
             const d = detailsById.get(q.id);
@@ -210,18 +210,23 @@ const QuizInterfaceInteractive = () => {
     return (
       <div className="min-h-screen bg-background pt-20">
         <ResultsScreen
-          score={score}
-          totalPoints={quizConfig.totalPoints}
-          passingScore={quizConfig.passingScore}
-          answers={answers}
-          questions={questions}
-          onRetake={() => {
-            setAnswers(questions.map((q) => ({ questionId: q.id, answer: null, flagged: false })));
-            setCurrentQuestionIndex(0);
-            setTimeRemaining(3600);
-            setQuizState('taking');
+          results={{
+            correctCount: questions.filter((q, i) => answers[i]?.answer === q.correctAnswer).length,
+            totalQuestions: questions.length,
+            totalPoints: score * quizConfig.totalPoints / 100,
+            maxPoints: quizConfig.totalPoints,
+            percentage: score,
+            passed: score >= quizConfig.passingScore,
+            topicScores: questions.reduce((acc, q, i) => {
+              if (!acc[q.topic]) acc[q.topic] = { correct: 0, total: 0 };
+              acc[q.topic].total += 1;
+              if (answers[i]?.answer === q.correctAnswer) acc[q.topic].correct += 1;
+              return acc;
+            }, {} as { [key: string]: { correct: number; total: number } }),
           }}
-          onExit={() => courseId ? router.push(`/learning-interface?courseId=${courseId}`) : router.push('/student-dashboard')}
+          questions={questions}
+          answers={answers}
+          quizConfig={quizConfig}
         />
       </div>
     );
@@ -236,13 +241,14 @@ const QuizInterfaceInteractive = () => {
             <h1 className="text-2xl font-heading font-bold text-foreground">{quizConfig.title}</h1>
             <p className="text-muted-foreground text-sm mt-1">{quizConfig.description}</p>
           </div>
-          <TimerDisplay timeRemaining={timeRemaining} isUrgent={timeRemaining < 300} />
+          <TimerDisplay timeRemaining={timeRemaining} totalTime={3600} />
         </div>
 
         <ProgressIndicator
-          current={currentQuestionIndex + 1}
-          total={quizConfig.totalQuestions}
-          answers={answers}
+          currentQuestion={currentQuestionIndex + 1}
+          totalQuestions={quizConfig.totalQuestions}
+          answeredCount={answers.filter((a) => a.answer !== null).length}
+          flaggedCount={answers.filter((a) => a.flagged).length}
         />
 
         <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -250,11 +256,10 @@ const QuizInterfaceInteractive = () => {
             <QuestionDisplay
               question={currentQuestion}
               questionNumber={currentQuestionIndex + 1}
-              selectedAnswer={currentAnswer?.answer}
+              answer={currentAnswer?.answer ?? null}
               isFlagged={currentAnswer?.flagged || false}
-              onAnswer={handleAnswer}
-              onFlag={() => handleFlag(currentQuestion.id)}
-              showExplanation={quizState === 'review'}
+              onAnswerChange={handleAnswer}
+              onFlagToggle={() => handleFlag(currentQuestion.id)}
             />
 
             <NavigationControls
@@ -263,8 +268,9 @@ const QuizInterfaceInteractive = () => {
               onPrevious={() => setCurrentQuestionIndex((i) => Math.max(0, i - 1))}
               onNext={() => setCurrentQuestionIndex((i) => Math.min(quizConfig.totalQuestions - 1, i + 1))}
               onSubmit={handleSubmit}
-              onToggleReview={() => setShowReviewPanel(!showReviewPanel)}
-              answeredCount={answers.filter((a) => a.answer !== null).length}
+              onReview={() => setShowReviewPanel(!showReviewPanel)}
+              isLastQuestion={currentQuestionIndex === quizConfig.totalQuestions - 1}
+              showReviewButton={true}
             />
           </div>
 
@@ -273,8 +279,8 @@ const QuizInterfaceInteractive = () => {
               <QuestionReviewPanel
                 questions={questions}
                 answers={answers}
-                currentIndex={currentQuestionIndex}
-                onQuestionSelect={setCurrentQuestionIndex}
+                currentQuestionIndex={currentQuestionIndex}
+                onGoToQuestion={setCurrentQuestionIndex}
               />
             </div>
           )}

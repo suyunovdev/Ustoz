@@ -43,6 +43,7 @@ describe('maybeAutoIssue', () => {
     vi.mocked(certificateRepo.isEligibleForCertificate).mockResolvedValue({
       eligible: false,
       progress: 60,
+      completed: false,
     });
 
     const result = await maybeAutoIssue(STUDENT, COURSE);
@@ -54,6 +55,7 @@ describe('maybeAutoIssue', () => {
     vi.mocked(certificateRepo.isEligibleForCertificate).mockResolvedValue({
       eligible: true,
       progress: 100,
+      completed: true,
     });
     vi.mocked(certificateRepo.issueCertificate).mockResolvedValue({
       id: 'cert-1',
@@ -95,6 +97,7 @@ describe('manualIssueByTeacher', () => {
     vi.mocked(certificateRepo.isEligibleForCertificate).mockResolvedValue({
       eligible: false,
       progress: 40,
+      completed: false,
     });
 
     await expect(
@@ -107,6 +110,7 @@ describe('manualIssueByTeacher', () => {
     vi.mocked(certificateRepo.isEligibleForCertificate).mockResolvedValue({
       eligible: false,
       progress: 40,
+      completed: false,
     });
     vi.mocked(certificateRepo.issueCertificate).mockResolvedValue({
       id: 'cert-2',

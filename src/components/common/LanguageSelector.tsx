@@ -59,7 +59,7 @@ const LanguageSelector = ({
   }, [isOpen]);
 
   const handleLanguageSelect = (languageCode: string) => {
-    setSelectedLanguage(languageCode);
+    setSelectedLanguage(languageCode as Locale);
     setLocale(languageCode as Locale);
     setIsOpen(false);
     if (onLanguageChange) {

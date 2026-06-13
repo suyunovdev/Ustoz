@@ -10,7 +10,7 @@ const nextConfig = {
   distDir: process.env.DIST_DIR || '.next',
 
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
   eslint: {

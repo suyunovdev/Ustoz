@@ -241,7 +241,7 @@ const CourseDetailsInteractive = () => {
     <div className="min-h-screen bg-background pt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <CourseHeroSection
-          course={{ ...course, isEnrolled }}
+          course={course}
           onPurchase={handlePurchase}
           isPurchasing={isPurchasing}
         />
@@ -318,7 +318,7 @@ const CourseDetailsInteractive = () => {
 
           <div className="lg:col-span-1">
             <CourseSidebar
-              course={{ ...course, isEnrolled }}
+              course={course}
               onPurchase={handlePurchase}
               isPurchasing={isPurchasing}
             />

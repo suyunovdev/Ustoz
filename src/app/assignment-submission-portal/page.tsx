@@ -373,7 +373,7 @@ const AssignmentSubmissionPortalInteractive = () => {
                         {submission?.grade !== null ? (
                           <div>
                             <p className="text-2xl font-bold text-success">
-                              {submission.grade}/{assignment.maxScore}
+                              {submission?.grade}/{assignment.maxScore}
                             </p>
                             <p className="text-xs text-muted-foreground">Baholandi</p>
                           </div>

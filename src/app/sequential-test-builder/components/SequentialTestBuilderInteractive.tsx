@@ -106,8 +106,8 @@ const SequentialTestBuilderInteractive = () => {
     }
   };
 
-  const handleQuestionReorder = (reorderedQuestions: TestQuestion[]) => {
-    setQuestions(reorderedQuestions);
+  const handleQuestionReorder = (questions: TestQuestion[]) => {
+    setQuestions(questions);
   };
 
   const handleConfigUpdate = (config: TestConfig) => {
@@ -179,7 +179,8 @@ const SequentialTestBuilderInteractive = () => {
               questions={questions}
               selectedQuestionId={selectedQuestionId}
               onQuestionSelect={setSelectedQuestionId}
-              onQuestionReorder={handleQuestionReorder}
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              onQuestionReorder={handleQuestionReorder as any}
               onAddQuestion={handleAddQuestion}
             />
           </div>
