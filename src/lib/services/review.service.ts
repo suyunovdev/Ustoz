@@ -11,6 +11,10 @@
 
 import { courseReviewRepo } from '@/lib/repositories';
 import { ValidationError } from '@/lib/errors';
+import {
+  isValidTemplateForRating,
+  getTemplateText,
+} from '@/lib/data/review-templates';
 
 export class ReviewNotFoundError extends Error {
   code = 'REVIEW_NOT_FOUND';
@@ -36,24 +40,12 @@ export class NotEnrolledError extends Error {
   }
 }
 
-const MIN_COMMENT_LENGTH = 0; // Comment optional, but if present can't be empty
-const MAX_COMMENT_LENGTH = 2000;
 const MAX_REPLY_LENGTH = 2000;
 
 function validateRating(rating: number) {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     throw new ValidationError("Reyting 1-5 oralig'ida");
   }
-}
-
-function validateComment(comment: string | null | undefined): string | null {
-  if (!comment) return null;
-  const trimmed = comment.trim();
-  if (trimmed.length === 0) return null;
-  if (trimmed.length > MAX_COMMENT_LENGTH) {
-    throw new ValidationError(`Izoh ${MAX_COMMENT_LENGTH} belgidan oshmasin`);
-  }
-  return trimmed;
 }
 
 function validateReply(reply: string): string {
@@ -88,7 +80,12 @@ export async function getCourseReviewStats(courseId: string) {
 
 export interface UpsertReviewServiceInput {
   rating: number;
-  comment?: string;
+  /**
+   * Tanlangan shablon ID (masalan "5-1"). Erkin matn EMAS — faqat
+   * `review-templates.ts`'da ro'yxatdan o'tgan ID'lar qabul qilinadi.
+   * Bo'sh qoldirsa — sharhsiz, faqat reyting saqlanadi.
+   */
+  templateId?: string;
 }
 
 export async function upsertOwnReview(
@@ -97,7 +94,18 @@ export async function upsertOwnReview(
   input: UpsertReviewServiceInput,
 ) {
   validateRating(input.rating);
-  const comment = validateComment(input.comment);
+
+  // Template ID → matn (erkin matn rad etiladi)
+  let comment: string | null = null;
+  if (input.templateId) {
+    if (!isValidTemplateForRating(input.templateId, input.rating)) {
+      throw new ValidationError(
+        `Tanlangan shablon ${input.rating}⭐ reytingiga mos kelmaydi`,
+      );
+    }
+    comment = getTemplateText(input.templateId);
+    if (!comment) throw new ValidationError("Shablon topilmadi");
+  }
 
   const enrolled = await courseReviewRepo.isEnrolled(courseId, studentId);
   if (!enrolled) throw new NotEnrolledError();

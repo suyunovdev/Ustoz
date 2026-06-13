@@ -60,21 +60,25 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@adobe/css-tools": "^4.5.0",
     "@aws-sdk/client-s3": "^3.1056.0",
     "@aws-sdk/s3-request-presigner": "^3.1056.0",
     "@dhiwise/component-tagger": "^1.0.14",
     "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
+    "@next/swc-darwin-arm64": "^16.2.9",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/react-query": "^5.100.14",
     "@tanstack/react-query-devtools": "^5.100.14",
+    "@testing-library/dom": "^10.4.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/pg": "^8.20.0",
     "axios": "^1.7.9",
     "bcryptjs": "^3.0.3",
+    "fraction.js": "^5.3.4",
     "jose": "^6.2.3",
     "jszip": "^3.10.1",
     "next": "^15.1.11",
@@ -83,7 +87,8 @@
     "react": "19.0.3",
     "react-dom": "19.0.3",
     "recharts": "^2.15.2",
-    "source-map-js": "^1.2.1"
+    "source-map-js": "^1.2.1",
+    "vite": "^8.0.16"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -107,6 +112,7 @@
     "jsdom": "^29.1.1",
     "postcss": "8.4.8",
     "prettier": "^3.5.3",
+    "pure-rand": "^6.1.0",
     "tailwindcss": "3.4.6",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5",

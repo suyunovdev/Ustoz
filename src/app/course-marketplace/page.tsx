@@ -17,7 +17,7 @@ const MarketplaceInteractive = dynamic(
 export const metadata: Metadata = {
   title: 'Kurslar marketplace',
   description:
-    "O'zbek tilidagi kurslarni kashf eting: dasturlash, dizayn, biznes, tillar va marketing. Narx, daraja va reyting bo'yicha filtr qiling, sizga mos kursni toping.",
+    "O'zbek tilidagi kurslarni kashf eting: maktab fanlari, tillar, san'at, hunarmandchilik, sport, tibbiyot, biznes va boshqa o'nlab yo'nalishlar. Narx, daraja va reyting bo'yicha filtr qiling, sizga mos kursni toping.",
   alternates: { canonical: '/course-marketplace' },
   openGraph: {
     title: 'Kurslar marketplace | Ustoz',

@@ -66,9 +66,9 @@ export async function POST(
     }
     const b = (body ?? {}) as Record<string, unknown>;
     const rating = typeof b.rating === 'number' ? b.rating : NaN;
-    const comment = typeof b.comment === 'string' ? b.comment : undefined;
+    const templateId = typeof b.templateId === 'string' ? b.templateId : undefined;
 
-    const result = await upsertOwnReview(courseId, session.sub, { rating, comment });
+    const result = await upsertOwnReview(courseId, session.sub, { rating, templateId });
     return jsonResponse(result, { status: 201 });
   } catch (err) {
     if (err instanceof NotEnrolledError) {

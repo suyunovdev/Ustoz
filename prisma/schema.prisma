@@ -57,31 +57,137 @@ enum TargetAudience {
   school_students
   university_students
   independent_learners
+  preschoolers
+  primary_school
+  middle_school
+  high_school
+  university_applicants
+  professionals
+  adults
+  seniors
+  all_levels
 }
 
 enum SubjectCategory {
+  // Tabiiy fanlar
   mathematics
   physics
   chemistry
   biology
   geometry
   algebra
+  astronomy
+  ecology
+  // IT va dasturlash
   informatics
-  uzbek_language
-  english_language
-  russian_language
-  history
-  geography
   programming
   web_development
   mobile_development
   data_science
   artificial_intelligence
+  // Tillar
+  uzbek_language
+  english_language
+  russian_language
+  arabic_language
+  chinese_language
+  korean_language
+  german_language
+  french_language
+  turkish_language
+  spanish_language
+  japanese_language
+  // Gumanitar va ijtimoiy
+  history
+  geography
+  philosophy
+  literature
+  sociology
+  // San'at va ijodiyot
+  music
+  singing
+  painting
+  drawing
+  photography
+  videography
+  cinema
+  theater
+  dance
+  design
+  // Hunarmandchilik
+  pottery
+  woodworking
+  sewing
+  knitting
+  embroidery
+  handcraft
+  jewelry
+  // Kasb-hunar va xizmat
+  cooking
+  confectionery
+  barbering
+  hairstyling
+  makeup
+  manicure
+  tailoring
+  // Sport va salomatlik
+  fitness
+  yoga
+  football
+  basketball
+  martial_arts
+  swimming
+  chess
+  nutrition
+  sports_general
+  // Tibbiyot va psixologiya
+  pharmacy
+  nursing
+  psychology
+  medicine_general
+  first_aid
+  // Huquq
+  law_general
+  civil_law
+  tax_law
+  // Qishloq xo'jaligi
+  agriculture
+  gardening
+  livestock
+  beekeeping
+  // Texnika va muhandislik
+  engineering_general
+  electrical
+  mechanics
+  construction
+  automotive
+  plumbing
+  // Soft skills va shaxsiy rivojlanish
+  leadership
+  public_speaking
+  time_management
+  sales
+  negotiation
+  personal_development
+  // Bolalar va ota-onalar
+  early_development
+  parenting
+  child_psychology
+  // Din va ma'naviyat
+  religion_islam
+  religion_general
+  quran_studies
+  arabic_studies
+  // Biznes va boshqaruv
   business_management
   entrepreneurship
   marketing
   finance
-  design
+  accounting
+  logistics
+  project_management
+  hr_management
+  // Boshqa
   other
 }
 

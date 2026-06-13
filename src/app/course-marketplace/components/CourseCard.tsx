@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { getSubjectLabel, getAudienceLabel } from '@/lib/data/subject-labels';
 
 interface Course {
   id: string;
@@ -37,51 +38,16 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
 
   const getSubjectDisplay = () => {
     if (!course.subjectCategory) return null;
-    
-    const subjectLabels: Record<string, string> = {
-      mathematics: 'Matematika',
-      physics: 'Fizika',
-      chemistry: 'Kimyo',
-      biology: 'Biologiya',
-      geometry: 'Geometriya',
-      algebra: 'Algebra',
-      informatics: 'Informatika',
-      uzbek_language: "O'zbek tili",
-      english_language: 'Ingliz tili',
-      russian_language: 'Rus tili',
-      history: 'Tarix',
-      geography: 'Geografiya',
-      programming: 'Dasturlash',
-      web_development: 'Web Development',
-      mobile_development: 'Mobile Development',
-      data_science: 'Data Science',
-      artificial_intelligence: "Sun'iy Intellekt",
-      business_management: 'Biznes Boshqaruv',
-      entrepreneurship: 'Tadbirkorlik',
-      marketing: 'Marketing',
-      finance: 'Moliya',
-      design: 'Dizayn'
-    };
-
-    const subjectLabel = subjectLabels[course.subjectCategory] || course.subjectCategory;
-    
+    const subjectLabel = getSubjectLabel(course.subjectCategory);
     if (course.gradeLevel) {
       return `${course.gradeLevel}-sinf ${subjectLabel}`;
     }
-    
     return subjectLabel;
   };
 
   const getAudienceDisplay = () => {
     if (!course.targetAudience) return null;
-    
-    const audienceLabels: Record<string, string> = {
-      school_students: "Maktab o'quvchilari",
-      university_students: 'Talabalar',
-      independent_learners: 'Mustaqil'
-    };
-    
-    return audienceLabels[course.targetAudience];
+    return getAudienceLabel(course.targetAudience);
   };
 
   const subjectDisplay = getSubjectDisplay();
