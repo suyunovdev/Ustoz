@@ -2,10 +2,9 @@
 
 import { useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useAuth } from '@/contexts/AuthContext';
-import UserMenu from '@/components/common/UserMenu';
 
 export type TeacherTabId =
   | 'overview'
@@ -71,6 +70,7 @@ export default function TeacherSidebar({
   onMobileClose,
 }: TeacherSidebarProps) {
   const pathname = usePathname() || '/teacher-dashboard';
+  const router = useRouter();
   const activeTab = activeTabProp ?? resolveActiveFromPath(pathname);
   const { user } = useAuth();
 
@@ -209,14 +209,37 @@ export default function TeacherSidebar({
 
       {/* User block */}
       {user && (
-        <div className="border-t border-border p-3 flex items-center justify-between gap-2">
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground truncate">
-              {user.fullName ?? user.email}
-            </p>
-            <p className="text-xs text-muted-foreground truncate">O'qituvchi</p>
-          </div>
-          <UserMenu user={user} />
+        <div className="border-t border-border p-3">
+          <button
+            onClick={() => router.push('/profile')}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md hover:bg-muted transition-smooth text-left"
+          >
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary text-primary-foreground flex items-center justify-center text-sm font-semibold flex-shrink-0">
+              {(user.fullName || user.email || '?').charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium text-foreground truncate">
+                {user.fullName ?? user.email}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user.role === 'teacher' ? "O'qituvchi" : user.role === 'admin' ? 'Admin' : 'Talaba'}
+              </p>
+            </div>
+            <Icon name="ChevronRightIcon" size={16} className="text-muted-foreground flex-shrink-0" />
+          </button>
+          <button
+            onClick={async () => {
+              try {
+                await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+              } catch {}
+              router.push('/login');
+              router.refresh();
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-md text-destructive hover:bg-destructive/10 transition-smooth text-sm"
+          >
+            <Icon name="ArrowRightOnRectangleIcon" size={18} />
+            <span>Chiqish</span>
+          </button>
         </div>
       )}
     </>
