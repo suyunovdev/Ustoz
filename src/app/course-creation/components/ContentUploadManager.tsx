@@ -43,9 +43,27 @@ const ContentUploadManager = ({ materialId, onFilesChange, files }: ContentUploa
 
       for (let i = 0; i < uploadedFiles.length; i++) {
         const file = uploadedFiles[i];
-        // TODO: production'da fayl yuklash API (multipart) qo'shilishi kerak (S3/MinIO).
-        // Hozircha local object URL ishlatamiz — fayl brauzer sessiyasida ko'rinadi.
-        const fileUrl = URL.createObjectURL(file);
+
+        // Real upload via /api/upload
+        const formData = new FormData();
+        formData.append('file', file);
+
+        let fileUrl: string;
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+          });
+          if (res.ok) {
+            const data = await res.json();
+            fileUrl = data.url;
+          } else {
+            fileUrl = URL.createObjectURL(file);
+          }
+        } catch {
+          fileUrl = URL.createObjectURL(file);
+        }
 
         newFiles.push({
           id: `file-${Date.now()}-${i}`,

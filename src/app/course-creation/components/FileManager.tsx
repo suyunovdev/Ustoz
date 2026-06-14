@@ -19,7 +19,7 @@ interface FileManagerProps {
 const FileManager = ({ files, onFilesChange }: FileManagerProps) => {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const uploadedFiles = e.target.files;
     if (!uploadedFiles) return;
 
@@ -35,17 +35,31 @@ const FileManager = ({ files, onFilesChange }: FileManagerProps) => {
       });
     }, 200);
 
-    // Process files
-    Array.from(uploadedFiles).forEach((file) => {
+    // Upload files via /api/upload
+    for (const file of Array.from(uploadedFiles)) {
+      let fileUrl: string;
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', credentials: 'include', body: formData });
+        if (res.ok) {
+          const data = await res.json();
+          fileUrl = data.url;
+        } else {
+          fileUrl = URL.createObjectURL(file);
+        }
+      } catch {
+        fileUrl = URL.createObjectURL(file);
+      }
       const newFile: FileAttachment = {
         id: `file-${Date.now()}-${Math.random()}`,
         name: file.name,
         size: formatFileSize(file.size),
         type: file.type,
-        url: URL.createObjectURL(file)
+        url: fileUrl,
       };
       onFilesChange([...files, newFile]);
-    });
+    }
   };
 
   const formatFileSize = (bytes: number): string => {

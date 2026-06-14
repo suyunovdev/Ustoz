@@ -63,15 +63,33 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
 
       try {
         const fileType = getFileType(file);
+        setUploadProgress(prev => ({ ...prev, [fileId]: 30 }));
 
-        // TODO: implement S3/MinIO upload
-        // Local-only preview URL — does NOT persist across page reloads.
-        const publicUrl = URL.createObjectURL(file);
+        // Real upload via /api/upload
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('topicId', 'general');
 
-        // Simulate upload progress so the UI feels responsive.
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+
+        setUploadProgress(prev => ({ ...prev, [fileId]: 80 }));
+
+        let publicUrl: string;
+        if (res.ok) {
+          const data = await res.json();
+          publicUrl = data.url;
+        } else {
+          const err = await res.json().catch(() => ({}));
+          console.error('Upload failed:', err?.error || res.status);
+          publicUrl = URL.createObjectURL(file);
+        }
+
         setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
 
-        // TODO: add POST /api/teacher/materials endpoint and persist via JWT-authenticated fetch
         const newFile: UploadedFile = {
           id: fileId,
           name: file.name,
@@ -80,7 +98,7 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
           uploadDate: new Date().toISOString().split('T')[0],
           status: 'pending',
           watermarkEnabled: watermarkConfig.enabled && fileType === 'video',
-          url: publicUrl
+          url: publicUrl,
         };
 
         newUploadedFiles.push(newFile);
