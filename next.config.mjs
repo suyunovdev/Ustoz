@@ -83,7 +83,10 @@ const nextConfig = {
           "img-src 'self' data: blob: https:",
           "connect-src 'self' https://api.resend.com https://my.click.uz https://checkout.paycom.uz https://fonts.googleapis.com https://fonts.gstatic.com https://*.r2.cloudflarestorage.com",
           "media-src 'self' https://*.cloudflarestream.com blob:",
-          "frame-src 'self' https://customer-*.cloudflarestream.com",
+          "frame-src 'self' https://customer-*.cloudflarestream.com https://www.youtube.com https://player.vimeo.com",
+          "object-src 'none'",
+          "base-uri 'self'",
+          "form-action 'self' https://my.click.uz https://checkout.paycom.uz",
         ].join('; '),
       });
     }

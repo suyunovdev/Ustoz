@@ -47,26 +47,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Signup uchun: email bandligini tekshirish
-    if (type === 'signup') {
-      const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-      if (existing) {
-        return NextResponse.json(
-          { error: 'Bu email allaqachon ro\'yxatdan o\'tgan' },
-          { status: 409 }
-        );
-      }
+    // Email mavjudligini tekshirish — lekin javob bir xil (enumeration oldini olish)
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
+
+    if (type === 'signup' && existing) {
+      // Email band — lekin tashqariga aytmaymiz, shunchaki "success" qaytaramiz
+      // Haqiqiy foydalanuvchi login sahifasiga yo'naltiriladi
+      return NextResponse.json({ success: true, emailDelivered: false });
     }
 
-    // Password reset uchun: email mavjudligini tekshirish
-    if (type === 'password_reset') {
-      const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
-      if (!existing) {
-        return NextResponse.json(
-          { error: 'Bu email tizimda topilmadi' },
-          { status: 404 }
-        );
-      }
+    if (type === 'password_reset' && !existing) {
+      // Email topilmadi — lekin tashqariga aytmaymiz
+      return NextResponse.json({ success: true, emailDelivered: false });
     }
 
     const otp = generateOtp();
@@ -119,9 +111,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // OTP ni log qilish — Vercel logs'da ko'rish uchun (production debugging)
-    // Haqiqiy production'da bu olib tashlanadi
-    console.log(`[OTP] ${normalizedEmail} → ${otp} (delivered: ${emailDelivered})`);
+    // Production'da OTP log qilinmaydi — faqat delivery holati
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEV OTP] ${normalizedEmail} → ${otp}`);
+    } else {
+      console.log(`[OTP] sent to ${normalizedEmail.slice(0, 3)}*** (delivered: ${emailDelivered})`);
+    }
 
     const responseBody: Record<string, unknown> = { success: true, emailDelivered };
     if (isDev) {

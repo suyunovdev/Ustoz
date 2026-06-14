@@ -18,7 +18,13 @@ export async function POST(req: NextRequest) {
     if (password.length < 8) {
       return NextResponse.json(
         { error: 'Parol kamida 8 ta belgidan iborat bo\'lishi kerak' },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+    if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+      return NextResponse.json(
+        { error: 'Parol kamida 1 ta katta harf, 1 ta kichik harf va 1 ta raqam bo\'lishi kerak' },
+        { status: 400 },
       );
     }
 

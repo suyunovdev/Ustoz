@@ -25,29 +25,54 @@ const RichTextEditor = ({
     }
   };
 
+  const sanitizeVideoId = (id: string | undefined): string => {
+    if (!id) return '';
+    return id.replace(/[^a-zA-Z0-9_-]/g, '');
+  };
+
   const insertVideo = () => {
     if (!videoUrl.trim()) return;
 
-    let embedUrl = videoUrl;
-    
-    // Convert YouTube URLs
+    let embedUrl = '';
+
+    // Faqat YouTube va Vimeo URL'lar qabul qilinadi — boshqa URL'lar rad etiladi
     if (videoUrl.includes('youtube.com/watch')) {
-      const videoId = videoUrl.split('v=')[1]?.split('&')[0];
+      const videoId = sanitizeVideoId(videoUrl.split('v=')[1]?.split('&')[0]);
+      if (!videoId) return;
       embedUrl = `https://www.youtube.com/embed/${videoId}`;
     } else if (videoUrl.includes('youtu.be/')) {
-      const videoId = videoUrl.split('youtu.be/')[1]?.split('?')[0];
+      const videoId = sanitizeVideoId(videoUrl.split('youtu.be/')[1]?.split('?')[0]);
+      if (!videoId) return;
       embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    }
-    // Convert Vimeo URLs
-    else if (videoUrl.includes('vimeo.com/')) {
-      const videoId = videoUrl.split('vimeo.com/')[1]?.split('?')[0];
+    } else if (videoUrl.includes('vimeo.com/')) {
+      const videoId = sanitizeVideoId(videoUrl.split('vimeo.com/')[1]?.split('?')[0]);
+      if (!videoId) return;
       embedUrl = `https://player.vimeo.com/video/${videoId}`;
+    } else {
+      return; // Noma'lum URL — rad etish
     }
 
-    const videoHtml = `<div class="video-wrapper" style="position: relative; padding-bottom: 56.25%; height: 0; margin: 16px 0;"><iframe src="${embedUrl}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" frameborder="0" allowfullscreen></iframe></div>`;
-    
-    document.execCommand('insertHTML', false, videoHtml);
+    // DOM API orqali xavfsiz element yaratish (innerHTML/insertHTML ishlatmaslik)
     if (editorRef.current) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'video-wrapper';
+      wrapper.style.cssText = 'position:relative;padding-bottom:56.25%;height:0;margin:16px 0;';
+      const iframe = document.createElement('iframe');
+      iframe.src = embedUrl;
+      iframe.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;';
+      iframe.frameBorder = '0';
+      iframe.allowFullscreen = true;
+      iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-presentation');
+      wrapper.appendChild(iframe);
+
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(wrapper);
+      } else {
+        editorRef.current.appendChild(wrapper);
+      }
       onContentChange(editorRef.current.innerHTML);
     }
 
