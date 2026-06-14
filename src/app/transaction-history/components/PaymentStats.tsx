@@ -30,7 +30,7 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
       {/* Total Spent */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-card rounded-lg shadow p-6">
         <div className="flex items-center">
           <div className="flex-shrink-0 bg-blue-500 rounded-md p-3">
             <svg
@@ -49,15 +49,15 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">Jami sarflangan</dt>
-              <dd className="text-lg font-semibold text-gray-900">{formatAmount(totalSpent)}</dd>
+              <dt className="text-sm font-medium text-muted-foreground truncate">Jami sarflangan</dt>
+              <dd className="text-lg font-semibold text-foreground">{formatAmount(totalSpent)}</dd>
             </dl>
           </div>
         </div>
       </div>
 
       {/* Completed Transactions */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-card rounded-lg shadow p-6">
         <div className="flex items-center">
           <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
             <svg
@@ -76,15 +76,15 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">Muvaffaqiyatli</dt>
-              <dd className="text-lg font-semibold text-gray-900">{completedCount} ta</dd>
+              <dt className="text-sm font-medium text-muted-foreground truncate">Muvaffaqiyatli</dt>
+              <dd className="text-lg font-semibold text-foreground">{completedCount} ta</dd>
             </dl>
           </div>
         </div>
       </div>
 
       {/* Pending Transactions */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-card rounded-lg shadow p-6">
         <div className="flex items-center">
           <div className="flex-shrink-0 bg-yellow-500 rounded-md p-3">
             <svg
@@ -103,15 +103,15 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">Kutilmoqda</dt>
-              <dd className="text-lg font-semibold text-gray-900">{pendingCount} ta</dd>
+              <dt className="text-sm font-medium text-muted-foreground truncate">Kutilmoqda</dt>
+              <dd className="text-lg font-semibold text-foreground">{pendingCount} ta</dd>
             </dl>
           </div>
         </div>
       </div>
 
       {/* Payment Methods */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-card rounded-lg shadow p-6">
         <div className="flex items-center">
           <div className="flex-shrink-0 bg-purple-500 rounded-md p-3">
             <svg
@@ -130,8 +130,8 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">To&apos;lov usullari</dt>
-              <dd className="text-sm font-semibold text-gray-900">
+              <dt className="text-sm font-medium text-muted-foreground truncate">To&apos;lov usullari</dt>
+              <dd className="text-sm font-semibold text-foreground">
                 Click: {clickCount} | Payme: {paymeCount}
               </dd>
             </dl>

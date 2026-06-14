@@ -47,15 +47,15 @@ export default function ExportControls({ transactions }: ExportControlsProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-4 mb-6">
+    <div className="bg-card rounded-lg shadow p-4 mb-6">
       <div className="flex flex-wrap gap-3">
         <button
           onClick={exportToCSV}
           disabled={transactions.length === 0}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg
-            className="-ml-1 mr-2 h-5 w-5 text-gray-500"
+            className="-ml-1 mr-2 h-5 w-5 text-muted-foreground"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -73,10 +73,10 @@ export default function ExportControls({ transactions }: ExportControlsProps) {
         <button
           onClick={printReceipt}
           disabled={transactions.length === 0}
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center px-4 py-2 border border-border rounded-md shadow-sm text-sm font-medium text-foreground bg-card hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg
-            className="-ml-1 mr-2 h-5 w-5 text-gray-500"
+            className="-ml-1 mr-2 h-5 w-5 text-muted-foreground"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"

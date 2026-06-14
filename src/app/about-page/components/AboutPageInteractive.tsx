@@ -3,31 +3,34 @@
 import Link from 'next/link';
 import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 const AboutPageInteractive = () => {
+  const { t } = useI18n();
+
   const teamMembers = [
     {
-      name: 'Alisher Rahimov',
-      role: 'Asoschisi va CEO',
-      description: 'Ta\'lim sohasida 15 yillik tajriba',
+      name: t('about.teamMember1Name'),
+      role: t('about.teamMember1Role'),
+      description: t('about.teamMember1Desc'),
       icon: 'UserIcon',
     },
     {
-      name: 'Madina Karimova',
-      role: 'Ta\'lim Direktori',
-      description: 'Pedagogika fanlari nomzodi',
+      name: t('about.teamMember2Name'),
+      role: t('about.teamMember2Role'),
+      description: t('about.teamMember2Desc'),
       icon: 'UserIcon',
     },
     {
-      name: 'Jasur Yusupov',
-      role: 'Texnologiya Direktori',
-      description: 'EdTech sohasida 10 yillik tajriba',
+      name: t('about.teamMember3Name'),
+      role: t('about.teamMember3Role'),
+      description: t('about.teamMember3Desc'),
       icon: 'UserIcon',
     },
     {
-      name: 'Nilufar Azimova',
-      role: 'Kontent Menejeri',
-      description: 'Kurs sifatini nazorat qilish',
+      name: t('about.teamMember4Name'),
+      role: t('about.teamMember4Role'),
+      description: t('about.teamMember4Desc'),
       icon: 'UserIcon',
     },
   ];
@@ -35,49 +38,49 @@ const AboutPageInteractive = () => {
   const achievements = [
     {
       year: '2023',
-      title: 'Platformaning Ishga Tushishi',
-      description: 'Ustoz platformasi rasmiy ravishda ishga tushirildi',
+      title: t('about.achievement1Title'),
+      description: t('about.achievement1Desc'),
       icon: 'RocketLaunchIcon',
     },
     {
       year: '2024',
-      title: '1000+ O\'quvchi',
-      description: 'Birinchi mingta o\'quvchiga erishdik',
+      title: t('about.achievement2Title'),
+      description: t('about.achievement2Desc'),
       icon: 'UserGroupIcon',
     },
     {
       year: '2025',
-      title: '50+ O\'qituvchi',
-      description: 'Professional o\'qituvchilar jamoasi shakllandi',
+      title: t('about.achievement3Title'),
+      description: t('about.achievement3Desc'),
       icon: 'AcademicCapIcon',
     },
     {
       year: '2026',
-      title: 'Yangi Imkoniyatlar',
-      description: 'AI asosidagi shaxsiy o\'rganish yo\'llari qo\'shildi',
+      title: t('about.achievement4Title'),
+      description: t('about.achievement4Desc'),
       icon: 'SparklesIcon',
     },
   ];
 
   const values = [
     {
-      title: 'Sifat',
-      description: 'Har bir kurs yuqori sifat standartlariga javob beradi',
+      title: t('about.valueQualityTitle'),
+      description: t('about.valueQualityDesc'),
       icon: 'ShieldCheckIcon',
     },
     {
-      title: 'Qulaylik',
-      description: 'Istalgan vaqt va joydan o\'rganish imkoniyati',
+      title: t('about.valueConvenienceTitle'),
+      description: t('about.valueConvenienceDesc'),
       icon: 'ClockIcon',
     },
     {
-      title: 'Hamjamiyat',
-      description: 'O\'qituvchilar va o\'quvchilar uchun qo\'llab-quvvatlovchi muhit',
+      title: t('about.valueCommunityTitle'),
+      description: t('about.valueCommunityDesc'),
       icon: 'HeartIcon',
     },
     {
-      title: 'Innovatsiya',
-      description: 'Zamonaviy texnologiyalar va o\'qitish metodlari',
+      title: t('about.valueInnovationTitle'),
+      description: t('about.valueInnovationDesc'),
       icon: 'LightBulbIcon',
     },
   ];
@@ -85,16 +88,16 @@ const AboutPageInteractive = () => {
   return (
     <div className="min-h-screen bg-background">
       <RoleBasedHeader userRole={null} currentPath="/about-page" />
-      
+
       <main className="pt-16">
         {/* Hero Section */}
         <section className="bg-gradient-to-r from-primary to-secondary text-primary-foreground py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-5xl font-heading font-bold mb-6">
-              Biz Haqimizda
+              {t('about.pageTitle')}
             </h1>
             <p className="text-lg md:text-xl max-w-3xl mx-auto opacity-90">
-              Ustoz - bu O'zbekistonda sifatli onlayn ta'limni barcha uchun ochiq qilish missiyasiga ega zamonaviy ta'lim platformasi
+              {t('about.pageSubtitle')}
             </p>
           </div>
         </section>
@@ -104,15 +107,15 @@ const AboutPageInteractive = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div>
-                <h2 className="text-3xl md:text-4xl font-heading font-bold mb-6">Bizning Missiyamiz</h2>
+                <h2 className="text-3xl md:text-4xl font-heading font-bold mb-6">{t('about.missionTitle')}</h2>
                 <p className="text-lg text-muted-foreground mb-6">
-                  Ustoz platformasi orqali biz O'zbekistonda sifatli ta'limni har bir kishiga yetkazishni maqsad qilganmiz. Biz ishonmizki, bilim olish har bir inson uchun ochiq va qulay bo'lishi kerak.
+                  {t('about.missionDesc1')}
                 </p>
                 <p className="text-lg text-muted-foreground mb-6">
-                  Platformamiz professional o'qituvchilarga o'z bilimlarini keng auditoriyaga yetkazish imkoniyatini beradi, o'quvchilarga esa turli sohalarda chuqur bilim olish va professional rivojlanish yo'llarini ochadi.
+                  {t('about.missionDesc2')}
                 </p>
                 <p className="text-lg text-muted-foreground">
-                  Biz zamonaviy texnologiyalar va innovatsion o'qitish metodlarini qo'llash orqali ta'lim jarayonini samarali va qiziqarli qilishga intilamiz.
+                  {t('about.missionDesc3')}
                 </p>
               </div>
               <div className="bg-card rounded-md p-8 shadow-warm-lg">
@@ -122,8 +125,8 @@ const AboutPageInteractive = () => {
                       <Icon name="EyeIcon" size={24} className="text-primary-foreground" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-heading font-bold mb-2">Viziyamiz</h3>
-                      <p className="text-muted-foreground">O'zbekistonda yetakchi onlayn ta'lim platformasi bo'lish va millionlab odamlarning hayotini o'zgartirish</p>
+                      <h3 className="text-xl font-heading font-bold mb-2">{t('about.visionTitle')}</h3>
+                      <p className="text-muted-foreground">{t('about.visionDesc')}</p>
                     </div>
                   </div>
                   <div className="flex items-start">
@@ -131,8 +134,8 @@ const AboutPageInteractive = () => {
                       <Icon name="FlagIcon" size={24} className="text-primary-foreground" />
                     </div>
                     <div>
-                      <h3 className="text-xl font-heading font-bold mb-2">Maqsadimiz</h3>
-                      <p className="text-muted-foreground">Sifatli ta'limni har bir kishiga ochiq va qulay qilish, professional o'qituvchilar va o'quvchilarni birlashtirish</p>
+                      <h3 className="text-xl font-heading font-bold mb-2">{t('about.goalTitle')}</h3>
+                      <p className="text-muted-foreground">{t('about.goalDesc')}</p>
                     </div>
                   </div>
                 </div>
@@ -145,8 +148,8 @@ const AboutPageInteractive = () => {
         <section className="py-16 md:py-24 bg-muted">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">Bizning Qadriyatlarimiz</h2>
-              <p className="text-lg text-muted-foreground">Biz quyidagi tamoyillar asosida ishlaymiz</p>
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('about.valuesTitle')}</h2>
+              <p className="text-lg text-muted-foreground">{t('about.valuesSubtitle')}</p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -167,8 +170,8 @@ const AboutPageInteractive = () => {
         <section className="py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">Bizning Jamoa</h2>
-              <p className="text-lg text-muted-foreground">Professional va tajribali mutaxassislar</p>
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('about.teamTitle')}</h2>
+              <p className="text-lg text-muted-foreground">{t('about.teamSubtitle')}</p>
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -190,8 +193,8 @@ const AboutPageInteractive = () => {
         <section className="py-16 md:py-24 bg-muted">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">Bizning Yutuqlarimiz</h2>
-              <p className="text-lg text-muted-foreground">Platformaning rivojlanish tarixi</p>
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('about.achievementsTitle')}</h2>
+              <p className="text-lg text-muted-foreground">{t('about.achievementsSubtitle')}</p>
             </div>
 
             <div className="relative">
@@ -225,8 +228,8 @@ const AboutPageInteractive = () => {
         <section className="py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">Ta'lim Falsafamiz</h2>
-              <p className="text-lg text-muted-foreground">Biz qanday yondashuvni qo'llaymiz</p>
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('about.philosophyTitle')}</h2>
+              <p className="text-lg text-muted-foreground">{t('about.philosophySubtitle')}</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -234,9 +237,9 @@ const AboutPageInteractive = () => {
                 <div className="flex items-center justify-center w-16 h-16 bg-secondary rounded-md mb-4">
                   <Icon name="UserGroupIcon" size={32} className="text-primary-foreground" variant="solid" />
                 </div>
-                <h3 className="text-xl font-heading font-bold mb-3">Shaxsiy Yondashuv</h3>
+                <h3 className="text-xl font-heading font-bold mb-3">{t('about.philosophy1Title')}</h3>
                 <p className="text-muted-foreground">
-                  Har bir o'quvchining o'ziga xos o'rganish uslubi va tezligini hisobga olamiz. Platformamiz individual o'rganish yo'llarini taklif etadi.
+                  {t('about.philosophy1Desc')}
                 </p>
               </div>
 
@@ -244,9 +247,9 @@ const AboutPageInteractive = () => {
                 <div className="flex items-center justify-center w-16 h-16 bg-accent rounded-md mb-4">
                   <Icon name="ChartBarIcon" size={32} className="text-accent-foreground" variant="solid" />
                 </div>
-                <h3 className="text-xl font-heading font-bold mb-3">Natijaga Yo'naltirilgan</h3>
+                <h3 className="text-xl font-heading font-bold mb-3">{t('about.philosophy2Title')}</h3>
                 <p className="text-muted-foreground">
-                  Biz o'quvchilarning real natijalarga erishishiga e'tibor qaratamiz. Har bir kurs amaliy ko'nikmalar va bilimlarni beradi.
+                  {t('about.philosophy2Desc')}
                 </p>
               </div>
 
@@ -254,9 +257,9 @@ const AboutPageInteractive = () => {
                 <div className="flex items-center justify-center w-16 h-16 bg-success rounded-md mb-4">
                   <Icon name="CheckBadgeIcon" size={32} className="text-success-foreground" variant="solid" />
                 </div>
-                <h3 className="text-xl font-heading font-bold mb-3">Sifat Nazorati</h3>
+                <h3 className="text-xl font-heading font-bold mb-3">{t('about.philosophy3Title')}</h3>
                 <p className="text-muted-foreground">
-                  Barcha kurslar qat'iy sifat nazoratidan o'tadi. Biz faqat yuqori sifatli ta'lim materiallarini taqdim etamiz.
+                  {t('about.philosophy3Desc')}
                 </p>
               </div>
             </div>
@@ -267,8 +270,8 @@ const AboutPageInteractive = () => {
         <section className="py-16 md:py-24 bg-gradient-to-r from-primary to-secondary text-primary-foreground">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">Biz Bilan Bog'laning</h2>
-              <p className="text-lg opacity-90">Savollaringiz bormi? Biz sizga yordam berishga tayyormiz</p>
+              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('about.contactTitle')}</h2>
+              <p className="text-lg opacity-90">{t('about.contactSubtitle')}</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
@@ -276,7 +279,7 @@ const AboutPageInteractive = () => {
                 <div className="flex items-center justify-center w-16 h-16 bg-primary rounded-md mb-4 mx-auto">
                   <Icon name="EnvelopeIcon" size={32} className="text-primary-foreground" />
                 </div>
-                <h3 className="font-heading font-bold mb-2">Email</h3>
+                <h3 className="font-heading font-bold mb-2">{t('about.contactEmail')}</h3>
                 <p className="text-muted-foreground">info@ustoz-talim.uz</p>
                 <p className="text-muted-foreground">support@ustoz-talim.uz</p>
               </div>
@@ -285,7 +288,7 @@ const AboutPageInteractive = () => {
                 <div className="flex items-center justify-center w-16 h-16 bg-secondary rounded-md mb-4 mx-auto">
                   <Icon name="PhoneIcon" size={32} className="text-primary-foreground" />
                 </div>
-                <h3 className="font-heading font-bold mb-2">Telefon</h3>
+                <h3 className="font-heading font-bold mb-2">{t('about.contactPhone')}</h3>
                 <p className="text-muted-foreground">+998 90 123 45 67</p>
                 <p className="text-muted-foreground">+998 91 234 56 78</p>
               </div>
@@ -294,9 +297,9 @@ const AboutPageInteractive = () => {
                 <div className="flex items-center justify-center w-16 h-16 bg-accent rounded-md mb-4 mx-auto">
                   <Icon name="MapPinIcon" size={32} className="text-accent-foreground" />
                 </div>
-                <h3 className="font-heading font-bold mb-2">Manzil</h3>
-                <p className="text-muted-foreground">Toshkent shahar,</p>
-                <p className="text-muted-foreground">Chilonzor tumani</p>
+                <h3 className="font-heading font-bold mb-2">{t('about.contactAddress')}</h3>
+                <p className="text-muted-foreground">{t('about.contactCity')}</p>
+                <p className="text-muted-foreground">{t('about.contactDistrict')}</p>
               </div>
             </div>
 
@@ -306,7 +309,7 @@ const AboutPageInteractive = () => {
                 className="inline-flex items-center justify-center px-8 py-4 bg-accent text-accent-foreground rounded-md font-medium hover:opacity-90 transition-smooth shadow-warm-lg"
               >
                 <Icon name="UserPlusIcon" size={24} className="mr-2" />
-                Ro'yxatdan O'tish
+                {t('about.ctaButton')}
               </Link>
             </div>
           </div>
@@ -327,28 +330,28 @@ const AboutPageInteractive = () => {
                   </div>
                   <span className="text-xl font-heading font-bold">Ustoz</span>
                 </div>
-                <p className="text-sm text-muted-foreground">Zamonaviy onlayn ta'lim platformasi. O'rganing, o'rgating, rivojlaning.</p>
+                <p className="text-sm text-muted-foreground">{t('about.footerDesc')}</p>
               </div>
 
               <div>
-                <h4 className="font-heading font-bold mb-4">Platforma</h4>
+                <h4 className="font-heading font-bold mb-4">{t('about.footerPlatform')}</h4>
                 <ul className="space-y-2 text-sm">
-                  <li><Link href="/landing-page" className="text-muted-foreground hover:text-primary transition-smooth">Bosh Sahifa</Link></li>
-                  <li><Link href="/course-marketplace" className="text-muted-foreground hover:text-primary transition-smooth">Kurslar</Link></li>
-                  <li><Link href="/about-page" className="text-muted-foreground hover:text-primary transition-smooth">Biz Haqimizda</Link></li>
-                  <li><Link href="/login" className="text-muted-foreground hover:text-primary transition-smooth">Kirish</Link></li>
+                  <li><Link href="/landing-page" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerHome')}</Link></li>
+                  <li><Link href="/course-marketplace" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerCourses')}</Link></li>
+                  <li><Link href="/about-page" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerAbout')}</Link></li>
+                  <li><Link href="/login" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerLogin')}</Link></li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-heading font-bold mb-4">O'qituvchilar</h4>
+                <h4 className="font-heading font-bold mb-4">{t('about.footerTeachers')}</h4>
                 <ul className="space-y-2 text-sm">
-                  <li><Link href="/register?role=teacher" className="text-muted-foreground hover:text-primary transition-smooth">O&apos;qituvchi Bo&apos;lish</Link></li>
+                  <li><Link href="/register?role=teacher" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerBecomeTeacher')}</Link></li>
                 </ul>
               </div>
 
               <div>
-                <h4 className="font-heading font-bold mb-4">Aloqa</h4>
+                <h4 className="font-heading font-bold mb-4">{t('about.footerContact')}</h4>
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li className="flex items-center">
                     <Icon name="EnvelopeIcon" size={16} className="mr-2" />
@@ -360,14 +363,14 @@ const AboutPageInteractive = () => {
                   </li>
                   <li className="flex items-center">
                     <Icon name="MapPinIcon" size={16} className="mr-2" />
-                    Toshkent, O'zbekiston
+                    {t('about.footerLocation')}
                   </li>
                 </ul>
               </div>
             </div>
 
             <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
-              <p>&copy; 2026 Ustoz. Barcha huquqlar himoyalangan.</p>
+              <p>&copy; 2026 Ustoz. {t('about.footerRights')}</p>
             </div>
           </div>
         </footer>

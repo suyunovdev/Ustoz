@@ -376,7 +376,7 @@ const CourseCreationInteractive = () => {
                     <Icon name="AcademicCapIcon" size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-heading font-semibold text-foreground">Kurs Yaratish Yo'riqnomasi</h3>
+                    <h3 className="text-2xl font-heading font-semibold text-foreground">Kurs Yaratish Yo&apos;riqnomasi</h3>
                     <p className="text-muted-foreground mt-1">5 bosqichda kurs yarating</p>
                   </div>
                 </div>
@@ -412,8 +412,8 @@ const CourseCreationInteractive = () => {
                     <div>
                       <h4 className="font-semibold text-accent-foreground mb-2">Muhim eslatma:</h4>
                       <ul className="space-y-1 text-sm text-accent-foreground">
-                        <li>• <strong>Dars Matni</strong> - Bu o'quvchi o'qiydigan asosiy darslik</li>
-                        <li>• <strong>Qo'shimcha Fayllar</strong> - PDF, Word, audio/video yuklab olish uchun</li>
+                        <li>• <strong>Dars Matni</strong> - Bu o&apos;quvchi o&apos;qiydigan asosiy darslik</li>
+                        <li>• <strong>Qo&apos;shimcha Fayllar</strong> - PDF, Word, audio/video yuklab olish uchun</li>
                         <li>• <strong>Test Savollari</strong> - Bilimni tekshirish, ball olish uchun</li>
                       </ul>
                     </div>
@@ -453,7 +453,7 @@ const CourseCreationInteractive = () => {
                 className="flex items-center space-x-2 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-md transition-smooth"
               >
                 <Icon name="QuestionMarkCircleIcon" size={18} className="text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Yo'riqnoma</span>
+                <span className="text-sm text-muted-foreground">Yo&apos;riqnoma</span>
               </button>
             </div>
           </div>
@@ -549,7 +549,7 @@ const CourseCreationInteractive = () => {
                     className="mt-3 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
                   >
                     <Icon name="PlusIcon" size={18} />
-                    <span className="text-sm font-medium">Yangi mavzu qo'shish</span>
+                    <span className="text-sm font-medium">Yangi mavzu qo&apos;shish</span>
                   </button>
                 </div>
               </div>
@@ -596,9 +596,9 @@ const CourseCreationInteractive = () => {
                   <div className="flex items-start space-x-3">
                     <Icon name="InformationCircleIcon" size={24} className="text-accent-foreground flex-shrink-0" />
                     <div>
-                      <h4 className="font-semibold text-accent-foreground mb-1">1-bosqich: Kurs haqida ma'lumot</h4>
+                      <h4 className="font-semibold text-accent-foreground mb-1">1-bosqich: Kurs haqida ma&apos;lumot</h4>
                       <p className="text-sm text-accent-foreground">
-                        Kurs nomi, tavsif, narx va kategoriyasini kiriting. Bu ma'lumotlar o'quvchilarga ko'rsatiladi.
+                        Kurs nomi, tavsif, narx va kategoriyasini kiriting. Bu ma&apos;lumotlar o&apos;quvchilarga ko&apos;rsatiladi.
                       </p>
                     </div>
                   </div>
@@ -615,13 +615,13 @@ const CourseCreationInteractive = () => {
                 {topics.length === 0 ? (
                   <div className="bg-card rounded-md shadow-warm p-12 text-center">
                     <Icon name="BookOpenIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-foreground font-medium mb-2">Hali mavzu qo'shilmagan</p>
-                    <p className="text-sm text-muted-foreground mb-4">Chap paneldagi "Qo'shish" tugmasini bosib mavzu yarating</p>
+                    <p className="text-foreground font-medium mb-2">Hali mavzu qo&apos;shilmagan</p>
+                    <p className="text-sm text-muted-foreground mb-4">Chap paneldagi &quot;Qo&apos;shish&quot; tugmasini bosib mavzu yarating</p>
                     <button
                       onClick={handleAddTopic}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
                     >
-                      Birinchi mavzuni qo'shish
+                      Birinchi mavzuni qo&apos;shish
                     </button>
                   </div>
                 ) : selectedTopic ? (
@@ -633,7 +633,7 @@ const CourseCreationInteractive = () => {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-bold text-foreground text-lg mb-2">📝 Dars Matni</h4>
-                          <p className="text-sm text-foreground">O'quvchilar o'qiydigan asosiy darslik matnini yozing.</p>
+                          <p className="text-sm text-foreground">O&apos;quvchilar o&apos;qiydigan asosiy darslik matnini yozing.</p>
                         </div>
                       </div>
                     </div>
@@ -642,7 +642,7 @@ const CourseCreationInteractive = () => {
                         {selectedTopic.title}
                       </h3>
                       <p className="caption text-muted-foreground">
-                        Mavzu uchun o'quv matnini yozing
+                        Mavzu uchun o&apos;quv matnini yozing
                       </p>
                     </div>
                     <RichTextEditor
@@ -664,9 +664,9 @@ const CourseCreationInteractive = () => {
                 {topics.length === 0 ? (
                   <div className="bg-card rounded-md shadow-warm p-12 text-center">
                     <Icon name="FolderIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-foreground font-medium mb-2">Hali mavzu qo'shilmagan</p>
+                    <p className="text-foreground font-medium mb-2">Hali mavzu qo&apos;shilmagan</p>
                     <button onClick={handleAddTopic} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth">
-                      Mavzu qo'shish
+                      Mavzu qo&apos;shish
                     </button>
                   </div>
                 ) : selectedTopic ? (
@@ -677,8 +677,8 @@ const CourseCreationInteractive = () => {
                           <Icon name="FolderIcon" size={24} className="text-white" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-bold text-foreground text-lg mb-2">📁 Qo'shimcha Fayllar</h4>
-                          <p className="text-sm text-foreground">O'quvchilar yuklab olishi mumkin bo'lgan materiallar.</p>
+                          <h4 className="font-bold text-foreground text-lg mb-2">📁 Qo&apos;shimcha Fayllar</h4>
+                          <p className="text-sm text-foreground">O&apos;quvchilar yuklab olishi mumkin bo&apos;lgan materiallar.</p>
                         </div>
                       </div>
                     </div>
@@ -702,9 +702,9 @@ const CourseCreationInteractive = () => {
                 {topics.length === 0 ? (
                   <div className="bg-card rounded-md shadow-warm p-12 text-center">
                     <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-foreground font-medium mb-2">Hali mavzu qo'shilmagan</p>
+                    <p className="text-foreground font-medium mb-2">Hali mavzu qo&apos;shilmagan</p>
                     <button onClick={handleAddTopic} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth">
-                      Mavzu qo'shish
+                      Mavzu qo&apos;shish
                     </button>
                   </div>
                 ) : selectedTopic ? (
@@ -716,7 +716,7 @@ const CourseCreationInteractive = () => {
                         </div>
                         <div className="flex-1">
                           <h4 className="font-bold text-foreground text-lg mb-2">🎓 Test Savollari</h4>
-                          <p className="text-sm text-foreground">Kamida 5 ta savol yarating. O'quvchilar 80% ball olsagina keyingi mavzuga o'ta oladilar.</p>
+                          <p className="text-sm text-foreground">Kamida 5 ta savol yarating. O&apos;quvchilar 80% ball olsagina keyingi mavzuga o&apos;ta oladilar.</p>
                         </div>
                       </div>
                     </div>
@@ -745,7 +745,7 @@ const CourseCreationInteractive = () => {
                     <div>
                       <h4 className="font-semibold text-accent-foreground mb-1">5-bosqich: Nashr qilish</h4>
                       <p className="text-sm text-accent-foreground">
-                        Kursni ko'rib chiqing va tasdiqlashga yuboring. Admin 24-48 soat ichida ko'rib chiqadi.
+                        Kursni ko&apos;rib chiqing va tasdiqlashga yuboring. Admin 24-48 soat ichida ko&apos;rib chiqadi.
                       </p>
                     </div>
                   </div>
@@ -824,7 +824,7 @@ const CourseCreationInteractive = () => {
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   <li>• Har bir mavzu uchun aniq va qisqa matn yozing</li>
                   <li>• Murakkab mavzularni video bilan tushuntiring</li>
-                  <li>• Kamida 5 ta test savoli qo'shing</li>
+                  <li>• Kamida 5 ta test savoli qo&apos;shing</li>
                   <li>• Javoblarga batafsil izoh bering</li>
                 </ul>
               </div>

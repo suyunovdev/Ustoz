@@ -141,21 +141,21 @@ export default function PaymentMethodSelectionInteractive() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error && !course) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Xatolik</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <h2 className="text-2xl font-bold text-foreground mb-4">Xatolik</h2>
+          <p className="text-muted-foreground mb-6">{error}</p>
           <button
             onClick={() => router.push('/course-marketplace')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
           >
             Kurslar ro&apos;yxatiga qaytish
           </button>
@@ -165,17 +165,17 @@ export default function PaymentMethodSelectionInteractive() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-background py-12">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">To&apos;lov Usulini Tanlang</h1>
-          <p className="mt-2 text-gray-600">Qulay to&apos;lov usulini tanlang va xaridni yakunlang</p>
+          <h1 className="text-3xl font-bold text-foreground">To&apos;lov Usulini Tanlang</h1>
+          <p className="mt-2 text-muted-foreground">Qulay to&apos;lov usulini tanlang va xaridni yakunlang</p>
         </div>
 
         {/* Course Info */}
         {course && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+          <div className="bg-card rounded-lg shadow-md p-6 mb-8">
             <div className="flex items-center space-x-4">
               <img
                 src={course.cover_image || '/assets/images/no_image.png'}
@@ -183,11 +183,11 @@ export default function PaymentMethodSelectionInteractive() {
                 className="w-24 h-24 object-cover rounded-lg"
               />
               <div className="flex-1">
-                <h2 className="text-xl font-semibold text-gray-900">{course.title}</h2>
+                <h2 className="text-xl font-semibold text-foreground">{course.title}</h2>
                 {course.instructor_name && (
-                  <p className="text-sm text-gray-600 mt-1">O&apos;qituvchi: {course.instructor_name}</p>
+                  <p className="text-sm text-muted-foreground mt-1">O&apos;qituvchi: {course.instructor_name}</p>
                 )}
-                <p className="text-2xl font-bold text-blue-600 mt-2">
+                <p className="text-2xl font-bold text-primary mt-2">
                   {formatAmount(course.price_uzs)}
                 </p>
               </div>
@@ -196,7 +196,7 @@ export default function PaymentMethodSelectionInteractive() {
         )}
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+          <div className="mb-6 bg-error/10 border border-error/30 text-error px-4 py-3 rounded">
             {error}
           </div>
         )}
@@ -208,7 +208,7 @@ export default function PaymentMethodSelectionInteractive() {
             onClick={() => setSelectedMethod('click')}
             disabled={processing}
             className={`w-full p-6 rounded-lg border-2 transition-all ${
-              selectedMethod === 'click' ?'border-blue-600 bg-blue-50' :'border-gray-200 hover:border-gray-300 bg-white'
+              selectedMethod === 'click' ?'border-primary bg-primary/10' :'border-border hover:border-primary/30 bg-card'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             <div className="flex items-center justify-between">
@@ -217,17 +217,17 @@ export default function PaymentMethodSelectionInteractive() {
                   <span className="text-white font-bold text-xl">CLICK</span>
                 </div>
                 <div className="text-left">
-                  <h3 className="text-lg font-semibold text-gray-900">Click</h3>
-                  <p className="text-sm text-gray-600">Uzcard, Humo kartalar orqali to&apos;lash</p>
+                  <h3 className="text-lg font-semibold text-foreground">Click</h3>
+                  <p className="text-sm text-muted-foreground">Uzcard, Humo kartalar orqali to&apos;lash</p>
                 </div>
               </div>
               <div
                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  selectedMethod === 'click' ? 'border-blue-600' : 'border-gray-300'
+                  selectedMethod === 'click' ? 'border-primary' : 'border-border'
                 }`}
               >
                 {selectedMethod === 'click' && (
-                  <div className="w-3 h-3 bg-blue-600 rounded-full"></div>
+                  <div className="w-3 h-3 bg-primary rounded-full"></div>
                 )}
               </div>
             </div>
@@ -238,7 +238,7 @@ export default function PaymentMethodSelectionInteractive() {
             onClick={() => setSelectedMethod('payme')}
             disabled={processing}
             className={`w-full p-6 rounded-lg border-2 transition-all ${
-              selectedMethod === 'payme' ?'border-green-600 bg-green-50' :'border-gray-200 hover:border-gray-300 bg-white'
+              selectedMethod === 'payme' ?'border-success bg-success/10' :'border-border hover:border-primary/30 bg-card'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             <div className="flex items-center justify-between">
@@ -247,17 +247,17 @@ export default function PaymentMethodSelectionInteractive() {
                   <span className="text-white font-bold text-xl">PAYME</span>
                 </div>
                 <div className="text-left">
-                  <h3 className="text-lg font-semibold text-gray-900">Payme</h3>
-                  <p className="text-sm text-gray-600">Uzcard, Humo kartalar orqali to&apos;lash</p>
+                  <h3 className="text-lg font-semibold text-foreground">Payme</h3>
+                  <p className="text-sm text-muted-foreground">Uzcard, Humo kartalar orqali to&apos;lash</p>
                 </div>
               </div>
               <div
                 className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  selectedMethod === 'payme' ? 'border-green-600' : 'border-gray-300'
+                  selectedMethod === 'payme' ? 'border-success' : 'border-border'
                 }`}
               >
                 {selectedMethod === 'payme' && (
-                  <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                  <div className="w-3 h-3 bg-success rounded-full"></div>
                 )}
               </div>
             </div>
@@ -269,14 +269,14 @@ export default function PaymentMethodSelectionInteractive() {
           <button
             onClick={() => router.back()}
             disabled={processing}
-            className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Orqaga
           </button>
           <button
             onClick={handlePayment}
             disabled={!selectedMethod || processing}
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
           >
             {processing ? (
               <>
@@ -309,10 +309,10 @@ export default function PaymentMethodSelectionInteractive() {
         </div>
 
         {/* Security Notice */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="mt-8 bg-primary/10 border border-primary/20 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <svg
-              className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5"
+              className="w-6 h-6 text-primary flex-shrink-0 mt-0.5"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -325,8 +325,8 @@ export default function PaymentMethodSelectionInteractive() {
               />
             </svg>
             <div>
-              <h4 className="font-semibold text-blue-900">Xavfsiz to&apos;lov</h4>
-              <p className="text-sm text-blue-700 mt-1">
+              <h4 className="font-semibold text-foreground">Xavfsiz to&apos;lov</h4>
+              <p className="text-sm text-muted-foreground mt-1">
                 Barcha to&apos;lovlar xavfsiz protokol orqali amalga oshiriladi. Sizning karta
                 ma&apos;lumotlaringiz shifrlangan holda saqlanadi.
               </p>

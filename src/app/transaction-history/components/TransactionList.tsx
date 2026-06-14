@@ -22,12 +22,12 @@ interface TransactionListProps {
 }
 
 const statusColors = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  processing: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  failed: 'bg-red-100 text-red-800',
-  cancelled: 'bg-gray-100 text-gray-800',
-  refunded: 'bg-purple-100 text-purple-800'
+  pending: 'bg-warning/15 text-warning dark:text-warning',
+  processing: 'bg-primary/15 text-primary dark:text-primary',
+  completed: 'bg-success/15 text-success dark:text-success',
+  failed: 'bg-error/15 text-error dark:text-error',
+  cancelled: 'bg-muted text-muted-foreground',
+  refunded: 'bg-purple-500/15 text-purple-700 dark:text-purple-400'
 };
 
 const statusLabels = {
@@ -68,9 +68,9 @@ export default function TransactionList({ transactions }: TransactionListProps) 
 
   if (transactions.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-8 text-center">
+      <div className="bg-card rounded-lg shadow p-8 text-center">
         <svg
-          className="mx-auto h-12 w-12 text-gray-400"
+          className="mx-auto h-12 w-12 text-muted-foreground"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -82,8 +82,8 @@ export default function TransactionList({ transactions }: TransactionListProps) 
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        <h3 className="mt-2 text-sm font-medium text-gray-900">To&apos;lovlar topilmadi</h3>
-        <p className="mt-1 text-sm text-gray-500">
+        <h3 className="mt-2 text-sm font-medium text-foreground">To&apos;lovlar topilmadi</h3>
+        <p className="mt-1 text-sm text-muted-foreground">
           Hozircha hech qanday to&apos;lov amalga oshirilmagan
         </p>
       </div>
@@ -91,45 +91,45 @@ export default function TransactionList({ transactions }: TransactionListProps) 
   }
 
   return (
-    <div className="bg-white rounded-lg shadow overflow-hidden">
+    <div className="bg-card rounded-lg shadow overflow-hidden">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full divide-y divide-border">
+          <thead className="bg-muted">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Sana
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Kurs
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Summa
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 To&apos;lov usuli
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Holat
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Amallar
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+          <tbody className="bg-card divide-y divide-border">
             {transactions.map((transaction) => (
               <>
-                <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <tr key={transaction.id} className="hover:bg-muted">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {formatDate(transaction.created_at)}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="px-6 py-4 text-sm text-foreground">
                     <div className="max-w-xs truncate">{transaction.courses.title}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                     {formatAmount(transaction.amount_uzs)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {paymentMethodLabels[transaction.payment_method]}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -141,10 +141,10 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                       {statusLabels[transaction.status]}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                     <button
                       onClick={() => toggleExpand(transaction.id)}
-                      className="text-blue-600 hover:text-blue-900"
+                      className="text-primary hover:text-primary/80"
                     >
                       {expandedId === transaction.id ? 'Yopish' : 'Batafsil'}
                     </button>
@@ -152,26 +152,26 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                 </tr>
                 {expandedId === transaction.id && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 bg-gray-50">
+                    <td colSpan={6} className="px-6 py-4 bg-muted">
                       <div className="space-y-2 text-sm">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <span className="font-medium text-gray-700">Tranzaksiya ID:</span>
-                            <p className="text-gray-900 mt-1 font-mono text-xs">
+                            <span className="font-medium text-muted-foreground">Tranzaksiya ID:</span>
+                            <p className="text-foreground mt-1 font-mono text-xs">
                               {transaction.merchant_trans_id}
                             </p>
                           </div>
                           <div>
-                            <span className="font-medium text-gray-700">Kurs ID:</span>
-                            <p className="text-gray-900 mt-1 font-mono text-xs">
+                            <span className="font-medium text-muted-foreground">Kurs ID:</span>
+                            <p className="text-foreground mt-1 font-mono text-xs">
                               {transaction.course_id}
                             </p>
                           </div>
                         </div>
                         {transaction.completed_at && (
                           <div>
-                            <span className="font-medium text-gray-700">Yakunlangan sana:</span>
-                            <p className="text-gray-900 mt-1">
+                            <span className="font-medium text-muted-foreground">Yakunlangan sana:</span>
+                            <p className="text-foreground mt-1">
                               {formatDate(transaction.completed_at)}
                             </p>
                           </div>
@@ -180,7 +180,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                           {transaction.status === 'completed' && (
                             <a
                               href={`/learning-interface?courseId=${transaction.course_id}`}
-                              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                              className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
                             >
                               Kursga o&apos;tish
                             </a>

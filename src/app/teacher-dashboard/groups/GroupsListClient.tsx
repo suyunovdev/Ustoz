@@ -19,13 +19,13 @@ import {
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
 
 export const COLOR_CLASS: Record<GroupColorDTO, { bg: string; text: string; ring: string }> = {
-  blue:   { bg: 'bg-blue-100',   text: 'text-blue-700',   ring: 'ring-blue-300' },
-  green:  { bg: 'bg-green-100',  text: 'text-green-700',  ring: 'ring-green-300' },
-  red:    { bg: 'bg-red-100',    text: 'text-red-700',    ring: 'ring-red-300' },
-  yellow: { bg: 'bg-yellow-100', text: 'text-yellow-700', ring: 'ring-yellow-300' },
-  purple: { bg: 'bg-purple-100', text: 'text-purple-700', ring: 'ring-purple-300' },
-  orange: { bg: 'bg-orange-100', text: 'text-orange-700', ring: 'ring-orange-300' },
-  pink:   { bg: 'bg-pink-100',   text: 'text-pink-700',   ring: 'ring-pink-300' },
+  blue:   { bg: 'bg-blue-100 dark:bg-blue-500/20',   text: 'text-blue-700 dark:text-blue-400',   ring: 'ring-blue-300 dark:ring-blue-500/40' },
+  green:  { bg: 'bg-green-100 dark:bg-green-500/20',  text: 'text-green-700 dark:text-green-400',  ring: 'ring-green-300 dark:ring-green-500/40' },
+  red:    { bg: 'bg-red-100 dark:bg-red-500/20',    text: 'text-red-700 dark:text-red-400',    ring: 'ring-red-300 dark:ring-red-500/40' },
+  yellow: { bg: 'bg-yellow-100 dark:bg-yellow-500/20', text: 'text-yellow-700 dark:text-yellow-400', ring: 'ring-yellow-300 dark:ring-yellow-500/40' },
+  purple: { bg: 'bg-purple-100 dark:bg-purple-500/20', text: 'text-purple-700 dark:text-purple-400', ring: 'ring-purple-300 dark:ring-purple-500/40' },
+  orange: { bg: 'bg-orange-100 dark:bg-orange-500/20', text: 'text-orange-700 dark:text-orange-400', ring: 'ring-orange-300 dark:ring-orange-500/40' },
+  pink:   { bg: 'bg-pink-100 dark:bg-pink-500/20',   text: 'text-pink-700 dark:text-pink-400',   ring: 'ring-pink-300 dark:ring-pink-500/40' },
 };
 
 export default function GroupsListClient() {

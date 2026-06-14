@@ -112,7 +112,7 @@ const ModerationDashboardInteractive = () => {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-heading font-bold text-foreground">Kontent moderatsiyasi</h1>
-              <p className="text-muted-foreground mt-1">O'qituvchilar yuklagan materiallarni ko'rib chiqish</p>
+              <p className="text-muted-foreground mt-1">O&apos;qituvchilar yuklagan materiallarni ko&apos;rib chiqish</p>
             </div>
             <button
               onClick={() => window.history.back()}
@@ -158,7 +158,7 @@ const ModerationDashboardInteractive = () => {
           <div className="bg-card rounded-md shadow-warm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="caption text-muted-foreground">O'rtacha vaqt</p>
+                <p className="caption text-muted-foreground">O&apos;rtacha vaqt</p>
                 <p className="text-3xl font-heading font-bold text-primary mt-2">{stats.avgReviewTime}</p>
               </div>
               <Icon name="ChartBarIcon" size={40} className="text-primary" />
@@ -247,7 +247,7 @@ const ModerationDashboardInteractive = () => {
             ) : (
               <div className="bg-card rounded-md shadow-warm p-12 text-center">
                 <Icon name="DocumentMagnifyingGlassIcon" size={64} className="text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Ko'rib chiqish uchun kontentni tanlang</p>
+                <p className="text-muted-foreground">Ko&apos;rib chiqish uchun kontentni tanlang</p>
               </div>
             )}
           </div>

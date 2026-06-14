@@ -147,7 +147,7 @@ const WatermarkSettings = ({ config, onConfigUpdate }: WatermarkSettingsProps) =
               }`}
               style={{ opacity: localConfig.opacity / 100 }}
             >
-              <div className="px-4 py-2 bg-white/90 text-gray-900 rounded-md font-medium shadow-lg">
+              <div className="px-4 py-2 bg-card/90 text-foreground rounded-md font-medium shadow-lg">
                 {localConfig.text || 'Watermark matni'}
               </div>
             </div>

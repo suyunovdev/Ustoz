@@ -155,35 +155,35 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
             <span>Test savoli qanday yaratiladi?</span>
           </h4>
           <div className="space-y-3">
-            <div className="flex items-start space-x-3 bg-white dark:bg-gray-800 rounded-md p-3">
+            <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">1</div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">"Savol qo'shish" tugmasini bosing</p>
                 <p className="text-xs text-muted-foreground mt-1">Yangi savol qo'shiladi</p>
               </div>
             </div>
-            <div className="flex items-start space-x-3 bg-white dark:bg-gray-800 rounded-md p-3">
+            <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">2</div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">Savol matnini yozing</p>
                 <p className="text-xs text-muted-foreground mt-1">Masalan: "Pythonda o'zgaruvchi qanday e'lon qilinadi?"</p>
               </div>
             </div>
-            <div className="flex items-start space-x-3 bg-white dark:bg-gray-800 rounded-md p-3">
+            <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">3</div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">4 ta javob varianti yozing</p>
                 <p className="text-xs text-muted-foreground mt-1">A, B, C, D variantlarini to'ldiring</p>
               </div>
             </div>
-            <div className="flex items-start space-x-3 bg-white dark:bg-gray-800 rounded-md p-3">
+            <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">4</div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">To'g'ri javobni belgilang</p>
                 <p className="text-xs text-muted-foreground mt-1">Radio tugmani bosib to'g'ri javobni tanlang</p>
               </div>
             </div>
-            <div className="flex items-start space-x-3 bg-white dark:bg-gray-800 rounded-md p-3">
+            <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">5</div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground">Izoh yozing (ixtiyoriy)</p>
