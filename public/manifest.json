@@ -1,0 +1,15 @@
+{
+  "name": "Ustoz Ta'lim",
+  "short_name": "Ustoz",
+  "description": "O'zbek tilidagi onlayn ta'lim platformasi",
+  "start_url": "/landing-page",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0f4c75",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ],
+  "categories": ["education"],
+  "lang": "uz"
+}
