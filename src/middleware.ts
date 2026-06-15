@@ -82,7 +82,10 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/favicon') ||
     pathname.startsWith('/assets/') ||
-    pathname.startsWith('/api/')
+    pathname.startsWith('/api/') ||
+    pathname === '/manifest.json' ||
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml'
   ) {
     return NextResponse.next();
   }
