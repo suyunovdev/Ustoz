@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import AppImage from '@/components/ui/AppImage';
 import { toast } from '@/components/common/Toaster';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -162,7 +163,7 @@ function ConversationItem({
       }`}
     >
       {conversation.partnerAvatarUrl ? (
-        <img
+        <AppImage
           src={conversation.partnerAvatarUrl}
           alt={conversation.partnerName}
           className="w-10 h-10 rounded-full object-cover shrink-0"
@@ -236,7 +237,7 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
     <>
       <div className="p-4 border-b border-border flex items-center gap-3">
         {conversation.partner.avatarUrl ? (
-          <img
+          <AppImage
             src={conversation.partner.avatarUrl}
             alt={conversation.partner.fullName}
             className="w-9 h-9 rounded-full object-cover"

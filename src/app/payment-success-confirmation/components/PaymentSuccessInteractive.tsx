@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Icon from '@/components/ui/AppIcon';
+import AppImage from '@/components/ui/AppImage';
 
 interface Transaction {
   id: string;
@@ -327,7 +328,7 @@ const PaymentSuccessInteractive = () => {
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
             {course.cover_image && (
               <div className="w-full md:w-40 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0">
-                <img
+                <AppImage
                   src={course.cover_image}
                   alt={course.title}
                   className="w-full h-full object-cover"

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import AppImage from '@/components/ui/AppImage';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import {
@@ -75,7 +76,7 @@ export default function StudentDetailClient({ studentId }: Props) {
       <div className="bg-card border border-border rounded-md p-6 mb-4 flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           {s.avatarUrl ? (
-            <img
+            <AppImage
               src={s.avatarUrl}
               alt={s.fullName}
               className="w-16 h-16 rounded-full object-cover"

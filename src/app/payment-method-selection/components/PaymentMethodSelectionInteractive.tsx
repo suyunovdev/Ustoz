@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import AppImage from '@/components/ui/AppImage';
 
 interface Course {
   id: string;
@@ -177,7 +178,7 @@ export default function PaymentMethodSelectionInteractive() {
         {course && (
           <div className="bg-card rounded-lg shadow-md p-6 mb-8">
             <div className="flex items-center space-x-4">
-              <img
+              <AppImage
                 src={course.cover_image || '/assets/images/no_image.png'}
                 alt={course.title}
                 className="w-24 h-24 object-cover rounded-lg"

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import AppImage from '@/components/ui/AppImage';
 import {
   usePublicTeacher,
   usePublicTeacherCourses,
@@ -59,7 +60,7 @@ export default function PublicTeacherClient({ teacherId }: Props) {
         <div className="max-w-5xl mx-auto px-6 py-12">
           <div className="flex items-start gap-6 flex-wrap">
             {t.avatarUrl ? (
-              <img
+              <AppImage
                 src={t.avatarUrl}
                 alt={t.fullName}
                 className="w-32 h-32 rounded-full object-cover ring-4 ring-card shadow-warm-lg"
@@ -175,7 +176,7 @@ export default function PublicTeacherClient({ teacherId }: Props) {
                 className="bg-card border border-border rounded-md p-4 hover:shadow-warm-md transition-smooth flex items-start gap-3"
               >
                 {c.coverImage ? (
-                  <img
+                  <AppImage
                     src={c.coverImage}
                     alt={c.title}
                     className="w-16 h-16 rounded object-cover shrink-0"

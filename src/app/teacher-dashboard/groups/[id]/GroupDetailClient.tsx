@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import AppImage from '@/components/ui/AppImage';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import {
@@ -162,7 +163,7 @@ export default function GroupDetailClient({ groupId }: Props) {
               className="bg-card border border-border rounded-md p-3 flex items-center gap-3"
             >
               {m.avatarUrl ? (
-                <img
+                <AppImage
                   src={m.avatarUrl}
                   alt={m.fullName}
                   className="w-8 h-8 rounded-full object-cover"

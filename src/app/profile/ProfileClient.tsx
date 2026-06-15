@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import AppImage from '@/components/ui/AppImage';
 import { toast } from '@/components/common/Toaster';
 import { useMyProfile, type ProfileDTO } from '@/hooks/queries/useProfile';
 import {
@@ -134,7 +135,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
           className="w-full px-3 py-2 border border-border rounded-md text-sm"
         />
         {avatarUrl && (
-          <img
+          <AppImage
             src={avatarUrl}
             alt="preview"
             className="mt-2 w-16 h-16 rounded-full object-cover"

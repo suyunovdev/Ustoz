@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import AppImage from '@/components/ui/AppImage';
 
 interface Props {
   materialId: string;
@@ -145,7 +146,7 @@ const MaterialPlayer = ({
   if (materialType === 'image') {
     return (
       <div className="relative inline-block max-w-full">
-        <img src={fileUrl} alt={`material-${materialId}`} className="max-w-full rounded-md" />
+        <AppImage src={fileUrl} alt={`material-${materialId}`} className="max-w-full rounded-md" />
         <div
           className="absolute pointer-events-none select-none text-white/50 text-xs font-mono backdrop-blur-[1px] px-2 py-1"
           style={{ ...positionStyle, textShadow: '0 1px 2px rgba(0,0,0,0.8)' }}

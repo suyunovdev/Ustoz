@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import AppImage from '@/components/ui/AppImage';
 import { toast } from '@/components/common/Toaster';
 import {
   useTeacherReviews,
@@ -258,7 +259,7 @@ function ReviewCard({ review }: { review: ReviewDTO }) {
     <div className="bg-card border border-border rounded-md p-4">
       <div className="flex items-start gap-3 mb-2">
         {review.studentAvatarUrl ? (
-          <img
+          <AppImage
             src={review.studentAvatarUrl}
             alt={review.studentName}
             className="w-10 h-10 rounded-full object-cover"

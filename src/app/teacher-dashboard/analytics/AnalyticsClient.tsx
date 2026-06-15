@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import AppImage from '@/components/ui/AppImage';
 import {
   useTeacherAnalytics,
   type DailyPointDTO,
@@ -154,7 +155,7 @@ export default function AnalyticsClient() {
                   className="bg-card border border-border rounded-md p-4 hover:shadow-warm-md transition-smooth flex items-center gap-3"
                 >
                   {c.coverImage ? (
-                    <img
+                    <AppImage
                       src={c.coverImage}
                       alt={c.title}
                       className="w-12 h-12 rounded object-cover"

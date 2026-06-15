@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import AppImage from '@/components/ui/AppImage';
 import { toast } from '@/components/common/Toaster';
 import { useTeacherStudents } from '@/hooks/queries/useTeacherStudents';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
@@ -132,7 +133,7 @@ export default function StudentsListClient() {
               className="bg-card border border-border rounded-md p-4 hover:shadow-warm-md transition-smooth flex items-center gap-4"
             >
               {s.avatarUrl ? (
-                <img
+                <AppImage
                   src={s.avatarUrl}
                   alt={s.fullName}
                   className="w-10 h-10 rounded-full object-cover"
