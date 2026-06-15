@@ -117,11 +117,11 @@ export interface RateLimitResult {
  * @param limit    - Ruxsat etilgan maksimal so'rovlar soni
  * @param windowMs - Vaqt oralig'i (millisekund)
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   key: string,
   limit: number,
   windowMs: number
-): RateLimitResult | Promise<RateLimitResult> {
+): Promise<RateLimitResult> {
   if (useRedis) {
     return checkRateLimitRedis(key, limit, windowMs);
   }
