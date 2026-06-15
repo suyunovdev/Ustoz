@@ -1,40 +1,47 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Icon from '@/components/ui/AppIcon';
+
+interface ChartData {
+  userGrowthData: { month: string; users: number; teachers: number; students: number }[];
+  courseCompletionData: { month: string; completion: number; enrollment: number }[];
+  engagementData: { day: string; active: number; sessions: number }[];
+}
 
 interface AnalyticsChartsProps {
   expanded?: boolean;
 }
 
 const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
-  const userGrowthData = [
-    { month: 'Yan', users: 120, teachers: 15, students: 105 },
-    { month: 'Fev', users: 185, teachers: 22, students: 163 },
-    { month: 'Mar', users: 245, teachers: 28, students: 217 },
-    { month: 'Apr', users: 312, teachers: 35, students: 277 },
-    { month: 'May', users: 398, teachers: 42, students: 356 },
-    { month: 'Iyun', users: 467, teachers: 48, students: 419 }
-  ];
+  const [data, setData] = useState<ChartData | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const courseCompletionData = [
-    { month: 'Yan', completion: 65, enrollment: 85 },
-    { month: 'Fev', completion: 68, enrollment: 88 },
-    { month: 'Mar', completion: 72, enrollment: 90 },
-    { month: 'Apr', completion: 75, enrollment: 92 },
-    { month: 'May', completion: 78, enrollment: 94 },
-    { month: 'Iyun', completion: 82, enrollment: 95 }
-  ];
+  useEffect(() => {
+    fetch('/api/admin/analytics', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => { if (d) setData(d); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
 
-  const engagementData = [
-    { day: 'Dush', active: 245, sessions: 1250 },
-    { day: 'Sesh', active: 312, sessions: 1580 },
-    { day: 'Chor', active: 289, sessions: 1420 },
-    { day: 'Pay', active: 356, sessions: 1780 },
-    { day: 'Jum', active: 398, sessions: 1950 },
-    { day: 'Shan', active: 178, sessions: 890 },
-    { day: 'Yak', active: 156, sessions: 780 }
-  ];
+  const userGrowthData = data?.userGrowthData || [];
+  const courseCompletionData = data?.courseCompletionData || [];
+  const engagementData = data?.engagementData || [];
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-card rounded-md shadow-warm p-6 animate-pulse">
+            <div className="h-6 bg-muted rounded w-1/3 mb-6" />
+            <div className="h-80 bg-muted rounded" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
