@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting: foydalanuvchi uchun 10 so'rov / daqiqa
     const rateLimitKey = `payment:${session.sub}`;
-    const { allowed, remaining, resetAt } = checkRateLimit(rateLimitKey, 10, 60 * 1000);
+    const { allowed, remaining, resetAt } = await checkRateLimit(rateLimitKey, 10, 60 * 1000);
 
     if (!allowed) {
       const retryAfterSec = Math.ceil((resetAt - Date.now()) / 1000);

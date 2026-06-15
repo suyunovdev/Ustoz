@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   // Rate limiting: 5 sharh / soat
   const rateLimitKey = `review:${session.sub}`;
-  const { allowed } = checkRateLimit(rateLimitKey, 5, 60 * 60 * 1000);
+  const { allowed } = await checkRateLimit(rateLimitKey, 5, 60 * 60 * 1000);
   if (!allowed) {
     return jsonResponse(
       { error: 'Juda ko\'p sharh. 1 soatdan keyin urinib ko\'ring.' },
