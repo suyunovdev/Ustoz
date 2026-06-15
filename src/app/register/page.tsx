@@ -4,7 +4,7 @@ import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import RegistrationForm from './components/RegistrationForm';
 
 export const metadata: Metadata = {
-  title: 'Ro\'yxatdan o\'tish - Ustoz',
+  title: 'Ro\'yxatdan o\'tish',
   description: 'Ustoz platformasida yangi akkaunt yarating. O\'qituvchi yoki talaba sifatida ro\'yxatdan o\'ting va ta\'lim jarayoniga qo\'shiling.',
 };
 

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import LandingPageInteractive from './components/LandingPageInteractive';
 
 export const metadata: Metadata = {
-  title: 'Ustoz - Ta\'lim Platformasi',
+  title: 'Bosh sahifa',
   description: 'O\'qituvchilar va o\'quvchilar uchun zamonaviy onlayn ta\'lim platformasi. Kurslar yarating, o\'rganing va rivojlaning.',
 };
 

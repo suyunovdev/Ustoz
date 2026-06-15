@@ -4,7 +4,7 @@ import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import LearningInterfaceInteractive from './components/LearningInterfaceInteractive';
 
 export const metadata: Metadata = {
-  title: "Dars O'rganish - Ustoz",
+  title: "Dars",
   description: "Video darslar, interaktiv transkript, eslatmalar va o'quv jarayonini kuzatish.",
 };
 

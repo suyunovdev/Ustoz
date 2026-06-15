@@ -4,7 +4,7 @@ import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import PaymentSuccessWrapper from './components/PaymentSuccessWrapper';
 
 export const metadata: Metadata = {
-  title: 'To\'lov muvaffaqiyatli - Ustoz',
+  title: 'To\'lov muvaffaqiyatli',
   description: 'To\'lov muvaffaqiyatli amalga oshirildi. Kursga kirish va chek yuklab olish.',
 };
 

@@ -4,7 +4,7 @@ import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import QuizInterfaceInteractive from './components/QuizInterfaceInteractive';
 
 export const metadata: Metadata = {
-  title: 'Test topshirish - Ustoz',
+  title: 'Test',
   description: 'Interaktiv test topshirish interfeysi. Savollarni javoblang, vaqtni kuzating va natijalaringizni ko\'ring.',
 };
 

@@ -13,7 +13,7 @@ import { loadDashboardData } from '@/lib/services/dashboard.service';
 import { queryKeys } from '@/hooks/queries/queryKeys';
 
 export const metadata: Metadata = {
-  title: 'Dashboard',
+  title: 'Talaba paneli',
   description:
     "O'qish jarayonini kuzating, sotib olgan kurslaringizga kiring va yangi tavsiyalarni toping.",
   robots: { index: false, follow: false },

@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import ForgotPasswordInteractive from './components/ForgotPasswordInteractive';
 
 export const metadata: Metadata = {
-  title: 'Parolni tiklash - Ustoz',
+  title: 'Parolni tiklash',
   description: 'Parolingizni unutdingizmi? Emailingizga tasdiqlash kodi yuboramiz.',
 };
 

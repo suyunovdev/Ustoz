@@ -1,5 +1,11 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import ProfileClient from './ProfileClient';
+
+export const metadata: Metadata = {
+  title: 'Profil',
+  description: 'Shaxsiy ma\'lumotlaringizni tahrirlang, profil rasmingizni yangilang va akkaunt sozlamalarini boshqaring.',
+};
 
 export const dynamic = 'force-dynamic';
 

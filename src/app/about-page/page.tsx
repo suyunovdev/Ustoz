@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import AboutPageInteractive from './components/AboutPageInteractive';
 
 export const metadata: Metadata = {
-  title: 'Biz Haqimizda - Ustoz',
+  title: 'Biz haqimizda',
   description: 'Ustoz platformasining missiyasi, jamoasi va ta\'lim falsafasi haqida to\'liq ma\'lumot.',
 };
 

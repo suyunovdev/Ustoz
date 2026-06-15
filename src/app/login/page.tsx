@@ -4,8 +4,8 @@ import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import LoginInteractive from './components/LoginInteractive';
 
 export const metadata: Metadata = {
-  title: 'Login - Ustoz',
-  description: 'Sign in to your Ustoz account to access your personalized dashboard as a teacher or student. Create and monetize courses or continue your learning journey.',
+  title: 'Kirish',
+  description: 'Ustoz platformasiga kiring. O\'qituvchi yoki talaba sifatida shaxsiy panelingizga kiring va ta\'lim jarayonini davom ettiring.',
 };
 
 export default function LoginPage() {

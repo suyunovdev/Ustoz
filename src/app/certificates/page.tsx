@@ -3,7 +3,7 @@ import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import CertificatesPageClient from './CertificatesPageClient';
 
 export const metadata: Metadata = {
-  title: 'Sertifikatlarim - Ustoz',
+  title: 'Sertifikatlar',
   description: "Tugatgan kurslaringiz uchun olgan sertifikatlaringizni ko'ring va yuklab oling.",
 };
 

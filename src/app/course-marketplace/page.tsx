@@ -15,12 +15,12 @@ const MarketplaceInteractive = dynamic(
 );
 
 export const metadata: Metadata = {
-  title: 'Kurslar marketplace',
+  title: 'Kurslar bozori',
   description:
     "O'zbek tilidagi kurslarni kashf eting: maktab fanlari, tillar, san'at, hunarmandchilik, sport, tibbiyot, biznes va boshqa o'nlab yo'nalishlar. Narx, daraja va reyting bo'yicha filtr qiling, sizga mos kursni toping.",
   alternates: { canonical: '/course-marketplace' },
   openGraph: {
-    title: 'Kurslar marketplace | Ustoz',
+    title: 'Kurslar bozori | Ustoz',
     description: "O'zbek tilidagi onlayn kurslar katalogi.",
     url: '/course-marketplace',
     type: 'website',
