@@ -10,8 +10,7 @@ function createPrismaClient(): PrismaClient {
   return new PrismaClient({ adapter } as ConstructorParameters<typeof PrismaClient>[0]);
 }
 
+// Production'da ham global cache'da saqlash — cold start'da qayta yaratilmaydi
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+globalForPrisma.prisma = prisma;

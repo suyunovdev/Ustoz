@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
     prisma.course.count({ where }),
   ]);
 
-  return jsonResponse({
+  const res = jsonResponse({
     courses: courses.map(c => ({
       id: c.id,
       title: c.title,
@@ -79,4 +79,7 @@ export async function GET(req: NextRequest) {
       totalPages: Math.ceil(total / limit),
     },
   });
+  // Public kurslar — 30 sekund CDN cache
+  res.headers.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
+  return res;
 }

@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
     orderBy: { enrollmentCount: 'desc' },
   });
 
-  return jsonResponse({
+  const res = jsonResponse({
     results: courses.map((c) => ({
       id: c.id,
       title: c.title,
@@ -45,4 +45,6 @@ export async function GET(req: NextRequest) {
       teacherName: c.teacher.fullName || 'Ustoz',
     })),
   });
+  res.headers.set('Cache-Control', 'public, s-maxage=15, stale-while-revalidate=30');
+  return res;
 }
