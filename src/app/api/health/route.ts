@@ -35,5 +35,8 @@ export async function GET() {
   checks.latency_ms = Date.now() - start;
 
   const httpStatus = checks.status === 'ok' ? 200 : 503;
-  return NextResponse.json(checks, { status: httpStatus });
+  const res = NextResponse.json(checks, { status: httpStatus });
+  // 10 sekund cache — tez-tez so'ralmaydi
+  res.headers.set('Cache-Control', 'public, s-maxage=10, stale-while-revalidate=30');
+  return res;
 }

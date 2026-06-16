@@ -96,6 +96,27 @@ const nextConfig = {
         source: '/(.*)',
         headers: securityHeaders,
       },
+      // Static sahifalar uchun CDN cache
+      {
+        source: '/landing-page',
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=120' }],
+      },
+      {
+        source: '/about-page',
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }],
+      },
+      {
+        source: '/login',
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }],
+      },
+      {
+        source: '/register',
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }],
+      },
+      {
+        source: '/course-marketplace',
+        headers: [{ key: 'Cache-Control', value: 'public, s-maxage=30, stale-while-revalidate=60' }],
+      },
     ];
   },
 
