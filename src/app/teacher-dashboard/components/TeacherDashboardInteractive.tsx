@@ -224,7 +224,7 @@ const TeacherDashboardInteractive = () => {
 
           {activeTab !== 'overview' &&
             activeTab !== 'courses' &&
-            activeTab !== 'earnings' && <ComingSoonPlaceholder tab={activeTab} />}
+            activeTab !== 'earnings' && <SidebarRedirectMessage tab={activeTab} />}
         </div>
       {modalProps && pending && (
         <ConfirmModal
@@ -684,13 +684,14 @@ function EarningsTab({
   );
 }
 
-function ComingSoonPlaceholder({ tab }: { tab: TeacherTabId }) {
+function SidebarRedirectMessage({ tab }: { tab: TeacherTabId }) {
+  const tabTitle = TAB_TITLES[tab]?.title || tab;
   return (
     <div className="bg-card rounded-md shadow-warm p-12 text-center">
-      <Icon name="RocketLaunchIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-      <h3 className="text-xl font-heading font-semibold text-foreground mb-2">Tez orada</h3>
+      <Icon name="Bars3Icon" size={48} className="text-muted-foreground mx-auto mb-4" />
+      <h3 className="text-xl font-heading font-semibold text-foreground mb-2">{tabTitle}</h3>
       <p className="text-muted-foreground">
-        Bu bo'lim ({tab}) keyingi iteratsiyalarda qo'shiladi.
+        Chap paneldagi menyudan foydalaning
       </p>
     </div>
   );

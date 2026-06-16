@@ -35,6 +35,7 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
   });
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [systemHealth, setSystemHealth] = useState(initialHealth);
+  const [loading, setLoading] = useState(true);
 
   const fetchHealth = useCallback(async () => {
     try {
@@ -45,12 +46,14 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
       const configOk = data.config?.status === 'ok';
       const latency = data.latency_ms || 0;
 
+      const uptimeHours = Math.round((data.uptime || 0) / 3600);
+
       setHealthMetrics({
         serverStatus: data.status === 'ok' ? 'online' : 'degraded',
         databasePerformance: dbOk ? Math.max(80, 100 - latency / 10) : 0,
         apiResponseTime: latency,
-        storageUsage: Math.round((data.uptime || 0) / 3600) % 100,
-        activeConnections: Math.round(data.uptime || 0),
+        storageUsage: data.database?.storage_usage_percent ?? 0,
+        activeConnections: uptimeHours,
         errorRate: data.status === 'ok' ? 0 : 1,
       });
 
@@ -70,6 +73,8 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
       setHealthMetrics((prev) => ({ ...prev, serverStatus: 'offline' }));
       setAlerts([{ id: 'err', type: 'error', message: 'Health endpoint ga ulanib bo\'lmadi', time: 'hozir' }]);
       setSystemHealth(0);
+    } finally {
+      setLoading(false);
     }
   }, []);
 
@@ -104,6 +109,21 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
     };
     return colors[type as keyof typeof colors] || 'text-muted-foreground';
   };
+
+  if (loading) {
+    return (
+      <div className="bg-card rounded-md shadow-warm p-6 animate-pulse">
+        <div className="h-6 bg-muted rounded w-1/3 mb-6" />
+        <div className="h-32 bg-muted rounded mb-6" />
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-20 bg-muted rounded-md" />
+          ))}
+        </div>
+        <div className="h-24 bg-muted rounded" />
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-md shadow-warm p-6">
@@ -166,9 +186,9 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
         <div className="p-4 border border-border rounded-md">
           <div className="flex items-center space-x-2 mb-2">
             <Icon name="UsersIcon" size={18} className="text-success" />
-            <p className="text-sm text-muted-foreground">Ulanishlar</p>
+            <p className="text-sm text-muted-foreground">Uptime (soat)</p>
           </div>
-          <p className="text-2xl font-heading font-bold text-foreground">{healthMetrics.activeConnections}</p>
+          <p className="text-2xl font-heading font-bold text-foreground">{healthMetrics.activeConnections} soat</p>
         </div>
       </div>
 

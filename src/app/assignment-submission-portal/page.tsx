@@ -109,10 +109,50 @@ const AssignmentSubmissionPortalInteractive = () => {
     e.preventDefault();
     if (!userId || !selectedAssignment) return;
 
-    // TODO: add POST /api/assignments/[id]/submit endpoint (with file upload support).
-    alert("Tez orada qo'shiladi");
+    setUploading(true);
+    setUploadProgress(10);
+    try {
+      // Fayl yuklash (agar tanlangan bo'lsa)
+      let fileUrl: string | null = null;
+      if (selectedFile) {
+        setUploadProgress(30);
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        const uploadRes = await fetch('/api/upload', { method: 'POST', credentials: 'include', body: formData });
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          fileUrl = uploadData.url;
+        }
+        setUploadProgress(60);
+      }
 
-    // Reset form
+      // Topshiriq topshirish
+      const res = await fetch(`/api/assignments/${selectedAssignment.id}/submit`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submissionText,
+          submissionUrl: fileUrl,
+        }),
+      });
+      setUploadProgress(90);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || 'Topshirishda xatolik');
+      }
+
+      // Muvaffaqiyatli — ro'yxatni yangilash
+      await loadAssignments(userId);
+      setUploadProgress(100);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Topshirishda xatolik yuz berdi');
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+    }
+
     setSubmissionText('');
     setSelectedFile(null);
     setSelectedAssignment(null);

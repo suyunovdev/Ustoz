@@ -60,27 +60,53 @@ const PaymentSuccessInteractive = () => {
     try {
       setLoading(true);
 
-      // TODO: add /api/payments/[id] endpoint for fetching transaction by id.
-      // For now we read query params passed from the payment flow.
-      const courseIdParam = searchParams.get('course_id');
-      const amountParam = searchParams.get('amount');
-      const paymentMethodParam = searchParams.get('payment_method');
+      // Fetch real transaction data from /api/payment/status/[id]
+      const txRes = await fetch(`/api/payment/status/${transactionId}`, {
+        credentials: 'include',
+      });
+
+      let courseIdParam = searchParams.get('course_id');
+
+      if (txRes.ok) {
+        const txData = await txRes.json();
+        const tx = txData.transaction;
+        setTransaction({
+          id: tx.id,
+          course_id: tx.course_id,
+          payment_method: tx.payment_method,
+          amount_uzs: parseInt(tx.amount_uzs, 10),
+          status: tx.status,
+          merchant_trans_id: tx.id,
+          created_at: tx.created_at,
+          completed_at: tx.completed_at || tx.created_at,
+        });
+        courseIdParam = tx.course_id;
+      } else {
+        // Fallback to URL params if endpoint fails
+        const amountParam = searchParams.get('amount');
+        const paymentMethodParam = searchParams.get('payment_method');
+
+        if (!courseIdParam) {
+          router.push('/student-dashboard');
+          return;
+        }
+
+        setTransaction({
+          id: transactionId || '',
+          course_id: courseIdParam,
+          payment_method: paymentMethodParam || 'click',
+          amount_uzs: amountParam ? parseInt(amountParam, 10) : 0,
+          status: 'completed',
+          merchant_trans_id: transactionId || '',
+          created_at: new Date().toISOString(),
+          completed_at: new Date().toISOString(),
+        });
+      }
 
       if (!courseIdParam) {
         router.push('/student-dashboard');
         return;
       }
-
-      setTransaction({
-        id: transactionId || '',
-        course_id: courseIdParam,
-        payment_method: paymentMethodParam || 'click',
-        amount_uzs: amountParam ? parseInt(amountParam, 10) : 0,
-        status: 'completed',
-        merchant_trans_id: transactionId || '',
-        created_at: new Date().toISOString(),
-        completed_at: new Date().toISOString()
-      });
 
       // Load course details via JWT API
       const courseRes = await fetch(`/api/courses/${courseIdParam}`, {
@@ -100,9 +126,6 @@ const PaymentSuccessInteractive = () => {
           });
         }
       }
-
-      // TODO: add /api/student/enrollments endpoint for enrollment metadata.
-      // Skipping enrollment fetch — UI handles missing enrollment gracefully.
     } catch (err: any) {
       console.error('Error loading success data:', err);
     } finally {

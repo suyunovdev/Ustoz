@@ -17,18 +17,38 @@ interface AnalyticsChartsProps {
 const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
   const [data, setData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/admin/analytics', { credentials: 'include' })
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        if (!res.ok) throw new Error('Analitika ma\'lumotlarini yuklashda xatolik');
+        return res.json();
+      })
       .then((d) => { if (d) setData(d); })
-      .catch(() => {})
+      .catch((err) => { setError(err.message || 'Kutilmagan xatolik yuz berdi'); })
       .finally(() => setLoading(false));
   }, []);
 
   const userGrowthData = data?.userGrowthData || [];
   const courseCompletionData = data?.courseCompletionData || [];
   const engagementData = data?.engagementData || [];
+
+  if (error) {
+    return (
+      <div className="bg-destructive/10 border border-destructive/20 rounded-md p-6 text-center">
+        <Icon name="ExclamationTriangleIcon" size={32} className="text-destructive mx-auto mb-3" />
+        <h3 className="text-lg font-heading font-semibold text-destructive mb-1">Xatolik yuz berdi</h3>
+        <p className="text-sm text-muted-foreground mb-4">{error}</p>
+        <button
+          onClick={() => { setError(null); setLoading(true); fetch('/api/admin/analytics', { credentials: 'include' }).then((res) => { if (!res.ok) throw new Error('Analitika ma\'lumotlarini yuklashda xatolik'); return res.json(); }).then((d) => { if (d) setData(d); }).catch((err) => { setError(err.message || 'Kutilmagan xatolik yuz berdi'); }).finally(() => setLoading(false)); }}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth text-sm font-medium"
+        >
+          Qayta urinish
+        </button>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
