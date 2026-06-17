@@ -119,7 +119,8 @@ export async function POST(req: NextRequest) {
     }
 
     const responseBody: Record<string, unknown> = { success: true, emailDelivered };
-    if (isDev) {
+    // Vaqtinchalik: email ishlamaguncha OTP ni qaytarish (Resend domain verify bo'lganda olib tashlanadi)
+    if (!emailDelivered) {
       responseBody.devOtp = otp;
     }
     return NextResponse.json(responseBody);
