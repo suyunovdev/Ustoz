@@ -27,8 +27,18 @@ interface FormErrors {
 const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { signIn } = useAuth();
+  const { signIn, user, loading: authLoading } = useAuth();
   const [isHydrated, setIsHydrated] = useState(false);
+
+  // Login qilingan bo'lsa dashboard'ga redirect
+  useEffect(() => {
+    if (authLoading || !user) return;
+    const redirect = searchParams.get('redirect');
+    if (redirect) { router.replace(redirect); return; }
+    if (user.role === 'admin') router.replace('/admin-dashboard');
+    else if (user.role === 'teacher') router.replace('/teacher-dashboard');
+    else router.replace('/student-dashboard');
+  }, [user, authLoading, router, searchParams]);
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [formData, setFormData] = useState<FormData>({
     email: '',

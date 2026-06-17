@@ -87,9 +87,20 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 // MAIN COMPONENT
 // ═══════════════════════════════════════════
 const LandingPageInteractive = () => {
-  useAuth(); // provider ichida bo'lish kerak
+  const { user, loading: authLoading } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
+
+  // Login qilingan foydalanuvchini dashboard'ga yo'naltirish
+  useEffect(() => {
+    if (authLoading) return;
+    if (user) {
+      const role = user.role;
+      if (role === 'admin') router.replace('/admin-dashboard');
+      else if (role === 'teacher') router.replace('/teacher-dashboard');
+      else router.replace('/student-dashboard');
+    }
+  }, [user, authLoading, router]);
   const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState({ totalCourses: 0, activeStudents: 0, successfulTeachers: 0, certificatesAwarded: 0 });
   const [popularCourses, setPopularCourses] = useState<PopularCourse[]>([]);
