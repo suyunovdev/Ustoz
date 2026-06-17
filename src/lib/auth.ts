@@ -72,8 +72,9 @@ export async function getSessionFromRequest(req: NextRequest): Promise<JWTPayloa
 // Session cookie yaratish (Response headers uchun)
 export function createSessionCookie(token: string): string {
   const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
-  const isProduction = process.env.NODE_ENV === 'production';
-  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${isProduction ? '; Secure' : ''}`;
+  // Secure flag faqat HTTPS mavjud bo'lganda (APP_URL https:// bilan boshlansa)
+  const useSecure = (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
+  return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${useSecure ? '; Secure' : ''}`;
 }
 
 // Session cookie o'chirish
