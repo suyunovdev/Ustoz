@@ -25,6 +25,8 @@ const RoleBasedHeader = (props: RoleBasedHeaderProps) => {
   );
 };
 
+const PUBLIC_PAGES = ['/landing-page', '/login', '/register', '/forgot-password', '/about-page', '/course-marketplace', '/course-details', '/help', '/unauthorized'];
+
 const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   const livePathname = usePathname();
   const searchParams = useSearchParams();
@@ -84,7 +86,9 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
           {/* Logo */}
           <Link
             href={
-              userRole === 'admin'
+              PUBLIC_PAGES.some(p => activePath === p || activePath.startsWith(p + '/'))
+                ? '/landing-page'
+                : userRole === 'admin'
                 ? '/admin-dashboard'
                 : userRole === 'teacher'
                 ? '/teacher-dashboard'
