@@ -21,10 +21,9 @@ import {
 import { EnrollmentNotFoundError, TopicNotFoundError } from '@/lib/errors';
 import { maybeAutoIssue } from './certificate.service';
 
-// TODO: pino logger — hozircha console.log
-const log = (event: string, payload?: Record<string, unknown>) => {
-  // eslint-disable-next-line no-console
-  console.log(`[progress.service] ${event}`, payload ?? {});
+// Silent in production — replace with structured logger when needed
+const log = (_event: string, _payload?: Record<string, unknown>) => {
+  // no-op
 };
 
 // ─── Public API ────────────────────────────────────────────────────────────

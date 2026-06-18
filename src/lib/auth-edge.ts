@@ -32,6 +32,7 @@ export async function verifyToken(token: string): Promise<JWTPayload | null> {
     const { payload } = await jwtVerify(token, JWT_SECRET);
     return payload as unknown as JWTPayload;
   } catch {
+    // JWT verification failure (expired, malformed, wrong signature) is expected — return null
     return null;
   }
 }

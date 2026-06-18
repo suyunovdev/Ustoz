@@ -68,7 +68,7 @@ const ModerationDashboardInteractive = () => {
       setContentItems([]);
       setSelectedItem(null);
     } catch (error) {
-      console.error('Error loading moderation data:', error);
+      // Moderation data loading failed — reset to empty state
       setContentItems([]);
       setStats({ pending: 0, approved: 0, rejected: 0, avgReviewTime: '0h 0m' });
     } finally {

@@ -40,9 +40,9 @@ export interface RecommendedCourse {
 
 // ─── Private helpers ──────────────────────────────────────────────────────
 
-const log = (msg: string, extra?: Record<string, unknown>) => {
-  // eslint-disable-next-line no-console
-  console.log(`[recommend] ${msg}`, extra ?? '');
+// Silent in production — replace with structured logger when needed
+const log = (_msg: string, _extra?: Record<string, unknown>) => {
+  // no-op
 };
 
 function formatCourse(

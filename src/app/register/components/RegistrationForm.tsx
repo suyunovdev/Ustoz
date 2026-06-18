@@ -331,7 +331,7 @@ const RegistrationForm = () => {
         }
       }
     } catch (error: any) {
-      console.error('Registration error:', error.message);
+      // Registration error — handled via UI error state below
 
       if (error.message.includes('Anonymous sign-ins are disabled')) {
         setErrors({

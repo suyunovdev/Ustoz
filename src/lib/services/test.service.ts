@@ -26,62 +26,51 @@ import {
   type CreateQuestionInput,
   type UpdateQuestionInput,
 } from '@/lib/repositories';
-import { ValidationError } from '@/lib/errors';
+import { ServiceError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 
-export class TestNotFoundError extends Error {
-  code = 'TEST_NOT_FOUND';
+// Barcha custom error'lar ServiceError'dan extend qilingan —
+// isServiceError() type guard to'g'ri ishlashi uchun.
+
+export class TestNotFoundError extends ServiceError {
   constructor(id: string) {
-    super(`Test topilmadi: ${id}`);
-    this.name = 'TestNotFoundError';
+    super(`Test topilmadi: ${id}`, 'TEST_NOT_FOUND');
   }
 }
 
-export class TestAccessDeniedError extends Error {
-  code = 'TEST_ACCESS_DENIED';
+export class TestAccessDeniedError extends ServiceError {
   constructor() {
-    super("Bu test sizniki emas");
-    this.name = 'TestAccessDeniedError';
+    super("Bu test sizniki emas", 'TEST_ACCESS_DENIED');
   }
 }
 
-export class CourseAccessDeniedError extends Error {
-  code = 'COURSE_ACCESS_DENIED';
+export class CourseAccessDeniedError extends ServiceError {
   constructor() {
-    super("Bu kurs sizniki emas");
-    this.name = 'CourseAccessDeniedError';
+    super("Bu kurs sizniki emas", 'COURSE_ACCESS_DENIED');
   }
 }
 
-export class TestNotPublishedError extends Error {
-  code = 'TEST_NOT_PUBLISHED';
+export class TestNotPublishedError extends ServiceError {
   constructor() {
-    super("Test hali e'lon qilinmagan");
-    this.name = 'TestNotPublishedError';
+    super("Test hali e'lon qilinmagan", 'TEST_NOT_PUBLISHED');
   }
 }
 
-export class AttemptLimitExceededError extends Error {
-  code = 'ATTEMPT_LIMIT_EXCEEDED';
+export class AttemptLimitExceededError extends ServiceError {
   constructor(limit: number) {
-    super(`Urinishlar tugadi (max ${limit})`);
-    this.name = 'AttemptLimitExceededError';
+    super(`Urinishlar tugadi (max ${limit})`, 'ATTEMPT_LIMIT_EXCEEDED');
   }
 }
 
-export class AttemptNotFoundError extends Error {
-  code = 'ATTEMPT_NOT_FOUND';
+export class AttemptNotFoundError extends ServiceError {
   constructor() {
-    super("Urinish topilmadi");
-    this.name = 'AttemptNotFoundError';
+    super("Urinish topilmadi", 'ATTEMPT_NOT_FOUND');
   }
 }
 
-export class AttemptAlreadySubmittedError extends Error {
-  code = 'ATTEMPT_ALREADY_SUBMITTED';
+export class AttemptAlreadySubmittedError extends ServiceError {
   constructor() {
-    super("Urinish allaqachon yakunlangan");
-    this.name = 'AttemptAlreadySubmittedError';
+    super("Urinish allaqachon yakunlangan", 'ATTEMPT_ALREADY_SUBMITTED');
   }
 }
 

@@ -181,7 +181,7 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
         router.push('/student-dashboard');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
+      // Login error — handled via UI error state below
       if (
         error.message?.includes('Email not confirmed') ||
         error.message?.includes('email_not_confirmed')

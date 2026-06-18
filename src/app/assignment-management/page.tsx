@@ -81,7 +81,7 @@ const AssignmentManagementInteractive = () => {
       setUserId(me.user.id);
       await Promise.all([loadCourses(), loadAssignments()]);
     } catch (err: unknown) {
-      console.error('Auth check error:', err);
+      // Auth check failed — show error in UI
       setError(err instanceof Error ? err.message : 'Autentifikatsiya xatoligi');
     } finally {
       setLoading(false);
@@ -95,7 +95,7 @@ const AssignmentManagementInteractive = () => {
       const data = await res.json();
       setCourses((data.courses || []).map((c: { id: string; title: string }) => ({ id: c.id, title: c.title })));
     } catch (err: unknown) {
-      console.error('Error loading courses:', err);
+      // Course loading failed — silently ignore, courses list stays empty
     }
   };
 
@@ -106,7 +106,7 @@ const AssignmentManagementInteractive = () => {
       const data = await res.json();
       setAssignments(data.assignments || []);
     } catch (err: unknown) {
-      console.error('Error loading assignments:', err);
+      // Assignment loading failed — show error in UI
       setError(err instanceof Error ? err.message : 'Topshiriqlarni yuklashda xatolik');
     }
   };
@@ -120,7 +120,7 @@ const AssignmentManagementInteractive = () => {
       const data = await res.json();
       setSubmissions(data.submissions || []);
     } catch (err: unknown) {
-      console.error('Error loading submissions:', err);
+      // Submission loading failed — show error in UI
       setError(err instanceof Error ? err.message : 'Topshiriqlarni yuklashda xatolik');
     }
   };
@@ -164,7 +164,7 @@ const AssignmentManagementInteractive = () => {
       await loadAssignments();
       setActiveTab('list');
     } catch (err: unknown) {
-      console.error('Error creating assignment:', err);
+      // Assignment creation failed — show error in UI
       setError(err instanceof Error ? err.message : 'Topshiriq yaratishda xatolik');
     } finally {
       setSubmitting(false);
@@ -200,7 +200,7 @@ const AssignmentManagementInteractive = () => {
       await loadSubmissions(selectedAssignment.id);
       setGradingData(null);
     } catch (err: unknown) {
-      console.error('Error grading submission:', err);
+      // Grading failed — show error in UI
       setError(err instanceof Error ? err.message : 'Baholashda xatolik');
     } finally {
       setSubmitting(false);
