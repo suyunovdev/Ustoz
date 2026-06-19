@@ -29,7 +29,12 @@ const ALLOWED_TYPES = new Set([
 export async function POST(req: NextRequest) {
   try {
     const session = await requireTeacherOrAdmin(req);
-    const formData = await req.formData();
+    let formData: FormData;
+    try {
+      formData = await req.formData();
+    } catch {
+      return jsonResponse({ error: 'FormData formatida yuborilishi kerak' }, { status: 400 });
+    }
     const file = formData.get('file') as File | null;
     const topicId = (formData.get('topicId') as string) || 'general';
 

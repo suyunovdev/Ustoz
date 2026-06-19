@@ -67,12 +67,15 @@ const nextConfig = {
       },
     ];
 
-    // HSTS va CSP faqat production'da
-    if (!isDev) {
+    // HSTS faqat HTTPS mavjud bo'lganda, CSP production'da
+    const isHttps = (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
+    if (isHttps) {
       securityHeaders.push({
         key: 'Strict-Transport-Security',
         value: 'max-age=31536000; includeSubDomains',
       });
+    }
+    if (!isDev) {
       securityHeaders.push({
         key: 'Content-Security-Policy',
         value: [
