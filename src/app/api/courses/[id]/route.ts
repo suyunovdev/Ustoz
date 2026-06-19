@@ -9,6 +9,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    return jsonResponse({ error: "Noto'g'ri ID formati" }, { status: 400 });
+  }
   const session = await getSessionFromRequest(req);
 
   const course = await prisma.course.findFirst({

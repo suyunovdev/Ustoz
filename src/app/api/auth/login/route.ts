@@ -42,7 +42,13 @@ function clearAttempts(key: string): void {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password } = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: 'JSON formatida yuborilishi kerak' }, { status: 400 });
+    }
+    const { email, password } = body;
 
     if (!email || !password) {
       return NextResponse.json(

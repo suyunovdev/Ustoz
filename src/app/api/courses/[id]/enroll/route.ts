@@ -18,6 +18,9 @@ export async function POST(
   }
 
   const { id: courseId } = await params;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(courseId)) {
+    return jsonResponse({ error: "Noto'g'ri kurs ID formati" }, { status: 400 });
+  }
 
   const course = await prisma.course.findFirst({ where: { id: courseId, isPublished: true } });
   if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
