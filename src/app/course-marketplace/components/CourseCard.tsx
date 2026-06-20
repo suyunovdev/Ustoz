@@ -5,6 +5,7 @@ import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
 import { getSubjectLabel, getAudienceLabel } from '@/lib/data/subject-labels';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Course {
   id: string;
@@ -34,6 +35,7 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps) => {
+  const { t } = useI18n();
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const getSubjectDisplay = () => {
@@ -142,14 +144,14 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
         <div className="flex items-center justify-between pt-3 border-t border-border">
           <div className="space-y-0.5">
             <div className="text-2xl font-heading font-bold text-primary">
-              {course.price === 0 ? 'Free' : `${course.price.toLocaleString()} ${course.currency}`}
+              {course.price === 0 ? t('courses.free') : `${course.price.toLocaleString()} ${course.currency}`}
             </div>
           </div>
           <Link
             href={`/course-details?courseId=${course.id}`}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-secondary transition-smooth"
           >
-            View Details
+            {t('courses.viewDetails')}
           </Link>
         </div>
       </div>

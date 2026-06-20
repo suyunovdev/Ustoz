@@ -1,4 +1,7 @@
+'use client';
+
 import CourseCard from './CourseCard';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Course {
   id: string;
@@ -25,6 +28,8 @@ interface CourseGridProps {
 }
 
 const CourseGrid = ({ courses, onWishlistToggle, wishlistedCourses }: CourseGridProps) => {
+  const { t } = useI18n();
+
   if (courses.length === 0) {
     return (
       <div className="col-span-full flex flex-col items-center justify-center py-16 space-y-4">
@@ -35,9 +40,9 @@ const CourseGrid = ({ courses, onWishlistToggle, wishlistedCourses }: CourseGrid
             <path d="M2 12L12 17L22 12" stroke="currentColor" className="text-muted-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
-        <h3 className="text-xl font-heading font-semibold">No courses found</h3>
+        <h3 className="text-xl font-heading font-semibold">{t('courses.noCoursesFound')}</h3>
         <p className="text-muted-foreground text-center max-w-md">
-          Try adjusting your filters or search query to find more courses
+          {t('courses.tryOtherFilter')}
         </p>
       </div>
     );
