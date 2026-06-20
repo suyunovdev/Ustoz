@@ -7,6 +7,7 @@ import {
   type TicketStatusDTO,
   type TicketPriorityDTO,
 } from '@/hooks/queries/useSupportTickets';
+import { useI18n } from '@/contexts/I18nContext';
 
 const STATUS_LABEL: Record<TicketStatusDTO, { label: string; color: string }> = {
   open: { label: 'Ochiq', color: 'bg-primary/10 text-primary' },
@@ -34,6 +35,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function TicketsListClient() {
+  const { t } = useI18n();
   const { data, isLoading, error } = useMyTickets();
   const tickets = data?.tickets ?? [];
 

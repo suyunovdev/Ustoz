@@ -10,6 +10,7 @@ import {
   type SubmissionStatusDTO,
 } from '@/hooks/queries/useAssignments';
 import { useSubmitAssignmentMutation } from '@/hooks/mutations/useAssignmentMutations';
+import { useI18n } from '@/contexts/I18nContext';
 
 const STATUS_LABEL: Record<SubmissionStatusDTO, { label: string; color: string }> = {
   submitted: { label: 'Topshirilgan', color: 'bg-primary/10 text-primary' },
@@ -54,7 +55,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
   }, [mySub.data?.submission?.id]);
 
   if (assignment.isLoading || mySub.isLoading) {
-    return <div className="p-8">Yuklanmoqda…</div>;
+    return <div className="p-8">{t('common.loading')}</div>;
   }
   if (assignment.error || !assignment.data) {
     return (
@@ -72,6 +73,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
   const canSubmit = !isOverdue || a.allowLateSubmission;
 
   const fmt = (ms: number) => {
+  const { t } = useI18n();
     const abs = Math.abs(ms);
     const days = Math.floor(abs / 86_400_000);
     const hours = Math.floor((abs % 86_400_000) / 3_600_000);

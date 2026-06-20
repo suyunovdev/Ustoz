@@ -9,6 +9,7 @@ import NavigationControls from './NavigationControls';
 import TimerDisplay from './TimerDisplay';
 import QuestionReviewPanel from './QuestionReviewPanel';
 import ResultsScreen from './ResultsScreen';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface QuizQuestion {
   id: string;
@@ -37,6 +38,7 @@ interface QuizConfig {
 }
 
 const QuizInterfaceInteractive = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const testId = searchParams.get('testId');
@@ -196,7 +198,7 @@ const QuizInterfaceInteractive = () => {
   if (!isHydrated || isLoading) {
     return (
       <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Test yuklanmoqda...</div>
+        <div className="animate-pulse text-muted-foreground">{t('learning.testLoading')}</div>
       </div>
     );
   }

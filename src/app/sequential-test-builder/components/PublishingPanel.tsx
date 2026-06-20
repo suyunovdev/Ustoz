@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface TestQuestion {
   id: string;
@@ -29,6 +30,7 @@ interface PublishingPanelProps {
 }
 
 const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: PublishingPanelProps) => {
+  const { t } = useI18n();
   const handleChange = (field: keyof TestConfig, value: any) => {
     onConfigUpdate({ ...config, [field]: value });
   };
@@ -40,7 +42,7 @@ const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: Publi
     <div className="space-y-6">
       {/* Test Information */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
-        <h3 className="text-xl font-heading font-semibold text-foreground">Test ma'lumotlari</h3>
+        <h3 className="text-xl font-heading font-semibold text-foreground">{t('testBuilder.testInfo')}</h3>
 
         {/* Title */}
         <div>
@@ -75,7 +77,7 @@ const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: Publi
 
       {/* Test Settings */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
-        <h3 className="text-xl font-heading font-semibold text-foreground">Test sozlamalari</h3>
+        <h3 className="text-xl font-heading font-semibold text-foreground">{t('testBuilder.testSettings')}</h3>
 
         {/* Passing Score */}
         <div>
@@ -189,7 +191,7 @@ const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: Publi
               className="w-5 h-5 text-primary focus:ring-2 focus:ring-ring rounded"
             />
             <div className="flex-1">
-              <p className="font-medium text-foreground">Savollarni aralashtirish</p>
+              <p className="font-medium text-foreground">{t('testBuilder.shuffleQuestions')}</p>
               <p className="caption text-muted-foreground">Har bir talaba uchun savollar tartibini o'zgartirish</p>
             </div>
           </label>
@@ -202,7 +204,7 @@ const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: Publi
               className="w-5 h-5 text-primary focus:ring-2 focus:ring-ring rounded"
             />
             <div className="flex-1">
-              <p className="font-medium text-foreground">Natijalarni ko'rsatish</p>
+              <p className="font-medium text-foreground">{t('testBuilder.showResults')}</p>
               <p className="caption text-muted-foreground">Test tugagandan so'ng natijalarni darhol ko'rsatish</p>
             </div>
           </label>
@@ -211,7 +213,7 @@ const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: Publi
 
       {/* Validation Checklist */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
-        <h3 className="text-lg font-heading font-semibold text-foreground">Nashr qilish tekshiruvi</h3>
+        <h3 className="text-lg font-heading font-semibold text-foreground">{t('testBuilder.publishChecklist')}</h3>
         <div className="space-y-2">
           {[
             { label: 'Test nomi kiritilgan', checked: !!config.title },
@@ -236,22 +238,22 @@ const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: Publi
 
       {/* Test Summary */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
-        <h3 className="text-lg font-heading font-semibold text-foreground">Test xulosasi</h3>
+        <h3 className="text-lg font-heading font-semibold text-foreground">{t('testBuilder.testSummary')}</h3>
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 bg-muted/50 rounded-md">
-            <p className="caption text-muted-foreground mb-1">Jami savollar</p>
+            <p className="caption text-muted-foreground mb-1">{t('testBuilder.totalQuestions')}</p>
             <p className="text-2xl font-data font-bold text-foreground">{questions.length}</p>
           </div>
           <div className="p-4 bg-muted/50 rounded-md">
-            <p className="caption text-muted-foreground mb-1">Jami ball</p>
+            <p className="caption text-muted-foreground mb-1">{t('testBuilder.totalPoints')}</p>
             <p className="text-2xl font-data font-bold text-primary">{totalPoints}</p>
           </div>
           <div className="p-4 bg-muted/50 rounded-md">
-            <p className="caption text-muted-foreground mb-1">O'tish bali</p>
+            <p className="caption text-muted-foreground mb-1">{t('testBuilder.passingScoreLabel')}</p>
             <p className="text-2xl font-data font-bold text-success">{Math.round(totalPoints * config.passingScore / 100)}</p>
           </div>
           <div className="p-4 bg-muted/50 rounded-md">
-            <p className="caption text-muted-foreground mb-1">Vaqt limiti</p>
+            <p className="caption text-muted-foreground mb-1">{t('testBuilder.timeLimitLabel')}</p>
             <p className="text-2xl font-data font-bold text-foreground">{config.timeLimit} daq</p>
           </div>
         </div>
@@ -268,7 +270,7 @@ const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: Publi
         }`}
       >
         <Icon name="PaperAirplaneIcon" size={24} />
-        <span>Testni nashr qilish</span>
+        <span>{t('testBuilder.publishTest')}</span>
       </button>
 
       {!isValid && (

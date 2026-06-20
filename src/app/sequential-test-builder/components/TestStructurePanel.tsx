@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface TestQuestion {
   id: string;
@@ -28,6 +29,7 @@ const TestStructurePanel = ({
   onQuestionReorder,
   onAddQuestion
 }: TestStructurePanelProps) => {
+  const { t } = useI18n();
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
   const handleDragStart = (index: number) => {
@@ -82,7 +84,7 @@ const TestStructurePanel = ({
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <div>
-          <h3 className="text-lg font-heading font-semibold text-foreground">Test tuzilmasi</h3>
+          <h3 className="text-lg font-heading font-semibold text-foreground">{t('testBuilder.testStructure')}</h3>
           <p className="caption text-muted-foreground">{questions.length} savol • {totalPoints} ball</p>
         </div>
         <button
@@ -99,13 +101,13 @@ const TestStructurePanel = ({
         {questions.length === 0 ? (
           <div className="text-center py-12">
             <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-4">Savollar yo'q</p>
+            <p className="text-muted-foreground mb-4">{t('testBuilder.noQuestions')}</p>
             <button
               onClick={onAddQuestion}
               className="inline-flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
             >
               <Icon name="PlusIcon" size={20} />
-              <span className="font-medium">Savol qo'shish</span>
+              <span className="font-medium">{t('testBuilder.addQuestion')}</span>
             </button>
           </div>
         ) : (
@@ -157,11 +159,11 @@ const TestStructurePanel = ({
       {questions.length > 0 && (
         <div className="pt-3 border-t border-border space-y-2">
           <div className="flex items-center justify-between">
-            <span className="caption text-muted-foreground">Jami savollar</span>
+            <span className="caption text-muted-foreground">{t('testBuilder.totalQuestions')}</span>
             <span className="font-data text-sm text-foreground">{questions.length}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="caption text-muted-foreground">Jami ball</span>
+            <span className="caption text-muted-foreground">{t('testBuilder.totalPoints')}</span>
             <span className="font-data text-sm text-primary">{totalPoints}</span>
           </div>
         </div>

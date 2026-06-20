@@ -9,6 +9,7 @@ import SearchBar from './SearchBar';
 import SortControls from './SortControls';
 import CourseGrid from './CourseGrid';
 import LoadingSkeleton from './LoadingSkeleton';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Course {
   id: string;
@@ -50,6 +51,7 @@ interface FilterOptions {
 }
 
 const MarketplaceInteractive = () => {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const [isHydrated, setIsHydrated] = useState(false);
   const [activeCategory, setActiveCategory] = useState(searchParams?.get('category') || 'all');
@@ -60,7 +62,7 @@ const MarketplaceInteractive = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<Category[]>([
-    { id: 'all', name: 'Barcha kurslar', count: 0 },
+    { id: 'all', name: t('courses.allCourses'), count: 0 },
   ]);
   const [filters, setFilters] = useState<FilterOptions>({
     priceRange: [0, 5000000],
@@ -117,7 +119,7 @@ const MarketplaceInteractive = () => {
         catMap[c.category] = (catMap[c.category] || 0) + 1;
       });
       const catList: Category[] = [
-        { id: 'all', name: 'Barcha kurslar', count: mapped.length },
+        { id: 'all', name: t('courses.allCourses'), count: mapped.length },
         ...Object.entries(catMap).map(([id, count]) => ({ id, name: id, count })),
       ];
       setCategories(catList);
@@ -214,9 +216,9 @@ const MarketplaceInteractive = () => {
         <div className="mb-8 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl md:text-4xl font-heading font-bold">Kurs Bozori</h1>
+              <h1 className="text-3xl md:text-4xl font-heading font-bold">{t('courses.courseMarketplace')}</h1>
               <p className="text-muted-foreground mt-2">
-                {filteredCourses.length} ta kurs mavjud
+                {filteredCourses.length} {t('courses.coursesAvailable')}
               </p>
             </div>
             <button
@@ -224,7 +226,7 @@ const MarketplaceInteractive = () => {
               className="lg:hidden flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md"
             >
               <Icon name="AdjustmentsHorizontalIcon" size={20} />
-              <span>Filtrlar</span>
+              <span>{t('misc.filters')}</span>
             </button>
           </div>
           <CategoryChips
@@ -254,12 +256,12 @@ const MarketplaceInteractive = () => {
 
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
-                {filteredCourses.length} ta kurs ko'rsatilmoqda
+                {filteredCourses.length} {t('courses.coursesShowing')}
               </p>
               {wishlistedCourses.length > 0 && (
                 <div className="flex items-center space-x-2 text-sm">
                   <Icon name="HeartIcon" size={16} variant="solid" className="text-error" />
-                  <span>{wishlistedCourses.length} ta saqlangan</span>
+                  <span>{wishlistedCourses.length} {t('courses.savedCount')}</span>
                 </div>
               )}
             </div>
@@ -270,8 +272,8 @@ const MarketplaceInteractive = () => {
               ) : filteredCourses.length === 0 ? (
                 <div className="col-span-3 text-center py-16">
                   <Icon name="MagnifyingGlassIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-foreground mb-2">Kurs topilmadi</h3>
-                  <p className="text-muted-foreground">Boshqa kalit so'z yoki filtr bilan qidirib ko'ring</p>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">{t('courses.noCoursesFound')}</h3>
+                  <p className="text-muted-foreground">{t('courses.tryOtherFilter')}</p>
                 </div>
               ) : (
                 <CourseGrid

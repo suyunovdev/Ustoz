@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Student {
   id: string;
@@ -24,6 +25,7 @@ const GroupBalancingPanel = ({
   balancingStrategy,
   onStrategyChange
 }: GroupBalancingPanelProps) => {
+  const { t } = useI18n();
   // Calculate distribution
   const highPerformers = selectedStudents.filter((s) => s.performance === 'high');
   const mediumPerformers = selectedStudents.filter((s) => s.performance === 'medium');
@@ -160,7 +162,7 @@ const GroupBalancingPanel = ({
                 <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
                   <Icon name="ArrowUpIcon" size={16} className="text-white" />
                 </div>
-                <span className="font-semibold text-foreground">Yuqori</span>
+                <span className="font-semibold text-foreground">{t('groups.high')}</span>
               </div>
               <span className="text-2xl font-bold text-green-600 dark:text-green-400">
                 {highPerformers.length}
@@ -168,15 +170,15 @@ const GroupBalancingPanel = ({
             </div>
             <div className="space-y-1">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Hozirgi:</span>
+                <span className="text-muted-foreground">{t('groups.current')}</span>
                 <span className="font-semibold text-foreground">{highPercent}%</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Ideal:</span>
+                <span className="text-muted-foreground">{t('groups.ideal')}</span>
                 <span className="font-semibold text-green-600 dark:text-green-400">{idealHigh}%</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Farq:</span>
+                <span className="text-muted-foreground">{t('groups.difference')}</span>
                 <span className={`font-semibold ${
                   Math.abs(highPercent - idealHigh) <= 5
                     ? 'text-green-600 dark:text-green-400' :'text-amber-600 dark:text-amber-400'
@@ -194,7 +196,7 @@ const GroupBalancingPanel = ({
                 <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
                   <Icon name="MinusIcon" size={16} className="text-white" />
                 </div>
-                <span className="font-semibold text-foreground">O'rta</span>
+                <span className="font-semibold text-foreground">{t('groups.medium')}</span>
               </div>
               <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
                 {mediumPerformers.length}
@@ -228,7 +230,7 @@ const GroupBalancingPanel = ({
                 <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
                   <Icon name="ArrowDownIcon" size={16} className="text-white" />
                 </div>
-                <span className="font-semibold text-foreground">Past</span>
+                <span className="font-semibold text-foreground">{t('groups.low')}</span>
               </div>
               <span className="text-2xl font-bold text-red-600 dark:text-red-400">
                 {lowPerformers.length}
@@ -266,21 +268,21 @@ const GroupBalancingPanel = ({
           <div className="bg-muted rounded-md p-4">
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="UserGroupIcon" size={20} className="text-primary" />
-              <span className="text-sm text-muted-foreground">Jami o'quvchilar</span>
+              <span className="text-sm text-muted-foreground">{t('groups.totalStudents')}</span>
             </div>
             <p className="text-3xl font-bold text-foreground">{total}</p>
           </div>
           <div className="bg-muted rounded-md p-4">
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="ChartBarIcon" size={20} className="text-primary" />
-              <span className="text-sm text-muted-foreground">O'rtacha ball</span>
+              <span className="text-sm text-muted-foreground">{t('groups.avgScore')}</span>
             </div>
             <p className="text-3xl font-bold text-foreground">{averageScore}%</p>
           </div>
           <div className="bg-muted rounded-md p-4">
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="CalendarIcon" size={20} className="text-primary" />
-              <span className="text-sm text-muted-foreground">O'rtacha davomat</span>
+              <span className="text-sm text-muted-foreground">{t('groups.avgAttendance')}</span>
             </div>
             <p className="text-3xl font-bold text-foreground">{averageAttendance}%</p>
           </div>
@@ -293,7 +295,7 @@ const GroupBalancingPanel = ({
           <div className="flex items-start space-x-3">
             <Icon name="LightBulbIcon" size={24} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
             <div>
-              <h4 className="font-semibold text-foreground mb-2">Tavsiyalar:</h4>
+              <h4 className="font-semibold text-foreground mb-2">{t('groups.recommendations')}</h4>
               <ul className="space-y-2 text-sm text-foreground">
                 {highPercent < idealHigh - 5 && (
                   <li className="flex items-start space-x-2">

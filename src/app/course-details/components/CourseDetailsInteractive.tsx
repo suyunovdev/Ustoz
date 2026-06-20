@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import CourseHeroSection from './CourseHeroSection';
 import CourseCurriculum from './CourseCurriculum';
 import CourseReviews from './CourseReviews';
@@ -65,6 +66,7 @@ interface Review {
 }
 
 const CourseDetailsInteractive = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams.get('courseId');
@@ -230,7 +232,7 @@ const CourseDetailsInteractive = () => {
   if (!isHydrated || isLoading) {
     return (
       <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Yuklanmoqda...</div>
+        <div className="animate-pulse text-muted-foreground">{t('common.loading')}</div>
       </div>
     );
   }
@@ -260,10 +262,10 @@ const CourseDetailsInteractive = () => {
                         : 'text-foreground hover:bg-muted'
                     }`}
                   >
-                    {tab === 'overview' && "Umumiy ma'lumot"}
-                    {tab === 'curriculum' && "O'quv dasturi"}
-                    {tab === 'reviews' && 'Sharhlar'}
-                    {tab === 'instructor' && "O'qituvchi"}
+                    {tab === 'overview' && t('courses.overview')}
+                    {tab === 'curriculum' && t('courses.curriculum')}
+                    {tab === 'reviews' && t('courses.reviews')}
+                    {tab === 'instructor' && t('courses.instructor')}
                   </button>
                 ))}
               </div>
@@ -272,16 +274,16 @@ const CourseDetailsInteractive = () => {
             {activeTab === 'overview' && (
               <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
                 <div>
-                  <h2 className="text-2xl font-heading font-bold text-foreground mb-4">Kurs haqida</h2>
+                  <h2 className="text-2xl font-heading font-bold text-foreground mb-4">{t('courses.aboutCourse')}</h2>
                   <p className="text-foreground leading-relaxed">{course.description}</p>
                 </div>
                 {course.hasCertificate && (
                   <div className="bg-accent bg-opacity-10 border border-accent rounded-md p-4 flex items-start space-x-3">
                     <Icon name="AcademicCapIcon" size={24} className="text-accent flex-shrink-0" />
                     <div>
-                      <h4 className="font-semibold text-foreground mb-1">Sertifikat</h4>
+                      <h4 className="font-semibold text-foreground mb-1">{t('courses.certificate')}</h4>
                       <p className="text-sm text-muted-foreground">
-                        Kursni muvaffaqiyatli tugatganingizdan so'ng rasmiy sertifikat olasiz.
+                        {t('courses.certificateDesc')}
                       </p>
                     </div>
                   </div>
@@ -298,7 +300,7 @@ const CourseDetailsInteractive = () => {
                 />
               ) : (
                 <div className="bg-card rounded-md shadow-warm p-8 text-center text-muted-foreground">
-                  O'quv dasturi hali qo'shilmagan
+                  {t('courses.noCurriculum')}
                 </div>
               )
             )}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ResultData {
   attempt: {
@@ -43,6 +44,7 @@ interface Props {
 }
 
 export default function ResultClient({ testId, attemptId }: Props) {
+  const { t } = useI18n();
   const [data, setData] = useState<ResultData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -62,7 +64,7 @@ export default function ResultClient({ testId, attemptId }: Props) {
     })();
   }, [attemptId]);
 
-  if (loading) return <div className="p-8 text-center">Yuklanmoqda…</div>;
+  if (loading) return <div className="p-8 text-center">{t('common.loading')}</div>;
   if (error || !data) {
     return (
       <div className="max-w-xl mx-auto p-8 text-center">

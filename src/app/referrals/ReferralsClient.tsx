@@ -9,6 +9,7 @@ import {
   useMyEarnings,
   type EarningStatusDTO,
 } from '@/hooks/queries/useReferrals';
+import { useI18n } from '@/contexts/I18nContext';
 
 function fmtUzs(s: string): string {
   const n = BigInt(s);
@@ -22,11 +23,12 @@ const STATUS_LABEL: Record<EarningStatusDTO, { label: string; color: string }> =
 };
 
 export default function ReferralsClient() {
+  const { t } = useI18n();
   const { data, isLoading, error } = useMyReferral();
   const [statusFilter, setStatusFilter] = useState<EarningStatusDTO | undefined>();
   const earnings = useMyEarnings(statusFilter);
 
-  if (isLoading || !data) return <div className="p-8">Yuklanmoqda…</div>;
+  if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
   if (error)
     return <div className="p-8 text-destructive">{(error as Error).message}</div>;
 

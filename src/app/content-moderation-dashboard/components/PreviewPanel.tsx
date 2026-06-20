@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ContentItem {
   id: string;
@@ -45,6 +46,7 @@ interface PreviewPanelProps {
 }
 
 const PreviewPanel = ({ item }: PreviewPanelProps) => {
+  const { t } = useI18n();
   const [testQuestions, setTestQuestions] = useState<TestQuestion[]>([]);
   const [linkDetails, setLinkDetails] = useState<LinkDetails | null>(null);
   const [materialDetails, setMaterialDetails] = useState<MaterialDetails | null>(null);

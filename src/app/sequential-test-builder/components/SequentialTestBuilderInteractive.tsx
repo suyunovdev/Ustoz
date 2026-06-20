@@ -5,6 +5,7 @@ import Icon from '@/components/ui/AppIcon';
 import TestStructurePanel from './TestStructurePanel';
 import QuestionEditor from './QuestionEditor';
 import PublishingPanel from './PublishingPanel';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface TestQuestion {
   id: string;
@@ -32,6 +33,7 @@ interface TestConfig {
 }
 
 const SequentialTestBuilderInteractive = () => {
+  const { t } = useI18n();
   const [isHydrated, setIsHydrated] = useState(false);
   const [activeSection, setActiveSection] = useState<'structure' | 'editor' | 'publish'>('structure');
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
@@ -69,7 +71,7 @@ const SequentialTestBuilderInteractive = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Yuklanmoqda...</p>
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
@@ -116,13 +118,13 @@ const SequentialTestBuilderInteractive = () => {
 
   const handlePublish = () => {
     console.log('Publishing test:', { testConfig, questions });
-    alert('Test muvaffaqiyatli nashr etildi!');
+    alert(t('testBuilder.testPublished'));
   };
 
   const sections = [
-    { id: 'structure', label: 'Test tuzilmasi', icon: 'ListBulletIcon' },
-    { id: 'editor', label: 'Savol muharriri', icon: 'PencilSquareIcon' },
-    { id: 'publish', label: 'Nashr qilish', icon: 'PaperAirplaneIcon' }
+    { id: 'structure', label: t('testBuilder.testStructure'), icon: 'ListBulletIcon' },
+    { id: 'editor', label: t('testBuilder.questionEditor'), icon: 'PencilSquareIcon' },
+    { id: 'publish', label: t('testBuilder.publishLabel'), icon: 'PaperAirplaneIcon' }
   ];
 
   return (
@@ -132,15 +134,15 @@ const SequentialTestBuilderInteractive = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-heading font-bold text-foreground">Ketma-ket test yaratish</h1>
-              <p className="text-muted-foreground mt-1">Kurslaringiz uchun professional testlar yarating</p>
+              <h1 className="text-3xl font-heading font-bold text-foreground">{t('testBuilder.createSequentialTest')}</h1>
+              <p className="text-muted-foreground mt-1">{t('testBuilder.createProfessionalTests')}</p>
             </div>
             <button
               onClick={() => window.history.back()}
               className="flex items-center space-x-2 px-4 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth"
             >
               <Icon name="ArrowLeftIcon" size={20} />
-              <span className="font-medium hidden sm:inline">Orqaga</span>
+              <span className="font-medium hidden sm:inline">{t('common.back')}</span>
             </button>
           </div>
         </div>
@@ -202,7 +204,7 @@ const SequentialTestBuilderInteractive = () => {
                     className="inline-flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
                   >
                     <Icon name="PlusIcon" size={20} />
-                    <span className="font-medium">Savol qo'shish</span>
+                    <span className="font-medium">{t('testBuilder.addQuestion')}</span>
                   </button>
                 </div>
               </div>

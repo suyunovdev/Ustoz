@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Student {
   id: string;
@@ -28,6 +29,7 @@ const StudentSelectionPanel = ({
   onSelectionChange,
   maxStudents
 }: StudentSelectionPanelProps) => {
+  const { t } = useI18n();
   const [searchQuery, setSearchQuery] = useState('');
   const [performanceFilter, setPerformanceFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [courseFilter, setCourseFilter] = useState<string>('all');
@@ -142,7 +144,7 @@ const StudentSelectionPanel = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Ism yoki email bo'yicha qidirish..."
+            placeholder={t("groups.searchByNameEmail")}
             className="w-full pl-10 pr-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
           />
         </div>
@@ -160,10 +162,10 @@ const StudentSelectionPanel = ({
                 onChange={(e) => setPerformanceFilter(e.target.value as any)}
                 className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground appearance-none cursor-pointer"
               >
-                <option value="all">Barchasi</option>
-                <option value="high">Yuqori</option>
-                <option value="medium">O'rta</option>
-                <option value="low">Past</option>
+                <option value="all">{t('groups.allLabel')}</option>
+                <option value="high">{t('groups.high')}</option>
+                <option value="medium">{t('groups.medium')}</option>
+                <option value="low">{t('groups.low')}</option>
               </select>
               <Icon
                 name="ChevronDownIcon"
@@ -184,7 +186,7 @@ const StudentSelectionPanel = ({
                 onChange={(e) => setCourseFilter(e.target.value)}
                 className="w-full px-4 py-2.5 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground appearance-none cursor-pointer"
               >
-                <option value="all">Barcha kurslar</option>
+                <option value="all">{t('courses.allCourses')}</option>
                 {allCourses.map((course) => (
                   <option key={course} value={course}>
                     {course}
@@ -221,8 +223,8 @@ const StudentSelectionPanel = ({
         {filteredStudents.length === 0 ? (
           <div className="text-center py-12 bg-muted rounded-md">
             <Icon name="UserGroupIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">O'quvchilar topilmadi</p>
-            <p className="text-sm text-muted-foreground mt-1">Qidiruv yoki filtrlarni o'zgartiring</p>
+            <p className="text-muted-foreground">{t('groups.noStudentsFound')}</p>
+            <p className="text-sm text-muted-foreground mt-1">{t('groups.changeFilters')}</p>
           </div>
         ) : (
           filteredStudents.map((student) => {
@@ -274,14 +276,14 @@ const StudentSelectionPanel = ({
                       <div className="flex items-center space-x-2">
                         <Icon name="ChartBarIcon" size={16} className="text-muted-foreground" />
                         <div>
-                          <p className="text-xs text-muted-foreground">O'rtacha ball</p>
+                          <p className="text-xs text-muted-foreground">{t('groups.averageScore')}</p>
                           <p className="text-sm font-semibold text-foreground">{student.averageScore}%</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Icon name="CalendarIcon" size={16} className="text-muted-foreground" />
                         <div>
-                          <p className="text-xs text-muted-foreground">Davomat</p>
+                          <p className="text-xs text-muted-foreground">{t('groups.attendance')}</p>
                           <p className="text-sm font-semibold text-foreground">{student.attendance}%</p>
                         </div>
                       </div>

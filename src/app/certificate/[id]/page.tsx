@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Certificate {
   id: string;
@@ -39,6 +40,7 @@ export default function CertificatePage() {
   }, [id]);
 
   const handleCopyLink = () => {
+  const { t } = useI18n();
     if (certificate?.verification_url) {
       navigator.clipboard.writeText(certificate.verification_url);
       setCopied(true);
@@ -91,7 +93,7 @@ export default function CertificatePage() {
           className="flex items-center gap-2 text-onBackground/60 hover:text-onBackground transition-colors"
         >
           <Icon name="ArrowLeftIcon" size={16} />
-          <span className="text-sm">Orqaga</span>
+          <span className="text-sm">{t('common.back')}</span>
         </button>
         <h1 className="font-semibold text-onBackground">Mening sertifikatim</h1>
         <div className="w-20" />

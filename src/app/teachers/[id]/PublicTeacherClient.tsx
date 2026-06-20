@@ -7,6 +7,7 @@ import {
   usePublicTeacher,
   usePublicTeacherCourses,
 } from '@/hooks/queries/useProfile';
+import { useI18n } from '@/contexts/I18nContext';
 
 function fmtUzs(s: string): string {
   const n = BigInt(s);
@@ -32,10 +33,11 @@ interface Props {
 }
 
 export default function PublicTeacherClient({ teacherId }: Props) {
+  const { t } = useI18n();
   const teacher = usePublicTeacher(teacherId);
   const courses = usePublicTeacherCourses(teacherId);
 
-  if (teacher.isLoading || !teacher.data) return <div className="p-8">Yuklanmoqda…</div>;
+  if (teacher.isLoading || !teacher.data) return <div className="p-8">{t('common.loading')}</div>;
   if (teacher.error) {
     return (
       <div className="max-w-xl mx-auto p-8 text-center">

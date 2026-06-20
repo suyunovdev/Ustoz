@@ -16,6 +16,7 @@ import {
   useReplaceMaterialMutation,
   type MaterialFormInput,
 } from '@/hooks/mutations/useMaterialMutations';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface SiblingTopic {
   id: string;
@@ -38,6 +39,7 @@ const TYPE_LABEL: Record<MaterialTypeDTO, { label: string; icon: string; color: 
 };
 
 const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
+  const { t } = useI18n();
   const { data, isLoading, error, refetch } = useTopicMaterials(topicId, expanded);
   const addMut = useAddMaterialMutation(topicId);
   const deleteMut = useDeleteMaterialMutation(topicId);

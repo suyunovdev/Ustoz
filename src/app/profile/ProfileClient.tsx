@@ -13,21 +13,22 @@ import {
   useRequestDeletionMutation,
   useCancelDeletionMutation,
 } from '@/hooks/mutations/useProfileMutations';
+import { useI18n } from '@/contexts/I18nContext';
 
 type TabId = 'profile' | 'password' | 'notifications' | 'account';
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'profile', label: 'Profil', icon: 'UserIcon' },
-  { id: 'password', label: 'Parol', icon: 'KeyIcon' },
-  { id: 'notifications', label: 'Bildirishnomalar', icon: 'BellIcon' },
-  { id: 'account', label: 'Hisob', icon: 'Cog6ToothIcon' },
+  { id: 'profile', label: t('profile.profileTab'), icon: 'UserIcon' },
+  { id: 'password', label: t('profile.passwordTab'), icon: 'KeyIcon' },
+  { id: 'notifications', label: t('profile.notificationsTab'), icon: 'BellIcon' },
+  { id: 'account', label: t('profile.accountTab'), icon: 'Cog6ToothIcon' },
 ];
 
 export default function ProfileClient() {
   const { data, isLoading, error } = useMyProfile();
   const [activeTab, setActiveTab] = useState<TabId>('profile');
 
-  if (isLoading || !data) return <div className="p-8">Yuklanmoqda…</div>;
+  if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
   if (error)
     return <div className="p-8 text-destructive">{(error as Error).message}</div>;
 
@@ -43,7 +44,7 @@ export default function ProfileClient() {
           <Icon name="ArrowLeftIcon" size={14} />
           Dashboard
         </Link>
-        <h1 className="text-2xl font-heading font-semibold">Profil sozlamalari</h1>
+        <h1 className="text-2xl font-heading font-semibold">{t('profile.profileSettings')}</h1>
         <p className="text-sm text-muted-foreground">{profile.email}</p>
       </div>
 
@@ -86,6 +87,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
   const [social, setSocial] = useState<Record<string, string>>(profile.socialLinks);
 
   const handleSubmit = (e: React.FormEvent) => {
+  const { t } = useI18n();
     e.preventDefault();
     const expertise = expertiseStr
       .split(',')

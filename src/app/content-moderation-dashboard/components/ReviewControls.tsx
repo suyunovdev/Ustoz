@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ContentItem {
   id: string;
@@ -16,6 +17,7 @@ interface ReviewControlsProps {
 }
 
 const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
+  const { t } = useI18n();
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionNotes, setRejectionNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -49,7 +51,7 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
               className="flex items-center justify-center space-x-2 px-6 py-4 bg-success text-success-foreground rounded-md hover:opacity-90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon name="CheckCircleIcon" size={24} />
-              <span className="font-medium">Tasdiqlash</span>
+              <span className="font-medium">{t('common.confirm')}</span>
             </button>
             <button
               onClick={() => setShowRejectModal(true)}

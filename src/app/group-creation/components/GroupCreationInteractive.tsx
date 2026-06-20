@@ -7,6 +7,7 @@ import GroupMetadataForm from './GroupMetadataForm';
 import StudentSelectionPanel from './StudentSelectionPanel';
 import GroupBalancingPanel from './GroupBalancingPanel';
 import GroupReviewPanel from './GroupReviewPanel';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Student {
   id: string;
@@ -38,6 +39,7 @@ interface SavedGroup {
 }
 
 const GroupCreationInteractive = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
   const [view, setView] = useState<'list' | 'create'>('list');
@@ -164,17 +166,17 @@ const GroupCreationInteractive = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Guruh ma'lumotlari yuklanmoqda...</p>
+          <p className="text-muted-foreground">{t('groups.loadingData')}</p>
         </div>
       </div>
     );
   }
 
   const steps = [
-    { id: 'metadata', label: "1. Guruh Ma\'lumotlari", icon: 'InformationCircleIcon', helpText: "Guruh haqida umumiy ma\'lumotlarni kiriting" },
-    { id: 'selection', label: "2. O\'quvchilarni Tanlash", icon: 'UserGroupIcon', helpText: "Qidiruv va filtrlar yordamida o\'quvchilarni tanlang" },
-    { id: 'balancing', label: '3. Guruh Balansi', icon: 'ScaleIcon', helpText: "Guruhni natija va darajaga ko\'ra muvozanatlang" },
-    { id: 'review', label: "4. Ko\'rib Chiqish", icon: 'CheckCircleIcon', helpText: "Guruh ma\'lumotlarini tekshiring va saqlang" }
+    { id: 'metadata', label: `1. ${t('groups.groupInfo')}`, icon: 'InformationCircleIcon', helpText: "Guruh haqida umumiy ma\'lumotlarni kiriting" },
+    { id: 'selection', label: `2. ${t('groups.selectStudents')}`, icon: 'UserGroupIcon', helpText: "Qidiruv va filtrlar yordamida o\'quvchilarni tanlang" },
+    { id: 'balancing', label: `3. ${t('groups.groupBalance')}`, icon: 'ScaleIcon', helpText: "Guruhni natija va darajaga ko\'ra muvozanatlang" },
+    { id: 'review', label: `4. ${t('groups.review')}`, icon: 'CheckCircleIcon', helpText: "Guruh ma\'lumotlarini tekshiring va saqlang" }
   ];
 
   const getCurrentStepNumber = () => steps.findIndex(s => s.id === activeStep) + 1;
@@ -276,7 +278,7 @@ const GroupCreationInteractive = () => {
               className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-smooth mb-6"
             >
               <Icon name="ArrowLeftIcon" size={18} />
-              <span className="text-sm">Guruhlar ro'yxatiga qaytish</span>
+              <span className="text-sm">{t('groups.backToList')}</span>
             </button>
 
             <div className="bg-card rounded-md shadow-warm border border-border p-8">
@@ -296,14 +298,14 @@ const GroupCreationInteractive = () => {
                 <div className="bg-muted/30 rounded-md p-4">
                   <div className="flex items-center space-x-2 mb-1">
                     <Icon name="UsersIcon" size={18} className="text-primary" />
-                    <span className="text-sm font-medium text-foreground">O'quvchilar soni</span>
+                    <span className="text-sm font-medium text-foreground">{t('groups.studentCount')}</span>
                   </div>
                   <p className="text-2xl font-bold text-foreground">{selectedGroup.studentCount}</p>
                 </div>
                 <div className="bg-muted/30 rounded-md p-4">
                   <div className="flex items-center space-x-2 mb-1">
                     <Icon name="ScaleIcon" size={18} className="text-primary" />
-                    <span className="text-sm font-medium text-foreground">Balans strategiyasi</span>
+                    <span className="text-sm font-medium text-foreground">{t('groups.balancingStrategy')}</span>
                   </div>
                   <p className="text-lg font-semibold text-foreground">
                     {selectedGroup.balancingStrategy === 'performance' ? "Natija bo'yicha" :
@@ -313,7 +315,7 @@ const GroupCreationInteractive = () => {
                 <div className="bg-muted/30 rounded-md p-4">
                   <div className="flex items-center space-x-2 mb-1">
                     <Icon name="CalendarIcon" size={18} className="text-primary" />
-                    <span className="text-sm font-medium text-foreground">Yaratilgan sana</span>
+                    <span className="text-sm font-medium text-foreground">{t('groups.createdDate')}</span>
                   </div>
                   <p className="text-lg font-semibold text-foreground">{formatDate(selectedGroup.createdAt)}</p>
                 </div>
@@ -337,7 +339,7 @@ const GroupCreationInteractive = () => {
                   className="flex items-center space-x-2 px-4 py-2 bg-destructive/10 text-destructive rounded-md hover:bg-destructive/20 transition-smooth text-sm font-medium"
                 >
                   <Icon name="TrashIcon" size={16} />
-                  <span>Guruhni o'chirish</span>
+                  <span>{t('groups.deleteGroup')}</span>
                 </button>
               </div>
             </div>
@@ -357,17 +359,17 @@ const GroupCreationInteractive = () => {
                 className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-smooth mb-3"
               >
                 <Icon name="ArrowLeftIcon" size={18} />
-                <span className="text-sm">Orqaga</span>
+                <span className="text-sm">{t('common.back')}</span>
               </button>
-              <h1 className="text-3xl font-heading font-bold text-foreground">Guruhlar</h1>
-              <p className="text-muted-foreground mt-1">O'quvchilar guruhlarini boshqaring</p>
+              <h1 className="text-3xl font-heading font-bold text-foreground">{t('groups.groups')}</h1>
+              <p className="text-muted-foreground mt-1">{t('groups.manageGroups')}</p>
             </div>
             <button
               onClick={() => { setView('create'); setShowGuideModal(true); }}
               className="flex items-center space-x-2 px-5 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium shadow-warm"
             >
               <Icon name="PlusCircleIcon" size={20} />
-              <span>Yangi guruh yaratish</span>
+              <span>{t('groups.createNewGroup')}</span>
             </button>
           </div>
 
@@ -387,7 +389,7 @@ const GroupCreationInteractive = () => {
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Icon name="UserGroupIcon" size={40} className="text-primary" />
               </div>
-              <h3 className="text-xl font-heading font-semibold text-foreground mb-3">Hali guruhlar yo'q</h3>
+              <h3 className="text-xl font-heading font-semibold text-foreground mb-3">{t('groups.noGroupsYet')}</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Birinchi guruhingizni yarating. O'quvchilarni guruhlarga ajratib, ularning o'qish jarayonini samarali boshqaring.
               </p>
@@ -468,8 +470,8 @@ const GroupCreationInteractive = () => {
                     <Icon name="UserGroupIcon" size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-heading font-semibold text-foreground">Guruh Yaratish Yo'riqnomasi</h3>
-                    <p className="text-muted-foreground mt-1">4 bosqichda guruh yarating</p>
+                    <h3 className="text-2xl font-heading font-semibold text-foreground">{t('groups.guideTitle')}</h3>
+                    <p className="text-muted-foreground mt-1">{t('groups.guideSubtitle')}</p>
                   </div>
                 </div>
                 <button onClick={() => setShowGuideModal(false)} className="p-2 hover:bg-muted rounded-md transition-smooth">
@@ -506,8 +508,8 @@ const GroupCreationInteractive = () => {
               <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Icon name="CheckCircleIcon" size={40} className="text-green-500" />
               </div>
-              <h3 className="text-2xl font-heading font-semibold text-foreground mb-2">Guruh muvaffaqiyatli yaratildi!</h3>
-              <p className="text-muted-foreground">Guruhlar ro'yxatiga qaytilmoqda...</p>
+              <h3 className="text-2xl font-heading font-semibold text-foreground mb-2">{t('groups.groupCreated')}</h3>
+              <p className="text-muted-foreground">{t('groups.redirecting')}</p>
             </div>
           </div>
         )}
@@ -521,15 +523,15 @@ const GroupCreationInteractive = () => {
             <Icon name="ArrowLeftIcon" size={20} />
             <span>Guruhlar ro'yxatiga qaytish</span>
           </button>
-          <h1 className="text-3xl font-heading font-bold text-foreground">Yangi Guruh Yaratish</h1>
-          <p className="text-muted-foreground mt-2">O'quvchilarni guruhlarga ajrating va monitoring qiling</p>
+          <h1 className="text-3xl font-heading font-bold text-foreground">{t('groups.createNewGroupTitle')}</h1>
+          <p className="text-muted-foreground mt-2">{t('groups.createDesc')}</p>
         </div>
 
         {/* Progress Indicator */}
         <div className="mb-6 bg-card rounded-md shadow-warm p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-3">
-              <span className="text-sm font-medium text-muted-foreground">Bosqich:</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('groups.step')}</span>
               <span className="text-lg font-bold text-primary">{getCurrentStepNumber()} / 4</span>
             </div>
             <button
@@ -537,7 +539,7 @@ const GroupCreationInteractive = () => {
               className="flex items-center space-x-2 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-md transition-smooth"
             >
               <Icon name="QuestionMarkCircleIcon" size={18} className="text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Yo'riqnoma</span>
+              <span className="text-sm text-muted-foreground">{t('groups.guide')}</span>
             </button>
           </div>
           <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -617,7 +619,7 @@ const GroupCreationInteractive = () => {
                 disabled={!canProceed()}
                 className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <span>Keyingisi</span>
+                <span>{t('common.next')}</span>
                 <Icon name="ArrowRightIcon" size={20} />
               </button>
             ) : (
@@ -626,7 +628,7 @@ const GroupCreationInteractive = () => {
                 className="flex items-center space-x-2 px-6 py-3 bg-green-500 text-white rounded-md hover:bg-green-600 transition-smooth"
               >
                 <Icon name="CheckIcon" size={20} />
-                <span>Guruhni Saqlash</span>
+                <span>{t('groups.saveGroup')}</span>
               </button>
             )}
           </div>

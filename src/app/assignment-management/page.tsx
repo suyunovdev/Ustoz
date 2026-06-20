@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Assignment {
   id: string;
@@ -36,6 +37,7 @@ interface Submission {
 }
 
 const AssignmentManagementInteractive = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'grade'>('list');

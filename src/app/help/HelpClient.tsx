@@ -9,8 +9,10 @@ import {
   searchFaqs,
   type FaqCategory,
 } from '@/lib/data/faqs';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function HelpClient() {
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<FaqCategory | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);

@@ -10,6 +10,7 @@ import {
   type TicketStatusDTO,
 } from '@/hooks/queries/useSupportTickets';
 import { useReplyToTicketMutation } from '@/hooks/mutations/useUserTicketMutations';
+import { useI18n } from '@/contexts/I18nContext';
 
 const STATUS_LABEL: Record<TicketStatusDTO, { label: string; color: string }> = {
   open: { label: 'Ochiq', color: 'bg-primary/10 text-primary' },
@@ -49,6 +50,7 @@ export default function TicketDetailClient({ ticketId }: Props) {
   }, [messages.length]);
 
   const handleSend = (e: React.FormEvent) => {
+  const { t } = useI18n();
     e.preventDefault();
     const text = draft.trim();
     if (text.length < 2) return toast.error("Xabar kamida 2 belgi");
@@ -58,7 +60,7 @@ export default function TicketDetailClient({ ticketId }: Props) {
     });
   };
 
-  if (isLoading || !ticket) return <div className="p-8">Yuklanmoqda…</div>;
+  if (isLoading || !ticket) return <div className="p-8">{t('common.loading')}</div>;
   if (error)
     return <div className="p-8 text-destructive">{(error as Error).message}</div>;
 

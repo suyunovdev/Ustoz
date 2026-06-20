@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface GroupMetadata {
   name: string;
@@ -17,6 +18,7 @@ interface GroupMetadataFormProps {
 }
 
 const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProps) => {
+  const { t } = useI18n();
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const mockCourses = [
@@ -46,7 +48,7 @@ const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProp
           type="text"
           value={metadata.name}
           onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="Masalan: A-guruh, Kuchli o'quvchilar, Ertalabki guruh"
+          placeholder={t('groups.groupName')}
           className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
         />
         {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
@@ -63,7 +65,7 @@ const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProp
             onChange={(e) => handleChange('courseId', e.target.value)}
             className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground appearance-none cursor-pointer"
           >
-            <option value="">Kursni tanlang</option>
+            <option value="">{t('groups.selectCourse')}</option>
             {mockCourses.map((course) => (
               <option key={course.id} value={course.id}>
                 {course.name}
@@ -140,7 +142,7 @@ const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProp
           >
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="ChartBarIcon" size={20} className="text-primary" />
-              <span className="font-semibold text-foreground">Natijaga ko'ra</span>
+              <span className="font-semibold text-foreground">{t('groups.byResult')}</span>
             </div>
             <p className="text-xs text-muted-foreground">
               Yuqori, o'rta va past natijali o'quvchilarni muvozanatli taqsimlash
@@ -148,7 +150,7 @@ const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProp
             {metadata.balancingStrategy === 'performance' && (
               <div className="mt-2 flex items-center space-x-1 text-primary">
                 <Icon name="CheckCircleIcon" size={16} />
-                <span className="text-xs font-medium">Tanlangan</span>
+                <span className="text-xs font-medium">{t('groups.selected')}</span>
               </div>
             )}
           </button>
@@ -163,7 +165,7 @@ const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProp
           >
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="ArrowPathIcon" size={20} className="text-primary" />
-              <span className="font-semibold text-foreground">Tasodifiy</span>
+              <span className="font-semibold text-foreground">{t('groups.random')}</span>
             </div>
             <p className="text-xs text-muted-foreground">
               O'quvchilarni tasodifiy tarzda taqsimlash
@@ -185,7 +187,7 @@ const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProp
           >
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="HandRaisedIcon" size={20} className="text-primary" />
-              <span className="font-semibold text-foreground">Qo'lda</span>
+              <span className="font-semibold text-foreground">{t('groups.manual')}</span>
             </div>
             <p className="text-xs text-muted-foreground">
               O'zingiz tanlab, qo'lda taqsimlash
@@ -205,7 +207,7 @@ const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProp
         <div className="flex items-start space-x-3">
           <Icon name="LightBulbIcon" size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
           <div>
-            <h4 className="font-semibold text-foreground mb-1">Maslahat</h4>
+            <h4 className="font-semibold text-foreground mb-1">{t('groups.advice')}</h4>
             <p className="text-sm text-muted-foreground">
               "Natijaga ko'ra" strategiyasi eng samarali hisoblanadi. Bu usul guruhda turli darajadagi o'quvchilarni muvozanatli taqsimlaydi va o'zaro yordam ko'rsatishga imkon beradi.
             </p>

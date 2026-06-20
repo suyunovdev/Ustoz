@@ -9,6 +9,7 @@ import {
   type ReviewRating,
   type ReviewTemplate,
 } from '@/lib/data/review-templates';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ReviewModalProps {
   courseId: string;
@@ -29,6 +30,7 @@ const ReviewModal = ({
   onClose,
   onSuccess,
 }: ReviewModalProps) => {
+  const { t } = useI18n();
   const [rating, setRating] = useState<ReviewRating | 0>(
     (existing?.rating as ReviewRating) ?? 0,
   );

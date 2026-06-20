@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Assignment {
   id: string;
@@ -30,6 +31,7 @@ interface Submission {
 }
 
 const AssignmentSubmissionPortalInteractive = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);

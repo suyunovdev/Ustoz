@@ -3,12 +3,14 @@
 import { useState } from 'react';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface DiscussionPanelProps {
   topicId: string;
 }
 
 const DiscussionPanel = ({ topicId }: DiscussionPanelProps) => {
+  const { t } = useI18n();
   const [newComment, setNewComment] = useState('');
 
   const mockDiscussions = [
@@ -45,14 +47,14 @@ const DiscussionPanel = ({ topicId }: DiscussionPanelProps) => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h3 className="font-heading font-semibold text-foreground mb-4">Muhokama</h3>
+        <h3 className="font-heading font-semibold text-foreground mb-4">{t('learning.discussion')}</h3>
         
         {/* Add Comment Form */}
         <form onSubmit={handleSubmit} className="space-y-3 mb-6">
           <textarea
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder="Savol yoki fikr bildiring..."
+            placeholder={t("learning.commentPlaceholder")}
             className="w-full px-4 py-3 border border-border rounded-md bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
             rows={3} />
 
@@ -94,11 +96,11 @@ const DiscussionPanel = ({ topicId }: DiscussionPanelProps) => {
                   </button>
                   <button className="flex items-center space-x-1 text-sm text-muted-foreground hover:text-primary transition-smooth">
                     <Icon name="ChatBubbleLeftIcon" size={16} />
-                    <span>Javob berish</span>
+                    <span>{t('learning.reply')}</span>
                   </button>
                   {discussion.replies > 0 &&
                 <span className="text-xs text-muted-foreground">
-                      {discussion.replies} javob
+                      {discussion.replies} {t('learning.repliesCount')}
                     </span>
                 }
                 </div>

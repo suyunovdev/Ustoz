@@ -7,6 +7,7 @@ import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
 import { useCreateTicketMutation } from '@/hooks/mutations/useUserTicketMutations';
 import type { TicketPriorityDTO } from '@/hooks/queries/useSupportTickets';
+import { useI18n } from '@/contexts/I18nContext';
 
 const CATEGORIES = [
   { value: 'billing', label: "To'lovlar" },
@@ -32,6 +33,7 @@ export default function NewTicketClient() {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
+  const { t } = useI18n();
     e.preventDefault();
     if (subject.trim().length < 5) return toast.error("Sarlavha kamida 5 belgi");
     if (message.trim().length < 10) return toast.error("Tavsif kamida 10 belgi");

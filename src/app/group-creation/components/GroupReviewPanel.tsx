@@ -2,6 +2,7 @@
 
 import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Student {
   id: string;
@@ -28,6 +29,7 @@ interface GroupReviewPanelProps {
 }
 
 const GroupReviewPanel = ({ metadata, selectedStudents }: GroupReviewPanelProps) => {
+  const { t } = useI18n();
   const mockCourses = [
     { id: '1', name: 'Matematika - 9-sinf' },
     { id: '2', name: 'Fizika - 10-sinf' },
@@ -116,19 +118,19 @@ const GroupReviewPanel = ({ metadata, selectedStudents }: GroupReviewPanelProps)
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-green-500/10 rounded-md p-4 border border-green-500/30">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">Yuqori natijali</span>
+              <span className="text-sm font-medium text-foreground">{t('groups.highPerformers')}</span>
               <span className="text-2xl font-bold text-green-600 dark:text-green-400">{highPerformers}</span>
             </div>
           </div>
           <div className="bg-yellow-500/10 rounded-md p-4 border border-yellow-500/30">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">O'rta natijali</span>
+              <span className="text-sm font-medium text-foreground">{t('groups.mediumPerformers')}</span>
               <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{mediumPerformers}</span>
             </div>
           </div>
           <div className="bg-red-500/10 rounded-md p-4 border border-red-500/30">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">Past natijali</span>
+              <span className="text-sm font-medium text-foreground">{t('groups.lowPerformers')}</span>
               <span className="text-2xl font-bold text-red-600 dark:text-red-400">{lowPerformers}</span>
             </div>
           </div>
@@ -181,14 +183,14 @@ const GroupReviewPanel = ({ metadata, selectedStudents }: GroupReviewPanelProps)
           <div className="flex items-start space-x-3">
             <Icon name="AdjustmentsHorizontalIcon" size={20} className="text-primary flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-foreground">Maksimal o'quvchilar</p>
+              <p className="text-sm font-medium text-foreground">{t('groups.maxStudentsLabel')}</p>
               <p className="text-lg font-bold text-primary">{metadata.maxStudents} ta</p>
             </div>
           </div>
           <div className="flex items-start space-x-3">
             <Icon name="ScaleIcon" size={20} className="text-primary flex-shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-medium text-foreground">Muvozanatlash</p>
+              <p className="text-sm font-medium text-foreground">{t('groups.balancing')}</p>
               <p className="text-lg font-bold text-primary">{getStrategyLabel(metadata.balancingStrategy)}</p>
             </div>
           </div>
@@ -200,15 +202,15 @@ const GroupReviewPanel = ({ metadata, selectedStudents }: GroupReviewPanelProps)
         <div className="flex items-start space-x-3">
           <Icon name="InformationCircleIcon" size={24} className="text-blue-600 dark:text-blue-400 flex-shrink-0" />
           <div>
-            <h4 className="font-semibold text-foreground mb-2">Yakuniy tekshiruv</h4>
+            <h4 className="font-semibold text-foreground mb-2">{t('groups.finalCheck')}</h4>
             <ul className="space-y-1 text-sm text-foreground">
               <li className="flex items-center space-x-2">
                 <Icon name="CheckCircleIcon" size={16} className="text-green-500" />
-                <span>Guruh nomi va tavsif to'g'ri</span>
+                <span>{t('groups.nameAndDescCorrect')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Icon name="CheckCircleIcon" size={16} className="text-green-500" />
-                <span>Kurs tanlangan</span>
+                <span>{t('groups.courseSelected')}</span>
               </li>
               <li className="flex items-center space-x-2">
                 <Icon name="CheckCircleIcon" size={16} className="text-green-500" />
@@ -216,7 +218,7 @@ const GroupReviewPanel = ({ metadata, selectedStudents }: GroupReviewPanelProps)
               </li>
               <li className="flex items-center space-x-2">
                 <Icon name="CheckCircleIcon" size={16} className="text-green-500" />
-                <span>Muvozanatlash strategiyasi belgilangan</span>
+                <span>{t('groups.strategySet')}</span>
               </li>
             </ul>
             <p className="text-sm text-muted-foreground mt-3">

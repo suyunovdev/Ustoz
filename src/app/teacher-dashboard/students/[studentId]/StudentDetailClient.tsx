@@ -17,6 +17,7 @@ import {
   useNotifyStudentMutation,
 } from '@/hooks/mutations/useTeacherStudentMutations';
 import { useStartConversationMutation } from '@/hooks/mutations/useConversationMutations';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Props {
   studentId: string;
@@ -38,6 +39,7 @@ export default function StudentDetailClient({ studentId }: Props) {
   const [pendingRemove, setPendingRemove] = useState<StudentEnrollmentDTO | null>(null);
 
   const handleStartChat = () => {
+  const { t } = useI18n();
     startConv.mutate(
       { studentId },
       {
@@ -49,7 +51,7 @@ export default function StudentDetailClient({ studentId }: Props) {
     );
   };
 
-  if (isLoading) return <div className="p-8">Yuklanmoqda…</div>;
+  if (isLoading) return <div className="p-8">{t('common.loading')}</div>;
   if (error || !data)
     return <div className="p-8 text-destructive">{(error as Error)?.message || 'Xato'}</div>;
 

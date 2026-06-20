@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ContentItem {
   id: string;
@@ -20,6 +21,7 @@ interface ContentListProps {
 }
 
 const ContentList = ({ items, selectedItem, onSelectItem, isLoading }: ContentListProps) => {
+  const { t } = useI18n();
   const getTypeIcon = (type: string) => {
     const icons = {
       material: 'DocumentTextIcon',

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface TestQuestion {
   id: string;
@@ -24,6 +25,7 @@ interface QuestionEditorProps {
 }
 
 const QuestionEditor = ({ question, onQuestionUpdate, onQuestionDelete }: QuestionEditorProps) => {
+  const { t } = useI18n();
   const [localQuestion, setLocalQuestion] = useState<TestQuestion | null>(null);
 
   useEffect(() => {
@@ -70,7 +72,7 @@ const QuestionEditor = ({ question, onQuestionUpdate, onQuestionDelete }: Questi
       {/* Header */}
       <div className="flex items-center justify-between pb-4 border-b border-border">
         <div>
-          <h3 className="text-xl font-heading font-semibold text-foreground">Savol muharriri</h3>
+          <h3 className="text-xl font-heading font-semibold text-foreground">{t('testBuilder.questionEditor')}</h3>
           <p className="caption text-muted-foreground">Savol #{localQuestion.order}</p>
         </div>
         <button
@@ -78,7 +80,7 @@ const QuestionEditor = ({ question, onQuestionUpdate, onQuestionDelete }: Questi
           className="flex items-center space-x-2 px-4 py-2 bg-destructive/10 text-destructive rounded-md hover:bg-destructive/20 transition-smooth"
         >
           <Icon name="TrashIcon" size={20} />
-          <span className="font-medium">O'chirish</span>
+          <span className="font-medium">{t('common.delete')}</span>
         </button>
       </div>
 
@@ -117,7 +119,7 @@ const QuestionEditor = ({ question, onQuestionUpdate, onQuestionDelete }: Questi
         <textarea
           value={localQuestion.question}
           onChange={(e) => handleChange('question', e.target.value)}
-          placeholder="Savolingizni kiriting..."
+          placeholder={t("testBuilder.questionPlaceholder")}
           rows={3}
           className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           required
@@ -232,9 +234,9 @@ const QuestionEditor = ({ question, onQuestionUpdate, onQuestionDelete }: Questi
             onChange={(e) => handleChange('difficulty', e.target.value)}
             className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            <option value="easy">Oson</option>
-            <option value="medium">O'rta</option>
-            <option value="hard">Qiyin</option>
+            <option value="easy">{t('testBuilder.easy')}</option>
+            <option value="medium">{t('testBuilder.mediumDiff')}</option>
+            <option value="hard">{t('testBuilder.hard')}</option>
           </select>
         </div>
 
@@ -263,7 +265,7 @@ const QuestionEditor = ({ question, onQuestionUpdate, onQuestionDelete }: Questi
           type="text"
           value={localQuestion.topic}
           onChange={(e) => handleChange('topic', e.target.value)}
-          placeholder="Masalan: Dasturlash asoslari"
+          placeholder={t("testBuilder.topicPlaceholder")}
           className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
       </div>

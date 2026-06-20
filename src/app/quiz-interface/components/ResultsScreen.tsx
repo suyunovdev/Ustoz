@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface QuizQuestion {
   id: string;
@@ -45,11 +46,12 @@ interface ResultsScreenProps {
 }
 
 const ResultsScreen = ({ results, questions, answers, quizConfig }: ResultsScreenProps) => {
+  const { t } = useI18n();
   const router = useRouter();
 
   const getAnswerDisplay = (question: QuizQuestion, userAnswer: string | number | null) => {
     if (question.type === 'multiple-choice' && question.options) {
-      return question.options[userAnswer as number] || 'Javob berilmagan';
+      return question.options[userAnswer as number] || t('learning.notAnswered');
     }
     if (question.type === 'true-false') {
       return userAnswer === 0 ? 'To\'g\'ri' : userAnswer === 1 ? 'Noto\'g\'ri' : 'Javob berilmagan';
@@ -81,7 +83,7 @@ const ResultsScreen = ({ results, questions, answers, quizConfig }: ResultsScree
               <Icon name={results.passed ? 'CheckCircleIcon' : 'XCircleIcon'} size={48} variant="solid" />
             </div>
             <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
-              {results.passed ? 'Tabriklaymiz!' : 'Test yakunlandi'}
+              {results.passed ? t('learning.congratsExcl') : t('learning.testFinished')}
             </h1>
             <p className="text-lg text-muted-foreground mb-6">
               {results.passed 
@@ -92,17 +94,17 @@ const ResultsScreen = ({ results, questions, answers, quizConfig }: ResultsScree
             <div className="flex items-center justify-center space-x-8 mb-6">
               <div>
                 <div className="text-5xl font-bold text-foreground">{Math.round(results.percentage)}%</div>
-                <div className="text-sm text-muted-foreground">Natija</div>
+                <div className="text-sm text-muted-foreground">{t('learning.result')}</div>
               </div>
               <div className="h-16 w-px bg-border" />
               <div>
                 <div className="text-3xl font-bold text-foreground">{results.totalPoints}/{results.maxPoints}</div>
-                <div className="text-sm text-muted-foreground">Ball</div>
+                <div className="text-sm text-muted-foreground">{t('learning.score')}</div>
               </div>
               <div className="h-16 w-px bg-border" />
               <div>
                 <div className="text-3xl font-bold text-foreground">{results.correctCount}/{results.totalQuestions}</div>
-                <div className="text-sm text-muted-foreground">To\'g\'ri javob</div>
+                <div className="text-sm text-muted-foreground">{t('learning.correctAnswer')}</div>
               </div>
             </div>
 
@@ -113,14 +115,14 @@ const ResultsScreen = ({ results, questions, answers, quizConfig }: ResultsScree
                 className="flex items-center space-x-2 px-6 py-3 rounded-md border-2 border-border text-foreground hover:bg-muted transition-smooth"
               >
                 <Icon name="HomeIcon" size={20} />
-                <span className="font-medium">Bosh sahifa</span>
+                <span className="font-medium">{t('learning.homePage')}</span>
               </button>
               <button
                 onClick={() => window.location.reload()}
                 className="flex items-center space-x-2 px-6 py-3 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-warm transition-smooth"
               >
                 <Icon name="ArrowPathIcon" size={20} />
-                <span className="font-medium">Qayta topshirish</span>
+                <span className="font-medium">{t('learning.retakeTest')}</span>
               </button>
             </div>
           </div>
@@ -178,7 +180,7 @@ const ResultsScreen = ({ results, questions, answers, quizConfig }: ResultsScree
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
-                        <span className="text-sm font-medium text-foreground">Savol {index + 1}</span>
+                        <span className="text-sm font-medium text-foreground">{t('learning.question')} {index + 1}</span>
                         <span className="text-xs px-2 py-1 bg-muted rounded-md text-muted-foreground">
                           {question.topic}
                         </span>
@@ -189,7 +191,7 @@ const ResultsScreen = ({ results, questions, answers, quizConfig }: ResultsScree
                         <div className={`p-3 rounded-md ${
                           isCorrect ? 'bg-success/10' : 'bg-destructive/10'
                         }`}>
-                          <span className="text-sm font-medium text-muted-foreground">Sizning javobingiz: </span>
+                          <span className="text-sm font-medium text-muted-foreground">{t('learning.yourAnswer')} </span>
                           <span className={`text-sm font-medium ${
                             isCorrect ? 'text-success' : 'text-destructive'
                           }`}>
@@ -199,7 +201,7 @@ const ResultsScreen = ({ results, questions, answers, quizConfig }: ResultsScree
                         
                         {!isCorrect && (
                           <div className="p-3 rounded-md bg-success/10">
-                            <span className="text-sm font-medium text-muted-foreground">To\'g\'ri javob: </span>
+                            <span className="text-sm font-medium text-muted-foreground">{t('learning.correctAnswerLabel')} </span>
                             <span className="text-sm font-medium text-success">
                               {correctAnswerDisplay}
                             </span>
@@ -212,7 +214,7 @@ const ResultsScreen = ({ results, questions, answers, quizConfig }: ResultsScree
                           <div className="flex items-start space-x-2">
                             <Icon name="InformationCircleIcon" size={20} className="text-primary flex-shrink-0 mt-0.5" />
                             <div>
-                              <span className="text-sm font-medium text-foreground block mb-1">Tushuntirish:</span>
+                              <span className="text-sm font-medium text-foreground block mb-1">{t('learning.explanation')}</span>
                               <p className="text-sm text-muted-foreground">{question.explanation}</p>
                             </div>
                           </div>

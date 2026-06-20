@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface NavigationControlsProps {
   currentIndex: number;
@@ -23,6 +24,7 @@ const NavigationControls = ({
   isLastQuestion,
   showReviewButton
 }: NavigationControlsProps) => {
+  const { t } = useI18n();
   return (
     <div className="bg-card rounded-lg shadow-warm p-4">
       <div className="flex items-center justify-between">
@@ -33,7 +35,7 @@ const NavigationControls = ({
           className="flex items-center space-x-2 px-4 py-2 rounded-md border-2 border-border text-foreground hover:bg-muted transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Icon name="ChevronLeftIcon" size={20} />
-          <span className="font-medium">Oldingi</span>
+          <span className="font-medium">{t('learning.previous')}</span>
         </button>
 
         {/* Middle Buttons */}
@@ -44,7 +46,7 @@ const NavigationControls = ({
               className="flex items-center space-x-2 px-4 py-2 rounded-md border-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground transition-smooth"
             >
               <Icon name="DocumentCheckIcon" size={20} />
-              <span className="font-medium">Ko\'rib chiqish</span>
+              <span className="font-medium">{t('learning.reviewQuiz')}</span>
             </button>
           )}
           
@@ -54,7 +56,7 @@ const NavigationControls = ({
               className="flex items-center space-x-2 px-6 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 shadow-warm transition-smooth"
             >
               <Icon name="CheckCircleIcon" size={20} />
-              <span className="font-medium">Testni yakunlash</span>
+              <span className="font-medium">{t('learning.finishTest')}</span>
             </button>
           )}
         </div>
@@ -65,7 +67,7 @@ const NavigationControls = ({
           disabled={isLastQuestion}
           className="flex items-center space-x-2 px-4 py-2 rounded-md border-2 border-border text-foreground hover:bg-muted transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span className="font-medium">Keyingi</span>
+          <span className="font-medium">{t('common.next')}</span>
           <Icon name="ChevronRightIcon" size={20} />
         </button>
       </div>

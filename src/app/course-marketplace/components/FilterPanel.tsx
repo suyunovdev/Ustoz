@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface FilterOptions {
   priceRange: [number, number];
@@ -22,6 +23,7 @@ interface FilterPanelProps {
 }
 
 const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelProps) => {
+  const { t } = useI18n();
   const [localFilters, setLocalFilters] = useState<FilterOptions>(filters);
 
   const languages = [
@@ -310,7 +312,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-heading font-semibold text-foreground">Filters</h3>
+          <h3 className="text-lg font-heading font-semibold text-foreground">{t("misc.filters")}</h3>
           <button
             onClick={onClose}
             className="lg:hidden p-2 hover:bg-muted rounded-md transition-smooth"
@@ -387,7 +389,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
               onChange={(e) => setLocalFilters({ ...localFilters, targetAudience: e.target.value, subjectCategory: '', gradeLevel: '' })}
               className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="">Barchasi</option>
+              <option value="">{t('groups.allLabel')}</option>
               {targetAudiences.map((audience) => (
                 <option key={audience.value} value={audience.value}>
                   {audience.label}

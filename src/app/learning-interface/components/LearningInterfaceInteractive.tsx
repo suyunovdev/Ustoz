@@ -13,6 +13,7 @@ import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
 import type { CourseProgressResponse } from '@/types/dashboard.types';
 import { useCompleteTopicMutation } from '@/hooks/mutations/useCompleteTopicMutation';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Topic {
   id: string;
@@ -37,6 +38,7 @@ interface Note {
 }
 
 const LearningInterfaceInteractive = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams.get('courseId');
@@ -172,9 +174,9 @@ const LearningInterfaceInteractive = () => {
         onSuccess: (data) => {
           setEnrollmentProgress(data.progress);
           if (data.wasAlreadyCompleted) {
-            toast.info('Bu mavzu allaqachon tugatilgan');
+            toast.info(t('learning.topicAlreadyCompleted'));
           } else if (data.shouldShowCertificateModal) {
-            toast.success('Kurs tugatildi! Progress: 100%');
+            toast.success(t('learning.courseFinished'));
             setShowCertificateModal(true);
           } else {
             toast.success(`Mavzu tugatildi · ${data.progress}%`);
@@ -182,7 +184,7 @@ const LearningInterfaceInteractive = () => {
         },
         onError: (err) => {
           setSections(previousSections);
-          toast.error(err.message || "Tarmoq xatosi. Qayta urinib ko'ring.");
+          toast.error(err.message || t('learning.networkError'));
         },
       },
     );
@@ -211,7 +213,7 @@ const LearningInterfaceInteractive = () => {
   if (!isHydrated || isLoading) {
     return (
       <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Yuklanmoqda...</div>
+        <div className="animate-pulse text-muted-foreground">{t('common.loading')}</div>
       </div>
     );
   }
@@ -221,8 +223,8 @@ const LearningInterfaceInteractive = () => {
       <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
         <div className="text-center">
           <Icon name="VideoCameraSlashIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-foreground mb-2">Darslar hali qo'shilmagan</h2>
-          <p className="text-muted-foreground mb-6">O'qituvchi tez orada darslarni yuklaydi</p>
+          <h2 className="text-xl font-semibold text-foreground mb-2">{t('learning.noLessonsYet')}</h2>
+          <p className="text-muted-foreground mb-6">{t('learning.teacherWillUpload')}</p>
           <button
             onClick={() => router.push('/student-dashboard')}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
@@ -244,7 +246,7 @@ const LearningInterfaceInteractive = () => {
               <Icon name="TrophyIcon" size={40} variant="solid" className="text-primary-foreground" />
             </div>
             <h2 className="text-2xl font-heading font-bold text-foreground mb-2">
-              Tabriklaymiz! 🎉
+              {t('learning.congratulations')}
             </h2>
             <p className="text-muted-foreground mb-2">
               Siz <span className="font-semibold text-foreground">"{courseTitle}"</span> kursini muvaffaqiyatli tugatdingiz!
@@ -279,7 +281,7 @@ const LearningInterfaceInteractive = () => {
         <h1 className="text-sm font-medium text-foreground flex-1 truncate">{courseTitle}</h1>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Icon name="ChartBarIcon" size={16} />
-          <span>{enrollmentProgress}% bajarildi</span>
+          <span>{enrollmentProgress}% {t('learning.completed')}</span>
         </div>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -338,7 +340,7 @@ const LearningInterfaceInteractive = () => {
                   {isMarkingComplete ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Saqlanmoqda...
+                      {t('learning.saving')}
                     </>
                   ) : (
                     <>
@@ -369,10 +371,10 @@ const LearningInterfaceInteractive = () => {
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {panel === 'transcript' && 'Transkript'}
-                {panel === 'notes' && 'Eslatmalar'}
-                {panel === 'discussion' && 'Muhokama'}
-                {panel === 'resources' && 'Materiallar'}
+                {panel === 'transcript' && t('learning.transcript')}
+                {panel === 'notes' && t('learning.notes')}
+                {panel === 'discussion' && t('learning.discussion')}
+                {panel === 'resources' && t('learning.materials')}
               </button>
             ))}
           </div>
@@ -397,7 +399,7 @@ const LearningInterfaceInteractive = () => {
         {isSidebarOpen && (
           <div className="w-80 flex-shrink-0 border-l border-border bg-card overflow-y-auto">
             <div className="p-3 border-b border-border">
-              <h3 className="font-medium text-foreground text-sm">O'quv dasturi</h3>
+              <h3 className="font-medium text-foreground text-sm">{t('learning.curriculumTitle')}</h3>
             </div>
             <CourseNavigation
               sections={sections}

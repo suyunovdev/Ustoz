@@ -13,6 +13,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import AppImage from '@/components/ui/AppImage';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Props {
   materialId: string;
@@ -43,6 +44,7 @@ const MaterialPlayer = ({
   viewerId,
   onView,
 }: Props) => {
+  const { t } = useI18n();
   const [positionIdx, setPositionIdx] = useState(0);
   const watchSecRef = useRef(0);
   const startedAtRef = useRef<number | null>(null);
