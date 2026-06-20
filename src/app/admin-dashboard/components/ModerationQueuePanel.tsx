@@ -10,6 +10,7 @@ import {
   type ModerationStatusDTO,
 } from '@/hooks/queries/useAdminModeration';
 import { useModerateMaterialMutation } from '@/hooks/mutations/useModerateMaterialMutation';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ModerationQueuePanelProps {
   expanded?: boolean;
@@ -18,21 +19,21 @@ interface ModerationQueuePanelProps {
 type StatusFilter = ModerationStatusDTO | 'all';
 
 const STATUS_TABS: { id: StatusFilter; label: string }[] = [
-  { id: 'submitted', label: 'Yangi' },
-  { id: 'under_review', label: "Ko'rib chiqilmoqda" },
-  { id: 'revision_requested', label: "O'zgartirish" },
-  { id: 'approved', label: 'Tasdiqlangan' },
-  { id: 'rejected', label: 'Rad etilgan' },
-  { id: 'all', label: 'Barchasi' },
+  { id: 'submitted', label: 'statusNew' },
+  { id: 'under_review', label: 'statusUnderReview' },
+  { id: 'revision_requested', label: 'modRevisionReq' },
+  { id: 'approved', label: 'statusApproved' },
+  { id: 'rejected', label: 'statusRejected' },
+  { id: 'all', label: 'filterAll' },
 ];
 
 const STATUS_BADGE: Record<ModerationStatusDTO, { label: string; color: string }> = {
-  draft: { label: 'Qoralama', color: 'bg-muted text-muted-foreground' },
-  submitted: { label: 'Yangi', color: 'bg-warning/10 text-warning' },
-  under_review: { label: "Ko'rib chiqilmoqda", color: 'bg-secondary/10 text-secondary' },
-  approved: { label: 'Tasdiqlangan', color: 'bg-success/10 text-success' },
-  rejected: { label: 'Rad etilgan', color: 'bg-destructive/10 text-destructive' },
-  revision_requested: { label: "O'zgartirish so'ralgan", color: 'bg-primary/10 text-primary' },
+  draft: { label: 'statusDraft', color: 'bg-muted text-muted-foreground' },
+  submitted: { label: 'statusNew', color: 'bg-warning/10 text-warning' },
+  under_review: { label: 'statusUnderReview', color: 'bg-secondary/10 text-secondary' },
+  approved: { label: 'statusApproved', color: 'bg-success/10 text-success' },
+  rejected: { label: 'statusRejected', color: 'bg-destructive/10 text-destructive' },
+  revision_requested: { label: 'statusRevisionRequested', color: 'bg-primary/10 text-primary' },
 };
 
 const CONTENT_TYPE_ICON: Record<string, string> = {
@@ -60,6 +61,7 @@ function formatDateTime(iso: string | null): string {
 }
 
 const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) => {
+  const { t } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('submitted');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -94,33 +96,33 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
     switch (pending.type) {
       case 'start_review':
         return {
-          title: "Ko'rib chiqishni boshlash",
+          title: t('admin.startReviewMod'),
           message: `"${t}" materialining ko'rib chiqilishini boshlaymizmi?`,
-          confirmLabel: 'Boshlash',
+          confirmLabel: t('admin.startBtn'),
           variant: 'default' as const,
           requireFeedback: false,
         };
       case 'approve':
         return {
-          title: 'Materialni tasdiqlash',
+          title: t('admin.approveMaterial'),
           message: `"${t}" material tasdiqlanadi va kursda ko'rinadi.`,
-          confirmLabel: 'Tasdiqlash',
+          confirmLabel: t('admin.approveBtn'),
           variant: 'default' as const,
           requireFeedback: false,
         };
       case 'reject':
         return {
-          title: 'Materialni rad etish',
+          title: t('admin.rejectMaterial'),
           message: `"${t}" material rad etiladi. Sabab kerak.`,
-          confirmLabel: 'Rad etish',
+          confirmLabel: t('admin.rejectBtn'),
           variant: 'danger' as const,
           requireFeedback: true,
         };
       case 'request_revision':
         return {
-          title: "O'zgartirish so'rash",
+          title: t('admin.requestRevisionMod'),
           message: `"${t}" material uchun teacher'ga aniq izoh yozing.`,
-          confirmLabel: "So'rov yuborish",
+          confirmLabel: t('admin.sendRequest'),
           variant: 'default' as const,
           requireFeedback: true,
         };
@@ -130,14 +132,14 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
   const handleConfirm = () => {
     if (!pending || !modalProps) return;
     if (modalProps.requireFeedback && feedback.trim().length < 5) {
-      toast.error("Sabab kamida 5 belgi");
+      toast.error(t('admin.reasonMin5'));
       return;
     }
     const messages = {
-      start_review: "Ko'rib chiqish boshlandi",
-      approve: 'Material tasdiqlandi',
-      reject: 'Material rad etildi',
-      request_revision: "O'zgartirish so'rovi yuborildi",
+      start_review: t('admin.reviewStartedMod'),
+      approve: t('admin.materialApproved'),
+      reject: t('admin.materialRejected'),
+      request_revision: t('admin.revisionSentMod'),
     };
 
     const variables =
@@ -168,11 +170,11 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Moderatsiya navbati
+            {t('admin.moderationQueue')}
           </h3>
           {stats && stats.submitted > 0 && (
             <span className="px-2 py-0.5 bg-warning/10 text-warning text-xs rounded-full">
-              {stats.submitted} yangi
+              {stats.submitted} {t('admin.newItems')}
             </span>
           )}
         </div>
@@ -180,15 +182,15 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
         {stats && (
           <div className="grid grid-cols-3 gap-3 mb-4 text-center">
             <div className="p-3 bg-warning/10 rounded-md">
-              <p className="text-xs text-muted-foreground">Kutilmoqda</p>
+              <p className="text-xs text-muted-foreground">{t('admin.waitingMod')}</p>
               <p className="text-xl font-heading font-bold text-warning">{stats.submitted}</p>
             </div>
             <div className="p-3 bg-secondary/10 rounded-md">
-              <p className="text-xs text-muted-foreground">Ko'rilmoqda</p>
+              <p className="text-xs text-muted-foreground">{t('admin.reviewingMod')}</p>
               <p className="text-xl font-heading font-bold text-secondary">{stats.under_review}</p>
             </div>
             <div className="p-3 bg-muted rounded-md">
-              <p className="text-xs text-muted-foreground">O'rtacha</p>
+              <p className="text-xs text-muted-foreground">{t('admin.averageMod')}</p>
               <p className="text-xl font-heading font-bold text-foreground">
                 {stats.avgReviewMinutes > 0 ? `${stats.avgReviewMinutes}m` : '—'}
               </p>
@@ -205,7 +207,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
         ) : items.length === 0 ? (
           <div className="text-center py-6">
             <Icon name="CheckCircleIcon" size={32} className="text-success mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">Navbat bo'sh</p>
+            <p className="text-sm text-muted-foreground">{t('admin.queueEmpty')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -230,7 +232,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
                 <span
                   className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[item.status].color}`}
                 >
-                  {STATUS_BADGE[item.status].label}
+                  {t(`admin.${STATUS_BADGE[item.status].label}`)}
                 </span>
               </div>
             ))}
@@ -245,11 +247,11 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
     <div className="space-y-6">
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label="Yangi" value={stats.submitted} icon="ClockIcon" color="text-warning" />
-          <StatCard label="Ko'rilmoqda" value={stats.under_review} icon="EyeIcon" color="text-secondary" />
-          <StatCard label="O'zgartirish" value={stats.revision_requested} icon="ArrowPathIcon" color="text-primary" />
-          <StatCard label="Tasdiqlangan" value={stats.approved} icon="CheckCircleIcon" color="text-success" />
-          <StatCard label="Rad etilgan" value={stats.rejected} icon="XCircleIcon" color="text-destructive" />
+          <StatCard label={t('admin.statusNew')} value={stats.submitted} icon="ClockIcon" color="text-warning" />
+          <StatCard label={t('admin.reviewingMod')} value={stats.under_review} icon="EyeIcon" color="text-secondary" />
+          <StatCard label={t('admin.modRevisionReq')} value={stats.revision_requested} icon="ArrowPathIcon" color="text-primary" />
+          <StatCard label={t('admin.statusApproved')} value={stats.approved} icon="CheckCircleIcon" color="text-success" />
+          <StatCard label={t('admin.statusRejected')} value={stats.rejected} icon="XCircleIcon" color="text-destructive" />
         </div>
       )}
 
@@ -266,7 +268,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
                     : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
-                {tab.label}
+                {t(`admin.${tab.label}`)}
               </button>
             ))}
           </div>
@@ -281,7 +283,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Material yoki teacher..."
+              placeholder={t('admin.searchTicketPlaceholder')}
               className="pl-9 pr-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full lg:w-64"
             />
           </div>
@@ -291,18 +293,18 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Materiallar ({data?.total ?? 0})
+            {t('admin.materials')} ({data?.total ?? 0})
           </h3>
           {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground">Yangilanmoqda...</span>
+            <span className="text-xs text-muted-foreground">{t('admin.updating')}</span>
           )}
         </div>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
-            <span>Xato: {error.message}</span>
+            <span>{t('admin.error')}: {error.message}</span>
             <button onClick={() => refetch()} className="underline text-xs">
-              Qayta urinish
+              {t('admin.retryBtn')}
             </button>
           </div>
         )}
@@ -316,7 +318,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
         ) : items.length === 0 ? (
           <div className="text-center py-12">
             <Icon name="CheckCircleIcon" size={48} className="text-success mx-auto mb-4" />
-            <p className="text-muted-foreground">Bu filterda materiallar yo'q</p>
+            <p className="text-muted-foreground">{t('admin.noMaterials')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -346,7 +348,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
                         <span
                           className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
                         >
-                          {badge.label}
+                          {t(`admin.${badge.label}`)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
@@ -368,28 +370,28 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
                     <div className="px-4 pb-4 pt-0 border-t border-border space-y-3 text-sm">
                       {item.material.description && (
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">📝 Tavsif</p>
+                          <p className="text-xs text-muted-foreground mb-1">{`📝 ${t('admin.descriptionSection')}`}</p>
                           <p className="whitespace-pre-wrap">{item.material.description}</p>
                         </div>
                       )}
 
                       {(item.material.fileUrl || item.material.externalLink) && (
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">🔗 Manba</p>
+                          <p className="text-xs text-muted-foreground mb-1">{`🔗 ${t('admin.sourceSection')}`}</p>
                           <a
                             href={item.material.fileUrl ?? item.material.externalLink ?? '#'}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-primary underline break-all"
                           >
-                            Materialni ochish ({item.material.fileFormat ?? item.material.contentType ?? 'link'})
+                            {t('admin.openMaterial')} ({item.material.fileFormat ?? item.material.contentType ?? 'link'})
                           </a>
                         </div>
                       )}
 
                       {item.feedback && (
                         <div>
-                          <p className="text-xs text-muted-foreground mb-1">💬 Avvalgi izoh</p>
+                          <p className="text-xs text-muted-foreground mb-1">{`💬 ${t('admin.previousNote')}`}</p>
                           <div className="p-2 bg-muted/50 rounded border-l-2 border-primary">
                             {item.feedback}
                           </div>
@@ -410,7 +412,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
                               className="text-xs px-3 py-1.5 rounded-md border border-secondary/30 text-secondary hover:bg-secondary/10 transition-smooth flex items-center gap-1"
                             >
                               <Icon name="EyeIcon" size={14} />
-                              Boshlash
+                              {t('admin.startBtn')}
                             </button>
                           )}
                           <button
@@ -418,21 +420,21 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
                             className="text-xs px-3 py-1.5 rounded-md border border-success/30 text-success hover:bg-success/10 transition-smooth flex items-center gap-1"
                           >
                             <Icon name="CheckCircleIcon" size={14} />
-                            Tasdiqlash
+                            {t('admin.approveBtn')}
                           </button>
                           <button
                             onClick={() => setPending({ item, type: 'request_revision' })}
                             className="text-xs px-3 py-1.5 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-smooth flex items-center gap-1"
                           >
                             <Icon name="ArrowPathIcon" size={14} />
-                            O'zgartirish
+                            {t('admin.revisionBtn')}
                           </button>
                           <button
                             onClick={() => setPending({ item, type: 'reject' })}
                             className="text-xs px-3 py-1.5 rounded-md border border-destructive/30 text-destructive hover:bg-destructive/10 transition-smooth flex items-center gap-1"
                           >
                             <Icon name="XCircleIcon" size={14} />
-                            Rad etish
+                            {t('admin.rejectBtn')}
                           </button>
                         </div>
                       )}
@@ -459,7 +461,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
       )}
       {modalProps?.requireFeedback && pending && (
         <FeedbackOverlay
-          label="Sabab / izoh (kamida 5 belgi)"
+          label={t('admin.feedbackLabel')}
           value={feedback}
           onChange={setFeedback}
         />
@@ -512,7 +514,7 @@ function FeedbackOverlay({
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           className="w-full p-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          placeholder="Yozing..."
+          placeholder={t('admin.writePlaceholder')}
         />
       </div>
     </div>

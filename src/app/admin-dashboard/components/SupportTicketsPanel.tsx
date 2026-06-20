@@ -18,35 +18,35 @@ import {
 type StatusFilter = TicketStatusDTO | 'all';
 
 const STATUS_TABS: { id: StatusFilter; label: string }[] = [
-  { id: 'open', label: 'Yangi' },
-  { id: 'in_progress', label: 'Javob kutilmoqda' },
-  { id: 'waiting_user', label: 'User javobi kutilmoqda' },
-  { id: 'resolved', label: 'Hal qilingan' },
-  { id: 'closed', label: 'Yopilgan' },
-  { id: 'all', label: 'Barchasi' },
+  { id: 'open', label: 'ticketOpen' },
+  { id: 'in_progress', label: 'ticketInProgress' },
+  { id: 'waiting_user', label: 'ticketWaitingUser' },
+  { id: 'resolved', label: 'ticketResolved' },
+  { id: 'closed', label: 'ticketClosed' },
+  { id: 'all', label: 'filterAll' },
 ];
 
 const STATUS_BADGE: Record<TicketStatusDTO, { label: string; color: string }> = {
-  open: { label: 'Yangi', color: 'bg-warning/10 text-warning' },
-  in_progress: { label: 'Javob kutilmoqda', color: 'bg-secondary/10 text-secondary' },
-  waiting_user: { label: 'User javobi', color: 'bg-primary/10 text-primary' },
-  resolved: { label: 'Hal qilingan', color: 'bg-success/10 text-success' },
-  closed: { label: 'Yopilgan', color: 'bg-muted text-muted-foreground' },
+  open: { label: 'ticketOpen', color: 'bg-warning/10 text-warning' },
+  in_progress: { label: 'ticketInProgress', color: 'bg-secondary/10 text-secondary' },
+  waiting_user: { label: 'ticketUserReply', color: 'bg-primary/10 text-primary' },
+  resolved: { label: 'ticketResolved', color: 'bg-success/10 text-success' },
+  closed: { label: 'ticketClosed', color: 'bg-muted text-muted-foreground' },
 };
 
 const PRIORITY_BADGE: Record<TicketPriorityDTO, { label: string; color: string }> = {
-  low: { label: 'Past', color: 'text-muted-foreground' },
-  normal: { label: 'O\'rtacha', color: 'text-foreground' },
-  high: { label: 'Yuqori', color: 'text-warning' },
-  urgent: { label: 'Shoshilinch', color: 'text-destructive' },
+  low: { label: 'priorityLow', color: 'text-muted-foreground' },
+  normal: { label: 'priorityNormal', color: 'text-foreground' },
+  high: { label: 'priorityHigh', color: 'text-warning' },
+  urgent: { label: 'priorityUrgent', color: 'text-destructive' },
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
-  billing: "To'lov",
-  technical: 'Texnik',
-  course: 'Kurs',
-  account: 'Akkaunt',
-  other: 'Boshqa',
+  billing: 'categoryBilling',
+  technical: 'categoryTechnical',
+  course: 'categoryCourse',
+  account: 'categoryAccount',
+  other: 'categoryOther',
 };
 
 function formatDateTime(iso: string): string {
@@ -59,6 +59,7 @@ function formatDateTime(iso: string): string {
 }
 
 const SupportTicketsPanel = () => {
+  const { t } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('open');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -90,11 +91,11 @@ const SupportTicketsPanel = () => {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label="Jami" value={stats.total} icon="LifebuoyIcon" color="text-foreground" />
-          <StatCard label="Yangi" value={stats.open} icon="ClockIcon" color="text-warning" />
-          <StatCard label="Jarayonda" value={stats.in_progress + stats.waiting_user} icon="ChatBubbleLeftRightIcon" color="text-secondary" />
-          <StatCard label="Hal qilingan" value={stats.resolved} icon="CheckCircleIcon" color="text-success" />
-          <StatCard label="Yopilgan" value={stats.closed} icon="LockClosedIcon" color="text-muted-foreground" />
+          <StatCard label={t('admin.total')} value={stats.total} icon="LifebuoyIcon" color="text-foreground" />
+          <StatCard label={t('admin.statusNew')} value={stats.open} icon="ClockIcon" color="text-warning" />
+          <StatCard label={t('admin.inProgress')} value={stats.in_progress + stats.waiting_user} icon="ChatBubbleLeftRightIcon" color="text-secondary" />
+          <StatCard label={t('admin.ticketResolved')} value={stats.resolved} icon="CheckCircleIcon" color="text-success" />
+          <StatCard label={t('admin.ticketClosed')} value={stats.closed} icon="LockClosedIcon" color="text-muted-foreground" />
         </div>
       )}
 
@@ -112,7 +113,7 @@ const SupportTicketsPanel = () => {
                     : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
-                {tab.label}
+                {t(`admin.${tab.label}`)}
               </button>
             ))}
           </div>
@@ -127,7 +128,7 @@ const SupportTicketsPanel = () => {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Mavzu, user..."
+              placeholder={t('admin.searchTicketPlaceholder')}
               className="pl-9 pr-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full lg:w-64"
             />
           </div>
@@ -136,9 +137,9 @@ const SupportTicketsPanel = () => {
 
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 text-sm text-destructive flex items-center justify-between">
-          <span>Xato: {error.message}</span>
+          <span>{t('admin.error')}: {error.message}</span>
           <button onClick={() => refetch()} className="underline text-xs">
-            Qayta urinish
+            {t('admin.retryBtn')}
           </button>
         </div>
       )}
@@ -149,7 +150,7 @@ const SupportTicketsPanel = () => {
         <div className="lg:col-span-1 bg-card rounded-md shadow-warm">
           <div className="p-4 border-b border-border">
             <p className="text-sm text-muted-foreground">
-              Ticket'lar ({data?.total ?? 0})
+              {t('admin.tickets')} ({data?.total ?? 0})
             </p>
           </div>
           <div className="max-h-[600px] overflow-y-auto">
@@ -162,7 +163,7 @@ const SupportTicketsPanel = () => {
             ) : tickets.length === 0 ? (
               <div className="p-8 text-center">
                 <Icon name="LifebuoyIcon" size={40} className="text-muted-foreground mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Ticket'lar yo'q</p>
+                <p className="text-sm text-muted-foreground">{t('admin.noTickets')}</p>
               </div>
             ) : (
               <div>
@@ -193,7 +194,7 @@ const SupportTicketsPanel = () => {
           ) : (
             <div className="p-8 text-center">
               <Icon name="LifebuoyIcon" size={40} className="text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">Ticket'ni tanlang</p>
+              <p className="text-sm text-muted-foreground">{t('admin.selectTicket')}</p>
             </div>
           )}
         </div>
@@ -211,6 +212,7 @@ function TicketRow({
   active: boolean;
   onClick: () => void;
 }) {
+  const { t } = useI18n();
   const priority = PRIORITY_BADGE[ticket.priority];
   const status = STATUS_BADGE[ticket.status];
   return (
@@ -229,10 +231,10 @@ function TicketRow({
         )}
       </div>
       <p className="text-xs text-muted-foreground truncate mb-1">
-        {ticket.user.fullName} · {CATEGORY_LABEL[ticket.category] ?? ticket.category}
+        {ticket.user.fullName} · {t(`admin.${CATEGORY_LABEL[ticket.category]}`) ?? ticket.category}
       </p>
       <div className="flex items-center gap-2 text-xs">
-        <span className={`px-2 py-0.5 rounded-full ${status.color}`}>{status.label}</span>
+        <span className={`px-2 py-0.5 rounded-full ${status.color}`}>{t(`admin.${status.label}`)}</span>
         <span className="text-muted-foreground">{formatDateTime(ticket.lastMessageAt)}</span>
         <span className="text-muted-foreground ml-auto">💬 {ticket._count.messages}</span>
       </div>
@@ -241,8 +243,10 @@ function TicketRow({
 }
 
 import type { TicketDetailDTO } from '@/hooks/queries/useAdminTickets';
+import { useI18n } from '@/contexts/I18nContext';
 
 function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
+  const { t } = useI18n();
   const [reply, setReply] = useState('');
   const replyMut = useTicketReplyMutation();
   const statusMut = useTicketStatusMutation();
@@ -258,7 +262,7 @@ function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
       {
         onSuccess: () => {
           setReply('');
-          toast.success('Javob yuborildi');
+          toast.success(t('admin.replySent'));
         },
         onError: (err) => toast.error(err.message),
       },
@@ -269,7 +273,7 @@ function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
     statusMut.mutate(
       { ticketId: ticket.id, newStatus },
       {
-        onSuccess: () => toast.success("Status o'zgartirildi"),
+        onSuccess: () => toast.success(t('admin.statusChanged')),
         onError: (err) => toast.error(err.message),
       },
     );
@@ -288,13 +292,13 @@ function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
             {ticket.subject}
           </h3>
           <span className={`px-3 py-1 rounded-full text-xs font-medium ${statusBadge.color}`}>
-            {statusBadge.label}
+            {t(`admin.${statusBadge.label}`)}
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span>{ticket.user.fullName} · {ticket.user.email}</span>
           <span>{CATEGORY_LABEL[ticket.category] ?? ticket.category}</span>
-          <span className={priorityBadge.color}>⚡ {priorityBadge.label}</span>
+          <span className={priorityBadge.color}>⚡ {t(`admin.${priorityBadge.label}`)}</span>
           <span>📅 {formatDateTime(ticket.createdAt)}</span>
         </div>
 
@@ -307,7 +311,7 @@ function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
                 className="text-xs px-3 py-1.5 rounded-md border border-success/30 text-success hover:bg-success/10 transition-smooth disabled:opacity-50 flex items-center gap-1"
               >
                 <Icon name="CheckCircleIcon" size={14} />
-                Hal qilindi
+                {t('admin.resolved')}
               </button>
             )}
             <button
@@ -316,7 +320,7 @@ function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
               className="text-xs px-3 py-1.5 rounded-md border border-border text-foreground hover:bg-muted transition-smooth disabled:opacity-50 flex items-center gap-1"
             >
               <Icon name="LockClosedIcon" size={14} />
-              Yopish
+              {t('admin.closeTicket')}
             </button>
           </div>
         )}
@@ -362,7 +366,7 @@ function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
             value={reply}
             onChange={(e) => setReply(e.target.value)}
             rows={3}
-            placeholder="Javobingizni yozing..."
+            placeholder={t('admin.replyPlaceholder')}
             className="w-full p-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
           />
           <div className="flex justify-end mt-2">
@@ -375,7 +379,7 @@ function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
                 <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               )}
               <Icon name="PaperAirplaneIcon" size={14} />
-              Yuborish
+              {t('admin.sendReply')}
             </button>
           </div>
         </div>

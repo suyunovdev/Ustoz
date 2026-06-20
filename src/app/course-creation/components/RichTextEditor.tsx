@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface RichTextEditorProps {
   content: string;
@@ -14,6 +15,7 @@ const RichTextEditor = ({
   onContentChange,
   placeholder = 'Start writing your content here...'
 }: RichTextEditorProps) => {
+  const { t } = useI18n();
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
@@ -95,15 +97,13 @@ const RichTextEditor = ({
         <div className="flex items-start space-x-3">
           <Icon name="InformationCircleIcon" size={20} className="text-blue-500 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-foreground mb-1">Bu yerda faqat MATN yoziladi</p>
-            <p className="text-xs text-muted-foreground">
-              PDF, Word, video fayllar uchun keyingi bosqich: "3. Qo'shimcha Fayllar"
-            </p>
+            <p className="text-sm font-medium text-foreground mb-1">{t('courseCreation.textOnlyHint')}</p>
+            <p className="text-xs text-muted-foreground">{t('courseCreation.textOnlyHintDesc')}</p>
           </div>
         </div>
       </div>
 
-      <h3 className="text-xl font-heading font-semibold text-foreground">Dars Matni</h3>
+      <h3 className="text-xl font-heading font-semibold text-foreground">{t('courseCreation.lessonTextTitle')}</h3>
 
       <div className="bg-card rounded-md shadow-warm border border-border overflow-hidden">
         {/* Toolbar */}
@@ -152,7 +152,7 @@ const RichTextEditor = ({
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
             <div className="bg-card rounded-md shadow-warm-xl border border-border w-full max-w-md">
               <div className="flex items-center justify-between p-4 border-b border-border">
-                <h3 className="text-lg font-heading font-semibold">Insert Video</h3>
+                <h3 className="text-lg font-heading font-semibold">{t('courseCreation.insertVideo')}</h3>
                 <button
                   onClick={() => setShowVideoModal(false)}
                   className="p-2 rounded-md hover:bg-muted transition-smooth"
@@ -164,9 +164,7 @@ const RichTextEditor = ({
               </div>
               <div className="p-4 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Video URL (YouTube, Vimeo, or direct link)
-                  </label>
+                  <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.videoUrlLabel')}</label>
                   <input
                     type="url"
                     value={videoUrl}
@@ -180,16 +178,12 @@ const RichTextEditor = ({
                     onClick={insertVideo}
                     className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium"
                     type="button"
-                  >
-                    Insert Video
-                  </button>
+                  >{t('courseCreation.insertVideoBtn')}</button>
                   <button
                     onClick={() => setShowVideoModal(false)}
                     className="px-4 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth font-medium"
                     type="button"
-                  >
-                    Cancel
-                  </button>
+                  >{t('common.cancel')}</button>
                 </div>
               </div>
             </div>

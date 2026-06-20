@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface FileAttachment {
   id: string;
@@ -17,6 +18,7 @@ interface FileManagerProps {
 }
 
 const FileManager = ({ files, onFilesChange }: FileManagerProps) => {
+  const { t } = useI18n();
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +85,7 @@ const FileManager = ({ files, onFilesChange }: FileManagerProps) => {
     <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-heading font-semibold text-foreground">File Attachments</h3>
+        <h3 className="text-xl font-heading font-semibold text-foreground">{t('courseCreation.fileAttachments')}</h3>
         <input
           type="file"
           multiple
@@ -97,7 +99,7 @@ const FileManager = ({ files, onFilesChange }: FileManagerProps) => {
           className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth cursor-pointer"
         >
           <Icon name="ArrowUpTrayIcon" size={20} />
-          <span className="font-medium">Upload Files</span>
+          <span className="font-medium">{t('courseCreation.uploadFiles')}</span>
         </label>
       </div>
 
@@ -105,7 +107,7 @@ const FileManager = ({ files, onFilesChange }: FileManagerProps) => {
       {uploadProgress !== null && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-foreground">Uploading...</span>
+            <span className="text-foreground">{t('courseCreation.uploadingProgress')}</span>
             <span className="font-data text-muted-foreground">{uploadProgress}%</span>
           </div>
           <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -121,7 +123,7 @@ const FileManager = ({ files, onFilesChange }: FileManagerProps) => {
       <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-md">
         <Icon name="InformationCircleIcon" size={20} className="text-muted-foreground" />
         <span className="caption text-muted-foreground">
-          Max file size: 50MB per file. Supported formats: PDF, DOC, DOCX, PPT, PPTX, ZIP
+          {t('courseCreation.fileLimitsShort')}
         </span>
       </div>
 
@@ -130,7 +132,7 @@ const FileManager = ({ files, onFilesChange }: FileManagerProps) => {
         {files.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-md">
             <Icon name="FolderIcon" size={48} className="text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">No files attached yet. Upload course materials.</p>
+            <p className="text-muted-foreground">{t('courseCreation.noFilesYet')}</p>
           </div>
         ) : (
           files.map((file) => (

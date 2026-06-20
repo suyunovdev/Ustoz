@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import AdminSidebar, { type AdminTabId } from './AdminSidebar';
 
 // Yengil panellar — to'g'ridan-to'g'ri import (dynamic chunk overhead'isiz).
@@ -36,60 +37,61 @@ const VALID_TABS: ReadonlyArray<AdminTabId> = [
   'system',
 ];
 
-const TAB_TITLES: Record<AdminTabId, { title: string; subtitle: string }> = {
+const TAB_TITLE_KEYS: Record<AdminTabId, { title: string; subtitle: string }> = {
   overview: {
-    title: "Umumiy ko'rinish",
-    subtitle: 'Platformaning umumiy koʻrsatkichlari',
+    title: 'admin.tabOverviewTitle',
+    subtitle: 'admin.tabOverviewSubtitle',
   },
   users: {
-    title: 'Foydalanuvchilar',
-    subtitle: 'Foydalanuvchilarni boshqarish va rollar',
+    title: 'admin.tabUsersTitle',
+    subtitle: 'admin.tabUsersSubtitle',
   },
   teacher_applications: {
-    title: "O'qituvchi arizalari",
-    subtitle: "Yangi o'qituvchilarni ko'rib chiqish va tasdiqlash",
+    title: 'admin.tabTeacherAppsTitle',
+    subtitle: 'admin.tabTeacherAppsSubtitle',
   },
   courses: {
-    title: 'Kurslar',
-    subtitle: 'Barcha kurslarni nazorat qilish',
+    title: 'admin.tabCoursesTitle',
+    subtitle: 'admin.tabCoursesSubtitle',
   },
   reviews: {
-    title: 'Sharhlar',
-    subtitle: 'Talabalar sharhlari va spam moderatsiyasi',
+    title: 'admin.tabReviewsTitle',
+    subtitle: 'admin.tabReviewsSubtitle',
   },
   payments: {
-    title: "To'lovlar",
-    subtitle: "Tranzaksiyalar va daromad boshqaruvi",
+    title: 'admin.tabPaymentsTitle',
+    subtitle: 'admin.tabPaymentsSubtitle',
   },
   campaigns: {
-    title: "Email yuborish",
-    subtitle: "Broadcast email kampaniyalari",
+    title: 'admin.tabCampaignsTitle',
+    subtitle: 'admin.tabCampaignsSubtitle',
   },
   moderation: {
-    title: 'Moderatsiya',
-    subtitle: 'Kontentni tasdiqlash va rad etish',
+    title: 'admin.tabModerationTitle',
+    subtitle: 'admin.tabModerationSubtitle',
   },
   tickets: {
-    title: "Yordam so'rovlari",
-    subtitle: 'Foydalanuvchi support ticket\'lari',
+    title: 'admin.tabTicketsTitle',
+    subtitle: 'admin.tabTicketsSubtitle',
   },
   audit_log: {
-    title: 'Audit log',
-    subtitle: 'Admin amallarining to\'liq tarixi (kim, qachon, nima qildi)',
+    title: 'admin.tabAuditLogTitle',
+    subtitle: 'admin.tabAuditLogSubtitle',
   },
   analytics: {
-    title: 'Tahlil',
-    subtitle: 'Platforma tahlili va statistikasi',
+    title: 'admin.tabAnalyticsTitle',
+    subtitle: 'admin.tabAnalyticsSubtitle',
   },
   system: {
-    title: 'Tizim holati',
-    subtitle: 'Server va xizmatlar monitoringi',
+    title: 'admin.tabSystemTitle',
+    subtitle: 'admin.tabSystemSubtitle',
   },
 };
 
 const AdminDashboardInteractive = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   const tabFromUrl = searchParams?.get('tab');
   const initialTab: AdminTabId = VALID_TABS.includes(tabFromUrl as AdminTabId)
     ? (tabFromUrl as AdminTabId)
@@ -113,7 +115,7 @@ const AdminDashboardInteractive = () => {
     router.replace(url, { scroll: false });
   };
 
-  const headerInfo = TAB_TITLES[activeTab];
+  const headerKeys = TAB_TITLE_KEYS[activeTab];
 
   return (
     <div className="min-h-screen bg-background">
@@ -133,7 +135,7 @@ const AdminDashboardInteractive = () => {
         >
           <Icon name="Bars3Icon" size={24} />
         </button>
-        <p className="font-heading font-semibold text-foreground">{headerInfo.title}</p>
+        <p className="font-heading font-semibold text-foreground">{t(headerKeys.title)}</p>
         <div className="w-9" />
       </div>
 
@@ -141,9 +143,9 @@ const AdminDashboardInteractive = () => {
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 hidden md:block">
             <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground mb-1">
-              {headerInfo.title}
+              {t(headerKeys.title)}
             </h1>
-            <p className="text-muted-foreground text-sm">{headerInfo.subtitle}</p>
+            <p className="text-muted-foreground text-sm">{t(headerKeys.subtitle)}</p>
           </div>
 
           {activeTab === 'overview' && (

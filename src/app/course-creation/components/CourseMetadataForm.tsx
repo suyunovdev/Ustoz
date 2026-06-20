@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import AppImage from '@/components/ui/AppImage';
 
 interface CourseMetadata {
@@ -23,6 +24,7 @@ interface CourseMetadataFormProps {
 }
 
 const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormProps) => {
+  const { t } = useI18n();
   const [imagePreview, setImagePreview] = useState(metadata.coverImage);
 
   const languages = [
@@ -267,13 +269,11 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
 
   return (
     <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
-      <h3 className="text-xl font-heading font-semibold text-foreground">Course Information</h3>
+      <h3 className="text-xl font-heading font-semibold text-foreground">{t('courseCreation.courseInfo')}</h3>
 
       {/* Cover Image */}
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Cover Image
-        </label>
+        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.coverImage')}</label>
         <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4">
           <div className="w-full sm:w-48 h-32 rounded-md overflow-hidden bg-muted border border-border">
             {imagePreview ? (
@@ -301,25 +301,21 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
               className="inline-flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth cursor-pointer"
             >
               <Icon name="ArrowUpTrayIcon" size={20} />
-              <span className="font-medium">Upload Image</span>
+              <span className="font-medium">{t('courseCreation.uploadImage')}</span>
             </label>
-            <p className="caption text-muted-foreground mt-2">
-              Recommended: 1280x720px, Max 5MB
-            </p>
+            <p className="caption text-muted-foreground mt-2">{t('courseCreation.imageRecommendation')}</p>
           </div>
         </div>
       </div>
 
       {/* Title */}
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Course Title *
-        </label>
+        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.courseTitle')}</label>
         <input
           type="text"
           value={metadata.title}
           onChange={(e) => handleChange('title', e.target.value)}
-          placeholder="Enter course title"
+          placeholder={t('courseCreation.courseTitlePlaceholder')}
           className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           required
         />
@@ -327,13 +323,11 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
 
       {/* Description */}
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Course Description *
-        </label>
+        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.courseDescription')}</label>
         <textarea
           value={metadata.description}
           onChange={(e) => handleChange('description', e.target.value)}
-          placeholder="Describe what students will learn in this course"
+          placeholder={t('courseCreation.courseDescriptionPlaceholder')}
           rows={4}
           className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           required
@@ -342,16 +336,14 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
 
       {/* Target Audience */}
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Maqsadli auditoriya *
-        </label>
+        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.targetAudience')}</label>
         <select
           value={metadata.targetAudience}
           onChange={(e) => handleChange('targetAudience', e.target.value)}
           className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           required
         >
-          <option value="">Auditoriyani tanlang</option>
+          <option value="">{t('courseCreation.selectAudience')}</option>
           {targetAudiences.map((audience) => (
             <option key={audience.value} value={audience.value}>
               {audience.label}
@@ -362,9 +354,7 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
 
       {/* Subject Category */}
       <div>
-        <label className="block text-sm font-medium text-foreground mb-2">
-          Fan nomi *
-        </label>
+        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.subjectName')}</label>
         <select
           value={metadata.subjectCategory}
           onChange={(e) => handleChange('subjectCategory', e.target.value)}
@@ -372,7 +362,7 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
           required
           disabled={!metadata.targetAudience}
         >
-          <option value="">{!metadata.targetAudience ? 'Avval auditoriyani tanlang' : 'Fanni tanlang'}</option>
+          <option value="">{!metadata.targetAudience ? t('courseCreation.selectSubjectFirst') : t('courseCreation.selectSubject')}</option>
           {subjectGroups.map((g) => (
             <optgroup key={g.group} label={g.group}>
               {g.options.map((subject) => (
@@ -388,16 +378,14 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
       {/* Grade Level (only for school students) */}
       {isSchoolAudience && (
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Sinf darajasi *
-          </label>
+          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.gradeLevel')}</label>
           <select
             value={metadata.gradeLevel}
             onChange={(e) => handleChange('gradeLevel', e.target.value)}
             className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             required
           >
-            <option value="">Sinfni tanlang</option>
+            <option value="">{t('courseCreation.selectGrade')}</option>
             {gradeLevels.map((grade) => (
               <option key={grade.value} value={grade.value}>
                 {grade.label}
@@ -410,16 +398,14 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
       {/* Category and Language */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Category *
-          </label>
+          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.category')}</label>
           <select
             value={metadata.category}
             onChange={(e) => handleChange('category', e.target.value)}
             className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             required
           >
-            <option value="">Select category</option>
+            <option value="">{t('courseCreation.selectCategory')}</option>
             <option value="Programming">Programming</option>
             <option value="Design">Design</option>
             <option value="Business">Business</option>
@@ -432,16 +418,14 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Language *
-          </label>
+          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.language')}</label>
           <select
             value={metadata.language}
             onChange={(e) => handleChange('language', e.target.value)}
             className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             required
           >
-            <option value="">Select language</option>
+            <option value="">{t('courseCreation.selectLanguage')}</option>
             {languages.map((lang) => (
               <option key={lang.code} value={lang.code}>
                 {lang.name}
@@ -454,9 +438,7 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
       {/* Pricing */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Price (USD) *
-          </label>
+          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.priceUSD')}</label>
           <div className="relative">
             <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
             <input
@@ -473,9 +455,7 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Price (UZS) *
-          </label>
+          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.priceUZS')}</label>
           <div className="relative">
             <input
               type="number"

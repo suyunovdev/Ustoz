@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import ContentList from './ContentList';
 import PreviewPanel from './PreviewPanel';
 import ReviewControls from './ReviewControls';
@@ -28,6 +29,7 @@ interface ContentItem {
 
 const ModerationDashboardInteractive = () => {
   const router = useRouter();
+  const { t } = useI18n();
   const [isHydrated, setIsHydrated] = useState(false);
   const [stats, setStats] = useState<ModerationStats>({
     pending: 0,
@@ -86,10 +88,10 @@ const ModerationDashboardInteractive = () => {
         decision,
         notes
       });
-      alert("Bu funksiya tez orada qo'shiladi");
+      alert(t('moderation.comingSoon'));
     } catch (error) {
       console.error('Error reviewing content:', error);
-      alert('Xatolik yuz berdi. Iltimos qaytadan urinib ko\'ring.');
+      alert(t('moderation.reviewError'));
     }
   };
 
@@ -98,7 +100,7 @@ const ModerationDashboardInteractive = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Yuklanmoqda...</p>
+          <p className="text-muted-foreground">{t('moderation.loading')}</p>
         </div>
       </div>
     );
@@ -111,15 +113,15 @@ const ModerationDashboardInteractive = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-heading font-bold text-foreground">Kontent moderatsiyasi</h1>
-              <p className="text-muted-foreground mt-1">O&apos;qituvchilar yuklagan materiallarni ko&apos;rib chiqish</p>
+              <h1 className="text-3xl font-heading font-bold text-foreground">{t('moderation.title')}</h1>
+              <p className="text-muted-foreground mt-1">{t('moderation.description')}</p>
             </div>
             <button
               onClick={() => window.history.back()}
               className="flex items-center space-x-2 px-4 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth"
             >
               <Icon name="ArrowLeftIcon" size={20} />
-              <span className="font-medium hidden sm:inline">Orqaga</span>
+              <span className="font-medium hidden sm:inline">{t('moderation.back')}</span>
             </button>
           </div>
         </div>
@@ -131,7 +133,7 @@ const ModerationDashboardInteractive = () => {
           <div className="bg-card rounded-md shadow-warm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="caption text-muted-foreground">Kutilmoqda</p>
+                <p className="caption text-muted-foreground">{t('moderation.pending')}</p>
                 <p className="text-3xl font-heading font-bold text-warning mt-2">{stats.pending}</p>
               </div>
               <Icon name="ClockIcon" size={40} className="text-warning" />
@@ -140,7 +142,7 @@ const ModerationDashboardInteractive = () => {
           <div className="bg-card rounded-md shadow-warm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="caption text-muted-foreground">Tasdiqlangan</p>
+                <p className="caption text-muted-foreground">{t('moderation.approved')}</p>
                 <p className="text-3xl font-heading font-bold text-success mt-2">{stats.approved}</p>
               </div>
               <Icon name="CheckCircleIcon" size={40} className="text-success" />
@@ -149,7 +151,7 @@ const ModerationDashboardInteractive = () => {
           <div className="bg-card rounded-md shadow-warm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="caption text-muted-foreground">Rad etilgan</p>
+                <p className="caption text-muted-foreground">{t('moderation.rejected')}</p>
                 <p className="text-3xl font-heading font-bold text-destructive mt-2">{stats.rejected}</p>
               </div>
               <Icon name="XCircleIcon" size={40} className="text-destructive" />
@@ -158,7 +160,7 @@ const ModerationDashboardInteractive = () => {
           <div className="bg-card rounded-md shadow-warm p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="caption text-muted-foreground">O&apos;rtacha vaqt</p>
+                <p className="caption text-muted-foreground">{t('moderation.avgTime')}</p>
                 <p className="text-3xl font-heading font-bold text-primary mt-2">{stats.avgReviewTime}</p>
               </div>
               <Icon name="ChartBarIcon" size={40} className="text-primary" />
@@ -172,13 +174,13 @@ const ModerationDashboardInteractive = () => {
         <div className="bg-card rounded-md shadow-warm p-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-foreground">Turi:</span>
+              <span className="text-sm font-medium text-foreground">{t('moderation.typeLabel')}</span>
               <div className="flex items-center space-x-2">
                 {([
-                  { value: 'all' as const, label: 'Barchasi' },
-                  { value: 'material' as const, label: 'Materiallar' },
-                  { value: 'link' as const, label: 'Havolalar' },
-                  { value: 'test' as const, label: 'Testlar' }
+                  { value: 'all' as const, label: t('moderation.all') },
+                  { value: 'material' as const, label: t('moderation.materials') },
+                  { value: 'link' as const, label: t('moderation.links') },
+                  { value: 'test' as const, label: t('moderation.tests') }
                 ]).map((type) => (
                   <button
                     key={`type-${type.value}`}
@@ -195,13 +197,13 @@ const ModerationDashboardInteractive = () => {
               </div>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-foreground">Status:</span>
+              <span className="text-sm font-medium text-foreground">{t('moderation.statusLabel')}</span>
               <div className="flex items-center space-x-2">
                 {([
-                  { value: 'all' as const, label: 'Barchasi' },
-                  { value: 'pending' as const, label: 'Kutilmoqda' },
-                  { value: 'approved' as const, label: 'Tasdiqlangan' },
-                  { value: 'rejected' as const, label: 'Rad etilgan' }
+                  { value: 'all' as const, label: t('moderation.all') },
+                  { value: 'pending' as const, label: t('moderation.pending') },
+                  { value: 'approved' as const, label: t('moderation.approved') },
+                  { value: 'rejected' as const, label: t('moderation.rejected') }
                 ]).map((status) => (
                   <button
                     key={`status-${status.value}`}
@@ -247,7 +249,7 @@ const ModerationDashboardInteractive = () => {
             ) : (
               <div className="bg-card rounded-md shadow-warm p-12 text-center">
                 <Icon name="DocumentMagnifyingGlassIcon" size={64} className="text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">Ko&apos;rib chiqish uchun kontentni tanlang</p>
+                <p className="text-muted-foreground">{t('moderation.selectContent')}</p>
               </div>
             )}
           </div>

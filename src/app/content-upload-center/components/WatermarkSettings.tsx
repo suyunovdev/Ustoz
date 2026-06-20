@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface WatermarkConfig {
   enabled: boolean;
@@ -16,6 +17,7 @@ interface WatermarkSettingsProps {
 }
 
 const WatermarkSettings = ({ config, onConfigUpdate }: WatermarkSettingsProps) => {
+  const { t } = useI18n();
   const [localConfig, setLocalConfig] = useState<WatermarkConfig>(config);
 
   const handleChange = (field: keyof WatermarkConfig, value: any) => {
@@ -25,11 +27,11 @@ const WatermarkSettings = ({ config, onConfigUpdate }: WatermarkSettingsProps) =
   };
 
   const positions = [
-    { value: 'top-left', label: 'Yuqori chap', icon: 'ArrowUpLeftIcon' },
-    { value: 'top-right', label: 'Yuqori o\'ng', icon: 'ArrowUpRightIcon' },
-    { value: 'center', label: 'Markazda', icon: 'Square2StackIcon' },
-    { value: 'bottom-left', label: 'Pastki chap', icon: 'ArrowDownLeftIcon' },
-    { value: 'bottom-right', label: 'Pastki o\'ng', icon: 'ArrowDownRightIcon' }
+    { value: 'top-left', label: t('content.topLeft'), icon: 'ArrowUpLeftIcon' },
+    { value: 'top-right', label: t('content.topRight'), icon: 'ArrowUpRightIcon' },
+    { value: 'center', label: t('content.center'), icon: 'Square2StackIcon' },
+    { value: 'bottom-left', label: t('content.bottomLeft'), icon: 'ArrowDownLeftIcon' },
+    { value: 'bottom-right', label: t('content.bottomRight'), icon: 'ArrowDownRightIcon' }
   ];
 
   return (
@@ -38,8 +40,8 @@ const WatermarkSettings = ({ config, onConfigUpdate }: WatermarkSettingsProps) =
       <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-heading font-semibold text-foreground">Watermark sozlamalari</h3>
-            <p className="caption text-muted-foreground mt-1">Video kontent himoyasi uchun</p>
+            <h3 className="text-xl font-heading font-semibold text-foreground">{t('content.watermarkSettings')}</h3>
+            <p className="caption text-muted-foreground mt-1">{t('content.watermarkSettingsDesc')}</p>
           </div>
           <button
             onClick={() => handleChange('enabled', !localConfig.enabled)}
@@ -50,34 +52,28 @@ const WatermarkSettings = ({ config, onConfigUpdate }: WatermarkSettingsProps) =
             }`}
           >
             <Icon name={localConfig.enabled ? 'ShieldCheckIcon' : 'ShieldExclamationIcon'} size={20} />
-            <span className="font-medium">{localConfig.enabled ? 'Yoqilgan' : 'O\'chirilgan'}</span>
+            <span className="font-medium">{localConfig.enabled ? t('content.enabled') : t('content.disabled')}</span>
           </button>
         </div>
 
         {/* Watermark Text */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-2">
-            Watermark matni
-          </label>
+          <label className="block text-sm font-medium text-foreground mb-2">{t('content.watermarkText')}</label>
           <input
             type="text"
             value={localConfig.text}
             onChange={(e) => handleChange('text', e.target.value)}
-            placeholder="Masalan: Ustoz Platform © 2026"
+            placeholder={t('content.watermarkTextPlaceholder')}
             disabled={!localConfig.enabled}
             className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 disabled:cursor-not-allowed"
           />
-          <p className="caption text-muted-foreground mt-2">
-            Bu matn video ustida ko'rsatiladi
-          </p>
+          <p className="caption text-muted-foreground mt-2">{t('content.watermarkTextHint')}</p>
         </div>
 
         {/* Opacity Control */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-foreground">
-              Shaffoflik
-            </label>
+            <label className="text-sm font-medium text-foreground">{t('content.opacity')}</label>
             <span className="font-data text-sm text-muted-foreground">{localConfig.opacity}%</span>
           </div>
           <input
@@ -96,16 +92,14 @@ const WatermarkSettings = ({ config, onConfigUpdate }: WatermarkSettingsProps) =
             }}
           />
           <div className="flex items-center justify-between mt-2">
-            <span className="caption text-muted-foreground">Shaffof</span>
-            <span className="caption text-muted-foreground">To'liq ko'rinadi</span>
+            <span className="caption text-muted-foreground">{t('content.transparent')}</span>
+            <span className="caption text-muted-foreground">{t('content.fullyVisible')}</span>
           </div>
         </div>
 
         {/* Position Selection */}
         <div>
-          <label className="block text-sm font-medium text-foreground mb-3">
-            Joylashuv
-          </label>
+          <label className="block text-sm font-medium text-foreground mb-3">{t('content.position')}</label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {positions.map((position) => {
               const isSelected = localConfig.position === position.value;
@@ -132,7 +126,7 @@ const WatermarkSettings = ({ config, onConfigUpdate }: WatermarkSettingsProps) =
 
       {/* Preview */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
-        <h3 className="text-lg font-heading font-semibold text-foreground">Ko'rinish</h3>
+        <h3 className="text-lg font-heading font-semibold text-foreground">{t('content.preview')}</h3>
         <div className="relative aspect-video bg-muted rounded-md overflow-hidden">
           <div className="absolute inset-0 flex items-center justify-center">
             <Icon name="VideoCameraIcon" size={64} className="text-muted-foreground" />
@@ -148,24 +142,20 @@ const WatermarkSettings = ({ config, onConfigUpdate }: WatermarkSettingsProps) =
               style={{ opacity: localConfig.opacity / 100 }}
             >
               <div className="px-4 py-2 bg-card/90 text-foreground rounded-md font-medium shadow-lg">
-                {localConfig.text || 'Watermark matni'}
+                {localConfig.text || t('content.watermarkTextDefault')}
               </div>
             </div>
           )}
         </div>
-        <p className="caption text-muted-foreground text-center">
-          Watermark video ustida shunday ko'rinadi
-        </p>
+        <p className="caption text-muted-foreground text-center">{t('content.watermarkPreviewHint')}</p>
       </div>
 
       {/* Info */}
       <div className="flex items-start space-x-3 p-4 bg-muted/50 rounded-md">
         <Icon name="InformationCircleIcon" size={24} className="text-muted-foreground mt-0.5" />
         <div>
-          <p className="font-medium text-foreground">Watermark himoyasi haqida</p>
-          <p className="caption text-muted-foreground mt-1">
-            Watermark video kontentingizni noqonuniy nusxa ko'chirishdan himoya qiladi. U video ustida doimiy ko'rinadi va olib tashlanmaydi.
-          </p>
+          <p className="font-medium text-foreground">{t('content.watermarkAbout')}</p>
+          <p className="caption text-muted-foreground mt-1">{t('content.watermarkAboutDesc')}</p>
         </div>
       </div>
     </div>

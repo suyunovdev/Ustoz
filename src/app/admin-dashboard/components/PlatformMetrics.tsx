@@ -2,6 +2,7 @@
 
 import Icon from '@/components/ui/AppIcon';
 import { useAdminStats } from '@/hooks/queries/useAdminStats';
+import { useI18n } from '@/contexts/I18nContext';
 
 function formatUzs(uzs: string | number): string {
   const n = typeof uzs === 'string' ? Number(uzs) : uzs;
@@ -13,6 +14,7 @@ function formatUzs(uzs: string | number): string {
 
 const PlatformMetrics = () => {
   const { data, isLoading, error } = useAdminStats();
+  const { t } = useI18n();
 
   if (isLoading || !data) {
     return (
@@ -29,30 +31,30 @@ const PlatformMetrics = () => {
   if (error) {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 text-sm text-destructive">
-        Statistikani yuklab boʻlmadi: {error.message}
+        {t('admin.statsLoadError')}: {error.message}
       </div>
     );
   }
 
   const metrics = [
     {
-      title: 'Jami foydalanuvchilar',
+      title: t('admin.totalUsers'),
       value: data.totalUsers.toLocaleString(),
-      sub: `${data.usersByRole.student} talaba · ${data.usersByRole.teacher} o'qituvchi · ${data.usersByRole.admin} admin`,
+      sub: `${data.usersByRole.student} ${t('admin.studentLabel')} · ${data.usersByRole.teacher} ${t('admin.teacherLabel')} · ${data.usersByRole.admin} ${t('admin.adminLabel')}`,
       icon: 'UserGroupIcon',
       trend: data.userGrowth,
       color: 'text-primary',
     },
     {
-      title: 'Faol kurslar',
+      title: t('admin.activeCourses'),
       value: data.activeCourses.toLocaleString(),
-      sub: `+${data.newCoursesLast30d} oxirgi 30 kunda`,
+      sub: `+${data.newCoursesLast30d} ${t('admin.newCoursesLast30d')}`,
       icon: 'BookOpenIcon',
       trend: data.courseGrowth,
       color: 'text-success',
     },
     {
-      title: 'Umumiy daromad',
+      title: t('admin.totalRevenue'),
       value: formatUzs(data.totalRevenueUzs),
       sub: `≈ $${data.totalRevenueUsd.toLocaleString()}`,
       icon: 'CurrencyDollarIcon',
@@ -60,9 +62,9 @@ const PlatformMetrics = () => {
       color: 'text-secondary',
     },
     {
-      title: 'Yangi foydalanuvchilar',
+      title: t('admin.newUsers'),
       value: `+${data.newUsersLast30d}`,
-      sub: 'Oxirgi 30 kun',
+      sub: t('admin.last30Days'),
       icon: 'SparklesIcon',
       trend: data.userGrowth,
       color: 'text-warning',

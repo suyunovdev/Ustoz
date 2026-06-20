@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface QuizQuestion {
   id: string;
@@ -20,6 +21,7 @@ interface QuizBuilderProps {
 }
 
 const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, testId }: QuizBuilderProps) => {
+  const { t } = useI18n();
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [currentTestId, setCurrentTestId] = useState<string | undefined>(testId);
@@ -96,10 +98,10 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
       const data = await res.json();
       if (data.test?.id) setCurrentTestId(data.test.id);
 
-      alert('Test muvaffaqiyatli saqlandi!');
+      alert(t('courseCreation.testSaved'));
     } catch (error: any) {
       console.error('Error saving test:', error);
-      alert(error.message || 'Xatolik yuz berdi. Iltimos qaytadan urinib ko\'ring.');
+      alert(error.message || t('courseCreation.testSaveError'));
     } finally {
       setIsSaving(false);
     }
@@ -113,9 +115,9 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-heading font-semibold text-foreground">Test savollari</h3>
+          <h3 className="text-xl font-heading font-semibold text-foreground">{t('courseCreation.testQuestionsTitle')}</h3>
           <p className="caption text-muted-foreground mt-1">
-            Mavzu: {topicTitle || 'Nomsiz mavzu'}
+            {t('courseCreation.topicLabel')} {topicTitle || t('courseCreation.untitledTopic')}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -129,7 +131,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
             }`}
           >
             <Icon name="CheckCircleIcon" size={20} />
-            <span className="font-medium">{isSaving ? 'Saqlanmoqda...' : 'Saqlash'}</span>
+            <span className="font-medium">{isSaving ? t('courseCreation.savingQuiz') : t('courseCreation.saveQuiz')}</span>
           </button>
           <button
             onClick={addQuestion}
@@ -142,7 +144,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
             aria-label="Add question"
           >
             <Icon name="PlusIcon" size={20} />
-            <span className="font-medium">Savol qo'shish</span>
+            <span className="font-medium">{t('courseCreation.addQuestion')}</span>
           </button>
         </div>
       </div>
@@ -152,42 +154,42 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
         <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-5 border-2 border-green-200 dark:border-green-800">
           <h4 className="font-bold text-foreground mb-4 flex items-center space-x-2">
             <Icon name="AcademicCapIcon" size={24} className="text-green-600" />
-            <span>Test savoli qanday yaratiladi?</span>
+            <span>{t('courseCreation.howToCreateTest')}</span>
           </h4>
           <div className="space-y-3">
             <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">1</div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">"Savol qo'shish" tugmasini bosing</p>
-                <p className="text-xs text-muted-foreground mt-1">Yangi savol qo'shiladi</p>
+                <p className="text-sm font-semibold text-foreground">{t('courseCreation.step1CreateTest')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('courseCreation.step1CreateTestDesc')}</p>
               </div>
             </div>
             <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">2</div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">Savol matnini yozing</p>
-                <p className="text-xs text-muted-foreground mt-1">Masalan: "Pythonda o'zgaruvchi qanday e'lon qilinadi?"</p>
+                <p className="text-sm font-semibold text-foreground">{t('courseCreation.step2CreateTest')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('courseCreation.step2CreateTestDesc')}</p>
               </div>
             </div>
             <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">3</div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">4 ta javob varianti yozing</p>
-                <p className="text-xs text-muted-foreground mt-1">A, B, C, D variantlarini to'ldiring</p>
+                <p className="text-sm font-semibold text-foreground">{t('courseCreation.step3CreateTest')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('courseCreation.step3CreateTestDesc')}</p>
               </div>
             </div>
             <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">4</div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">To'g'ri javobni belgilang</p>
-                <p className="text-xs text-muted-foreground mt-1">Radio tugmani bosib to'g'ri javobni tanlang</p>
+                <p className="text-sm font-semibold text-foreground">{t('courseCreation.step4CreateTest')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('courseCreation.step4CreateTestDesc')}</p>
               </div>
             </div>
             <div className="flex items-start space-x-3 bg-card rounded-md p-3">
               <div className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm">5</div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground">Izoh yozing (ixtiyoriy)</p>
-                <p className="text-xs text-muted-foreground mt-1">Nima uchun bu javob to'g'ri ekanligini tushuntiring</p>
+                <p className="text-sm font-semibold text-foreground">{t('courseCreation.step5CreateTest')}</p>
+                <p className="text-xs text-muted-foreground mt-1">{t('courseCreation.step5CreateTestDesc')}</p>
               </div>
             </div>
           </div>
@@ -200,7 +202,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
       }`}>
         <Icon name={meetsMinimum ? 'CheckCircleIcon' : 'ExclamationTriangleIcon'} size={20} />
         <span className="caption">
-          {questions.length} / 5-15 savol (Kamida 5 ta savol kerak, o'tish bali 80%)
+          {questions.length} / 5-15 {t('courseCreation.questionsCount')}
         </span>
       </div>
 
@@ -209,7 +211,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
         {questions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-md">
             <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">Hali savollar yo'q. Birinchi test savolini qo'shing.</p>
+            <p className="text-muted-foreground">{t('courseCreation.noQuestionsYet')}</p>
           </div>
         ) : (
           questions.map((question, qIndex) => {
@@ -227,7 +229,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
                     <span className="font-data text-sm text-muted-foreground">S{qIndex + 1}</span>
                     <span className="font-medium text-foreground truncate">
-                      {question.question || 'Nomsiz savol'}
+                      {question.question || t('courseCreation.untitledQuestion')}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -254,13 +256,11 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
                   <div className="p-4 space-y-4">
                     {/* Question Text */}
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Savol *
-                      </label>
+                      <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.questionLabel')}</label>
                       <textarea
                         value={question.question}
                         onChange={(e) => updateQuestion(question.id, 'question', e.target.value)}
-                        placeholder="Savolingizni kiriting"
+                        placeholder={t('courseCreation.questionPlaceholder')}
                         rows={2}
                         className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                         required
@@ -269,9 +269,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
 
                     {/* Options */}
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Javob variantlari *
-                      </label>
+                      <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.answerOptions')}</label>
                       <div className="space-y-2">
                         {question.options.map((option, optIndex) => (
                           <div key={optIndex} className="flex items-center space-x-2">
@@ -293,20 +291,16 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
                           </div>
                         ))}
                       </div>
-                      <p className="caption text-muted-foreground mt-2">
-                        To'g'ri javobni belgilash uchun radio tugmasini bosing
-                      </p>
+                      <p className="caption text-muted-foreground mt-2">{t('courseCreation.correctAnswerHint')}</p>
                     </div>
 
                     {/* Explanation */}
                     <div>
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Tushuntirish (ixtiyoriy)
-                      </label>
+                      <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.explanationOptional')}</label>
                       <textarea
                         value={question.explanation}
                         onChange={(e) => updateQuestion(question.id, 'explanation', e.target.value)}
-                        placeholder="Nima uchun bu javob to'g'ri ekanligini tushuntiring"
+                        placeholder={t('courseCreation.explanationPlaceholder')}
                         rows={2}
                         className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                       />

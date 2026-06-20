@@ -11,26 +11,27 @@ import {
   type PaymentMethodDTO,
 } from '@/hooks/queries/useAdminPayments';
 import { useRefundMutation } from '@/hooks/mutations/useRefundMutation';
+import { useI18n } from '@/contexts/I18nContext';
 
 type StatusFilter = TransactionStatusDTO | 'all';
 type MethodFilter = PaymentMethodDTO | 'all';
 
 const STATUS_TABS: { id: StatusFilter; label: string }[] = [
-  { id: 'all', label: 'Barchasi' },
-  { id: 'completed', label: 'Muvaffaqiyatli' },
-  { id: 'pending', label: 'Kutilmoqda' },
-  { id: 'failed', label: "Bo'lmadi" },
-  { id: 'refunded', label: 'Qaytarilgan' },
-  { id: 'cancelled', label: 'Bekor qilingan' },
+  { id: 'all', label: 'filterAll' },
+  { id: 'completed', label: 'paymentCompleted' },
+  { id: 'pending', label: 'paymentPending' },
+  { id: 'failed', label: 'paymentFailed' },
+  { id: 'refunded', label: 'paymentRefunded' },
+  { id: 'cancelled', label: 'paymentCancelled' },
 ];
 
 const STATUS_BADGE: Record<TransactionStatusDTO, { label: string; color: string }> = {
-  completed: { label: 'Muvaffaqiyatli', color: 'bg-success/10 text-success' },
-  processing: { label: 'Jarayonda', color: 'bg-secondary/10 text-secondary' },
-  pending: { label: 'Kutilmoqda', color: 'bg-warning/10 text-warning' },
-  failed: { label: "Bo'lmadi", color: 'bg-destructive/10 text-destructive' },
-  refunded: { label: 'Qaytarilgan', color: 'bg-primary/10 text-primary' },
-  cancelled: { label: 'Bekor qilingan', color: 'bg-muted text-muted-foreground' },
+  completed: { label: 'paymentCompleted', color: 'bg-success/10 text-success' },
+  processing: { label: 'paymentProcessing', color: 'bg-secondary/10 text-secondary' },
+  pending: { label: 'paymentPending', color: 'bg-warning/10 text-warning' },
+  failed: { label: 'paymentFailed', color: 'bg-destructive/10 text-destructive' },
+  refunded: { label: 'paymentRefunded', color: 'bg-primary/10 text-primary' },
+  cancelled: { label: 'paymentCancelled', color: 'bg-muted text-muted-foreground' },
 };
 
 const METHOD_LABEL: Record<PaymentMethodDTO, string> = {
@@ -58,6 +59,7 @@ function formatDateTime(iso: string | null): string {
 }
 
 const PaymentsPanel = () => {
+  const { t } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('all');
   const [method, setMethod] = useState<MethodFilter>('all');
   const [searchInput, setSearchInput] = useState('');
@@ -88,7 +90,7 @@ const PaymentsPanel = () => {
   const refundModalProps = useMemo(() => {
     if (!refundTarget) return null;
     return {
-      title: "To'lovni qaytarish",
+      title: t('admin.refundPayment'),
       message: `${refundTarget.student.fullName} (${formatUzs(refundTarget.amountUzs)}) "${refundTarget.course.title}" kursi uchun to'lovni qaytaramizmi? Talaba kurs ro'yxatidan olib tashlanadi.`,
     };
   }, [refundTarget]);
@@ -96,14 +98,14 @@ const PaymentsPanel = () => {
   const handleRefund = () => {
     if (!refundTarget) return;
     if (refundReason.trim().length < 5) {
-      toast.error("Sabab kamida 5 belgi bo'lishi kerak");
+      toast.error(t('admin.noteRequired'));
       return;
     }
     refundMutation.mutate(
       { transactionId: refundTarget.id, reason: refundReason },
       {
         onSuccess: () => {
-          toast.success("To'lov qaytarildi");
+          toast.success(t('admin.paymentRefundedSuccess'));
           setRefundTarget(null);
         },
         onError: (err) => toast.error(err.message),
@@ -116,11 +118,11 @@ const PaymentsPanel = () => {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label="Jami" value={stats.total} icon="CreditCardIcon" color="text-foreground" />
-          <StatCard label="Muvaffaqiyatli" value={stats.completed} icon="CheckCircleIcon" color="text-success" />
-          <StatCard label="Kutilmoqda" value={stats.pending} icon="ClockIcon" color="text-warning" />
-          <StatCard label="Qaytarilgan" value={stats.refunded} icon="ArrowUturnLeftIcon" color="text-primary" />
-          <StatCard label="Daromad" value={formatUzs(data?.totalRevenueUzs ?? '0')} icon="CurrencyDollarIcon" color="text-success" isText />
+          <StatCard label={t('admin.total')} value={stats.total} icon="CreditCardIcon" color="text-foreground" />
+          <StatCard label={t('admin.paymentCompleted')} value={stats.completed} icon="CheckCircleIcon" color="text-success" />
+          <StatCard label={t('admin.paymentPending')} value={stats.pending} icon="ClockIcon" color="text-warning" />
+          <StatCard label={t('admin.paymentRefunded')} value={stats.refunded} icon="ArrowUturnLeftIcon" color="text-primary" />
+          <StatCard label={t('admin.revenue')} value={formatUzs(data?.totalRevenueUzs ?? '0')} icon="CurrencyDollarIcon" color="text-success" isText />
         </div>
       )}
 
@@ -138,7 +140,7 @@ const PaymentsPanel = () => {
                     : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
-                {tab.label}
+                {t(`admin.${tab.label}`)}
               </button>
             ))}
           </div>
@@ -149,7 +151,7 @@ const PaymentsPanel = () => {
               onChange={(e) => setMethod(e.target.value as MethodFilter)}
               className="px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-card"
             >
-              <option value="all">Barcha to'lov</option>
+              <option value="all">{t('admin.allPayments')}</option>
               <option value="click">Click</option>
               <option value="payme">Payme</option>
             </select>
@@ -164,7 +166,7 @@ const PaymentsPanel = () => {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Email, ism, kurs..."
+                placeholder={t('admin.searchPaymentPlaceholder')}
                 className="pl-9 pr-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full lg:w-64"
               />
             </div>
@@ -176,18 +178,18 @@ const PaymentsPanel = () => {
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Tranzaksiyalar ({data?.total ?? 0})
+            {t('admin.transactions')} ({data?.total ?? 0})
           </h3>
           {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground">Yangilanmoqda...</span>
+            <span className="text-xs text-muted-foreground">{t('admin.updating')}</span>
           )}
         </div>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
-            <span>Xato: {error.message}</span>
+            <span>{t('admin.error')}: {error.message}</span>
             <button onClick={() => refetch()} className="underline text-xs">
-              Qayta urinish
+              {t('admin.retryBtn')}
             </button>
           </div>
         )}
@@ -203,7 +205,7 @@ const PaymentsPanel = () => {
         ) : transactions.length === 0 ? (
           <div className="text-center py-12">
             <Icon name="CreditCardIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">To'lovlar topilmadi</p>
+            <p className="text-muted-foreground">{t('admin.paymentsNotFound')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -240,10 +242,10 @@ const PaymentsPanel = () => {
                       </div>
                       {tx.refundedAt && tx.refundReason && (
                         <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground border-l-2 border-primary">
-                          <strong>Refund sababi:</strong> {tx.refundReason}
+                          <strong>{t('admin.refundReason')}:</strong> {tx.refundReason}
                           <br />
                           <span className="text-[10px]">
-                            Qaytarilgan: {formatDateTime(tx.refundedAt)}
+                            {t('admin.refundedAt')}: {formatDateTime(tx.refundedAt)}
                           </span>
                         </div>
                       )}
@@ -257,7 +259,7 @@ const PaymentsPanel = () => {
 
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${badge.color}`}>
-                      {badge.label}
+                      {t(`admin.${badge.label}`)}
                     </span>
                     {isRefundable && (
                       <button
@@ -265,7 +267,7 @@ const PaymentsPanel = () => {
                         className="text-xs px-3 py-1.5 rounded-md border border-destructive/30 text-destructive hover:bg-destructive/10 transition-smooth flex items-center gap-1"
                       >
                         <Icon name="ArrowUturnLeftIcon" size={14} />
-                        Qaytarish
+                        {t('admin.refundBtn')}
                       </button>
                     )}
                   </div>
@@ -282,7 +284,7 @@ const PaymentsPanel = () => {
           open={true}
           title={refundModalProps.title}
           message={refundModalProps.message}
-          confirmLabel="Qaytarish"
+          confirmLabel={t('admin.refundBtn')}
           variant="danger"
           isLoading={refundMutation.isPending}
           onConfirm={handleRefund}
@@ -291,7 +293,7 @@ const PaymentsPanel = () => {
       )}
       {refundTarget && (
         <FeedbackOverlay
-          label="Refund sababi (kamida 5 belgi)"
+          label={t('admin.refundReasonLabel')}
           value={refundReason}
           onChange={setRefundReason}
           visible={true}
@@ -352,7 +354,7 @@ function FeedbackOverlay({
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           className="w-full p-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          placeholder="Sabab yozing..."
+          placeholder={t('admin.reasonPlaceholder')}
         />
       </div>
     </div>

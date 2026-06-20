@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ExternalLink {
   id: string;
@@ -21,6 +22,7 @@ interface ExternalLinkIntegrationProps {
 }
 
 const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: ExternalLinkIntegrationProps) => {
+  const { t } = useI18n();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newLink, setNewLink] = useState<Partial<ExternalLink>>({
     type: 'youtube',
@@ -90,15 +92,15 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-heading font-semibold text-foreground">Tashqi havolalar</h3>
-            <p className="caption text-muted-foreground mt-1">Telegram, YouTube va boshqa resurslar</p>
+            <h3 className="text-xl font-heading font-semibold text-foreground">{t('content.externalLinks')}</h3>
+            <p className="caption text-muted-foreground mt-1">{t('content.externalLinksDesc')}</p>
           </div>
           <button
             onClick={() => setShowAddModal(true)}
             className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
           >
             <Icon name="PlusIcon" size={20} />
-            <span className="font-medium">Havola qo'shish</span>
+            <span className="font-medium">{t('content.addLink')}</span>
           </button>
         </div>
       </div>
@@ -108,14 +110,14 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
         {links.length === 0 ? (
           <div className="bg-card rounded-md shadow-warm p-12 text-center">
             <Icon name="LinkIcon" size={64} className="text-muted-foreground mx-auto mb-4" />
-            <h4 className="text-lg font-medium text-foreground mb-2">Havolalar yo'q</h4>
-            <p className="text-muted-foreground mb-4">Telegram kanal, YouTube playlist yoki boshqa resurslarni qo'shing</p>
+            <h4 className="text-lg font-medium text-foreground mb-2">{t('content.noLinks')}</h4>
+            <p className="text-muted-foreground mb-4">{t('content.noLinksDesc')}</p>
             <button
               onClick={() => setShowAddModal(true)}
               className="inline-flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
             >
               <Icon name="PlusIcon" size={20} />
-              <span className="font-medium">Birinchi havolani qo'shish</span>
+              <span className="font-medium">{t('content.addFirstLink')}</span>
             </button>
           </div>
         ) : (
@@ -137,8 +139,8 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
                           link.status === 'approved' ? 'bg-success/10 text-success' :
                           link.status === 'rejected'? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'
                         }`}>
-                          {link.status === 'approved' ? 'Tasdiqlangan' :
-                           link.status === 'rejected' ? 'Rad etilgan' : 'Kutilmoqda'}
+                          {link.status === 'approved' ? t('content.approved') :
+                           link.status === 'rejected' ? t('content.rejected') : t('content.pending')}
                         </span>
                       )}
                     </div>
@@ -177,7 +179,7 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
           <div className="bg-card rounded-md shadow-warm-xl border border-border w-full max-w-2xl">
             <div className="flex items-center justify-between p-6 border-b border-border">
-              <h3 className="text-xl font-heading font-semibold text-foreground">Havola qo'shish</h3>
+              <h3 className="text-xl font-heading font-semibold text-foreground">{t('content.addLink')}</h3>
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-2 rounded-md hover:bg-muted transition-smooth"
@@ -189,14 +191,12 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
             <div className="p-6 space-y-4">
               {/* Link Type */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Havola turi
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">{t('content.linkType')}</label>
                 <div className="grid grid-cols-3 gap-3">
                   {[
                     { value: 'youtube', label: 'YouTube', icon: 'PlayCircleIcon' },
                     { value: 'telegram', label: 'Telegram', icon: 'ChatBubbleLeftRightIcon' },
-                    { value: 'other', label: 'Boshqa', icon: 'LinkIcon' }
+                    { value: 'other', label: t('content.other'), icon: 'LinkIcon' }
                   ].map((type) => {
                     const isSelected = newLink.type === type.value;
                     return (
@@ -220,9 +220,7 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
 
               {/* URL */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Havola URL *
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">{t('content.linkUrl')}</label>
                 <input
                   type="url"
                   value={newLink.url}
@@ -235,14 +233,12 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Sarlavha *
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">{t('content.linkTitle')}</label>
                 <input
                   type="text"
                   value={newLink.title}
                   onChange={(e) => setNewLink({ ...newLink, title: e.target.value })}
-                  placeholder="Masalan: Dasturlash asoslari kursi"
+                  placeholder={t('content.linkTitlePlaceholder')}
                   className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   required
                 />
@@ -250,13 +246,11 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
 
               {/* Description */}
               <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Tavsif (ixtiyoriy)
-                </label>
+                <label className="block text-sm font-medium text-foreground mb-2">{t('content.linkDescription')}</label>
                 <textarea
                   value={newLink.description}
                   onChange={(e) => setNewLink({ ...newLink, description: e.target.value })}
-                  placeholder="Qisqacha tavsif..."
+                  placeholder={t('content.linkDescriptionPlaceholder')}
                   rows={3}
                   className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                 />
@@ -269,14 +263,12 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
                   disabled={!newLink.url || !newLink.title || isSubmitting}
                   className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? 'Qo\'shilmoqda...' : 'Qo\'shish'}
+                  {isSubmitting ? t('content.adding') : t('content.addBtn')}
                 </button>
                 <button
                   onClick={() => setShowAddModal(false)}
                   className="px-4 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth font-medium"
-                >
-                  Bekor qilish
-                </button>
+                >{t('content.cancelBtn')}</button>
               </div>
             </div>
           </div>

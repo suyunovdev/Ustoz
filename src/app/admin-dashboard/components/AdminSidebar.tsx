@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
 
 export type AdminTabId =
   | 'overview'
@@ -22,23 +23,23 @@ export type AdminTabId =
 
 interface NavItem {
   id: AdminTabId;
-  label: string;
+  labelKey: string;
   icon: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'overview', label: "Umumiy ko'rinish", icon: 'HomeIcon' },
-  { id: 'users', label: 'Foydalanuvchilar', icon: 'UserGroupIcon' },
-  { id: 'teacher_applications', label: "O'qituvchi arizalari", icon: 'AcademicCapIcon' },
-  { id: 'courses', label: 'Kurslar', icon: 'BookOpenIcon' },
-  { id: 'reviews', label: 'Sharhlar', icon: 'ChatBubbleLeftRightIcon' },
-  { id: 'payments', label: "To'lovlar", icon: 'CreditCardIcon' },
-  { id: 'campaigns', label: 'Email yuborish', icon: 'EnvelopeIcon' },
-  { id: 'moderation', label: 'Moderatsiya', icon: 'ShieldCheckIcon' },
-  { id: 'tickets', label: 'Yordam so\'rovlari', icon: 'LifebuoyIcon' },
-  { id: 'audit_log', label: 'Audit log', icon: 'ClipboardDocumentListIcon' },
-  { id: 'analytics', label: 'Tahlil', icon: 'ChartBarIcon' },
-  { id: 'system', label: 'Tizim', icon: 'CogIcon' },
+  { id: 'overview', labelKey: 'admin.navOverview', icon: 'HomeIcon' },
+  { id: 'users', labelKey: 'admin.navUsers', icon: 'UserGroupIcon' },
+  { id: 'teacher_applications', labelKey: 'admin.navTeacherApps', icon: 'AcademicCapIcon' },
+  { id: 'courses', labelKey: 'admin.navCourses', icon: 'BookOpenIcon' },
+  { id: 'reviews', labelKey: 'admin.navReviews', icon: 'ChatBubbleLeftRightIcon' },
+  { id: 'payments', labelKey: 'admin.navPayments', icon: 'CreditCardIcon' },
+  { id: 'campaigns', labelKey: 'admin.navCampaigns', icon: 'EnvelopeIcon' },
+  { id: 'moderation', labelKey: 'admin.navModeration', icon: 'ShieldCheckIcon' },
+  { id: 'tickets', labelKey: 'admin.navTickets', icon: 'LifebuoyIcon' },
+  { id: 'audit_log', labelKey: 'admin.navAuditLog', icon: 'ClipboardDocumentListIcon' },
+  { id: 'analytics', labelKey: 'admin.navAnalytics', icon: 'ChartBarIcon' },
+  { id: 'system', labelKey: 'admin.navSystem', icon: 'CogIcon' },
 ];
 
 interface AdminSidebarProps {
@@ -55,6 +56,7 @@ export default function AdminSidebar({
   onMobileClose,
 }: AdminSidebarProps) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
 
   // Esc bilan mobile drawer'ni yopish
@@ -112,7 +114,7 @@ export default function AdminSidebar({
         </div>
         <div className="min-w-0">
           <p className="text-lg font-heading font-bold text-foreground leading-tight">Ustoz</p>
-          <p className="text-xs text-muted-foreground">Admin paneli</p>
+          <p className="text-xs text-muted-foreground">{t('admin.sidebarAdminPanel')}</p>
         </div>
       </Link>
 
@@ -138,7 +140,7 @@ export default function AdminSidebar({
                 size={20}
                 className={isActive ? '' : 'text-muted-foreground'}
               />
-              <span className="truncate">{item.label}</span>
+              <span className="truncate">{t(item.labelKey)}</span>
             </button>
           );
         })}
@@ -156,7 +158,7 @@ export default function AdminSidebar({
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-foreground truncate">{user.fullName ?? user.email}</p>
-              <p className="text-xs text-muted-foreground truncate">Admin</p>
+              <p className="text-xs text-muted-foreground truncate">{t('admin.roleAdmin')}</p>
             </div>
             <Icon name="ChevronRightIcon" size={16} className="text-muted-foreground flex-shrink-0" />
           </button>
@@ -169,7 +171,7 @@ export default function AdminSidebar({
             className="w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-md text-destructive hover:bg-destructive/10 transition-smooth text-sm"
           >
             <Icon name="ArrowRightOnRectangleIcon" size={18} />
-            <span>Chiqish</span>
+            <span>{t('admin.sidebarLogout')}</span>
           </button>
         </div>
       )}

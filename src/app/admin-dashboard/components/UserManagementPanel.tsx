@@ -7,6 +7,7 @@ import { toast } from '@/components/common/Toaster';
 import { useAdminUsers, type AdminUserDTO } from '@/hooks/queries/useAdminUsers';
 import { useUserActionMutation } from '@/hooks/mutations/useUserActionMutation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
 
 type RoleFilter = 'all' | 'student' | 'teacher' | 'admin';
 
@@ -16,18 +17,9 @@ interface PendingAction {
   newRole?: 'student' | 'teacher' | 'admin';
 }
 
-const ROLE_LABELS: Record<string, { label: string; color: string }> = {
-  admin: { label: 'Admin', color: 'bg-destructive/10 text-destructive' },
-  teacher: { label: "O'qituvchi", color: 'bg-primary/10 text-primary' },
-  student: { label: 'Talaba', color: 'bg-success/10 text-success' },
-};
+// ROLE_LABELS are now driven by t() inside the component
 
-const FILTERS: { id: RoleFilter; label: string }[] = [
-  { id: 'all', label: 'Barchasi' },
-  { id: 'teacher', label: "O'qituvchilar" },
-  { id: 'student', label: 'Talabalar' },
-  { id: 'admin', label: 'Adminlar' },
-];
+// FILTERS are now driven by t() inside the component
 
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
@@ -36,6 +28,20 @@ function formatDate(iso: string | null): string {
 
 const UserManagementPanel = () => {
   const { user: currentUser } = useAuth();
+  const { t } = useI18n();
+
+  const ROLE_LABELS: Record<string, { label: string; color: string }> = {
+    admin: { label: t('admin.roleAdmin'), color: 'bg-destructive/10 text-destructive' },
+    teacher: { label: t('admin.roleTeacher'), color: 'bg-primary/10 text-primary' },
+    student: { label: t('admin.roleStudent'), color: 'bg-success/10 text-success' },
+  };
+
+  const FILTERS: { id: RoleFilter; label: string }[] = [
+    { id: 'all', label: t('admin.filterAll') },
+    { id: 'teacher', label: t('admin.filterTeachers') },
+    { id: 'student', label: t('admin.filterStudents') },
+    { id: 'admin', label: t('admin.filterAdmins') },
+  ];
   const [filterRole, setFilterRole] = useState<RoleFilter>('all');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -62,24 +68,24 @@ const UserManagementPanel = () => {
     if (!pending) return null;
     if (pending.type === 'suspend') {
       return {
-        title: 'Foydalanuvchini bloklash',
+        title: t('admin.suspendUser'),
         message: `${pending.user.fullName} (${pending.user.email}) hisobini bloklamoqchimisiz? U tizimga kira olmaydi.`,
-        confirmLabel: 'Bloklash',
+        confirmLabel: t('admin.suspendBtn'),
         variant: 'danger' as const,
       };
     }
     if (pending.type === 'activate') {
       return {
-        title: 'Foydalanuvchini faollashtirish',
+        title: t('admin.activateUser'),
         message: `${pending.user.fullName} (${pending.user.email}) hisobini qaytadan faollashtirilsinmi?`,
-        confirmLabel: 'Faollashtirish',
+        confirmLabel: t('admin.activateBtn'),
         variant: 'default' as const,
       };
     }
     return {
-      title: 'Rolni o\'zgartirish',
+      title: t('admin.changeRole'),
       message: `${pending.user.fullName}'ning rolini ${ROLE_LABELS[pending.user.role]?.label} → ${ROLE_LABELS[pending.newRole!]?.label}'ga o'zgartirilsinmi?`,
-      confirmLabel: "O'zgartirish",
+      confirmLabel: t('admin.changeBtn'),
       variant: 'default' as const,
     };
   })();
@@ -99,7 +105,7 @@ const UserManagementPanel = () => {
       actionMutation.mutate(
         { userId: pending.user.id, action: 'suspend' },
         {
-          onSuccess: () => onSuccess('Foydalanuvchi bloklandi'),
+          onSuccess: () => onSuccess(t('admin.userSuspended')),
           onError,
         },
       );
@@ -107,7 +113,7 @@ const UserManagementPanel = () => {
       actionMutation.mutate(
         { userId: pending.user.id, action: 'activate' },
         {
-          onSuccess: () => onSuccess('Foydalanuvchi faollashtirildi'),
+          onSuccess: () => onSuccess(t('admin.userActivated')),
           onError,
         },
       );
@@ -115,7 +121,7 @@ const UserManagementPanel = () => {
       actionMutation.mutate(
         { userId: pending.user.id, action: 'change_role', newRole: pending.newRole! },
         {
-          onSuccess: () => onSuccess("Rol o'zgartirildi"),
+          onSuccess: () => onSuccess(t('admin.roleChanged')),
           onError,
         },
       );
@@ -151,7 +157,7 @@ const UserManagementPanel = () => {
             />
             <input
               type="text"
-              placeholder="Email yoki ism boʻyicha qidirish..."
+              placeholder={t('admin.searchByEmailOrName')}
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               className="pl-10 pr-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary w-full md:w-80"
@@ -164,18 +170,18 @@ const UserManagementPanel = () => {
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Foydalanuvchilar ({total})
+            {t('admin.usersCount')} ({total})
           </h3>
           {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground">Yangilanmoqda...</span>
+            <span className="text-xs text-muted-foreground">{t('admin.updating')}</span>
           )}
         </div>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
-            <span>Xato: {error.message}</span>
+            <span>{t('admin.error')}: {error.message}</span>
             <button onClick={() => refetch()} className="underline text-xs">
-              Qayta urinish
+              {t('admin.retryBtn')}
             </button>
           </div>
         )}
@@ -191,7 +197,7 @@ const UserManagementPanel = () => {
         ) : users.length === 0 ? (
           <div className="text-center py-12">
             <Icon name="UserGroupIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Foydalanuvchilar topilmadi</p>
+            <p className="text-muted-foreground">{t('admin.usersNotFound')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -215,18 +221,18 @@ const UserManagementPanel = () => {
                         </h4>
                         {!user.isActive && (
                           <span className="px-2 py-0.5 text-xs bg-destructive/10 text-destructive rounded-full">
-                            Bloklangan
+                            {t('admin.blocked')}
                           </span>
                         )}
                         {isSelf && (
                           <span className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded-full">
-                            Siz
+                            {t('admin.you')}
                           </span>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Qoʻshilgan: {formatDate(user.createdAt)} · Oxirgi kirish:{' '}
+                        {t('admin.joinedAt')}: {formatDate(user.createdAt)} · {t('admin.lastLogin')}:{' '}
                         {formatDate(user.lastLoginAt)}
                       </p>
                     </div>
@@ -263,7 +269,7 @@ const UserManagementPanel = () => {
                                 className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 flex items-center gap-2"
                               >
                                 <Icon name="NoSymbolIcon" size={16} />
-                                Bloklash
+                                {t('admin.suspendBtn')}
                               </button>
                             ) : (
                               <button
@@ -274,11 +280,11 @@ const UserManagementPanel = () => {
                                 className="w-full text-left px-4 py-2 text-sm text-success hover:bg-success/10 flex items-center gap-2"
                               >
                                 <Icon name="CheckCircleIcon" size={16} />
-                                Faollashtirish
+                                {t('admin.activateBtn')}
                               </button>
                             )}
                             <div className="border-t border-border my-1" />
-                            <p className="px-4 py-1 text-xs text-muted-foreground">Rolni oʻzgartirish</p>
+                            <p className="px-4 py-1 text-xs text-muted-foreground">{t('admin.changeRole')}</p>
                             {(['student', 'teacher', 'admin'] as const).map((r) => (
                               <button
                                 key={r}

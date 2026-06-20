@@ -12,12 +12,13 @@ import {
   useCreateCampaignMutation,
   usePreviewRecipientsMutation,
 } from '@/hooks/mutations/useCampaignMutations';
+import { useI18n } from '@/contexts/I18nContext';
 
 const STATUS_BADGE: Record<string, { label: string; color: string }> = {
-  draft: { label: 'Qoralama', color: 'bg-muted text-muted-foreground' },
-  sending: { label: 'Yuborilmoqda', color: 'bg-warning/10 text-warning' },
-  completed: { label: 'Yakunlangan', color: 'bg-success/10 text-success' },
-  failed: { label: 'Xato', color: 'bg-destructive/10 text-destructive' },
+  draft: { label: 'campaignDraft', color: 'bg-muted text-muted-foreground' },
+  sending: { label: 'campaignSending', color: 'bg-warning/10 text-warning' },
+  completed: { label: 'campaignCompleted', color: 'bg-success/10 text-success' },
+  failed: { label: 'campaignFailed', color: 'bg-destructive/10 text-destructive' },
 };
 
 function formatDateTime(iso: string | null): string {
@@ -31,20 +32,21 @@ function formatDateTime(iso: string | null): string {
   });
 }
 
-function recipientLabel(filter: RecipientFilterDTO): string {
+function recipientLabel(filter: RecipientFilterDTO, t: (key: string) => string): string {
   switch (filter.type) {
     case 'all_users':
-      return 'Barcha foydalanuvchilar';
+      return t('admin.allUsers');
     case 'by_role':
-      return `Rollar: ${filter.roles.join(', ')}`;
+      return `${t('admin.byRole')}: ${filter.roles.join(', ')}`;
     case 'by_course':
-      return `${filter.courseIds.length} ta kursdagi talabalar`;
+      return `${filter.courseIds.length} ${t('admin.courseStudents')}`;
     case 'manual':
-      return `${filter.emails.length} ta email`;
+      return `${filter.emails.length} ${t('admin.emailCount')}`;
   }
 }
 
 const CampaignsPanel = () => {
+  const { t } = useI18n();
   const { data, isLoading, error, refetch } = useAdminCampaigns();
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -52,29 +54,29 @@ const CampaignsPanel = () => {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          Yuborilgan email kampaniyalar. Resend orqali yetkaziladi.
+          {t('admin.campaignsDesc')}
         </p>
         <button
           onClick={() => setCreateOpen(true)}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium flex items-center gap-2 self-start sm:self-auto"
         >
           <Icon name="PaperAirplaneIcon" size={18} />
-          Yangi kampaniya
+          {t('admin.newCampaign')}
         </button>
       </div>
 
       {error && (
         <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 text-sm text-destructive flex items-center justify-between">
-          <span>Xato: {error.message}</span>
+          <span>{t('admin.error')}: {error.message}</span>
           <button onClick={() => refetch()} className="underline text-xs">
-            Qayta urinish
+            {t('admin.retryBtn')}
           </button>
         </div>
       )}
 
       <div className="bg-card rounded-md shadow-warm p-6">
         <h3 className="text-xl font-heading font-semibold text-foreground mb-6">
-          Kampaniyalar tarixi ({data?.campaigns.length ?? 0})
+          {t('admin.campaignsHistory')} ({data?.campaigns.length ?? 0})
         </h3>
 
         {isLoading ? (
@@ -88,12 +90,12 @@ const CampaignsPanel = () => {
         ) : !data || data.campaigns.length === 0 ? (
           <div className="text-center py-12">
             <Icon name="EnvelopeIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Hozircha hech qanday kampaniya yo'q</p>
+            <p className="text-muted-foreground">{t('admin.noCampaigns')}</p>
             <button
               onClick={() => setCreateOpen(true)}
               className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium"
             >
-              Birinchi kampaniyani yuboring
+              {t('admin.firstCampaign')}
             </button>
           </div>
         ) : (
@@ -111,6 +113,7 @@ const CampaignsPanel = () => {
 };
 
 function CampaignRow({ campaign }: { campaign: CampaignDTO }) {
+  const { t } = useI18n();
   const badge = STATUS_BADGE[campaign.status] ?? STATUS_BADGE.draft;
   return (
     <div className="p-4 border border-border rounded-md hover:bg-muted/30 transition-smooth">
@@ -120,11 +123,11 @@ function CampaignRow({ campaign }: { campaign: CampaignDTO }) {
             {campaign.subject}
           </h4>
           <p className="text-xs text-muted-foreground mt-1">
-            {recipientLabel(campaign.recipientFilter)} · {campaign.createdBy.fullName}
+            {recipientLabel(campaign.recipientFilter, t)} · {campaign.createdBy.fullName}
           </p>
         </div>
         <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${badge.color}`}>
-          {badge.label}
+          {t(`admin.${badge.label}`)}
         </span>
       </div>
 
@@ -192,11 +195,11 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
 
   const handleSend = () => {
     if (subject.trim().length < 3) {
-      toast.error("Subject kamida 3 belgi");
+      toast.error(t('admin.subjectMin3'));
       return;
     }
     if (bodyHtml.trim().length < 10) {
-      toast.error('Matn juda qisqa');
+      toast.error(t('admin.bodyTooShort'));
       return;
     }
     try {
@@ -229,7 +232,7 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Yangi email kampaniya
+            {t('admin.newEmailCampaign')}
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
@@ -240,13 +243,13 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
           {/* Subject */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Mavzu (Subject)
+              {t('admin.subjectLabel')}
             </label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Yangi kurslar va chegirmalar"
+              placeholder={t('admin.subjectPlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -254,7 +257,7 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
           {/* Body HTML */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Email matni (HTML qo'llaniladi)
+              {t('admin.bodyLabel')}
             </label>
             <textarea
               value={bodyHtml}
@@ -268,13 +271,13 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
           {/* Recipients */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-2">
-              Kimga yuborish
+              {t('admin.recipientsLabel')}
             </label>
             <div className="space-y-2">
               {[
-                { id: 'all_users' as const, label: 'Barcha faol foydalanuvchilar' },
-                { id: 'by_role' as const, label: 'Rol bo\'yicha' },
-                { id: 'manual' as const, label: 'Aniq email manzillar' },
+                { id: 'all_users' as const, label: t('admin.allActiveUsers') },
+                { id: 'by_role' as const, label: t('admin.byRoleLabel') },
+                { id: 'manual' as const, label: t('admin.manualEmails') },
               ].map((opt) => (
                 <label key={opt.id} className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
@@ -331,13 +334,13 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
               disabled={previewMut.isPending}
               className="mt-3 text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-smooth"
             >
-              {previewMut.isPending ? 'Tekshirilmoqda...' : 'Necha kishi olishini ko\'rsatish'}
+              {previewMut.isPending ? t('admin.checking') : t('admin.previewCount')}
             </button>
 
             {previewResult && (
               <div className="mt-2 p-2 bg-primary/10 rounded text-xs text-primary">
-                <strong>{previewResult.count}</strong> ta foydalanuvchi email oladi
-                {previewResult.capped && ' (max 1000 cheklov qo\'llandi)'}
+                <strong>{previewResult.count}</strong> {t('admin.recipientPreview')}
+                {previewResult.capped && ` ${t('admin.cappedNote')}`}
               </div>
             )}
           </div>
@@ -349,7 +352,7 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
             disabled={createMut.isPending}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md transition-smooth font-medium disabled:opacity-50"
           >
-            Bekor qilish
+            {t('admin.cancelBtn')}
           </button>
           <button
             onClick={handleSend}
@@ -360,7 +363,7 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
             <Icon name="PaperAirplaneIcon" size={16} />
-            Yuborish
+            {t('admin.sendBtn')}
           </button>
         </div>
       </div>

@@ -7,6 +7,7 @@ import {
   useAdminAuditLogMeta,
   type AuditLogEntryDTO,
 } from '@/hooks/queries/useAdminAuditLog';
+import { useI18n } from '@/contexts/I18nContext';
 
 // Action prefiks bo'yicha rang
 const ACTION_COLOR: Record<string, string> = {
@@ -64,6 +65,7 @@ function formatDateTime(iso: string): string {
 }
 
 const AuditLogPanel = () => {
+  const { t } = useI18n();
   const [action, setAction] = useState('');
   const [targetType, setTargetType] = useState('');
   const [searchInput, setSearchInput] = useState('');
@@ -95,7 +97,7 @@ const AuditLogPanel = () => {
       <div className="bg-card rounded-md shadow-warm p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Amal turi</label>
+            <label className="block text-xs text-muted-foreground mb-1">{t('admin.actionType')}</label>
             <select
               value={action}
               onChange={(e) => setAction(e.target.value)}
@@ -111,7 +113,7 @@ const AuditLogPanel = () => {
           </div>
 
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Maqsad turi</label>
+            <label className="block text-xs text-muted-foreground mb-1">{t('admin.targetType')}</label>
             <select
               value={targetType}
               onChange={(e) => setTargetType(e.target.value)}
@@ -127,7 +129,7 @@ const AuditLogPanel = () => {
           </div>
 
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Dan</label>
+            <label className="block text-xs text-muted-foreground mb-1">{t('admin.dateFrom')}</label>
             <input
               type="date"
               value={fromDate}
@@ -137,7 +139,7 @@ const AuditLogPanel = () => {
           </div>
 
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Gacha</label>
+            <label className="block text-xs text-muted-foreground mb-1">{t('admin.dateTo')}</label>
             <input
               type="date"
               value={toDate}
@@ -147,7 +149,7 @@ const AuditLogPanel = () => {
           </div>
 
           <div>
-            <label className="block text-xs text-muted-foreground mb-1">Qidirish (IP, admin)</label>
+            <label className="block text-xs text-muted-foreground mb-1">{t('admin.searchIpAdmin')}</label>
             <div className="relative">
               <Icon
                 name="MagnifyingGlassIcon"
@@ -167,7 +169,7 @@ const AuditLogPanel = () => {
 
         {(action || targetType || search || fromDate || toDate) && (
           <div className="flex items-center gap-2 mt-3">
-            <span className="text-xs text-muted-foreground">Faol filterlar:</span>
+            <span className="text-xs text-muted-foreground">{t('admin.activeFilters')}:</span>
             <button
               onClick={() => {
                 setAction('');
@@ -179,7 +181,7 @@ const AuditLogPanel = () => {
               }}
               className="text-xs text-primary hover:underline"
             >
-              Tozalash
+              {t('admin.clearFilters')}
             </button>
           </div>
         )}
@@ -189,18 +191,18 @@ const AuditLogPanel = () => {
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Amallar tarixi ({data?.total ?? 0})
+            {t('admin.actionsHistory')} ({data?.total ?? 0})
           </h3>
           {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground">Yangilanmoqda...</span>
+            <span className="text-xs text-muted-foreground">{t('admin.updating')}</span>
           )}
         </div>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
-            <span>Xato: {error.message}</span>
+            <span>{t('admin.error')}: {error.message}</span>
             <button onClick={() => refetch()} className="underline text-xs">
-              Qayta urinish
+              {t('admin.retryBtn')}
             </button>
           </div>
         )}
@@ -218,7 +220,7 @@ const AuditLogPanel = () => {
               size={48}
               className="text-muted-foreground mx-auto mb-4"
             />
-            <p className="text-muted-foreground">Yozuvlar topilmadi</p>
+            <p className="text-muted-foreground">{t('admin.logsNotFound')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -281,7 +283,7 @@ function LogRow({
 
       {isOpen && (
         <div className="px-3 pb-3 pt-0 border-t border-border space-y-2 text-sm">
-          <Field label="Vaqt" value={formatDateTime(log.createdAt)} />
+          <Field label={t('admin.time')} value={formatDateTime(log.createdAt)} />
           <Field label="Admin" value={`${log.admin.fullName} <${log.admin.email}>`} />
           <Field label="Action" value={log.action} mono />
           <Field label="Target" value={`${log.targetType}${log.targetId ? ` / ${log.targetId}` : ''}`} mono />

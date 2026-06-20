@@ -6,6 +6,7 @@ import FileLibraryPanel from './FileLibraryPanel';
 import UploadArea from './UploadArea';
 import WatermarkSettings from './WatermarkSettings';
 import ExternalLinkIntegration from './ExternalLinkIntegration';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface UploadedFile {
   id: string;
@@ -37,6 +38,7 @@ interface ExternalLink {
 }
 
 const ContentUploadInteractive = () => {
+  const { t } = useI18n();
   const [isHydrated, setIsHydrated] = useState(false);
   const [activeSection, setActiveSection] = useState<'upload' | 'watermark' | 'links'>('upload');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -120,7 +122,7 @@ const ContentUploadInteractive = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Yuklanmoqda...</p>
+          <p className="text-muted-foreground">{t('content.loading')}</p>
         </div>
       </div>
     );
@@ -182,9 +184,9 @@ const ContentUploadInteractive = () => {
   };
 
   const sections: { id: 'upload' | 'watermark' | 'links'; label: string; icon: string }[] = [
-    { id: 'upload', label: 'Yuklash', icon: 'ArrowUpTrayIcon' },
-    { id: 'watermark', label: 'Watermark', icon: 'ShieldCheckIcon' },
-    { id: 'links', label: 'Tashqi havolalar', icon: 'LinkIcon' }
+    { id: 'upload', label: t('content.uploadTab'), icon: 'ArrowUpTrayIcon' },
+    { id: 'watermark', label: t('content.watermarkTab'), icon: 'ShieldCheckIcon' },
+    { id: 'links', label: t('content.externalLinksTab'), icon: 'LinkIcon' }
   ];
 
   return (
@@ -194,15 +196,15 @@ const ContentUploadInteractive = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-heading font-bold text-foreground">Kontent yuklash markazi</h1>
-              <p className="text-muted-foreground mt-1">Dars materiallarini yuklang va boshqaring</p>
+              <h1 className="text-3xl font-heading font-bold text-foreground">{t('content.uploadCenterTitle')}</h1>
+              <p className="text-muted-foreground mt-1">{t('content.uploadCenterDesc')}</p>
             </div>
             <button
               onClick={() => window.history.back()}
               className="flex items-center space-x-2 px-4 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth"
             >
               <Icon name="ArrowLeftIcon" size={20} />
-              <span className="font-medium hidden sm:inline">Orqaga</span>
+              <span className="font-medium hidden sm:inline">{t('content.back')}</span>
             </button>
           </div>
         </div>

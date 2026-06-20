@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface UploadedFile {
   id: string;
@@ -29,6 +30,7 @@ interface UploadAreaProps {
 }
 
 const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProps) => {
+  const { t } = useI18n();
   const [isDragging, setIsDragging] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [uploadingFiles, setUploadingFiles] = useState<string[]>([]);
@@ -148,10 +150,10 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
       {/* Upload Zone */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-heading font-semibold text-foreground">Fayl yuklash</h3>
+          <h3 className="text-xl font-heading font-semibold text-foreground">{t('content.fileUpload')}</h3>
           <div className="flex items-center space-x-2">
             <Icon name="InformationCircleIcon" size={20} className="text-muted-foreground" />
-            <span className="caption text-muted-foreground">Max: 500MB</span>
+            <span className="caption text-muted-foreground">{t('content.maxSize')}</span>
           </div>
         </div>
 
@@ -166,8 +168,8 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
           }`}
         >
           <Icon name="CloudArrowUpIcon" size={64} className="text-primary mx-auto mb-4" />
-          <h4 className="text-lg font-medium text-foreground mb-2">Fayllarni bu yerga tashlang</h4>
-          <p className="text-muted-foreground mb-4">yoki</p>
+          <h4 className="text-lg font-medium text-foreground mb-2">{t('content.dropFilesHere')}</h4>
+          <p className="text-muted-foreground mb-4">{t('content.or')}</p>
           <input
             type="file"
             multiple
@@ -181,7 +183,7 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
             className="inline-flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth cursor-pointer"
           >
             <Icon name="FolderOpenIcon" size={20} />
-            <span className="font-medium">Fayllarni tanlang</span>
+            <span className="font-medium">{t('content.selectFiles')}</span>
           </label>
         </div>
 
@@ -190,21 +192,21 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
           <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-md">
             <Icon name="DocumentTextIcon" size={24} className="text-primary" />
             <div>
-              <p className="font-medium text-foreground">Hujjatlar</p>
+              <p className="font-medium text-foreground">{t('content.documents')}</p>
               <p className="caption text-muted-foreground">PDF, Word</p>
             </div>
           </div>
           <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-md">
             <Icon name="VideoCameraIcon" size={24} className="text-primary" />
             <div>
-              <p className="font-medium text-foreground">Video</p>
+              <p className="font-medium text-foreground">{t('content.video')}</p>
               <p className="caption text-muted-foreground">MP4, AVI, MOV</p>
             </div>
           </div>
           <div className="flex items-center space-x-3 p-4 bg-muted/50 rounded-md">
             <Icon name="MusicalNoteIcon" size={24} className="text-primary" />
             <div>
-              <p className="font-medium text-foreground">Audio</p>
+              <p className="font-medium text-foreground">{t('content.audio')}</p>
               <p className="caption text-muted-foreground">MP3, WAV</p>
             </div>
           </div>
@@ -214,11 +216,11 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
       {/* Upload Progress */}
       {uploadingFiles.length > 0 && (
         <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
-          <h3 className="text-lg font-heading font-semibold text-foreground">Yuklanmoqda...</h3>
+          <h3 className="text-lg font-heading font-semibold text-foreground">{t('content.uploadingProgress')}</h3>
           {uploadingFiles.map((fileId) => (
             <div key={fileId} className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground">Fayl yuklanmoqda</span>
+                <span className="text-sm text-foreground">{t('content.fileUploading')}</span>
                 <span className="font-data text-sm text-muted-foreground">{Math.round(uploadProgress[fileId] || 0)}%</span>
               </div>
               <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -237,8 +239,8 @@ const UploadArea = ({ onFileUpload, watermarkConfig, teacherId }: UploadAreaProp
         <div className="flex items-center space-x-3 p-4 bg-success/10 rounded-md">
           <Icon name="ShieldCheckIcon" size={24} className="text-success" />
           <div>
-            <p className="font-medium text-success">Watermark himoyasi yoqilgan</p>
-            <p className="caption text-muted-foreground">Video fayllar avtomatik himoyalanadi</p>
+            <p className="font-medium text-success">{t('content.watermarkEnabled')}</p>
+            <p className="caption text-muted-foreground">{t('content.watermarkEnabledDesc')}</p>
           </div>
         </div>
       )}

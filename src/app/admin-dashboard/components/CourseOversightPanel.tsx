@@ -10,6 +10,7 @@ import {
   type ModerationStatusDTO,
 } from '@/hooks/queries/useAdminCourses';
 import { useCourseActionMutation } from '@/hooks/mutations/useCourseActionMutation';
+import { useI18n } from '@/contexts/I18nContext';
 
 type StatusFilter = ModerationStatusDTO | 'all';
 
@@ -24,13 +25,13 @@ const STATUS_TABS: { id: StatusFilter; label: string; color?: string }[] = [
 ];
 
 const STATUS_BADGE: Record<ModerationStatusDTO, { label: string; color: string }> = {
-  draft: { label: 'Qoralama', color: 'bg-muted text-muted-foreground' },
-  submitted: { label: 'Yuborilgan', color: 'bg-warning/10 text-warning' },
-  under_review: { label: "Ko'rib chiqilmoqda", color: 'bg-secondary/10 text-secondary' },
-  approved: { label: 'Tasdiqlangan', color: 'bg-success/10 text-success' },
-  rejected: { label: 'Rad etilgan', color: 'bg-destructive/10 text-destructive' },
+  draft: { label: 'statusDraft', color: 'bg-muted text-muted-foreground' },
+  submitted: { label: 'statusSubmitted', color: 'bg-warning/10 text-warning' },
+  under_review: { label: 'statusUnderReview', color: 'bg-secondary/10 text-secondary' },
+  approved: { label: 'statusApproved', color: 'bg-success/10 text-success' },
+  rejected: { label: 'statusRejected', color: 'bg-destructive/10 text-destructive' },
   revision_requested: {
-    label: "O'zgartirish so'ralgan",
+    label: 'statusRevisionRequested',
     color: 'bg-primary/10 text-primary',
   },
 };
@@ -51,12 +52,13 @@ function formatDate(iso: string | null): string {
 
 function formatUzs(uzs: string): string {
   const n = Number(uzs);
-  if (!Number.isFinite(n) || n === 0) return 'Bepul';
+  if (!Number.isFinite(n) || n === 0) return 'Free';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M so'm`;
   return `${(n / 1_000).toFixed(0)}K so'm`;
 }
 
 const CourseOversightPanel = () => {
+  const { t } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('all');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -93,63 +95,63 @@ const CourseOversightPanel = () => {
     switch (pending.type) {
       case 'approve':
         return {
-          title: 'Kursni tasdiqlash',
+          title: t('admin.approveCourse'),
           message: `"${t}" kursini tasdiqlaysizmi? Marketplace'da darrov ko'rinadi.`,
-          confirmLabel: 'Tasdiqlash',
+          confirmLabel: t('admin.approve'),
           variant: 'default' as const,
           requireFeedback: false,
-          feedbackLabel: 'Izoh (ixtiyoriy)',
+          feedbackLabel: t('admin.noteOptional'),
         };
       case 'reject':
         return {
-          title: 'Kursni rad etish',
+          title: t('admin.rejectCourse'),
           message: `"${t}" kursini rad etyapsiz. Sabab ko'rsating (kamida 5 belgi).`,
-          confirmLabel: 'Rad etish',
+          confirmLabel: t('admin.reject'),
           variant: 'danger' as const,
           requireFeedback: true,
-          feedbackLabel: 'Rad etish sababi',
+          feedbackLabel: t('admin.rejectReasonLabel'),
         };
       case 'request_revision':
         return {
-          title: "O'zgartirish so'rash",
+          title: t('admin.requestRevision'),
           message: `"${t}" kursi uchun teacher'ga aniq izoh yozing.`,
-          confirmLabel: "So'rov yuborish",
+          confirmLabel: t('admin.sendRequest'),
           variant: 'default' as const,
           requireFeedback: true,
-          feedbackLabel: "O'zgartirish izohi",
+          feedbackLabel: t('admin.revisionNote'),
         };
       case 'feature':
         return {
-          title: "Featured deb belgilash",
+          title: t('admin.markFeatured'),
           message: `"${t}" kursi marketplace'da yuqorida ko'rsatiladi.`,
-          confirmLabel: 'Belgilash',
+          confirmLabel: t('admin.markFeaturedBtn'),
           variant: 'default' as const,
           requireFeedback: false,
           feedbackLabel: '',
         };
       case 'unfeature':
         return {
-          title: 'Featured belgisini olib tashlash',
+          title: t('admin.unmarkFeatured'),
           message: `"${t}" kursi oddiy ro'yxatga qaytadi.`,
-          confirmLabel: 'Olib tashlash',
+          confirmLabel: t('admin.unmarkFeaturedBtn'),
           variant: 'default' as const,
           requireFeedback: false,
           feedbackLabel: '',
         };
       case 'suspend':
         return {
-          title: 'Kursni vaqtincha to\'xtatish',
+          title: t('admin.suspendCourse'),
           message: `"${t}" kursi yashiriladi. Sabab ko'rsating.`,
-          confirmLabel: "To'xtatish",
+          confirmLabel: t('admin.suspendBtn'),
           variant: 'danger' as const,
           requireFeedback: true,
-          feedbackLabel: "To'xtatish sababi",
+          feedbackLabel: t('admin.suspendReason'),
         };
       case 'unsuspend':
         return {
-          title: "To'xtatishni bekor qilish",
+          title: t('admin.unsuspendCourse'),
           message: `"${t}" kursi qaytarib faollashtiriladi.`,
-          confirmLabel: 'Faollashtirish',
+          confirmLabel: t('admin.unsuspendBtn'),
           variant: 'default' as const,
           requireFeedback: false,
           feedbackLabel: '',
@@ -172,43 +174,43 @@ const CourseOversightPanel = () => {
       case 'approve':
         actionMutation.mutate(
           { courseId: course.id, action: 'approve', feedback: feedbackInput || undefined },
-          { onSuccess: () => onSuccess('Kurs tasdiqlandi'), onError },
+          { onSuccess: () => onSuccess(t('admin.courseApproved')), onError },
         );
         break;
       case 'reject':
         actionMutation.mutate(
           { courseId: course.id, action: 'reject', feedback: feedbackInput },
-          { onSuccess: () => onSuccess('Kurs rad etildi'), onError },
+          { onSuccess: () => onSuccess(t('admin.courseRejected')), onError },
         );
         break;
       case 'request_revision':
         actionMutation.mutate(
           { courseId: course.id, action: 'request_revision', feedback: feedbackInput },
-          { onSuccess: () => onSuccess("O'zgartirish so'rovi yuborildi"), onError },
+          { onSuccess: () => onSuccess(t('admin.revisionSent')), onError },
         );
         break;
       case 'feature':
         actionMutation.mutate(
           { courseId: course.id, action: 'feature' },
-          { onSuccess: () => onSuccess('Featured deb belgilandi'), onError },
+          { onSuccess: () => onSuccess(t('admin.markedFeatured')), onError },
         );
         break;
       case 'unfeature':
         actionMutation.mutate(
           { courseId: course.id, action: 'unfeature' },
-          { onSuccess: () => onSuccess('Featured olib tashlandi'), onError },
+          { onSuccess: () => onSuccess(t('admin.unmarkedFeatured')), onError },
         );
         break;
       case 'suspend':
         actionMutation.mutate(
           { courseId: course.id, action: 'suspend', reason: feedbackInput },
-          { onSuccess: () => onSuccess("Kurs to'xtatildi"), onError },
+          { onSuccess: () => onSuccess(t('admin.courseSuspended')), onError },
         );
         break;
       case 'unsuspend':
         actionMutation.mutate(
           { courseId: course.id, action: 'unsuspend' },
-          { onSuccess: () => onSuccess('Kurs faollashtirildi'), onError },
+          { onSuccess: () => onSuccess(t('admin.courseUnsuspended')), onError },
         );
         break;
     }
@@ -219,10 +221,10 @@ const CourseOversightPanel = () => {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <StatCard label="Jami" value={stats.total} icon="BookOpenIcon" color="text-foreground" />
-          <StatCard label="Tasdiqlangan" value={stats.approved} icon="CheckCircleIcon" color="text-success" />
-          <StatCard label="Kutilmoqda" value={stats.submitted + stats.under_review} icon="ClockIcon" color="text-warning" />
-          <StatCard label="Featured" value={stats.featured} icon="StarIcon" color="text-primary" />
+          <StatCard label={t('admin.total')} value={stats.total} icon="BookOpenIcon" color="text-foreground" />
+          <StatCard label={t('admin.statusApproved')} value={stats.approved} icon="CheckCircleIcon" color="text-success" />
+          <StatCard label={t('admin.waiting')} value={stats.submitted + stats.under_review} icon="ClockIcon" color="text-warning" />
+          <StatCard label={t('admin.featured')} value={stats.featured} icon="StarIcon" color="text-primary" />
         </div>
       )}
 
@@ -240,7 +242,7 @@ const CourseOversightPanel = () => {
                     : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
-                {tab.label}
+                {t(`admin.${tab.id === 'all' ? 'filterAll' : tab.id === 'submitted' ? 'statusSubmitted' : tab.id === 'under_review' ? 'statusUnderReview' : tab.id === 'approved' ? 'statusApproved' : tab.id === 'rejected' ? 'statusRejected' : tab.id === 'revision_requested' ? 'statusRevisionReq' : 'statusDraft'}`)}
                 {tab.id !== 'all' && stats && stats[tab.id as keyof typeof stats] > 0 && (
                   <span className="ml-2 text-xs opacity-75">
                     {stats[tab.id as keyof typeof stats]}
@@ -272,7 +274,7 @@ const CourseOversightPanel = () => {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Kurs qidirish..."
+                placeholder={t('admin.searchCourse')}
                 className="pl-9 pr-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full lg:w-64"
               />
             </div>
@@ -284,18 +286,18 @@ const CourseOversightPanel = () => {
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Kurslar ({data?.total ?? 0})
+            {t('admin.coursesCount')} ({data?.total ?? 0})
           </h3>
           {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground">Yangilanmoqda...</span>
+            <span className="text-xs text-muted-foreground">{t('admin.updating')}</span>
           )}
         </div>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
-            <span>Xato: {error.message}</span>
+            <span>{t('admin.error')}: {error.message}</span>
             <button onClick={() => refetch()} className="underline text-xs">
-              Qayta urinish
+              {t('admin.retryBtn')}
             </button>
           </div>
         )}
@@ -311,7 +313,7 @@ const CourseOversightPanel = () => {
         ) : courses.length === 0 ? (
           <div className="text-center py-12">
             <Icon name="BookOpenIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Kurslar topilmadi</p>
+            <p className="text-muted-foreground">{t('admin.coursesNotFound')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -341,12 +343,12 @@ const CourseOversightPanel = () => {
                         )}
                         {isSuspended && (
                           <span className="px-2 py-0.5 bg-destructive/10 text-destructive text-xs rounded-full">
-                            To'xtatilgan
+                            {t('admin.suspended')}
                           </span>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
-                        {course.teacher.fullName} · {course.categoryRel?.name ?? 'Kategoriyasiz'}
+                        {course.teacher.fullName} · {course.categoryRel?.name ?? t('admin.noCategory')}
                       </p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
                         <span>📚 {course._count.topics} mavzu</span>
@@ -357,7 +359,7 @@ const CourseOversightPanel = () => {
                       </div>
                       {course.adminFeedback && (
                         <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground border-l-2 border-primary">
-                          <strong>Admin izohi:</strong> {course.adminFeedback}
+                          <strong>{t('admin.adminNote')}:</strong> {course.adminFeedback}
                         </div>
                       )}
                     </div>
@@ -365,7 +367,7 @@ const CourseOversightPanel = () => {
 
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${badge.color}`}>
-                      {badge.label}
+                      {t(`admin.${badge.label}`)}
                     </span>
                     <div className="relative">
                       <button
@@ -382,7 +384,7 @@ const CourseOversightPanel = () => {
                             {course.moderationStatus !== 'approved' && (
                               <MenuItem
                                 icon="CheckCircleIcon"
-                                label="Tasdiqlash"
+                                label={t('admin.approve')}
                                 color="text-success"
                                 onClick={() => {
                                   setOpenMenuFor(null);
@@ -393,7 +395,7 @@ const CourseOversightPanel = () => {
                             {course.moderationStatus !== 'rejected' && (
                               <MenuItem
                                 icon="XCircleIcon"
-                                label="Rad etish"
+                                label={t('admin.reject')}
                                 color="text-destructive"
                                 onClick={() => {
                                   setOpenMenuFor(null);
@@ -403,7 +405,7 @@ const CourseOversightPanel = () => {
                             )}
                             <MenuItem
                               icon="ArrowPathIcon"
-                              label="O'zgartirish so'rash"
+                              label={t('admin.requestRevisionMenu')}
                               onClick={() => {
                                 setOpenMenuFor(null);
                                 setPending({ course, type: 'request_revision' });
@@ -413,7 +415,7 @@ const CourseOversightPanel = () => {
                             {course.isFeatured ? (
                               <MenuItem
                                 icon="StarIcon"
-                                label="Featured olib tashlash"
+                                label={t('admin.removeFeaturedMenu')}
                                 onClick={() => {
                                   setOpenMenuFor(null);
                                   setPending({ course, type: 'unfeature' });
@@ -422,7 +424,7 @@ const CourseOversightPanel = () => {
                             ) : (
                               <MenuItem
                                 icon="StarIcon"
-                                label="Featured belgilash"
+                                label={t('admin.featureBtnLabel')}
                                 color="text-primary"
                                 onClick={() => {
                                   setOpenMenuFor(null);
@@ -434,7 +436,7 @@ const CourseOversightPanel = () => {
                             {isSuspended ? (
                               <MenuItem
                                 icon="PlayCircleIcon"
-                                label="Faollashtirish"
+                                label={t('admin.unsuspendBtn')}
                                 color="text-success"
                                 onClick={() => {
                                   setOpenMenuFor(null);
@@ -444,7 +446,7 @@ const CourseOversightPanel = () => {
                             ) : (
                               <MenuItem
                                 icon="NoSymbolIcon"
-                                label="Vaqtincha to'xtatish"
+                                label={t('admin.tempSuspend')}
                                 color="text-destructive"
                                 onClick={() => {
                                   setOpenMenuFor(null);
@@ -475,7 +477,7 @@ const CourseOversightPanel = () => {
           isLoading={actionMutation.isPending}
           onConfirm={() => {
             if (confirmInfo.requireFeedback && feedbackInput.trim().length < 5) {
-              toast.error('Sabab kamida 5 belgi bo\'lishi kerak');
+              toast.error(t('admin.noteRequired'));
               return;
             }
             handleConfirm();
@@ -567,7 +569,7 @@ function FeedbackOverlay({
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           className="w-full p-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          placeholder="Izoh yozing..."
+          placeholder={t('admin.notePlaceholder')}
         />
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import AppImage from '@/components/ui/AppImage';
 
 interface CourseMetadata {
@@ -49,13 +50,15 @@ const PublishingControls = ({
   isSaving = false,
   saveError = null,
 }: PublishingControlsProps) => {
+  const { t } = useI18n();
+
   const getStatusBadge = () => {
     const statusConfig = {
-      draft: { label: 'Draft', color: 'bg-muted text-muted-foreground', icon: 'DocumentIcon' },
-      preview: { label: 'Preview Mode', color: 'bg-secondary/10 text-secondary', icon: 'EyeIcon' },
-      submitted: { label: 'Pending Review', color: 'bg-warning/10 text-warning', icon: 'ClockIcon' },
-      approved: { label: 'Approved', color: 'bg-success/10 text-success', icon: 'CheckCircleIcon' },
-      rejected: { label: 'Rejected', color: 'bg-destructive/10 text-destructive', icon: 'XCircleIcon' }
+      draft: { label: t('courseCreation.statusDraft'), color: 'bg-muted text-muted-foreground', icon: 'DocumentIcon' },
+      preview: { label: t('courseCreation.statusPreview'), color: 'bg-secondary/10 text-secondary', icon: 'EyeIcon' },
+      submitted: { label: t('courseCreation.statusPendingReview'), color: 'bg-warning/10 text-warning', icon: 'ClockIcon' },
+      approved: { label: t('courseCreation.statusApproved'), color: 'bg-success/10 text-success', icon: 'CheckCircleIcon' },
+      rejected: { label: t('courseCreation.statusRejected'), color: 'bg-destructive/10 text-destructive', icon: 'XCircleIcon' }
     };
 
     const config = statusConfig[status];
@@ -72,7 +75,7 @@ const PublishingControls = ({
     <div className="space-y-6">
       {/* Course Summary Card */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
-        <h3 className="text-xl font-heading font-semibold text-foreground">Kurs Xulosasi</h3>
+        <h3 className="text-xl font-heading font-semibold text-foreground">{t('courseCreation.courseSummary')}</h3>
         
         {/* Course Info */}
         <div className="space-y-4">
@@ -89,10 +92,10 @@ const PublishingControls = ({
             )}
             <div className="flex-1 space-y-2">
               <h4 className="text-lg font-heading font-semibold text-foreground">
-                {metadata.title || 'Kurs nomi kiritilmagan'}
+                {metadata.title || t('courseCreation.courseNameNotEntered')}
               </h4>
               <p className="text-sm text-muted-foreground line-clamp-3">
-                {metadata.description || 'Tavsif kiritilmagan'}
+                {metadata.description || t('courseCreation.descriptionNotEntered')}
               </p>
               <div className="flex flex-wrap gap-2">
                 {metadata.category && (
@@ -112,31 +115,31 @@ const PublishingControls = ({
           {/* Detailed Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Narx (USD)</p>
+              <p className="text-xs text-muted-foreground">{t('courseCreation.priceUSDLabel')}</p>
               <p className="text-lg font-semibold text-foreground">${metadata.priceUSD || '0.00'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">Narx (UZS)</p>
+              <p className="text-xs text-muted-foreground">{t('courseCreation.priceUZSLabel')}</p>
               <p className="text-lg font-semibold text-foreground">{metadata.priceUZS || '0'} so'm</p>
             </div>
             {metadata.targetAudience && (
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Maqsadli auditoriya</p>
+                <p className="text-xs text-muted-foreground">{t('courseCreation.targetAudienceLabel')}</p>
                 <p className="text-sm text-foreground">
-                  {metadata.targetAudience === 'school_students' ? "Maktab o'quvchilari" :
-                   metadata.targetAudience === 'university_students'? 'Talabalar' : 'Mustaqil o\'rganuvchilar'}
+                  {metadata.targetAudience === 'school_students' ? t('courseCreation.schoolStudents') :
+                   metadata.targetAudience === 'university_students'? t('courseCreation.universityStudents') : t('courseCreation.independentLearners')}
                 </p>
               </div>
             )}
             {metadata.subjectCategory && (
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Fan</p>
+                <p className="text-xs text-muted-foreground">{t('courseCreation.subject')}</p>
                 <p className="text-sm text-foreground capitalize">{metadata.subjectCategory.replace('_', ' ')}</p>
               </div>
             )}
             {metadata.gradeLevel && (
               <div className="space-y-1">
-                <p className="text-xs text-muted-foreground">Sinf</p>
+                <p className="text-xs text-muted-foreground">{t('courseCreation.grade')}</p>
                 <p className="text-sm text-foreground">{metadata.gradeLevel}-sinf</p>
               </div>
             )}
@@ -157,15 +160,15 @@ const PublishingControls = ({
                 </div>
                 <div className="flex items-center space-x-2">
                   {topic.content && (
-                    <Icon name="DocumentTextIcon" size={16} className="text-success" title="Matn mavjud" />
+                    <Icon name="DocumentTextIcon" size={16} className="text-success" title={t('courseCreation.textExists')} />
                   )}
                   {topic.files.length > 0 && (
-                    <Icon name="FolderIcon" size={16} className="text-secondary" title="Fayllar mavjud" />
+                    <Icon name="FolderIcon" size={16} className="text-secondary" title={t('courseCreation.filesExist')} />
                   )}
                   {topic.hasQuiz ? (
-                    <Icon name="CheckCircleIcon" size={16} className="text-success" title="Test mavjud" />
+                    <Icon name="CheckCircleIcon" size={16} className="text-success" title={t('courseCreation.testExists')} />
                   ) : (
-                    <Icon name="XCircleIcon" size={16} className="text-destructive" title="Test yo'q" />
+                    <Icon name="XCircleIcon" size={16} className="text-destructive" title={t('courseCreation.noTest')} />
                   )}
                 </div>
               </div>
@@ -178,21 +181,21 @@ const PublishingControls = ({
       <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
         {/* Status */}
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-heading font-semibold text-foreground">Nashr Qilish</h3>
+          <h3 className="text-xl font-heading font-semibold text-foreground">{t('courseCreation.publishTitle')}</h3>
           {getStatusBadge()}
         </div>
 
         {/* Validation Checklist */}
         <div className="space-y-3">
-          <h4 className="font-medium text-foreground">Tekshirish ro'yxati</h4>
+          <h4 className="font-medium text-foreground">{t('courseCreation.checklistTitle')}</h4>
           <div className="space-y-2">
             {[
-              { label: 'Kurs nomi va tavsifi', checked: !!metadata.title && !!metadata.description },
-              { label: 'Muqova rasmi yuklangan', checked: !!metadata.coverImage },
-              { label: 'Kamida bitta mavzu yaratilgan', checked: topics.length > 0 },
-              { label: 'Barcha mavzularda matn mavjud', checked: topics.length > 0 && topics.every(t => t.content && t.content.length > 0) },
-              { label: 'Barcha mavzularda testlar mavjud (5+ savol)', checked: isValid },
-              { label: 'Narx ma\'lumotlari kiritilgan', checked: !!metadata.priceUZS }
+              { label: t('courseCreation.checkCourseInfo'), checked: !!metadata.title && !!metadata.description },
+              { label: t('courseCreation.checkCoverImage'), checked: !!metadata.coverImage },
+              { label: t('courseCreation.checkOneTopic'), checked: topics.length > 0 },
+              { label: t('courseCreation.checkAllTopicsText'), checked: topics.length > 0 && topics.every(t => t.content && t.content.length > 0) },
+              { label: t('courseCreation.checkAllTopicsQuiz'), checked: isValid },
+              { label: t('courseCreation.checkPrice'), checked: !!metadata.priceUZS }
             ].map((item, index) => (
               <div key={index} className="flex items-center space-x-3">
                 <Icon
@@ -214,7 +217,7 @@ const PublishingControls = ({
             <div className="flex items-start space-x-3">
               <Icon name="ExclamationCircleIcon" size={20} className="text-destructive flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-destructive mb-1">Xatolik yuz berdi:</p>
+                <p className="text-sm font-medium text-destructive mb-1">{t('courseCreation.errorOccurred')}</p>
                 <p className="text-xs text-destructive">{saveError}</p>
               </div>
             </div>
@@ -233,7 +236,7 @@ const PublishingControls = ({
             ) : (
               <Icon name="DocumentIcon" size={20} />
             )}
-            <span className="font-medium">Qoralama sifatida saqlash</span>
+            <span className="font-medium">{t('courseCreation.saveAsDraft')}</span>
           </button>
 
           <button
@@ -242,7 +245,7 @@ const PublishingControls = ({
             className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-secondary text-secondary-foreground rounded-md hover:opacity-90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Icon name="EyeIcon" size={20} />
-            <span className="font-medium">Kursni ko'rib chiqish</span>
+            <span className="font-medium">{t('courseCreation.previewCourse')}</span>
           </button>
 
           <button
@@ -256,7 +259,7 @@ const PublishingControls = ({
               <Icon name="PaperAirplaneIcon" size={20} />
             )}
             <span className="font-medium">
-              {isSaving ? 'Saqlanmoqda...' : status === 'submitted' ? 'Yuborildi ✓' : 'Tasdiqlashga yuborish va Nashr qilish'}
+              {isSaving ? t('courseCreation.saving') : status === 'submitted' ? t('courseCreation.submitted') + ' ✓' : t('courseCreation.submitAndPublish')}
             </span>
           </button>
 
@@ -265,11 +268,11 @@ const PublishingControls = ({
               <div className="flex items-start space-x-3">
                 <Icon name="ExclamationTriangleIcon" size={20} className="text-warning flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-warning mb-1">Kursni to'liq nashr qilish uchun:</p>
+                  <p className="text-sm font-medium text-warning mb-1">{t('courseCreation.publishWarningTitle')}</p>
                   <ul className="text-xs text-warning space-y-1">
-                    <li>• Barcha mavzularda matn yozing</li>
-                    <li>• Har bir mavzu uchun kamida 5 ta test savoli qo'shing</li>
-                    <li>• Kurs ma'lumotlarini to'ldiring</li>
+                    <li>• {t('courseCreation.publishWarning1')}</li>
+                    <li>• {t('courseCreation.publishWarning2')}</li>
+                    <li>• {t('courseCreation.publishWarning3')}</li>
                   </ul>
                 </div>
               </div>

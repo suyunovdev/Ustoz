@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ChartData {
   userGrowthData: { month: string; users: number; teachers: number; students: number }[];
@@ -15,6 +16,7 @@ interface AnalyticsChartsProps {
 }
 
 const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
+  const { t } = useI18n();
   const [data, setData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,13 +40,13 @@ const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
     return (
       <div className="bg-destructive/10 border border-destructive/20 rounded-md p-6 text-center">
         <Icon name="ExclamationTriangleIcon" size={32} className="text-destructive mx-auto mb-3" />
-        <h3 className="text-lg font-heading font-semibold text-destructive mb-1">Xatolik yuz berdi</h3>
+        <h3 className="text-lg font-heading font-semibold text-destructive mb-1">{t('admin.errorOccurred')}</h3>
         <p className="text-sm text-muted-foreground mb-4">{error}</p>
         <button
           onClick={() => { setError(null); setLoading(true); fetch('/api/admin/analytics', { credentials: 'include' }).then((res) => { if (!res.ok) throw new Error('Analitika ma\'lumotlarini yuklashda xatolik'); return res.json(); }).then((d) => { if (d) setData(d); }).catch((err) => { setError(err.message || 'Kutilmagan xatolik yuz berdi'); }).finally(() => setLoading(false)); }}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth text-sm font-medium"
         >
-          Qayta urinish
+          {t('admin.retryAnalytics')}
         </button>
       </div>
     );
@@ -69,8 +71,8 @@ const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-xl font-heading font-semibold text-foreground">Foydalanuvchilar o'sishi</h3>
-            <p className="text-sm text-muted-foreground">Oylik statistika</p>
+            <h3 className="text-xl font-heading font-semibold text-foreground">{t('admin.userGrowth')}</h3>
+            <p className="text-sm text-muted-foreground">{t('admin.monthlyStats')}</p>
           </div>
           <Icon name="UserGroupIcon" size={24} className="text-primary" />
         </div>
@@ -89,8 +91,8 @@ const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
                 }}
               />
               <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-              <Bar dataKey="teachers" fill="#0F4C75" name="O'qituvchilar" radius={[8, 8, 0, 0]} />
-              <Bar dataKey="students" fill="#3282B8" name="Talabalar" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="teachers" fill="#0F4C75" name={t('admin.teachers')} radius={[8, 8, 0, 0]} />
+              <Bar dataKey="students" fill="#3282B8" name={t('admin.students')} radius={[8, 8, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -101,8 +103,8 @@ const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
         <div className="bg-card rounded-md shadow-warm p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-heading font-semibold text-foreground">Kurs tugatish darajasi</h3>
-              <p className="text-sm text-muted-foreground">Oylik ko'rsatkichlar</p>
+              <h3 className="text-xl font-heading font-semibold text-foreground">{t('admin.courseCompletion')}</h3>
+              <p className="text-sm text-muted-foreground">{t('admin.monthlyIndicators')}</p>
             </div>
             <Icon name="AcademicCapIcon" size={24} className="text-success" />
           </div>
@@ -121,8 +123,8 @@ const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
                   }}
                 />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-                <Line type="monotone" dataKey="completion" stroke="#10B981" strokeWidth={2} name="Tugatish %" />
-                <Line type="monotone" dataKey="enrollment" stroke="#3282B8" strokeWidth={2} name="Ro'yxatdan o'tish %" />
+                <Line type="monotone" dataKey="completion" stroke="#10B981" strokeWidth={2} name={t('admin.completionPercent')} />
+                <Line type="monotone" dataKey="enrollment" stroke="#3282B8" strokeWidth={2} name={t('admin.enrollmentPercent')} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -132,8 +134,8 @@ const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
         <div className="bg-card rounded-md shadow-warm p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-xl font-heading font-semibold text-foreground">Haftalik faollik</h3>
-              <p className="text-sm text-muted-foreground">Faol foydalanuvchilar</p>
+              <h3 className="text-xl font-heading font-semibold text-foreground">{t('admin.weeklyActivity')}</h3>
+              <p className="text-sm text-muted-foreground">{t('admin.activeUsers')}</p>
             </div>
             <Icon name="ChartBarIcon" size={24} className="text-secondary" />
           </div>
@@ -152,7 +154,7 @@ const AnalyticsCharts = ({ expanded = false }: AnalyticsChartsProps) => {
                   }}
                 />
                 <Legend wrapperStyle={{ paddingTop: '20px' }} iconType="circle" />
-                <Bar dataKey="active" fill="#F59E0B" name="Faol foydalanuvchilar" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="active" fill="#F59E0B" name={t('admin.activeUsers')} radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

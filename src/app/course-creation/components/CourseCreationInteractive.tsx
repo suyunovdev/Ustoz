@@ -8,6 +8,7 @@ import QuizBuilder from './QuizBuilder';
 import PublishingControls from './PublishingControls';
 import Icon from '@/components/ui/AppIcon';
 import ContentUploadManager from './ContentUploadManager';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Topic {
   id: string;
@@ -64,6 +65,7 @@ interface TestQuestion {
 }
 
 const CourseCreationInteractive = () => {
+  const { t } = useI18n();
   const [isHydrated, setIsHydrated] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<'metadata' | 'content' | 'materials' | 'quiz' | 'publish'>('metadata');
@@ -101,7 +103,7 @@ const CourseCreationInteractive = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading course creation tools...</p>
+          <p className="text-muted-foreground">{t('courseCreation.loadingTools')}</p>
         </div>
       </div>
     );
@@ -199,7 +201,7 @@ const CourseCreationInteractive = () => {
       }));
 
       const coursePayload: Record<string, string | number | boolean | null> = {
-        title: metadata.title || 'Nomsiz kurs',
+        title: metadata.title || t('courseCreation.untitledCourse'),
         description: metadata.description || '',
         category: metadata.category || 'general',
         targetAudience,
@@ -244,7 +246,7 @@ const CourseCreationInteractive = () => {
 
       return savedCourseId;
     } catch (err: unknown) {
-      setSaveError(err instanceof Error ? err.message : 'Saqlashda xatolik yuz berdi');
+      setSaveError(err instanceof Error ? err.message : t('courseCreation.saveError'));
       return null;
     } finally {
       setIsSaving(false);
@@ -285,38 +287,38 @@ const CourseCreationInteractive = () => {
   const sections = [
     { 
       id: 'metadata', 
-      label: '1. Kurs Ma\'lumotlari', 
+      label: t('courseCreation.section1Label'), 
       icon: 'InformationCircleIcon',
-      description: 'Kurs nomi, tavsif, narx va kategoriya',
-      helpText: 'Kurs haqida umumiy ma\'lumotlarni kiriting'
+      description: t('courseCreation.section1Desc'),
+      helpText: t('courseCreation.section1Help')
     },
     { 
       id: 'content', 
-      label: '2. Dars Matni', 
+      label: t('courseCreation.section2Label'), 
       icon: 'DocumentTextIcon',
-      description: 'Matn, video darsliklar, tushuntirishlar',
-      helpText: 'Har bir mavzu uchun o\'quv matnini yozing'
+      description: t('courseCreation.section2Desc'),
+      helpText: t('courseCreation.section2Help')
     },
     { 
       id: 'materials', 
-      label: '3. Qo\'shimcha Fayllar', 
+      label: t('courseCreation.section3Label'), 
       icon: 'FolderIcon',
-      description: 'PDF, Word, audio, video fayllar',
-      helpText: 'O\'quvchilar yuklab olishi mumkin bo\'lgan materiallar'
+      description: t('courseCreation.section3Desc'),
+      helpText: t('courseCreation.section3Help')
     },
     { 
       id: 'quiz', 
-      label: '4. Test Savollari', 
+      label: t('courseCreation.section4Label'), 
       icon: 'AcademicCapIcon',
-      description: 'Bilimni tekshirish uchun savollar',
-      helpText: 'Har bir mavzu uchun kamida 5 ta savol yarating'
+      description: t('courseCreation.section4Desc'),
+      helpText: t('courseCreation.section4Help')
     },
     { 
       id: 'publish', 
-      label: '5. Nashr Qilish', 
+      label: t('courseCreation.section5Label'), 
       icon: 'PaperAirplaneIcon',
-      description: 'Kursni ko\'rib chiqish va nashr qilish',
-      helpText: 'Tayyor bo\'lgach kursni tasdiqlashga yuboring'
+      description: t('courseCreation.section5Desc'),
+      helpText: t('courseCreation.section5Help')
     }
   ];
 
@@ -376,8 +378,8 @@ const CourseCreationInteractive = () => {
                     <Icon name="AcademicCapIcon" size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-heading font-semibold text-foreground">Kurs Yaratish Yo&apos;riqnomasi</h3>
-                    <p className="text-muted-foreground mt-1">5 bosqichda kurs yarating</p>
+                    <h3 className="text-2xl font-heading font-semibold text-foreground">{t('courseCreation.guideTitle')}</h3>
+                    <p className="text-muted-foreground mt-1">{t('courseCreation.guideSubtitle')}</p>
                   </div>
                 </div>
                 <button
@@ -399,7 +401,7 @@ const CourseCreationInteractive = () => {
                       <p className="text-sm text-muted-foreground mb-2">{section.description}</p>
                       <div className="bg-muted/50 rounded-md p-3">
                         <p className="text-sm text-foreground">
-                          <strong>Nimani yuklash kerak:</strong> {section.helpText}
+                          <strong>{t('courseCreation.whatToUpload')}</strong> {section.helpText}
                         </p>
                       </div>
                     </div>
@@ -410,11 +412,11 @@ const CourseCreationInteractive = () => {
                   <div className="flex items-start space-x-3">
                     <Icon name="LightBulbIcon" size={24} className="text-accent-foreground flex-shrink-0" />
                     <div>
-                      <h4 className="font-semibold text-accent-foreground mb-2">Muhim eslatma:</h4>
+                      <h4 className="font-semibold text-accent-foreground mb-2">{t('courseCreation.importantNote')}</h4>
                       <ul className="space-y-1 text-sm text-accent-foreground">
-                        <li>• <strong>Dars Matni</strong> - Bu o&apos;quvchi o&apos;qiydigan asosiy darslik</li>
-                        <li>• <strong>Qo&apos;shimcha Fayllar</strong> - PDF, Word, audio/video yuklab olish uchun</li>
-                        <li>• <strong>Test Savollari</strong> - Bilimni tekshirish, ball olish uchun</li>
+                        <li>• {t('courseCreation.lessonTextNote')}</li>
+                        <li>• {t('courseCreation.additionalFilesNote')}</li>
+                        <li>• {t('courseCreation.testQuestionsNote')}</li>
                       </ul>
                     </div>
                   </div>
@@ -435,14 +437,14 @@ const CourseCreationInteractive = () => {
         <div className="mb-6 bg-card rounded-md shadow-warm p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center space-x-3">
-              <span className="text-sm font-medium text-muted-foreground">Bosqich:</span>
+              <span className="text-sm font-medium text-muted-foreground">{t('courseCreation.step')}:</span>
               <span className="text-lg font-bold text-primary">{getCurrentStepNumber()} / 5</span>
             </div>
             <div className="flex items-center space-x-2">
               {isSaving && (
                 <span className="text-xs text-muted-foreground flex items-center space-x-1">
                   <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                  <span>Saqlanmoqda...</span>
+                  <span>{t('courseCreation.saving')}</span>
                 </span>
               )}
               {saveError && (
@@ -453,7 +455,7 @@ const CourseCreationInteractive = () => {
                 className="flex items-center space-x-2 px-3 py-1.5 bg-muted hover:bg-muted/80 rounded-md transition-smooth"
               >
                 <Icon name="QuestionMarkCircleIcon" size={18} className="text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Yo&apos;riqnoma</span>
+                <span className="text-sm text-muted-foreground">{t('courseCreation.guide')}</span>
               </button>
             </div>
           </div>
@@ -529,15 +531,13 @@ const CourseCreationInteractive = () => {
             {['content', 'materials', 'quiz'].includes(activeSection) && (
               <div className="lg:hidden">
                 <div className="bg-card rounded-md shadow-warm p-4">
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    Mavzu tanlang:
-                  </label>
+                  <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.selectTopic')}</label>
                   <select
                     value={selectedTopicId || ''}
                     onChange={(e) => setSelectedTopicId(e.target.value)}
                     className="w-full px-4 py-2 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="" disabled>Mavzuni tanlang</option>
+                    <option value="" disabled>{t('courseCreation.selectTopicPlaceholder')}</option>
                     {topics.map((topic) => (
                       <option key={topic.id} value={topic.id}>
                         {topic.order}. {topic.title}
@@ -549,7 +549,7 @@ const CourseCreationInteractive = () => {
                     className="mt-3 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
                   >
                     <Icon name="PlusIcon" size={18} />
-                    <span className="text-sm font-medium">Yangi mavzu qo&apos;shish</span>
+                    <span className="text-sm font-medium">{t('courseCreation.addNewTopic')}</span>
                   </button>
                 </div>
               </div>
@@ -596,9 +596,9 @@ const CourseCreationInteractive = () => {
                   <div className="flex items-start space-x-3">
                     <Icon name="InformationCircleIcon" size={24} className="text-accent-foreground flex-shrink-0" />
                     <div>
-                      <h4 className="font-semibold text-accent-foreground mb-1">1-bosqich: Kurs haqida ma&apos;lumot</h4>
+                      <h4 className="font-semibold text-accent-foreground mb-1">{t('courseCreation.step1Info')}</h4>
                       <p className="text-sm text-accent-foreground">
-                        Kurs nomi, tavsif, narx va kategoriyasini kiriting. Bu ma&apos;lumotlar o&apos;quvchilarga ko&apos;rsatiladi.
+                        {t('courseCreation.step1InfoDesc')}
                       </p>
                     </div>
                   </div>
@@ -615,8 +615,8 @@ const CourseCreationInteractive = () => {
                 {topics.length === 0 ? (
                   <div className="bg-card rounded-md shadow-warm p-12 text-center">
                     <Icon name="BookOpenIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-foreground font-medium mb-2">Hali mavzu qo&apos;shilmagan</p>
-                    <p className="text-sm text-muted-foreground mb-4">Chap paneldagi &quot;Qo&apos;shish&quot; tugmasini bosib mavzu yarating</p>
+                    <p className="text-foreground font-medium mb-2">{t('courseCreation.noTopicsYet')}</p>
+                    <p className="text-sm text-muted-foreground mb-4">{t('courseCreation.addTopicHint')}</p>
                     <button
                       onClick={handleAddTopic}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
@@ -632,8 +632,8 @@ const CourseCreationInteractive = () => {
                           <Icon name="DocumentTextIcon" size={24} className="text-white" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-bold text-foreground text-lg mb-2">📝 Dars Matni</h4>
-                          <p className="text-sm text-foreground">O&apos;quvchilar o&apos;qiydigan asosiy darslik matnini yozing.</p>
+                          <h4 className="font-bold text-foreground text-lg mb-2">{t('courseCreation.lessonText')}</h4>
+                          <p className="text-sm text-foreground">{t('courseCreation.lessonTextDesc')}</p>
                         </div>
                       </div>
                     </div>
@@ -642,7 +642,7 @@ const CourseCreationInteractive = () => {
                         {selectedTopic.title}
                       </h3>
                       <p className="caption text-muted-foreground">
-                        Mavzu uchun o&apos;quv matnini yozing
+                        {t('courseCreation.writeTopicText')}
                       </p>
                     </div>
                     <RichTextEditor
@@ -653,7 +653,7 @@ const CourseCreationInteractive = () => {
                 ) : (
                   <div className="bg-card rounded-md shadow-warm p-12 text-center">
                     <Icon name="ArrowLeftIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground mb-2">Chap tarafdan mavzu tanlang</p>
+                    <p className="text-muted-foreground mb-2">{t('courseCreation.selectTopicLeft')}</p>
                   </div>
                 )}
               </div>
@@ -664,9 +664,9 @@ const CourseCreationInteractive = () => {
                 {topics.length === 0 ? (
                   <div className="bg-card rounded-md shadow-warm p-12 text-center">
                     <Icon name="FolderIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-foreground font-medium mb-2">Hali mavzu qo&apos;shilmagan</p>
+                    <p className="text-foreground font-medium mb-2">{t('courseCreation.noTopicsYet')}</p>
                     <button onClick={handleAddTopic} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth">
-                      Mavzu qo&apos;shish
+                      {t('courseCreation.addTopic')}
                     </button>
                   </div>
                 ) : selectedTopic ? (
@@ -677,8 +677,8 @@ const CourseCreationInteractive = () => {
                           <Icon name="FolderIcon" size={24} className="text-white" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-bold text-foreground text-lg mb-2">📁 Qo&apos;shimcha Fayllar</h4>
-                          <p className="text-sm text-foreground">O&apos;quvchilar yuklab olishi mumkin bo&apos;lgan materiallar.</p>
+                          <h4 className="font-bold text-foreground text-lg mb-2">{t('courseCreation.additionalFiles')}</h4>
+                          <p className="text-sm text-foreground">{t('courseCreation.additionalFilesDesc')}</p>
                         </div>
                       </div>
                     </div>
@@ -691,7 +691,7 @@ const CourseCreationInteractive = () => {
                 ) : (
                   <div className="bg-card rounded-md shadow-warm p-12 text-center">
                     <Icon name="ArrowLeftIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Chap tarafdan mavzu tanlang</p>
+                    <p className="text-muted-foreground">{t('courseCreation.selectTopicLeft')}</p>
                   </div>
                 )}
               </div>
@@ -702,9 +702,9 @@ const CourseCreationInteractive = () => {
                 {topics.length === 0 ? (
                   <div className="bg-card rounded-md shadow-warm p-12 text-center">
                     <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-foreground font-medium mb-2">Hali mavzu qo&apos;shilmagan</p>
+                    <p className="text-foreground font-medium mb-2">{t('courseCreation.noTopicsYet')}</p>
                     <button onClick={handleAddTopic} className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth">
-                      Mavzu qo&apos;shish
+                      {t('courseCreation.addTopic')}
                     </button>
                   </div>
                 ) : selectedTopic ? (
@@ -715,8 +715,8 @@ const CourseCreationInteractive = () => {
                           <Icon name="AcademicCapIcon" size={24} className="text-white" />
                         </div>
                         <div className="flex-1">
-                          <h4 className="font-bold text-foreground text-lg mb-2">🎓 Test Savollari</h4>
-                          <p className="text-sm text-foreground">Kamida 5 ta savol yarating. O&apos;quvchilar 80% ball olsagina keyingi mavzuga o&apos;ta oladilar.</p>
+                          <h4 className="font-bold text-foreground text-lg mb-2">{t('courseCreation.testQuestions')}</h4>
+                          <p className="text-sm text-foreground">{t('courseCreation.testQuestionsDesc')}</p>
                         </div>
                       </div>
                     </div>
@@ -731,7 +731,7 @@ const CourseCreationInteractive = () => {
                 ) : (
                   <div className="bg-card rounded-md shadow-warm p-12 text-center">
                     <Icon name="ArrowLeftIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">Chap tarafdan mavzu tanlang</p>
+                    <p className="text-muted-foreground">{t('courseCreation.selectTopicLeft')}</p>
                   </div>
                 )}
               </div>
@@ -743,9 +743,9 @@ const CourseCreationInteractive = () => {
                   <div className="flex items-start space-x-3">
                     <Icon name="PaperAirplaneIcon" size={24} className="text-accent-foreground flex-shrink-0" />
                     <div>
-                      <h4 className="font-semibold text-accent-foreground mb-1">5-bosqich: Nashr qilish</h4>
+                      <h4 className="font-semibold text-accent-foreground mb-1">{t('courseCreation.step5Info')}</h4>
                       <p className="text-sm text-accent-foreground">
-                        Kursni ko&apos;rib chiqing va tasdiqlashga yuboring. Admin 24-48 soat ichida ko&apos;rib chiqadi.
+                        {t('courseCreation.step5InfoDesc')}
                       </p>
                     </div>
                   </div>
@@ -770,20 +770,20 @@ const CourseCreationInteractive = () => {
             <div className="sticky top-24 space-y-4">
               {/* Progress Card */}
               <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
-                <h4 className="font-heading font-semibold text-foreground">Kurs Holati</h4>
+                <h4 className="font-heading font-semibold text-foreground">{t('courseCreation.courseStatus')}</h4>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Mavzular</span>
+                    <span className="text-muted-foreground">{t('courseCreation.topics')}</span>
                     <span className="font-data font-medium text-foreground">{topics.length}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Testlar</span>
+                    <span className="text-muted-foreground">{t('courseCreation.tests')}</span>
                     <span className="font-data font-medium text-foreground">
                       {topics.filter(t => t.hasQuiz).length}/{topics.length}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Tayyor</span>
+                    <span className="text-muted-foreground">{t('courseCreation.ready')}</span>
                     <span className="font-data font-medium text-foreground">
                       {topics.length > 0 ? Math.round((topics.filter(t => t.hasQuiz).length / topics.length) * 100) : 0}%
                     </span>
@@ -800,7 +800,7 @@ const CourseCreationInteractive = () => {
                   ) : (
                     <Icon name="DocumentIcon" size={16} />
                   )}
-                  <span>Qoralama saqlash</span>
+                  <span>{t('courseCreation.saveDraft')}</span>
                 </button>
               </div>
 
@@ -808,7 +808,7 @@ const CourseCreationInteractive = () => {
               <div className="bg-primary/10 rounded-md p-6 space-y-3 border border-primary/20">
                 <div className="flex items-center space-x-2">
                   <Icon name="LightBulbIcon" size={20} className="text-primary" />
-                  <h4 className="font-heading font-semibold text-primary">Joriy bosqich</h4>
+                  <h4 className="font-heading font-semibold text-primary">{t('courseCreation.currentStep')}</h4>
                 </div>
                 <p className="text-sm text-foreground">
                   {sections.find(s => s.id === activeSection)?.helpText}
@@ -819,13 +819,13 @@ const CourseCreationInteractive = () => {
               <div className="bg-muted/50 rounded-md p-6 space-y-3">
                 <div className="flex items-center space-x-2">
                   <Icon name="CheckCircleIcon" size={20} className="text-success" />
-                  <h4 className="font-heading font-semibold text-foreground">Maslahatlar</h4>
+                  <h4 className="font-heading font-semibold text-foreground">{t('courseCreation.tips')}</h4>
                 </div>
                 <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li>• Har bir mavzu uchun aniq va qisqa matn yozing</li>
-                  <li>• Murakkab mavzularni video bilan tushuntiring</li>
-                  <li>• Kamida 5 ta test savoli qo&apos;shing</li>
-                  <li>• Javoblarga batafsil izoh bering</li>
+                  <li>• {t('courseCreation.tip1')}</li>
+                  <li>• {t('courseCreation.tip2')}</li>
+                  <li>• {t('courseCreation.tip3')}</li>
+                  <li>• {t('courseCreation.tip4')}</li>
                 </ul>
               </div>
             </div>
@@ -840,11 +840,11 @@ const CourseCreationInteractive = () => {
             className="flex items-center space-x-2 px-6 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Icon name="ChevronLeftIcon" size={20} />
-            <span className="font-medium">Oldingi</span>
+            <span className="font-medium">{t('courseCreation.previous')}</span>
           </button>
 
           <div className="text-sm text-muted-foreground">
-            Bosqich {getCurrentStepNumber()} / {sections.length}
+            {t('courseCreation.step')} {getCurrentStepNumber()} / {sections.length}
           </div>
 
           {getCurrentStepNumber() < sections.length ? (
@@ -853,7 +853,7 @@ const CourseCreationInteractive = () => {
               disabled={!canProceed()}
               className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="font-medium">Keyingi</span>
+              <span className="font-medium">{t('courseCreation.next')}</span>
               <Icon name="ChevronRightIcon" size={20} />
             </button>
           ) : (
@@ -867,7 +867,7 @@ const CourseCreationInteractive = () => {
               ) : (
                 <Icon name="CheckIcon" size={20} />
               )}
-              <span className="font-medium">Nashr qilish</span>
+              <span className="font-medium">{t('courseCreation.publish')}</span>
             </button>
           )}
         </div>
@@ -881,10 +881,10 @@ const CourseCreationInteractive = () => {
               <Icon name="CheckCircleIcon" size={32} className="text-success" />
             </div>
             <h3 className="text-xl font-heading font-semibold text-foreground mb-2">
-              {publishStatus === 'draft' ? 'Qoralama saqlandi!' : 'Muvaffaqiyatli yuborildi!'}
+              {publishStatus === 'draft' ? t('courseCreation.draftSaved') : t('courseCreation.successSubmitted')}
             </h3>
             <p className="text-muted-foreground">
-              {publishStatus === 'draft' ?'Kurs qoralama sifatida saqlandi. Istalgan vaqtda tahrirlashingiz mumkin.' :'Kurs ko\'rib chiqish uchun yuborildi. 24-48 soat ichida xabar beramiz.'}
+              {publishStatus === 'draft' ?t('courseCreation.draftSavedDesc') :t('courseCreation.successSubmittedDesc')}
             </p>
           </div>
         </div>

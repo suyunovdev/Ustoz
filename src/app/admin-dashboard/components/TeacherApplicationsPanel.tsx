@@ -10,22 +10,23 @@ import {
   type ApplicationStatusDTO,
 } from '@/hooks/queries/useAdminTeacherApplications';
 import { useReviewTeacherAppMutation } from '@/hooks/mutations/useReviewTeacherAppMutation';
+import { useI18n } from '@/contexts/I18nContext';
 
 type StatusFilter = ApplicationStatusDTO | 'all';
 
 const STATUS_TABS: { id: StatusFilter; label: string }[] = [
-  { id: 'all', label: 'Barchasi' },
-  { id: 'pending', label: 'Yangi' },
-  { id: 'under_review', label: "Ko'rib chiqilmoqda" },
-  { id: 'approved', label: 'Tasdiqlangan' },
-  { id: 'rejected', label: 'Rad etilgan' },
+  { id: 'all', label: 'all' },
+  { id: 'pending', label: 'new' },
+  { id: 'under_review', label: 'under_review' },
+  { id: 'approved', label: 'approved' },
+  { id: 'rejected', label: 'rejected' },
 ];
 
 const STATUS_BADGE: Record<ApplicationStatusDTO, { label: string; color: string }> = {
-  pending: { label: 'Yangi', color: 'bg-warning/10 text-warning' },
-  under_review: { label: "Ko'rib chiqilmoqda", color: 'bg-secondary/10 text-secondary' },
-  approved: { label: 'Tasdiqlangan', color: 'bg-success/10 text-success' },
-  rejected: { label: 'Rad etilgan', color: 'bg-destructive/10 text-destructive' },
+  pending: { label: 'statusNew', color: 'bg-warning/10 text-warning' },
+  under_review: { label: 'statusUnderReview', color: 'bg-secondary/10 text-secondary' },
+  approved: { label: 'statusApproved', color: 'bg-success/10 text-success' },
+  rejected: { label: 'statusRejected', color: 'bg-destructive/10 text-destructive' },
 };
 
 type PendingAction =
@@ -42,6 +43,7 @@ function formatDate(iso: string): string {
 }
 
 const TeacherApplicationsPanel = () => {
+  const { t } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('pending');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -73,43 +75,43 @@ const TeacherApplicationsPanel = () => {
     const { type, app } = pending;
     if (type === 'start_review') {
       return {
-        title: "Ko'rib chiqishni boshlash",
+        title: t('admin.startReviewTitle'),
         message: `${app.fullName}'ning arizasi "Ko'rib chiqilmoqda" holatiga o'tadi.`,
-        confirmLabel: 'Boshlash',
+        confirmLabel: t('admin.startBtn'),
         variant: 'default' as const,
         requireFeedback: false,
       };
     }
     if (type === 'approve') {
       return {
-        title: "Arizani tasdiqlash",
+        title: t('admin.approveTitle'),
         message: `${app.fullName} o'qituvchi sifatida tasdiqlanadi. User role 'teacher'ga o'zgaradi.`,
-        confirmLabel: 'Tasdiqlash',
+        confirmLabel: t('admin.approve'),
         variant: 'default' as const,
         requireFeedback: false,
-        feedbackLabel: 'Tabriklash matni (ixtiyoriy)',
+        feedbackLabel: t('admin.congratsLabel'),
       };
     }
     return {
-      title: 'Arizani rad etish',
+      title: t('admin.rejectTitle'),
       message: `${app.fullName}'ga sabab yozing.`,
-      confirmLabel: 'Rad etish',
+      confirmLabel: t('admin.reject'),
       variant: 'danger' as const,
       requireFeedback: true,
-      feedbackLabel: 'Rad etish sababi',
+      feedbackLabel: t('admin.rejectReasonLabel'),
     };
   }, [pending]);
 
   const handleConfirm = () => {
     if (!pending || !modalProps) return;
     if (modalProps.requireFeedback && feedback.trim().length < 5) {
-      toast.error("Sabab kamida 5 belgi");
+      toast.error(t('admin.reasonMin5'));
       return;
     }
     const successMsg = {
-      start_review: "Ko'rib chiqish boshlandi",
-      approve: "Ariza tasdiqlandi — user endi o'qituvchi",
-      reject: 'Ariza rad etildi',
+      start_review: t('admin.reviewStarted'),
+      approve: t('admin.appApproved'),
+      reject: t('admin.appRejected'),
     }[pending.type];
 
     const variables =
@@ -137,11 +139,11 @@ const TeacherApplicationsPanel = () => {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label="Jami" value={stats.total} icon="DocumentTextIcon" color="text-foreground" />
-          <StatCard label="Yangi" value={stats.pending} icon="ClockIcon" color="text-warning" />
-          <StatCard label="Ko'rilmoqda" value={stats.under_review} icon="EyeIcon" color="text-secondary" />
-          <StatCard label="Tasdiqlangan" value={stats.approved} icon="CheckCircleIcon" color="text-success" />
-          <StatCard label="Rad etilgan" value={stats.rejected} icon="XCircleIcon" color="text-destructive" />
+          <StatCard label={t('admin.total')} value={stats.total} icon="DocumentTextIcon" color="text-foreground" />
+          <StatCard label={t('admin.statusNew')} value={stats.pending} icon="ClockIcon" color="text-warning" />
+          <StatCard label={t('admin.reviewing')} value={stats.under_review} icon="EyeIcon" color="text-secondary" />
+          <StatCard label={t('admin.statusApproved')} value={stats.approved} icon="CheckCircleIcon" color="text-success" />
+          <StatCard label={t('admin.statusRejected')} value={stats.rejected} icon="XCircleIcon" color="text-destructive" />
         </div>
       )}
 
@@ -159,7 +161,7 @@ const TeacherApplicationsPanel = () => {
                     : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
-                {tab.label}
+                {tab.id === 'all' ? t('admin.statusAll') : tab.id === 'pending' ? t('admin.statusNew') : tab.id === 'under_review' ? t('admin.statusUnderReview') : tab.id === 'approved' ? t('admin.statusApproved') : t('admin.statusRejected')}
                 {tab.id !== 'all' && stats && stats[tab.id as keyof typeof stats] > 0 && (
                   <span className="ml-2 text-xs opacity-75">
                     {stats[tab.id as keyof typeof stats]}
@@ -179,7 +181,7 @@ const TeacherApplicationsPanel = () => {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Ism, email, soha..."
+              placeholder={t('admin.searchNameEmailField')}
               className="pl-9 pr-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full lg:w-64"
             />
           </div>
@@ -190,18 +192,18 @@ const TeacherApplicationsPanel = () => {
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Arizalar ({data?.total ?? 0})
+            {t('admin.applications')} ({data?.total ?? 0})
           </h3>
           {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground">Yangilanmoqda...</span>
+            <span className="text-xs text-muted-foreground">{t('admin.updating')}</span>
           )}
         </div>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
-            <span>Xato: {error.message}</span>
+            <span>{t('admin.error')}: {error.message}</span>
             <button onClick={() => refetch()} className="underline text-xs">
-              Qayta urinish
+              {t('admin.retryBtn')}
             </button>
           </div>
         )}
@@ -217,7 +219,7 @@ const TeacherApplicationsPanel = () => {
         ) : apps.length === 0 ? (
           <div className="text-center py-12">
             <Icon name="DocumentTextIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Arizalar topilmadi</p>
+            <p className="text-muted-foreground">{t('admin.applicationsNotFound')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -242,7 +244,7 @@ const TeacherApplicationsPanel = () => {
                           {app.fullName}
                         </h4>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}>
-                          {badge.label}
+                          {t(`admin.${badge.label}`)}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
@@ -261,35 +263,35 @@ const TeacherApplicationsPanel = () => {
 
                   {isOpen && (
                     <div className="px-4 pb-4 pt-0 border-t border-border space-y-3">
-                      <Section title="📞 Aloqa">
+                      <Section title={`📞 ${t('admin.contactSection')}`}>
                         <p>
-                          <strong>Telefon:</strong> {app.phone ?? '—'}
+                          <strong>{t('admin.phoneLabel')}:</strong> {app.phone ?? '—'}
                         </p>
                         <p>
-                          <strong>Email:</strong> {app.email}
+                          <strong>{t('admin.emailLabel')}:</strong> {app.email}
                         </p>
                       </Section>
 
-                      <Section title="🎯 Mutaxassislik">
+                      <Section title={`🎯 ${t('admin.expertiseSection')}`}>
                         <p>{app.expertise}</p>
                       </Section>
 
-                      <Section title="📝 Bio">
+                      <Section title={`📝 ${t('admin.bioSection')}`}>
                         <p className="whitespace-pre-wrap">{app.bio}</p>
                       </Section>
 
-                      <Section title="💡 Motivatsiya">
+                      <Section title={`💡 ${t('admin.motivationSection')}`}>
                         <p className="whitespace-pre-wrap">{app.motivation}</p>
                       </Section>
 
                       {app.experience && (
-                        <Section title="💼 Tajriba">
+                        <Section title={`💼 ${t('admin.experienceSection')}`}>
                           <p className="whitespace-pre-wrap">{app.experience}</p>
                         </Section>
                       )}
 
                       {app.sampleUrl && (
-                        <Section title="🔗 Namuna ish">
+                        <Section title={`🔗 ${t('admin.sampleWorkSection')}`}>
                           <a
                             href={app.sampleUrl}
                             target="_blank"
@@ -302,7 +304,7 @@ const TeacherApplicationsPanel = () => {
                       )}
 
                       {app.feedback && (
-                        <Section title="💬 Admin javobi">
+                        <Section title={`💬 ${t('admin.adminResponse')}`}>
                           <div className="p-2 bg-muted/50 rounded text-sm border-l-2 border-primary">
                             {app.feedback}
                           </div>
@@ -317,7 +319,7 @@ const TeacherApplicationsPanel = () => {
                               className="text-sm px-3 py-1.5 rounded-md border border-secondary/30 text-secondary hover:bg-secondary/10 transition-smooth flex items-center gap-1"
                             >
                               <Icon name="EyeIcon" size={14} />
-                              Ko'rib chiqishni boshlash
+                              {t('admin.startReview')}
                             </button>
                           )}
                           <button
@@ -325,14 +327,14 @@ const TeacherApplicationsPanel = () => {
                             className="text-sm px-3 py-1.5 rounded-md border border-success/30 text-success hover:bg-success/10 transition-smooth flex items-center gap-1"
                           >
                             <Icon name="CheckCircleIcon" size={14} />
-                            Tasdiqlash
+                            {t('admin.approve')}
                           </button>
                           <button
                             onClick={() => setPending({ app, type: 'reject' })}
                             className="text-sm px-3 py-1.5 rounded-md border border-destructive/30 text-destructive hover:bg-destructive/10 transition-smooth flex items-center gap-1"
                           >
                             <Icon name="XCircleIcon" size={14} />
-                            Rad etish
+                            {t('admin.reject')}
                           </button>
                         </div>
                       )}
@@ -364,7 +366,7 @@ const TeacherApplicationsPanel = () => {
             label={
               'feedbackLabel' in modalProps && modalProps.feedbackLabel
                 ? modalProps.feedbackLabel
-                : 'Izoh'
+                : t('admin.commentLabel')
             }
             value={feedback}
             onChange={setFeedback}
@@ -427,7 +429,7 @@ function FeedbackOverlay({
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           className="w-full p-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          placeholder="Yozing..."
+          placeholder={t('admin.writePlaceholder')}
         />
       </div>
     </div>

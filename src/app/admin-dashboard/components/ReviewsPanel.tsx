@@ -10,12 +10,13 @@ import {
   type ReviewStatusDTO,
 } from '@/hooks/queries/useAdminReviews';
 import { useReviewActionMutation } from '@/hooks/mutations/useReviewActionMutation';
+import { useI18n } from '@/contexts/I18nContext';
 
 const STATUS_TABS: { id: ReviewStatusDTO; label: string }[] = [
-  { id: 'all', label: 'Barchasi' },
-  { id: 'visible', label: 'Faol' },
-  { id: 'hidden', label: 'Yashirilgan' },
-  { id: 'reported', label: 'Shikoyat qilingan' },
+  { id: 'all', label: 'reviewsAll' },
+  { id: 'visible', label: 'reviewsActive' },
+  { id: 'hidden', label: 'reviewsHidden' },
+  { id: 'reported', label: 'reviewsReported' },
 ];
 
 type PendingAction =
@@ -48,6 +49,7 @@ function Stars({ value }: { value: number }) {
 }
 
 const ReviewsPanel = () => {
+  const { t } = useI18n();
   const [status, setStatus] = useState<ReviewStatusDTO>('all');
   const [rating, setRating] = useState<number | 'all'>('all');
   const [searchInput, setSearchInput] = useState('');
@@ -82,25 +84,25 @@ const ReviewsPanel = () => {
     switch (type) {
       case 'hide':
         return {
-          title: 'Sharhni yashirish',
+          title: t('admin.hideReview'),
           message: `"${courseTitle}" kursidagi ${review.student.fullName}'ning sharhini yashirsangiz, talabalar ko'rmaydi (lekin DB'da qoladi).`,
-          confirmLabel: 'Yashirish',
+          confirmLabel: t('admin.hideBtn'),
           variant: 'default' as const,
           requireReason: true,
         };
       case 'unhide':
         return {
-          title: 'Sharhni qaytarish',
+          title: t('admin.unhideReview'),
           message: `Sharh qayta ommaviy ko'rinadi.`,
-          confirmLabel: 'Qaytarish',
+          confirmLabel: t('admin.unhideBtn'),
           variant: 'default' as const,
           requireReason: false,
         };
       case 'delete':
         return {
-          title: "Sharhni butunlay o'chirish",
+          title: t('admin.deleteReview'),
           message: `${review.student.fullName} sharhi DB'dan butunlay o'chiriladi. Kurs reytingi qayta hisoblanadi. Bu amalni bekor qilib bo'lmaydi.`,
-          confirmLabel: "O'chirish",
+          confirmLabel: t('admin.deleteBtn'),
           variant: 'danger' as const,
           requireReason: true,
         };
@@ -110,13 +112,13 @@ const ReviewsPanel = () => {
   const handleConfirm = () => {
     if (!pending || !modalProps) return;
     if (modalProps.requireReason && reason.trim().length < 5) {
-      toast.error("Sabab kamida 5 belgi bo'lishi kerak");
+      toast.error(t('admin.noteRequired'));
       return;
     }
     const successMsg = {
-      hide: 'Sharh yashirildi',
-      unhide: 'Sharh qaytarildi',
-      delete: "Sharh o'chirildi",
+      hide: t('admin.reviewHidden'),
+      unhide: t('admin.reviewUnhidden'),
+      delete: t('admin.reviewDeleted'),
     }[pending.type];
 
     const variables =
@@ -142,12 +144,12 @@ const ReviewsPanel = () => {
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label="Jami" value={stats.total} icon="ChatBubbleLeftRightIcon" color="text-foreground" />
-          <StatCard label="Faol" value={stats.visible} icon="EyeIcon" color="text-success" />
-          <StatCard label="Yashirilgan" value={stats.hidden} icon="EyeSlashIcon" color="text-warning" />
-          <StatCard label="Shikoyatli" value={stats.reported} icon="FlagIcon" color="text-destructive" />
+          <StatCard label={t('admin.total')} value={stats.total} icon="ChatBubbleLeftRightIcon" color="text-foreground" />
+          <StatCard label={t('admin.reviewsActive')} value={stats.visible} icon="EyeIcon" color="text-success" />
+          <StatCard label={t('admin.hidden')} value={stats.hidden} icon="EyeSlashIcon" color="text-warning" />
+          <StatCard label={t('admin.reported')} value={stats.reported} icon="FlagIcon" color="text-destructive" />
           <StatCard
-            label="O'rtacha"
+            label={t('admin.average')}
             value={`${stats.avgRating.toFixed(1)} ⭐`}
             icon="StarIcon"
             color="text-warning"
@@ -170,7 +172,7 @@ const ReviewsPanel = () => {
                     : 'bg-muted text-foreground hover:bg-muted/80'
                 }`}
               >
-                {tab.label}
+                {t(`admin.${tab.label}`)}
               </button>
             ))}
           </div>
@@ -183,7 +185,7 @@ const ReviewsPanel = () => {
               }
               className="px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-card"
             >
-              <option value="all">Barcha reyting</option>
+              <option value="all">{t('admin.allRating')}</option>
               <option value="5">5 ⭐</option>
               <option value="4">4 ⭐</option>
               <option value="3">3 ⭐</option>
@@ -201,7 +203,7 @@ const ReviewsPanel = () => {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Matn, kurs, talaba..."
+                placeholder={t('admin.searchReviewPlaceholder')}
                 className="pl-9 pr-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full lg:w-64"
               />
             </div>
@@ -213,18 +215,18 @@ const ReviewsPanel = () => {
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Sharhlar ({data?.total ?? 0})
+            {t('admin.reviewsCount')} ({data?.total ?? 0})
           </h3>
           {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground">Yangilanmoqda...</span>
+            <span className="text-xs text-muted-foreground">{t('admin.updating')}</span>
           )}
         </div>
 
         {error && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
-            <span>Xato: {error.message}</span>
+            <span>{t('admin.error')}: {error.message}</span>
             <button onClick={() => refetch()} className="underline text-xs">
-              Qayta urinish
+              {t('admin.retryBtn')}
             </button>
           </div>
         )}
@@ -240,7 +242,7 @@ const ReviewsPanel = () => {
         ) : reviews.length === 0 ? (
           <div className="text-center py-12">
             <Icon name="ChatBubbleLeftRightIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Sharhlar topilmadi</p>
+            <p className="text-muted-foreground">{t('admin.reviewsNotFound')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -267,7 +269,7 @@ const ReviewsPanel = () => {
                         <Stars value={review.rating} />
                         {isHidden && (
                           <span className="px-2 py-0.5 text-xs bg-warning/10 text-warning rounded-full">
-                            Yashirilgan
+                            {t('admin.hidden')}
                           </span>
                         )}
                         {review.reportCount > 0 && (
@@ -287,7 +289,7 @@ const ReviewsPanel = () => {
                       )}
                       {review.hideReason && (
                         <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground border-l-2 border-warning">
-                          <strong>Yashirish sababi:</strong> {review.hideReason}
+                          <strong>{t('admin.hideReason')}:</strong> {review.hideReason}
                         </div>
                       )}
                     </div>
@@ -299,7 +301,7 @@ const ReviewsPanel = () => {
                           className="text-xs px-3 py-1.5 rounded-md border border-success/30 text-success hover:bg-success/10 transition-smooth flex items-center gap-1"
                         >
                           <Icon name="EyeIcon" size={14} />
-                          Qaytarish
+                          {t('admin.unhideBtn')}
                         </button>
                       ) : (
                         <button
@@ -307,7 +309,7 @@ const ReviewsPanel = () => {
                           className="text-xs px-3 py-1.5 rounded-md border border-warning/30 text-warning hover:bg-warning/10 transition-smooth flex items-center gap-1"
                         >
                           <Icon name="EyeSlashIcon" size={14} />
-                          Yashirish
+                          {t('admin.hideBtn')}
                         </button>
                       )}
                       <button
@@ -315,7 +317,7 @@ const ReviewsPanel = () => {
                         className="text-xs px-3 py-1.5 rounded-md border border-destructive/30 text-destructive hover:bg-destructive/10 transition-smooth flex items-center gap-1"
                       >
                         <Icon name="TrashIcon" size={14} />
-                        O'chirish
+                        {t('admin.deleteBtn')}
                       </button>
                     </div>
                   </div>
@@ -340,7 +342,7 @@ const ReviewsPanel = () => {
       )}
       {modalProps?.requireReason && pending && (
         <FeedbackOverlay
-          label="Sabab (kamida 5 belgi)"
+          label={t('admin.reasonLabel')}
           value={reason}
           onChange={setReason}
         />
@@ -397,7 +399,7 @@ function FeedbackOverlay({
           onChange={(e) => onChange(e.target.value)}
           rows={3}
           className="w-full p-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          placeholder="Sabab yozing..."
+          placeholder={t('admin.reasonPlaceholder')}
         />
       </div>
     </div>

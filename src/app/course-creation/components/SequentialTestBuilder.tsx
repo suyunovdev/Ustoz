@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface TestQuestion {
   id: string;
@@ -22,6 +23,7 @@ interface SequentialTestBuilderProps {
 }
 
 const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: SequentialTestBuilderProps) => {
+  const { t } = useI18n();
   const [currentStep, setCurrentStep] = useState(0);
   const [editingQuestion, setEditingQuestion] = useState<TestQuestion>({
     id: '',
@@ -92,11 +94,11 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
       case 0:
         return (
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-foreground">Savol matni</label>
+            <label className="block text-sm font-medium text-foreground">{t('courseCreation.questionText')}</label>
             <textarea
               value={editingQuestion.questionText}
               onChange={(e) => setEditingQuestion({ ...editingQuestion, questionText: e.target.value })}
-              placeholder="Savolingizni kiriting..."
+              placeholder={t('courseCreation.questionTextPlaceholder')}
               rows={4}
               className="w-full px-4 py-3 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             />
@@ -110,7 +112,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
         const optionLabel = ['A', 'B', 'C', 'D'][currentStep - 1];
         return (
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-foreground">Variant {optionLabel}</label>
+            <label className="block text-sm font-medium text-foreground">{t('courseCreation.optionLabel')} {optionLabel}</label>
             <input
               type="text"
               value={editingQuestion[optionKey] as string}
@@ -123,7 +125,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
       case 5:
         return (
           <div className="space-y-4">
-            <label className="block text-sm font-medium text-foreground mb-3">To'g'ri javobni tanlang</label>
+            <label className="block text-sm font-medium text-foreground mb-3">{t('courseCreation.selectCorrectAnswer')}</label>
             <div className="grid grid-cols-2 gap-3">
               {['A', 'B', 'C', 'D'].map((option) => (
                 <button
@@ -139,7 +141,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
                       name={editingQuestion.correctAnswer === option ? 'CheckCircleIcon' : 'CircleStackIcon'}
                       size={24}
                     />
-                    <span className="font-medium text-lg">Variant {option}</span>
+                    <span className="font-medium text-lg">{t('courseCreation.optionLabel')} {option}</span>
                   </div>
                 </button>
               ))}
@@ -149,11 +151,11 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
       case 6:
         return (
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-foreground">Tushuntirish</label>
+            <label className="block text-sm font-medium text-foreground">{t('courseCreation.explanation')}</label>
             <textarea
               value={editingQuestion.explanation}
               onChange={(e) => setEditingQuestion({ ...editingQuestion, explanation: e.target.value })}
-              placeholder="Nima uchun bu javob to'g'ri ekanligini tushuntiring..."
+              placeholder={t('courseCreation.explanationPlaceholder2')}
               rows={4}
               className="w-full px-4 py-3 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             />
@@ -172,8 +174,8 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-heading font-semibold text-foreground">Test Savollari</h3>
-          <p className="caption text-muted-foreground mt-1">Ketma-ket savollar qo'shing (5-15 ta)</p>
+          <h3 className="text-xl font-heading font-semibold text-foreground">{t('courseCreation.sequentialTestTitle')}</h3>
+          <p className="caption text-muted-foreground mt-1">{t('courseCreation.sequentialTestDesc')}</p>
         </div>
         {!isAdding && (
           <button
@@ -186,7 +188,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
             }`}
           >
             <Icon name="PlusIcon" size={20} />
-            <span className="font-medium">Savol qo'shish</span>
+            <span className="font-medium">{t('courseCreation.addQuestion')}</span>
           </button>
         )}
       </div>
@@ -197,7 +199,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
       }`}>
         <Icon name={meetsMinimum ? 'CheckCircleIcon' : 'ExclamationTriangleIcon'} size={20} />
         <span className="caption">
-          {questions.length} / 5-15 savol (Kamida 5 ta savol talab qilinadi)
+          {questions.length} / 5-15 {t('courseCreation.questionsRequired')}
         </span>
       </div>
 
@@ -240,9 +242,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
             <button
               onClick={() => setIsAdding(false)}
               className="px-4 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth"
-            >
-              Bekor qilish
-            </button>
+            >{t('courseCreation.cancelBtn')}</button>
             <div className="flex items-center space-x-3">
               {currentStep > 0 && (
                 <button
@@ -250,7 +250,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
                   className="flex items-center space-x-2 px-4 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth"
                 >
                   <Icon name="ChevronLeftIcon" size={20} />
-                  <span>Orqaga</span>
+                  <span>{t('courseCreation.backBtn')}</span>
                 </button>
               )}
               {currentStep < 6 ? (
@@ -263,7 +263,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
                       : 'bg-muted text-muted-foreground cursor-not-allowed'
                   }`}
                 >
-                  <span>Keyingisi</span>
+                  <span>{t('courseCreation.nextBtn')}</span>
                   <Icon name="ChevronRightIcon" size={20} />
                 </button>
               ) : (
@@ -277,7 +277,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
                   }`}
                 >
                   <Icon name="CheckIcon" size={20} />
-                  <span>Saqlash</span>
+                  <span>{t('courseCreation.saveBtn')}</span>
                 </button>
               )}
             </div>
@@ -290,8 +290,8 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
         {questions.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-md">
             <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mb-4" />
-            <p className="text-muted-foreground mb-2">Hali savollar qo'shilmagan</p>
-            <p className="caption text-muted-foreground">Kamida 5 ta test savoli qo'shing</p>
+            <p className="text-muted-foreground mb-2">{t('courseCreation.noQuestionsAdded')}</p>
+            <p className="caption text-muted-foreground">{t('courseCreation.minQuestionsHint')}</p>
           </div>
         ) : (
           questions.map((question, index) => (
@@ -303,11 +303,9 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-2">
                     <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded">
-                      Savol {index + 1}
+                      {t('courseCreation.questionNumber')} {index + 1}
                     </span>
-                    <span className="px-2 py-1 bg-success/10 text-success text-xs font-medium rounded">
-                      To'g'ri: {question.correctAnswer}
-                    </span>
+                    <span className="px-2 py-1 bg-success/10 text-success text-xs font-medium rounded">{t('courseCreation.correctLabel')} {question.correctAnswer}</span>
                   </div>
                   <p className="font-medium text-foreground mb-2">{question.questionText}</p>
                   <div className="grid grid-cols-2 gap-2 text-sm">

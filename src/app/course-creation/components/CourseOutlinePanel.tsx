@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Topic {
   id: string;
@@ -31,6 +32,7 @@ const CourseOutlinePanel = ({
   onDeleteTopic,
   selectedTopicId
 }: CourseOutlinePanelProps) => {
+  const { t } = useI18n();
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [editingTopicId, setEditingTopicId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
@@ -87,14 +89,14 @@ const CourseOutlinePanel = ({
     <div className="h-full flex flex-col bg-card rounded-md shadow-warm">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
-        <h3 className="text-lg font-heading font-semibold text-foreground">Kurs Mavzulari</h3>
+        <h3 className="text-lg font-heading font-semibold text-foreground">{t('courseCreation.courseTopics')}</h3>
         <button
           onClick={onAddTopic}
           className="flex items-center space-x-2 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
           aria-label="Yangi mavzu qo'shish"
         >
           <Icon name="PlusIcon" size={20} />
-          <span className="font-medium hidden sm:inline">Qo'shish</span>
+          <span className="font-medium hidden sm:inline">{t('courseCreation.add')}</span>
         </button>
       </div>
 
@@ -103,7 +105,7 @@ const CourseOutlinePanel = ({
         {topics.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Icon name="BookOpenIcon" size={48} className="text-muted-foreground mb-4" />
-            <p className="text-muted-foreground text-sm">Hali mavzu yo'q.</p>
+            <p className="text-muted-foreground text-sm">{t('courseCreation.noTopicsEmpty')}</p>
             <p className="text-muted-foreground text-sm mt-1">"Qo'shish" tugmasini bosing.</p>
           </div>
         ) : (
@@ -157,14 +159,14 @@ const CourseOutlinePanel = ({
                   <button
                     onClick={(e) => startEditing(e, topic)}
                     className={`p-1 rounded hover:bg-black/10 transition-smooth ${isSelected ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'}`}
-                    title="Nomini o'zgartirish"
+                    title={t('courseCreation.renameTopic')}
                   >
                     <Icon name="PencilIcon" size={14} />
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); onDeleteTopic(topic.id); }}
                     className={`p-1 rounded hover:bg-red-500/20 transition-smooth ${isSelected ? 'opacity-80' : 'opacity-0 group-hover:opacity-100'}`}
-                    title="O'chirish"
+                    title={t('courseCreation.deleteTopic')}
                   >
                     <Icon name="TrashIcon" size={14} />
                   </button>
@@ -178,7 +180,7 @@ const CourseOutlinePanel = ({
       {/* Footer Stats */}
       <div className="p-4 border-t border-border bg-muted/50">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Jami mavzular:</span>
+          <span className="text-muted-foreground">{t('courseCreation.totalTopics')}</span>
           <span className="font-data font-medium text-foreground">{topics.length}</span>
         </div>
       </div>
