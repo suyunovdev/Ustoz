@@ -32,21 +32,25 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
     { code: 'en', name: 'English' }
   ];
 
-  const difficulties = ['Beginner', 'Intermediate', 'Advanced'];
+  const difficulties = [
+    { value: 'Beginner', label: t('misc.beginner') },
+    { value: 'Intermediate', label: t('misc.intermediate') },
+    { value: 'Advanced', label: t('misc.advanced') },
+  ];
   
   const targetAudiences = [
-    { value: 'preschoolers', label: 'Maktabgacha yoshdagilar' },
-    { value: 'primary_school', label: "Boshlang\'ich sinf" },
-    { value: 'middle_school', label: "O\'rta sinf" },
-    { value: 'high_school', label: 'Yuqori sinf' },
-    { value: 'school_students', label: "Maktab o\'quvchilari (umumiy)" },
-    { value: 'university_applicants', label: 'Abituriyentlar' },
-    { value: 'university_students', label: 'Talabalar' },
-    { value: 'professionals', label: 'Mutaxassislar' },
-    { value: 'adults', label: 'Kattalar' },
-    { value: 'seniors', label: 'Keksalar' },
-    { value: 'independent_learners', label: "Mustaqil o\'rganuvchilar" },
-    { value: 'all_levels', label: 'Barcha darajalar' },
+    { value: 'preschoolers', label: t('misc.preschoolers') },
+    { value: 'primary_school', label: t('misc.primarySchool') },
+    { value: 'middle_school', label: t('misc.middleSchool') },
+    { value: 'high_school', label: t('misc.highSchool') },
+    { value: 'school_students', label: t('misc.schoolStudents') },
+    { value: 'university_applicants', label: t('misc.universityApplicants') },
+    { value: 'university_students', label: t('misc.universityStudents') },
+    { value: 'professionals', label: t('misc.professionals') },
+    { value: 'adults', label: t('misc.adults') },
+    { value: 'seniors', label: t('misc.seniors') },
+    { value: 'independent_learners', label: t('misc.independentLearners') },
+    { value: 'all_levels', label: t('misc.allLevels') },
   ];
 
   // Universal kategoriya guruhlari
@@ -325,7 +329,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
           {/* Price Range */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-3">
-              Price Range
+              {t('misc.priceRange')}
             </label>
             <div className="space-y-4">
               <div className="flex items-center space-x-2">
@@ -382,7 +386,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
           {/* Target Audience */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-3">
-              Auditoriya
+              {t('misc.audience')}
             </label>
             <select
               value={localFilters.targetAudience}
@@ -402,14 +406,14 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
           {localFilters.targetAudience && (
             <div>
               <label className="block text-sm font-medium text-foreground mb-3">
-                Fan nomi
+                {t('misc.subjectName')}
               </label>
               <select
                 value={localFilters.subjectCategory}
                 onChange={(e) => setLocalFilters({ ...localFilters, subjectCategory: e.target.value })}
                 className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="">Barchasi</option>
+                <option value="">{t('misc.all')}</option>
                 {subjectGroups.map((g) => (
                   <optgroup key={g.group} label={g.group}>
                     {g.options.map((subject) => (
@@ -427,14 +431,14 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
           {isSchoolAudience && (
             <div>
               <label className="block text-sm font-medium text-foreground mb-3">
-                Sinf
+                {t('misc.grade')}
               </label>
               <select
                 value={localFilters.gradeLevel}
                 onChange={(e) => setLocalFilters({ ...localFilters, gradeLevel: e.target.value })}
                 className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >
-                <option value="">Barchasi</option>
+                <option value="">{t('misc.all')}</option>
                 {gradeLevels.map((grade) => (
                   <option key={grade.value} value={grade.value}>
                     {grade.label}
@@ -447,7 +451,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
           {/* Language */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-3">
-              Language
+              {t('misc.language')}
             </label>
             <div className="space-y-2">
               {languages.map((lang) => (
@@ -467,18 +471,18 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
           {/* Difficulty */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-3">
-              Difficulty Level
+              {t('misc.difficultyLevelLabel')}
             </label>
             <div className="space-y-2">
               {difficulties.map((difficulty) => (
-                <label key={difficulty} className="flex items-center space-x-2 cursor-pointer">
+                <label key={difficulty.value} className="flex items-center space-x-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={localFilters.difficulty.includes(difficulty)}
-                    onChange={() => handleDifficultyToggle(difficulty)}
+                    checked={localFilters.difficulty.includes(difficulty.value)}
+                    onChange={() => handleDifficultyToggle(difficulty.value)}
                     className="w-4 h-4 rounded border-input text-primary focus:ring-2 focus:ring-ring"
                   />
-                  <span className="text-sm text-foreground">{difficulty}</span>
+                  <span className="text-sm text-foreground">{difficulty.label}</span>
                 </label>
               ))}
             </div>
@@ -487,7 +491,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
           {/* Minimum Rating */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-3">
-              Minimum Rating
+              {t('misc.minimumRating')}
             </label>
             <div className="flex items-center space-x-2">
               <input
@@ -512,13 +516,13 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
               onClick={handleApplyFilters}
               className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium"
             >
-              Apply Filters
+              {t('misc.applyFilters')}
             </button>
             <button
               onClick={handleResetFilters}
               className="w-full px-4 py-2 bg-muted text-muted-foreground rounded-md hover:bg-border transition-smooth font-medium"
             >
-              Reset All
+              {t('misc.resetAll')}
             </button>
           </div>
         </div>

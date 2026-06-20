@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
   placeholder?: string;
 }
 
-const SearchBar = ({ onSearch, placeholder = 'Search courses, instructors...' }: SearchBarProps) => {
+const SearchBar = ({ onSearch, placeholder }: SearchBarProps) => {
+  const { t } = useI18n();
+  const resolvedPlaceholder = placeholder || t('marketplace.searchCourses');
   const [query, setQuery] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -33,7 +36,7 @@ const SearchBar = ({ onSearch, placeholder = 'Search courses, instructors...' }:
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder={placeholder}
+          placeholder={resolvedPlaceholder}
           className="w-full pl-12 pr-12 py-3 bg-card border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-smooth"
         />
         {query && (

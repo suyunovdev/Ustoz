@@ -2154,6 +2154,22 @@
     "priceRange": "Narx diapazoni",
     "language": "Til",
     "difficultyLevelLabel": "Qiyinlik darajasi",
-    "minimumRating": "Minimal reyting"
+    "minimumRating": "Minimal reyting",
+    "beginner": "Boshlang'ich",
+    "intermediate": "O'rta",
+    "advanced": "Ilg'or",
+    "all": "Barchasi",
+    "preschoolers": "Maktabgacha yoshdagilar",
+    "primarySchool": "Boshlang'ich sinf",
+    "middleSchool": "O'rta sinf",
+    "highSchool": "Yuqori sinf",
+    "schoolStudents": "Maktab o'quvchilari (umumiy)",
+    "universityApplicants": "Abituriyentlar",
+    "universityStudents": "Talabalar",
+    "professionals": "Mutaxassislar",
+    "adults": "Kattalar",
+    "seniors": "Keksalar",
+    "independentLearners": "Mustaqil o'rganuvchilar",
+    "allLevels": "Barcha darajalar"
   }
 }

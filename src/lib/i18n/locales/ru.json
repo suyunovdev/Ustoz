@@ -2154,6 +2154,22 @@
     "priceRange": "Ценовой диапазон",
     "language": "Язык",
     "difficultyLevelLabel": "Уровень сложности",
-    "minimumRating": "Минимальный рейтинг"
+    "minimumRating": "Минимальный рейтинг",
+    "beginner": "Начинающий",
+    "intermediate": "Средний",
+    "advanced": "Продвинутый",
+    "all": "Все",
+    "preschoolers": "Дошкольники",
+    "primarySchool": "Начальные классы",
+    "middleSchool": "Средние классы",
+    "highSchool": "Старшие классы",
+    "schoolStudents": "Школьники (общее)",
+    "universityApplicants": "Абитуриенты",
+    "universityStudents": "Студенты",
+    "professionals": "Специалисты",
+    "adults": "Взрослые",
+    "seniors": "Пожилые",
+    "independentLearners": "Самостоятельные ученики",
+    "allLevels": "Все уровни"
   }
 }

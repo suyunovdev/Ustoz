@@ -50,6 +50,44 @@ interface FilterOptions {
   tags?: string[];
 }
 
+// Category key -> translation key mapping
+const CATEGORY_LABELS: Record<string, string> = {
+  mathematics: 'Matematika', physics: 'Fizika', chemistry: 'Kimyo', biology: 'Biologiya',
+  geometry: 'Geometriya', algebra: 'Algebra', astronomy: 'Astronomiya', ecology: 'Ekologiya',
+  informatics: 'Informatika', programming: 'Dasturlash', web_development: 'Web Development',
+  mobile_development: 'Mobile Development', data_science: 'Data Science',
+  artificial_intelligence: "Sun'iy Intellekt", uzbek_language: "O'zbek tili",
+  english_language: 'Ingliz tili', russian_language: 'Rus tili', arabic_language: 'Arab tili',
+  chinese_language: 'Xitoy tili', korean_language: 'Koreys tili', german_language: 'Nemis tili',
+  french_language: 'Fransuz tili', turkish_language: 'Turk tili', spanish_language: 'Ispan tili',
+  japanese_language: 'Yapon tili', history: 'Tarix', geography: 'Geografiya',
+  philosophy: 'Falsafa', literature: 'Adabiyot', sociology: 'Sotsiologiya',
+  music: 'Musiqa', singing: 'Ashula', painting: 'Rangtasvir', drawing: 'Rasm chizish',
+  photography: 'Fotografiya', videography: 'Videografiya', cinema: 'Kino', theater: 'Teatr',
+  dance: 'Raqs', design: 'Dizayn', pottery: 'Kulolchilik', woodworking: "Yog'och ustachiligi",
+  sewing: 'Tikuvchilik', knitting: "To'qish", embroidery: 'Kashtachilik',
+  handcraft: "Qo'l hunari", jewelry: 'Zargarlik', cooking: 'Pazandachilik',
+  confectionery: 'Qandolatchilik', barbering: 'Sartaroshlik', hairstyling: 'Soch turmaklash',
+  makeup: 'Vizaj', manicure: 'Manikyur', tailoring: 'Bichuv-tikuv', fitness: 'Fitnes',
+  yoga: 'Yoga', football: 'Futbol', basketball: 'Basketbol', martial_arts: "Jang san'atlari",
+  swimming: 'Suzish', chess: 'Shaxmat', nutrition: "To'g'ri ovqatlanish",
+  sports_general: 'Sport', pharmacy: 'Farmatsevtika', nursing: 'Hamshiralik',
+  psychology: 'Psixologiya', medicine_general: 'Tibbiyot', first_aid: 'Ilk tibbiy yordam',
+  law_general: 'Huquq', civil_law: 'Fuqarolik huquqi', tax_law: 'Soliq huquqi',
+  agriculture: 'Dehqonchilik', gardening: "Bog'dorchilik", livestock: 'Chorvachilik',
+  beekeeping: 'Asalarichilik', engineering_general: 'Muhandislik', electrical: 'Elektrik',
+  mechanics: 'Mexanika', construction: 'Qurilish', automotive: 'Avto', plumbing: 'Santexnika',
+  business_management: 'Biznes boshqaruvi', entrepreneurship: 'Tadbirkorlik',
+  marketing: 'Marketing', finance: 'Moliya', accounting: 'Buxgalteriya',
+  logistics: 'Logistika', project_management: 'Loyiha boshqaruvi', hr_management: 'HR boshqaruvi',
+  leadership: 'Yetakchilik', public_speaking: 'Notiqlik', time_management: 'Vaqt boshqaruvi',
+  sales: 'Sotuv', negotiation: 'Muzokara', personal_development: 'Shaxsiy rivojlanish',
+  early_development: 'Erta rivojlanish', parenting: 'Ota-onalik',
+  child_psychology: 'Bola psixologiyasi', religion_islam: 'Islom asoslari',
+  quran_studies: "Qur'on ilmlari", arabic_studies: 'Arab tili (diniy)',
+  religion_general: 'Din', other: 'Boshqa',
+};
+
 const MarketplaceInteractive = () => {
   const { t } = useI18n();
   const searchParams = useSearchParams();
@@ -96,9 +134,9 @@ const MarketplaceInteractive = () => {
       const mapped: Course[] = (data.courses || []).map((c: any) => ({
         id: c.id,
         title: c.title,
-        instructor: c.teacherName || 'Ustoz',
+        instructor: c.teacherName || t('auth.teacher'),
         instructorImage: c.teacherAvatar || 'https://img.rocket.new/generatedImages/rocket_gen_img_19acf6093-1763297372321.png',
-        instructorImageAlt: `${c.teacherName || 'Ustoz'} rasmi`,
+        instructorImageAlt: `${c.teacherName || t('auth.teacher')} rasmi`,
         coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
         coverImageAlt: `${c.title} kursi`,
         rating: Number(c.rating) || 0,
@@ -120,7 +158,7 @@ const MarketplaceInteractive = () => {
       });
       const catList: Category[] = [
         { id: 'all', name: t('courses.allCourses'), count: mapped.length },
-        ...Object.entries(catMap).map(([id, count]) => ({ id, name: id, count })),
+        ...Object.entries(catMap).map(([id, count]) => ({ id, name: CATEGORY_LABELS[id] || id, count })),
       ];
       setCategories(catList);
     } catch (err) {

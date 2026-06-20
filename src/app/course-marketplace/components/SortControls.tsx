@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface SortOption {
   id: string;
@@ -15,15 +16,16 @@ interface SortControlsProps {
 }
 
 const SortControls = ({ currentSort, onSortChange }: SortControlsProps) => {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const sortOptions: SortOption[] = [
-    { id: 'popularity', label: 'Most Popular', icon: 'FireIcon' },
-    { id: 'price-low', label: 'Price: Low to High', icon: 'ArrowUpIcon' },
-    { id: 'price-high', label: 'Price: High to Low', icon: 'ArrowDownIcon' },
-    { id: 'rating', label: 'Highest Rated', icon: 'StarIcon' },
-    { id: 'newest', label: 'Newest First', icon: 'ClockIcon' }
+    { id: 'popularity', label: t('marketplace.popular'), icon: 'FireIcon' },
+    { id: 'price-low', label: t('marketplace.priceAsc'), icon: 'ArrowUpIcon' },
+    { id: 'price-high', label: t('marketplace.priceDesc'), icon: 'ArrowDownIcon' },
+    { id: 'rating', label: t('marketplace.highestRated'), icon: 'StarIcon' },
+    { id: 'newest', label: t('marketplace.newest'), icon: 'ClockIcon' }
   ];
 
   const currentOption = sortOptions.find(opt => opt.id === currentSort) || sortOptions[0];
@@ -58,7 +60,7 @@ const SortControls = ({ currentSort, onSortChange }: SortControlsProps) => {
       >
         <Icon name={currentOption.icon as any} size={20} />
         <span className="font-medium hidden sm:inline">{currentOption.label}</span>
-        <span className="font-medium sm:hidden">Sort</span>
+        <span className="font-medium sm:hidden">{t('marketplace.sortBy')}</span>
         <Icon name={isOpen ? 'ChevronUpIcon' : 'ChevronDownIcon'} size={16} />
       </button>
 

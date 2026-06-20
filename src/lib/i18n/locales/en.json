@@ -2154,6 +2154,22 @@
     "priceRange": "Price Range",
     "language": "Language",
     "difficultyLevelLabel": "Difficulty Level",
-    "minimumRating": "Minimum Rating"
+    "minimumRating": "Minimum Rating",
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "advanced": "Advanced",
+    "all": "All",
+    "preschoolers": "Preschoolers",
+    "primarySchool": "Primary School",
+    "middleSchool": "Middle School",
+    "highSchool": "High School",
+    "schoolStudents": "School Students (General)",
+    "universityApplicants": "University Applicants",
+    "universityStudents": "University Students",
+    "professionals": "Professionals",
+    "adults": "Adults",
+    "seniors": "Seniors",
+    "independentLearners": "Independent Learners",
+    "allLevels": "All Levels"
   }
 }
