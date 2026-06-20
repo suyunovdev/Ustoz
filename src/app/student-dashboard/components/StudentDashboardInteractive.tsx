@@ -15,6 +15,7 @@ import SearchBar from './SearchBar';
 import CategoryFilter from './CategoryFilter';
 import QuickActions from './QuickActions';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import type {
   DashboardEnrollment,
 } from '@/types/dashboard.types';
@@ -57,6 +58,7 @@ function getMostRecentInProgress(
 }
 
 const StudentDashboardInteractive = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = (() => {
@@ -240,9 +242,9 @@ const StudentDashboardInteractive = () => {
 
             <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-hide">
               {[
-                { key: 'continue', label: 'Davom ettirish' },
-                { key: 'my-courses', label: 'Mening Kurslarim' },
-                { key: 'recommended', label: 'Tavsiya Etilgan' },
+                { key: 'continue', label: t('student.tabContinue') },
+                { key: 'my-courses', label: t('student.tabMyCourses') },
+                { key: 'recommended', label: t('student.tabRecommended') },
               ].map(({ key, label }) => (
                 <button
                   key={key}
@@ -262,7 +264,7 @@ const StudentDashboardInteractive = () => {
             {activeView === 'continue' && (
               <div>
                 <h2 className="text-2xl font-heading font-bold text-foreground mb-4">
-                  O'qishni Davom Ettiring
+                  {t('student.continueLearningTitle')}
                 </h2>
                 {loadingCourses ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -273,11 +275,11 @@ const StudentDashboardInteractive = () => {
                 ) : continueLearning.length === 0 ? (
                   <div className="bg-card rounded-lg border border-border p-12 text-center">
                     <Icon name="PlayCircleIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Hali boshlangan kurs yo'q</h3>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">{t('student.noStartedCourse')}</h3>
                     <p className="text-muted-foreground mb-6">
                       {enrollments.length > 0
-                        ? 'Kurslaringizdan birini boshlang'
-                        : 'Birinchi kursingizni sotib oling'}
+                        ? t('student.startOneCourse')
+                        : t('student.buyFirstCourse')}
                     </p>
                     <button
                       onClick={() =>
@@ -287,7 +289,7 @@ const StudentDashboardInteractive = () => {
                       }
                       className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
-                      {enrollments.length > 0 ? "Kurslarimni Ko'rish" : "Kurslarni Ko'rish"}
+                      {enrollments.length > 0 ? t('student.viewMyCourses') : t('student.viewCourses')}
                     </button>
                   </div>
                 ) : (
@@ -304,7 +306,7 @@ const StudentDashboardInteractive = () => {
             {activeView === 'my-courses' && (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-heading font-bold text-foreground">Mening Kurslarim</h2>
+                  <h2 className="text-2xl font-heading font-bold text-foreground">{t('student.tabMyCourses')}</h2>
                 </div>
                 {loadingCourses ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -319,13 +321,13 @@ const StudentDashboardInteractive = () => {
                 ) : enrollments.length === 0 ? (
                   <div className="bg-card rounded-lg border border-border p-12 text-center">
                     <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-foreground mb-2">Hali kurslar yo'q</h3>
-                    <p className="text-muted-foreground mb-6">Birinchi kursingizni sotib oling va o'qishni boshlang</p>
+                    <h3 className="text-xl font-semibold text-foreground mb-2">{t('student.noCourses')}</h3>
+                    <p className="text-muted-foreground mb-6">{t('student.buyFirstCourseAndStart')}</p>
                     <button
                       onClick={() => router.push('/course-marketplace')}
                       className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
-                      Kurslarni Ko'rish
+                      {t('student.viewCourses')}
                     </button>
                   </div>
                 ) : (
@@ -342,7 +344,7 @@ const StudentDashboardInteractive = () => {
             {activeView === 'recommended' && (
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-2xl font-heading font-bold text-foreground">Tavsiya Etilgan Kurslar</h2>
+                  <h2 className="text-2xl font-heading font-bold text-foreground">{t('student.recommendedCourses')}</h2>
                 </div>
                 <div className="mb-4">
                   <CategoryFilter
@@ -370,8 +372,8 @@ const StudentDashboardInteractive = () => {
                     return (
                       <div className="text-center py-12 text-muted-foreground">
                         {selectedCategory
-                          ? "Bu kategoriyada hozircha tavsiya yo'q"
-                          : "Barcha kurslar allaqachon sizning ro'yxatingizda"}
+                          ? t('student.noCategoryRecommendations')
+                          : t('student.allCoursesInList')}
                       </div>
                     );
                   }
@@ -392,12 +394,12 @@ const StudentDashboardInteractive = () => {
                           {loadingMore ? (
                             <>
                               <div className="w-4 h-4 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-                              <span>Yuklanmoqda...</span>
+                              <span>{t('common.loading')}</span>
                             </>
                           ) : (
                             <>
                               <Icon name="ArrowPathIcon" size={18} />
-                              <span>Yana tavsiya ko'rish</span>
+                              <span>{t('student.loadMoreRecommendations')}</span>
                             </>
                           )}
                         </button>
@@ -412,20 +414,20 @@ const StudentDashboardInteractive = () => {
           {/* Sidebar */}
           <div className="space-y-6">
             <div className="bg-card rounded-md shadow-warm p-4">
-              <h3 className="text-lg font-heading font-semibold text-foreground mb-4">Tez Harakatlar</h3>
+              <h3 className="text-lg font-heading font-semibold text-foreground mb-4">{t('student.quickActions')}</h3>
               <QuickActions />
             </div>
 
             <div className="bg-card rounded-md shadow-warm p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-heading font-semibold text-foreground">Sertifikatlar</h3>
+                <h3 className="text-lg font-heading font-semibold text-foreground">{t('dashboard.certificates')}</h3>
                 <Icon name="AcademicCapIcon" size={20} className="text-primary" />
               </div>
               {certificates.length === 0 ? (
                 <div className="text-center py-6">
                   <Icon name="AcademicCapIcon" size={40} className="text-muted-foreground/40 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Hali sertifikat yo'q</p>
-                  <p className="text-xs text-muted-foreground mt-1">Kurs tugatganingizda paydo bo'ladi</p>
+                  <p className="text-sm text-muted-foreground">{t('student.noCertificates')}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t('student.certificateAppearOnComplete')}</p>
                 </div>
               ) : (
                 <>
@@ -447,7 +449,7 @@ const StudentDashboardInteractive = () => {
                     onClick={() => router.push('/certificates')}
                     className="w-full mt-4 text-sm text-primary hover:underline font-medium"
                   >
-                    Hammasini ko'rish ({certificates.length}) →
+                    {t('student.viewAll')} ({certificates.length}) →
                   </button>
                 </>
               )}

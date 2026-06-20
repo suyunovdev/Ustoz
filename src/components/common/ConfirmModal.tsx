@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ConfirmModalProps {
   open: boolean;
@@ -19,13 +20,17 @@ export default function ConfirmModal({
   open,
   title,
   message,
-  confirmLabel = 'Tasdiqlash',
-  cancelLabel = 'Bekor qilish',
+  confirmLabel,
+  cancelLabel,
   variant = 'default',
   isLoading = false,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const { t } = useI18n();
+  const resolvedConfirmLabel = confirmLabel ?? t('ui.confirm');
+  const resolvedCancelLabel = cancelLabel ?? t('ui.cancel');
+
   // Esc bilan yopish
   useEffect(() => {
     if (!open) return;
@@ -79,7 +84,7 @@ export default function ConfirmModal({
             disabled={isLoading}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md transition-smooth font-medium disabled:opacity-50"
           >
-            {cancelLabel}
+            {resolvedCancelLabel}
           </button>
           <button
             type="button"
@@ -90,7 +95,7 @@ export default function ConfirmModal({
             {isLoading && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            {confirmLabel}
+            {resolvedConfirmLabel}
           </button>
         </div>
       </div>

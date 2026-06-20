@@ -6,6 +6,7 @@ import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
 
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface FormData {
   fullName: string;
@@ -41,6 +42,7 @@ interface PasswordStrength {
 const RegistrationForm = () => {
   const router = useRouter();
   const { signUp, signIn, sendEmailOtp, verifyEmailOtp } = useAuth();
+  const { t } = useI18n();
   const [isHydrated, setIsHydrated] = useState(false);
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [formData, setFormData] = useState<FormData>({
@@ -104,11 +106,11 @@ const RegistrationForm = () => {
 
     const strengths: PasswordStrength[] = [
       { score: 0, label: '', color: 'bg-muted' },
-      { score: 1, label: 'Juda zaif', color: 'bg-destructive' },
-      { score: 2, label: 'Zaif', color: 'bg-warning' },
-      { score: 3, label: "O'rtacha", color: 'bg-accent' },
-      { score: 4, label: 'Kuchli', color: 'bg-success' },
-      { score: 5, label: 'Juda kuchli', color: 'bg-success' },
+      { score: 1, label: t('auth.passwordVeryWeak'), color: 'bg-destructive' },
+      { score: 2, label: t('auth.passwordWeak'), color: 'bg-warning' },
+      { score: 3, label: t('auth.passwordMedium'), color: 'bg-accent' },
+      { score: 4, label: t('auth.passwordStrong'), color: 'bg-success' },
+      { score: 5, label: t('auth.passwordVeryStrong'), color: 'bg-success' },
     ];
 
     return strengths[score];
@@ -128,43 +130,43 @@ const RegistrationForm = () => {
     const newErrors: FormErrors = {};
 
     if (!formData.fullName.trim()) {
-      newErrors.fullName = "To'liq ismingizni kiriting";
+      newErrors.fullName = t('auth.enterFullName');
     } else if (formData.fullName.trim().length < 3) {
-      newErrors.fullName = "Ism kamida 3 ta belgidan iborat bo'lishi kerak";
+      newErrors.fullName = t('auth.fullNameMinLength');
     }
 
     if (authMethod === 'email') {
       if (!formData.email.trim()) {
-        newErrors.email = 'Email manzilni kiriting';
+        newErrors.email = t('auth.enterEmail');
       } else if (!validateEmail(formData.email)) {
-        newErrors.email = "Noto'g'ri email manzil formati";
+        newErrors.email = t('auth.invalidEmailFormat');
       }
     } else {
       if (!formData.phone.trim()) {
-        newErrors.phone = 'Telefon raqamni kiriting';
+        newErrors.phone = t('auth.enterPhone');
       } else if (!validatePhone(formData.phone)) {
-        newErrors.phone = "Telefon raqam +998XXXXXXXXX formatida bo'lishi kerak";
+        newErrors.phone = t('auth.invalidPhoneFormat');
       }
     }
 
     if (!formData.password) {
-      newErrors.password = 'Parolni kiriting';
+      newErrors.password = t('auth.passwordRequired');
     } else if (formData.password.length < 8) {
-      newErrors.password = "Parol kamida 8 ta belgidan iborat bo'lishi kerak";
+      newErrors.password = t('auth.passwordMinLength');
     }
 
     if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Parolni tasdiqlang';
+      newErrors.confirmPassword = t('auth.confirmPasswordRequired');
     } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Parollar mos kelmaydi';
+      newErrors.confirmPassword = t('auth.passwordsDoNotMatch');
     }
 
     if (!formData.role) {
-      newErrors.role = 'Rolni tanlang';
+      newErrors.role = t('auth.selectRoleRequired');
     }
 
     if (!formData.termsAccepted || !formData.privacyAccepted) {
-      newErrors.terms = "Shartlar va maxfiylik siyosatini qabul qilishingiz kerak";
+      newErrors.terms = t('auth.termsRequired');
     }
 
     setErrors(newErrors);
@@ -188,12 +190,12 @@ const RegistrationForm = () => {
     const maxSize = 5 * 1024 * 1024;
 
     if (!validTypes.includes(file.type)) {
-      alert('Faqat JPG, PNG yoki WEBP formatdagi rasmlar qabul qilinadi');
+      alert(t('auth.photoInvalidType'));
       return;
     }
 
     if (file.size > maxSize) {
-      alert('Rasm hajmi 5MB dan oshmasligi kerak');
+      alert(t('auth.photoTooLarge'));
       return;
     }
 
@@ -232,13 +234,13 @@ const RegistrationForm = () => {
 
   const handleGoogleSignUp = async () => {
     // Google OAuth hozircha yoqilmagan
-    setErrors({ submit: 'Google orqali ro\'yxatdan o\'tish hozircha mavjud emas. Iltimos email orqali davom eting.' });
+    setErrors({ submit: t('auth.googleRegisterUnavailable') });
   };
 
   // Verify OTP code and then sign the user in
   const handleVerifyOtp = async () => {
     if (!otpCode || otpCode.length < 6) {
-      setErrors({ otp: "6 xonali kodni kiriting" });
+      setErrors({ otp: t('auth.otpEnterCode') });
       return;
     }
 
@@ -270,7 +272,7 @@ const RegistrationForm = () => {
     } catch (error: any) {
       setErrors({
         otp:
-          error.message === 'Token has expired or is invalid' ? "Kod noto'g'ri yoki muddati tugagan. Qayta yuboring." : error.message ||"Tasdiqlashda xatolik yuz berdi",
+          error.message === 'Token has expired or is invalid' ? t('auth.otpExpiredOrInvalid') : error.message || t('auth.verificationError'),
       });
     } finally {
       setIsVerifying(false);
@@ -288,7 +290,7 @@ const RegistrationForm = () => {
       setEmailDelivered(!!result?.emailDelivered);
       setResendCooldown(60);
     } catch (error: any) {
-      setErrors({ otp: error.message || "Kod yuborishda xatolik" });
+      setErrors({ otp: error.message || t('auth.otpSendError') });
     }
   };
 
@@ -335,19 +337,18 @@ const RegistrationForm = () => {
 
       if (error.message.includes('Anonymous sign-ins are disabled')) {
         setErrors({
-          submit:
-            "⚠️ Supabase sozlamalari: Email autentifikatsiya yoqilmagan. Supabase Dashboard → Authentication → Providers → Email bo'limida 'Enable Email provider' ni yoqing.",
+          submit: t('auth.supabaseEmailError'),
         });
       } else if (
         error.message.includes('User already registered') ||
         error.message.includes('already been registered')
       ) {
         setErrors({
-          email: "Bu email manzil allaqachon ro'yxatdan o'tgan",
+          email: t('auth.alreadyRegistered'),
         });
       } else {
         setErrors({
-          submit: error.message || "Ro'yxatdan o'tishda xatolik yuz berdi",
+          submit: error.message || t('auth.registrationError'),
         });
       }
     } finally {
@@ -360,7 +361,7 @@ const RegistrationForm = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Yuklanmoqda...</p>
+          <p className="text-muted-foreground">{t('auth.loadingText')}</p>
         </div>
       </div>
     );
@@ -377,17 +378,17 @@ const RegistrationForm = () => {
               <Icon name="EnvelopeIcon" size={32} className="text-primary" />
             </div>
             <h2 className="text-2xl font-heading font-bold text-foreground">
-              Emailni tasdiqlang
+              {t('auth.verifyEmailTitle')}
             </h2>
             <p className="text-muted-foreground">
-              {registeredEmail || formData.email} manziliga 6 xonali tasdiqlash kodi yuborildi
+              {registeredEmail || formData.email} {t('auth.otpSentTo')}
             </p>
           </div>
 
           {/* OTP Input */}
           <div className="space-y-3">
             <label className="block text-sm font-medium text-foreground">
-              Tasdiqlash kodi *
+              {t('auth.verificationCodeLabel')}
             </label>
             <input
               type="text"
@@ -423,19 +424,19 @@ const RegistrationForm = () => {
             {isVerifying ? (
               <>
                 <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                <span>Tekshirilmoqda...</span>
+                <span>{t('auth.verifying')}</span>
               </>
             ) : (
               <>
                 <Icon name="CheckCircleIcon" size={20} />
-                <span>Tasdiqlash</span>
+                <span>{t('auth.verifyButton')}</span>
               </>
             )}
           </button>
 
           {/* Resend */}
           <div className="text-center space-y-2">
-            <p className="text-sm text-muted-foreground">Kod kelmadimi?</p>
+            <p className="text-sm text-muted-foreground">{t('auth.codeNotReceived')}</p>
             <button
               type="button"
               onClick={handleResendOtp}
@@ -443,8 +444,8 @@ const RegistrationForm = () => {
               className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed"
             >
               {resendCooldown > 0
-                ? `Qayta yuborish (${resendCooldown}s)`
-                : 'Kodni qayta yuborish'}
+                ? `${t('auth.resendIn')} (${resendCooldown}s)`
+                : t('auth.resendCode')}
             </button>
           </div>
 
@@ -459,7 +460,7 @@ const RegistrationForm = () => {
             className="w-full py-3 bg-muted text-foreground rounded-md font-medium hover:bg-muted/80 transition-smooth flex items-center justify-center space-x-2"
           >
             <Icon name="ArrowLeftIcon" size={18} />
-            <span>Orqaga qaytish</span>
+            <span>{t('auth.goBack')}</span>
           </button>
 
           {/* Dev mode: OTP ko'rsatish (faqat email yuborilmagan bo'lsa) */}
@@ -469,10 +470,10 @@ const RegistrationForm = () => {
                 <Icon name="ExclamationTriangleIcon" size={20} className="text-warning flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-foreground mb-1">
-                    Dev rejimi — email yuborilmadi
+                    {t('auth.devModeTitle')}
                   </p>
                   <p className="text-xs text-muted-foreground mb-2">
-                    Resend free plan faqat verified email'ga yuboradi. Test uchun kod:
+                    {t('auth.devModeDesc')}
                   </p>
                   <div className="text-center">
                     <button
@@ -495,8 +496,8 @@ const RegistrationForm = () => {
               <Icon name="InformationCircleIcon" size={20} className="text-secondary flex-shrink-0 mt-0.5" />
               <p className="text-sm text-muted-foreground">
                 {emailDelivered
-                  ? 'Spam papkasini ham tekshiring. Kod 10 daqiqa davomida amal qiladi.'
-                  : 'Kod 10 daqiqa davomida amal qiladi.'}
+                  ? t('auth.spamCheckNote')
+                  : t('auth.otpValidityNote')}
               </p>
             </div>
           </div>
@@ -511,10 +512,10 @@ const RegistrationForm = () => {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">
-            Ro'yxatdan o'tish
+            {t('auth.registerFormTitle')}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            O'qituvchi yoki talaba sifatida platformaga qo'shiling
+            {t('auth.registerFormSubtitle')}
           </p>
         </div>
 
@@ -527,18 +528,18 @@ const RegistrationForm = () => {
           >
             <div className="flex items-center justify-center gap-2">
               <Icon name="EnvelopeIcon" size={18} />
-              <span>Elektron pochta</span>
+              <span>{t('auth.emailTabRegister')}</span>
             </div>
           </button>
           <button
             type="button"
             disabled
-            title="Telefon orqali ro'yxatdan o'tish hozircha mavjud emas"
+            title={t('auth.phoneRegisterUnavailable')}
             className="flex-1 py-2.5 px-4 rounded-md text-sm font-medium transition-smooth text-muted-foreground opacity-50 cursor-not-allowed"
           >
             <div className="flex items-center justify-center gap-2">
               <Icon name="PhoneIcon" size={18} />
-              <span>Telefon raqam</span>
+              <span>{t('auth.phoneTabDisabled')}</span>
             </div>
           </button>
         </div>
@@ -548,7 +549,7 @@ const RegistrationForm = () => {
           {/* Full Name */}
           <div className="space-y-2">
             <label htmlFor="fullName" className="block text-sm font-medium text-foreground">
-              To'liq ism
+              {t('auth.fullNameLabel')}
             </label>
             <div className="relative">
               <input
@@ -556,7 +557,7 @@ const RegistrationForm = () => {
                 id="fullName"
                 value={formData.fullName}
                 onChange={(e) => handleInputChange('fullName', e.target.value)}
-                placeholder="Ismingiz va familiyangiz"
+                placeholder={t('auth.fullNamePlaceholderRegister')}
                 className={`w-full px-4 py-3 pl-11 rounded-md border ${
                   errors.fullName ? 'border-destructive' : 'border-input'
                 } bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-smooth`}
@@ -575,7 +576,7 @@ const RegistrationForm = () => {
           {/* Email */}
           <div className="space-y-2">
             <label htmlFor="email" className="block text-sm font-medium text-foreground">
-              Elektron pochta
+              {t('auth.emailLabel')}
             </label>
             <div className="relative">
               <input
@@ -583,7 +584,7 @@ const RegistrationForm = () => {
                 id="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="sizning@email.uz"
+                placeholder={t('auth.emailPlaceholderLogin')}
                 className={`w-full px-4 py-3 pl-11 rounded-md border ${
                   errors.email ? 'border-destructive' : 'border-input'
                 } bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-smooth`}
@@ -602,7 +603,7 @@ const RegistrationForm = () => {
           {/* Password */}
           <div className="space-y-2">
             <label htmlFor="password" className="block text-sm font-medium text-foreground">
-              Parol *
+              {t('auth.passwordFieldLabel')}
             </label>
             <div className="relative">
               <input
@@ -613,7 +614,7 @@ const RegistrationForm = () => {
                 className={`w-full px-4 py-3 pl-12 pr-12 bg-background border rounded-md focus:outline-none focus:ring-2 transition-smooth ${
                   errors.password ? 'border-destructive focus:ring-destructive' : 'border-input focus:ring-ring'
                 }`}
-                placeholder="Kamida 8 ta belgi"
+                placeholder={t('auth.passwordPlaceholderRegister')}
               />
               <Icon name="LockClosedIcon" size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <button
@@ -648,7 +649,7 @@ const RegistrationForm = () => {
           {/* Confirm Password */}
           <div className="space-y-2">
             <label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground">
-              Parolni tasdiqlang *
+              {t('auth.confirmPasswordFieldLabel')}
             </label>
             <div className="relative">
               <input
@@ -659,7 +660,7 @@ const RegistrationForm = () => {
                 className={`w-full px-4 py-3 pl-12 pr-12 bg-background border rounded-md focus:outline-none focus:ring-2 transition-smooth ${
                   errors.confirmPassword ? 'border-destructive focus:ring-destructive' : 'border-input focus:ring-ring'
                 }`}
-                placeholder="Parolni qayta kiriting"
+                placeholder={t('auth.confirmPasswordPlaceholder')}
               />
               <Icon name="LockClosedIcon" size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <button
@@ -681,7 +682,7 @@ const RegistrationForm = () => {
           {/* Profile Photo Upload */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">
-              Profil rasmi (ixtiyoriy)
+              {t('auth.profilePhotoLabel')}
             </label>
             <div
               onDragOver={handleDragOver}
@@ -695,7 +696,7 @@ const RegistrationForm = () => {
                 <div className="flex items-center space-x-4">
                   <AppImage src={photoPreview} alt="Profile preview" className="w-20 h-20 rounded-full object-cover" />
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">Rasm yuklandi</p>
+                    <p className="text-sm font-medium text-foreground">{t('auth.photoUploaded')}</p>
                     <button
                       type="button"
                       onClick={() => {
@@ -704,19 +705,19 @@ const RegistrationForm = () => {
                       }}
                       className="text-sm text-destructive hover:underline"
                     >
-                      O'chirish
+                      {t('auth.photoDelete')}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="text-center">
                   <Icon name="PhotoIcon" size={48} className="mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-foreground mb-1">Rasmni bu yerga torting yoki</p>
+                  <p className="text-sm text-foreground mb-1">{t('auth.photoDragText')}</p>
                   <label className="inline-block">
-                    <span className="text-sm text-primary hover:underline cursor-pointer">faylni tanlang</span>
+                    <span className="text-sm text-primary hover:underline cursor-pointer">{t('auth.photoSelectFile')}</span>
                     <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
                   </label>
-                  <p className="text-xs text-muted-foreground mt-2">JPG, PNG yoki WEBP (max 5MB)</p>
+                  <p className="text-xs text-muted-foreground mt-2">{t('auth.photoFormats')}</p>
                 </div>
               )}
             </div>
@@ -724,7 +725,7 @@ const RegistrationForm = () => {
 
           {/* Role Selection */}
           <div className="bg-card rounded-md p-6 shadow-warm">
-            <h3 className="text-lg font-heading font-semibold text-foreground mb-4">Rolni tanlang *</h3>
+            <h3 className="text-lg font-heading font-semibold text-foreground mb-4">{t('auth.selectRoleTitle')}</h3>
             <div className="grid md:grid-cols-2 gap-4">
               <button
                 type="button"
@@ -738,8 +739,8 @@ const RegistrationForm = () => {
                     <Icon name="AcademicCapIcon" size={24} />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-heading font-semibold text-foreground mb-2">O'qituvchi</h4>
-                    <p className="text-sm text-muted-foreground">Kurslar yarating, o'qituvchilik qiling va daromad oling</p>
+                    <h4 className="font-heading font-semibold text-foreground mb-2">{t('auth.teacherRole')}</h4>
+                    <p className="text-sm text-muted-foreground">{t('auth.teacherRoleDesc')}</p>
                   </div>
                   {formData.role === 'teacher' && <Icon name="CheckCircleIcon" size={24} className="text-primary" />}
                 </div>
@@ -757,8 +758,8 @@ const RegistrationForm = () => {
                     <Icon name="BookOpenIcon" size={24} />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-heading font-semibold text-foreground mb-2">Talaba</h4>
-                    <p className="text-sm text-muted-foreground">Kurslarni sotib oling, o'rganing va sertifikat oling</p>
+                    <h4 className="font-heading font-semibold text-foreground mb-2">{t('auth.studentRole')}</h4>
+                    <p className="text-sm text-muted-foreground">{t('auth.studentRoleDesc')}</p>
                   </div>
                   {formData.role === 'student' && <Icon name="CheckCircleIcon" size={24} className="text-primary" />}
                 </div>
@@ -774,12 +775,12 @@ const RegistrationForm = () => {
 
           {/* Language Preference */}
           <div className="bg-card rounded-md p-6 shadow-warm">
-            <h3 className="text-lg font-heading font-semibold text-foreground mb-4">Til tanlovi</h3>
+            <h3 className="text-lg font-heading font-semibold text-foreground mb-4">{t('auth.languagePreference')}</h3>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { code: 'uz', name: "O'zbek", flag: '🇺🇿' },
-                { code: 'ru', name: 'Русский', flag: '🇷🇺' },
-                { code: 'en', name: 'English', flag: '🇬🇧' },
+                { code: 'uz', name: "O'zbek", flag: '\u{1F1FA}\u{1F1FF}' },
+                { code: 'ru', name: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439', flag: '\u{1F1F7}\u{1F1FA}' },
+                { code: 'en', name: 'English', flag: '\u{1F1EC}\u{1F1E7}' },
               ].map((lang) => (
                 <button
                   key={lang.code}
@@ -808,11 +809,11 @@ const RegistrationForm = () => {
                 className="mt-1 w-5 h-5 rounded border-input text-primary focus:ring-2 focus:ring-ring cursor-pointer"
               />
               <span className="text-sm text-foreground group-hover:text-primary transition-smooth">
-                Men{' '}
+                {t('auth.termsPrefix')}{' '}
                 <button type="button" onClick={() => setShowTermsModal(true)} className="text-primary hover:underline font-medium">
-                  foydalanish shartlari
+                  {t('auth.termsLabel')}
                 </button>
-                ni o'qib chiqdim va qabul qilaman
+                {t('auth.termsSuffix') ? ` ${t('auth.termsSuffix')}` : ''}
               </span>
             </label>
 
@@ -824,11 +825,11 @@ const RegistrationForm = () => {
                 className="mt-1 w-5 h-5 rounded border-input text-primary focus:ring-2 focus:ring-ring cursor-pointer"
               />
               <span className="text-sm text-foreground group-hover:text-primary transition-smooth">
-                Men{' '}
+                {t('auth.termsPrefix')}{' '}
                 <button type="button" onClick={() => setShowPrivacyModal(true)} className="text-primary hover:underline font-medium">
-                  maxfiylik siyosati
+                  {t('auth.privacyLabel')}
                 </button>
-                ni o'qib chiqdim va qabul qilaman
+                {t('auth.termsSuffix') ? ` ${t('auth.termsSuffix')}` : ''}
               </span>
             </label>
 
@@ -856,12 +857,12 @@ const RegistrationForm = () => {
             {isSubmitting ? (
               <>
                 <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                <span>Ro'yxatdan o'tilmoqda...</span>
+                <span>{t('auth.registering')}</span>
               </>
             ) : (
               <>
                 <Icon name="UserPlusIcon" size={20} />
-                <span>Akkaunt yaratish</span>
+                <span>{t('auth.createAccountButton')}</span>
               </>
             )}
           </button>
@@ -873,7 +874,7 @@ const RegistrationForm = () => {
             <div className="w-full border-t border-border"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-4 bg-background text-muted-foreground">yoki</span>
+            <span className="px-4 bg-background text-muted-foreground">{t('auth.orDivider')}</span>
           </div>
         </div>
 
@@ -888,14 +889,14 @@ const RegistrationForm = () => {
             <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#FBBC05"/>
             <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#EA4335"/>
           </svg>
-          <span>Google orqali ro'yxatdan o'tish</span>
+          <span>{t('auth.googleRegister')}</span>
         </button>
 
         {/* Login Link */}
         <p className="text-center text-sm text-muted-foreground">
-          Hisobingiz bormi?{' '}
+          {t('auth.haveAccount')}{' '}
           <a href="/login" className="text-primary font-medium hover:underline">
-            Kirish
+            {t('auth.loginLink')}
           </a>
         </p>
       </div>
@@ -905,35 +906,35 @@ const RegistrationForm = () => {
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
           <div className="bg-card rounded-md shadow-warm-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-border">
-              <h3 className="text-xl font-heading font-semibold text-foreground">Foydalanish shartlari</h3>
+              <h3 className="text-xl font-heading font-semibold text-foreground">{t('auth.termsModalTitle')}</h3>
               <button onClick={() => setShowTermsModal(false)} className="p-2 rounded-md hover:bg-muted transition-smooth">
                 <Icon name="XMarkIcon" size={24} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              <p className="text-foreground">Ustoz platformasidan foydalanish orqali siz quyidagi shartlarga rozilik bildirasiz:</p>
+              <p className="text-foreground">{t('auth.termsModalIntro')}</p>
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">1. Akkaunt mas'uliyati</h4>
-                  <p className="text-muted-foreground text-sm">Siz o'z akkauntingiz xavfsizligi uchun to'liq javobgarsiz.</p>
+                  <h4 className="font-semibold text-foreground mb-2">{t('auth.termsAccount')}</h4>
+                  <p className="text-muted-foreground text-sm">{t('auth.termsAccountDesc')}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">2. Kontent siyosati</h4>
-                  <p className="text-muted-foreground text-sm">Barcha yuklangan kontent mualliflik huquqlariga rioya qilishi kerak.</p>
+                  <h4 className="font-semibold text-foreground mb-2">{t('auth.termsContent')}</h4>
+                  <p className="text-muted-foreground text-sm">{t('auth.termsContentDesc')}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">3. To'lov shartlari</h4>
-                  <p className="text-muted-foreground text-sm">O'qituvchilar sotuvdan 70% oladi, platforma 30% komissiya oladi.</p>
+                  <h4 className="font-semibold text-foreground mb-2">{t('auth.termsPayment')}</h4>
+                  <p className="text-muted-foreground text-sm">{t('auth.termsPaymentDesc')}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">4. Qaytarish siyosati</h4>
-                  <p className="text-muted-foreground text-sm">Kursni sotib olganingizdan keyin 7 kun ichida qaytarish mumkin.</p>
+                  <h4 className="font-semibold text-foreground mb-2">{t('auth.termsRefund')}</h4>
+                  <p className="text-muted-foreground text-sm">{t('auth.termsRefundDesc')}</p>
                 </div>
               </div>
             </div>
             <div className="p-6 border-t border-border">
               <button onClick={() => setShowTermsModal(false)} className="w-full py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-smooth">
-                Yopish
+                {t('common.close')}
               </button>
             </div>
           </div>
@@ -945,31 +946,31 @@ const RegistrationForm = () => {
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
           <div className="bg-card rounded-md shadow-warm-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
             <div className="flex items-center justify-between p-6 border-b border-border">
-              <h3 className="text-xl font-heading font-semibold text-foreground">Maxfiylik siyosati</h3>
+              <h3 className="text-xl font-heading font-semibold text-foreground">{t('auth.privacyModalTitle')}</h3>
               <button onClick={() => setShowPrivacyModal(false)} className="p-2 rounded-md hover:bg-muted transition-smooth">
                 <Icon name="XMarkIcon" size={24} />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              <p className="text-foreground">Ustoz platformasi sizning shaxsiy ma'lumotlaringizni quyidagicha himoya qiladi:</p>
+              <p className="text-foreground">{t('auth.privacyModalIntro')}</p>
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">1. Ma'lumotlar to'plash</h4>
-                  <p className="text-muted-foreground text-sm">Biz faqat xizmatlarni taqdim etish uchun zarur bo'lgan ma'lumotlarni to'playmiz.</p>
+                  <h4 className="font-semibold text-foreground mb-2">{t('auth.privacyCollection')}</h4>
+                  <p className="text-muted-foreground text-sm">{t('auth.privacyCollectionDesc')}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">2. Ma'lumotlardan foydalanish</h4>
-                  <p className="text-muted-foreground text-sm">Sizning ma'lumotlaringiz faqat platforma xizmatlarini ko'rsatish uchun ishlatiladi.</p>
+                  <h4 className="font-semibold text-foreground mb-2">{t('auth.privacyUsage')}</h4>
+                  <p className="text-muted-foreground text-sm">{t('auth.privacyUsageDesc')}</p>
                 </div>
                 <div>
-                  <h4 className="font-semibold text-foreground mb-2">3. Ma'lumotlar xavfsizligi</h4>
-                  <p className="text-muted-foreground text-sm">Barcha shaxsiy ma'lumotlar shifrlangan va xavfsiz serverlarda saqlanadi.</p>
+                  <h4 className="font-semibold text-foreground mb-2">{t('auth.privacySecurity')}</h4>
+                  <p className="text-muted-foreground text-sm">{t('auth.privacySecurityDesc')}</p>
                 </div>
               </div>
             </div>
             <div className="p-6 border-t border-border">
               <button onClick={() => setShowPrivacyModal(false)} className="w-full py-3 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-smooth">
-                Yopish
+                {t('common.close')}
               </button>
             </div>
           </div>

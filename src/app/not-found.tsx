@@ -1,8 +1,13 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function NotFound() {
+    const { t } = useI18n();
+
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
             <div className="text-center max-w-md">
@@ -13,11 +18,10 @@ export default function NotFound() {
                 </div>
 
                 <h2 className="text-2xl font-medium text-foreground mb-2">
-                    Sahifa topilmadi
+                    {t('ui.notFoundTitle')}
                 </h2>
                 <p className="text-muted-foreground mb-8">
-                    Siz qidirayotgan sahifa mavjud emas yoki boshqa manzilga
-                    ko&apos;chirilgan.
+                    {t('ui.notFoundDesc')}
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -26,7 +30,7 @@ export default function NotFound() {
                         className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium hover:bg-primary/90 transition-colors duration-200 shadow-warm"
                     >
                         <Icon name="HomeIcon" size={16} />
-                        Bosh sahifaga qaytish
+                        {t('ui.goHome')}
                     </Link>
                 </div>
             </div>

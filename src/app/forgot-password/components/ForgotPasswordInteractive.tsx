@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useI18n } from '@/contexts/I18nContext';
 
 type Step = 'email' | 'otp' | 'newPassword' | 'success';
 
 export default function ForgotPasswordInteractive() {
   const router = useRouter();
+  const { t } = useI18n();
   const [step, setStep] = useState<Step>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
@@ -38,11 +40,11 @@ export default function ForgotPasswordInteractive() {
         body: JSON.stringify({ email: email.trim(), type: 'password_reset' }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Xatolik yuz berdi');
+      if (!res.ok) throw new Error(data.error || t('auth.errorOccurred'));
       setStep('otp');
       startResendCooldown();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Xatolik yuz berdi');
+      setError(err instanceof Error ? err.message : t('auth.errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -59,10 +61,10 @@ export default function ForgotPasswordInteractive() {
         body: JSON.stringify({ email: email.trim(), otp: otp.trim() }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Noto\'g\'ri kod');
+      if (!res.ok) throw new Error(data.error || t('auth.invalidCode'));
       setStep('newPassword');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Xatolik yuz berdi');
+      setError(err instanceof Error ? err.message : t('auth.errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -72,11 +74,11 @@ export default function ForgotPasswordInteractive() {
     e.preventDefault();
     setError('');
     if (newPassword !== confirmPassword) {
-      setError('Parollar mos kelmadi');
+      setError(t('auth.passwordsNotMatch'));
       return;
     }
     if (newPassword.length < 8) {
-      setError('Parol kamida 8 ta belgidan iborat bo\'lishi kerak');
+      setError(t('auth.passwordTooShort'));
       return;
     }
     setLoading(true);
@@ -87,10 +89,10 @@ export default function ForgotPasswordInteractive() {
         body: JSON.stringify({ email: email.trim(), newPassword }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Xatolik yuz berdi');
+      if (!res.ok) throw new Error(data.error || t('auth.errorOccurred'));
       setStep('success');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Xatolik yuz berdi');
+      setError(err instanceof Error ? err.message : t('auth.errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -107,10 +109,10 @@ export default function ForgotPasswordInteractive() {
         body: JSON.stringify({ email: email.trim(), type: 'password_reset' }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Xatolik yuz berdi');
+      if (!res.ok) throw new Error(data.error || t('auth.errorOccurred'));
       startResendCooldown();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Xatolik yuz berdi');
+      setError(err instanceof Error ? err.message : t('auth.errorOccurred'));
     } finally {
       setLoading(false);
     }
@@ -135,13 +137,13 @@ export default function ForgotPasswordInteractive() {
         {/* STEP 1: Email */}
         {step === 'email' && (
           <>
-            <h2 className="text-xl font-semibold text-foreground mb-2">Parolni tiklash</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">{t('auth.forgotPasswordTitle')}</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Emailingizni kiriting — tasdiqlash kodi yuboramiz.
+              {t('auth.forgotPasswordDesc')}
             </p>
             <form onSubmit={handleSendOtp} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Email</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('auth.emailFieldLabel')}</label>
                 <input
                   type="email"
                   value={email}
@@ -157,7 +159,7 @@ export default function ForgotPasswordInteractive() {
                 disabled={loading}
                 className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
-                {loading ? 'Yuklanmoqda...' : 'Kod yuborish'}
+                {loading ? t('auth.loadingButton') : t('auth.sendCodeButton')}
               </button>
             </form>
           </>
@@ -166,13 +168,13 @@ export default function ForgotPasswordInteractive() {
         {/* STEP 2: OTP */}
         {step === 'otp' && (
           <>
-            <h2 className="text-xl font-semibold text-foreground mb-2">Kodni kiriting</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">{t('auth.enterCodeTitle')}</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              <span className="font-medium text-foreground">{email}</span> manziliga 6 xonali kod yuborildi.
+              <span className="font-medium text-foreground">{email}</span> {t('auth.otpSentToEmail')}
             </p>
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Tasdiqlash kodi</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('auth.verificationCodeFieldLabel')}</label>
                 <input
                   type="text"
                   value={otp}
@@ -189,7 +191,7 @@ export default function ForgotPasswordInteractive() {
                 disabled={loading || otp.length !== 6}
                 className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
-                {loading ? 'Tekshirilmoqda...' : 'Tasdiqlash'}
+                {loading ? t('auth.checkingCode') : t('auth.verifyCodeButton')}
               </button>
               <button
                 type="button"
@@ -197,7 +199,7 @@ export default function ForgotPasswordInteractive() {
                 disabled={resendCooldown > 0 || loading}
                 className="w-full py-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 transition-colors"
               >
-                {resendCooldown > 0 ? `Qayta yuborish (${resendCooldown}s)` : 'Kodni qayta yuborish'}
+                {resendCooldown > 0 ? `${t('auth.resendInSeconds')} (${resendCooldown}s)` : t('auth.resendCodeButton')}
               </button>
             </form>
           </>
@@ -206,11 +208,11 @@ export default function ForgotPasswordInteractive() {
         {/* STEP 3: New Password */}
         {step === 'newPassword' && (
           <>
-            <h2 className="text-xl font-semibold text-foreground mb-2">Yangi parol</h2>
-            <p className="text-sm text-muted-foreground mb-6">Kamida 8 ta belgidan iborat yangi parol kiriting.</p>
+            <h2 className="text-xl font-semibold text-foreground mb-2">{t('auth.newPasswordTitle')}</h2>
+            <p className="text-sm text-muted-foreground mb-6">{t('auth.newPasswordDesc')}</p>
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Yangi parol</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('auth.newPasswordLabel')}</label>
                 <input
                   type="password"
                   value={newPassword}
@@ -222,7 +224,7 @@ export default function ForgotPasswordInteractive() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Parolni tasdiqlang</label>
+                <label className="block text-sm font-medium text-foreground mb-1">{t('auth.confirmNewPasswordLabel')}</label>
                 <input
                   type="password"
                   value={confirmPassword}
@@ -238,7 +240,7 @@ export default function ForgotPasswordInteractive() {
                 disabled={loading}
                 className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
-                {loading ? 'Saqlanmoqda...' : 'Parolni yangilash'}
+                {loading ? t('auth.savingPassword') : t('auth.updatePasswordButton')}
               </button>
             </form>
           </>
@@ -252,15 +254,15 @@ export default function ForgotPasswordInteractive() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-xl font-semibold text-foreground mb-2">Parol yangilandi!</h2>
+            <h2 className="text-xl font-semibold text-foreground mb-2">{t('auth.passwordUpdatedTitle')}</h2>
             <p className="text-sm text-muted-foreground mb-6">
-              Parolingiz muvaffaqiyatli yangilandi. Endi yangi parol bilan kirishingiz mumkin.
+              {t('auth.passwordUpdatedDesc')}
             </p>
             <button
               onClick={() => router.push('/login')}
               className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
             >
-              Kirish sahifasiga o&apos;tish
+              {t('auth.goToLogin')}
             </button>
           </div>
         )}
@@ -268,7 +270,7 @@ export default function ForgotPasswordInteractive() {
         {step !== 'success' && (
           <p className="text-center text-sm text-muted-foreground mt-6">
             <Link href="/login" className="text-primary hover:underline">
-              Kirish sahifasiga qaytish
+              {t('auth.backToLogin')}
             </Link>
           </p>
         )}

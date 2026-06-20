@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
 import AppImage from '@/components/ui/AppImage';
 
 interface Course {
@@ -18,6 +19,7 @@ export default function PaymentMethodSelectionInteractive() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  const { t } = useI18n();
   const [course, setCourse] = useState<Course | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<'click' | 'payme' | null>(null);
   const [loading, setLoading] = useState(true);
@@ -63,13 +65,13 @@ export default function PaymentMethodSelectionInteractive() {
 
       if (!response.ok) {
         const errBody = await response.json().catch(() => ({}));
-        throw new Error(errBody.error || 'Kurs topilmadi');
+        throw new Error(errBody.error || t('payment.courseNotFound'));
       }
 
       const { course: c } = await response.json();
 
       if (!c) {
-        setError('Kurs topilmadi');
+        setError(t('payment.courseNotFound'));
         return;
       }
 
@@ -83,7 +85,7 @@ export default function PaymentMethodSelectionInteractive() {
       });
     } catch (err: any) {
       console.error('Error fetching course:', err);
-      setError(err.message || 'Kursni yuklashda xatolik');
+      setError(err.message || t('payment.courseLoadError'));
     } finally {
       setLoading(false);
     }
@@ -113,7 +115,7 @@ export default function PaymentMethodSelectionInteractive() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "To'lovni boshlashda xatolik");
+        throw new Error(data.error || t('payment.paymentInitError'));
       }
 
       // Navigate to payment processing screen with transaction data
@@ -131,7 +133,7 @@ export default function PaymentMethodSelectionInteractive() {
       );
     } catch (err: any) {
       console.error('Payment initiation error:', err);
-      setError(err.message || "To'lovni boshlashda xatolik");
+      setError(err.message || t('payment.paymentInitError'));
       setProcessing(false);
     }
   };
@@ -152,13 +154,13 @@ export default function PaymentMethodSelectionInteractive() {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-4">Xatolik</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-4">{t('payment.error')}</h2>
           <p className="text-muted-foreground mb-6">{error}</p>
           <button
             onClick={() => router.push('/course-marketplace')}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
           >
-            Kurslar ro&apos;yxatiga qaytish
+            {t('payment.backToCourses')}
           </button>
         </div>
       </div>
@@ -170,8 +172,8 @@ export default function PaymentMethodSelectionInteractive() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground">To&apos;lov Usulini Tanlang</h1>
-          <p className="mt-2 text-muted-foreground">Qulay to&apos;lov usulini tanlang va xaridni yakunlang</p>
+          <h1 className="text-3xl font-bold text-foreground">{t('payment.selectPaymentMethod')}</h1>
+          <p className="mt-2 text-muted-foreground">{t('payment.selectPaymentMethodDesc')}</p>
         </div>
 
         {/* Course Info */}
@@ -186,7 +188,7 @@ export default function PaymentMethodSelectionInteractive() {
               <div className="flex-1">
                 <h2 className="text-xl font-semibold text-foreground">{course.title}</h2>
                 {course.instructor_name && (
-                  <p className="text-sm text-muted-foreground mt-1">O&apos;qituvchi: {course.instructor_name}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t('payment.instructor')}: {course.instructor_name}</p>
                 )}
                 <p className="text-2xl font-bold text-primary mt-2">
                   {formatAmount(course.price_uzs)}
@@ -219,7 +221,7 @@ export default function PaymentMethodSelectionInteractive() {
                 </div>
                 <div className="text-left">
                   <h3 className="text-lg font-semibold text-foreground">Click</h3>
-                  <p className="text-sm text-muted-foreground">Uzcard, Humo kartalar orqali to&apos;lash</p>
+                  <p className="text-sm text-muted-foreground">{t('payment.payViaCards')}</p>
                 </div>
               </div>
               <div
@@ -249,7 +251,7 @@ export default function PaymentMethodSelectionInteractive() {
                 </div>
                 <div className="text-left">
                   <h3 className="text-lg font-semibold text-foreground">Payme</h3>
-                  <p className="text-sm text-muted-foreground">Uzcard, Humo kartalar orqali to&apos;lash</p>
+                  <p className="text-sm text-muted-foreground">{t('payment.payViaCards')}</p>
                 </div>
               </div>
               <div
@@ -272,7 +274,7 @@ export default function PaymentMethodSelectionInteractive() {
             disabled={processing}
             className="flex-1 px-6 py-3 border border-border text-foreground rounded-lg hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Orqaga
+            {t('payment.back')}
           </button>
           <button
             onClick={handlePayment}
@@ -301,10 +303,10 @@ export default function PaymentMethodSelectionInteractive() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Yuklanmoqda...
+                {t('payment.loading')}
               </>
             ) : (
-              "To'lovga o'tish"
+              t('payment.proceedToPayment')
             )}
           </button>
         </div>
@@ -326,10 +328,9 @@ export default function PaymentMethodSelectionInteractive() {
               />
             </svg>
             <div>
-              <h4 className="font-semibold text-foreground">Xavfsiz to&apos;lov</h4>
+              <h4 className="font-semibold text-foreground">{t('payment.securePayment')}</h4>
               <p className="text-sm text-muted-foreground mt-1">
-                Barcha to&apos;lovlar xavfsiz protokol orqali amalga oshiriladi. Sizning karta
-                ma&apos;lumotlaringiz shifrlangan holda saqlanadi.
+                {t('payment.securePaymentDesc')}
               </p>
             </div>
           </div>

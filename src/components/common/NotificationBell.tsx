@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import { useNotifications } from '@/hooks/queries/useNotifications';
 import {
   useMarkReadMutation,
@@ -39,6 +40,7 @@ function timeAgo(iso: string): string {
 }
 
 const NotificationBell = ({ userId }: NotificationBellProps) => {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { data, isLoading } = useNotifications();
@@ -66,7 +68,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
       <button
         onClick={() => setIsOpen((v) => !v)}
         className="relative p-2 hover:bg-muted rounded-md transition-smooth"
-        aria-label="Bildirishnomalar"
+        aria-label={t('ui.notifications')}
       >
         <Icon name="BellIcon" size={20} />
         {unreadCount > 0 && (
@@ -80,10 +82,10 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
         <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-card border border-border rounded-md shadow-warm-lg overflow-hidden z-50">
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <h3 className="font-medium text-foreground">
-              Bildirishnomalar
+              {t('ui.notifications')}
               {unreadCount > 0 && (
                 <span className="ml-2 text-xs font-normal text-primary">
-                  ({unreadCount} yangi)
+                  ({unreadCount} {t('ui.newCount')})
                 </span>
               )}
             </h3>
@@ -93,7 +95,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
                 disabled={markAllMut.isPending}
                 className="text-xs text-primary hover:underline disabled:opacity-50"
               >
-                Hammasini o'qilgan
+                {t('ui.markAllRead')}
               </button>
             )}
           </div>
@@ -107,7 +109,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
               </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground italic">
-                Bildirishnoma yo'q
+                {t('ui.noNotifications')}
               </div>
             ) : (
               <ul className="divide-y divide-border">
@@ -159,7 +161,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
               onClick={() => setIsOpen(false)}
               className="block text-center text-sm text-primary hover:underline py-1.5"
             >
-              Hammasini ko'rish
+              {t('ui.viewAll')}
             </Link>
           </div>
         </div>

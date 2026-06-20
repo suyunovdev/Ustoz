@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ErrorProps {
   error: Error & { digest?: string };
@@ -9,6 +10,8 @@ interface ErrorProps {
 }
 
 export default function Error({ error, reset }: ErrorProps) {
+  const { t } = useI18n();
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
       <div className="text-center max-w-md">
@@ -23,11 +26,10 @@ export default function Error({ error, reset }: ErrorProps) {
         </div>
 
         <h1 className="text-2xl font-semibold text-foreground mb-2">
-          Xatolik yuz berdi
+          {t('ui.errorTitle')}
         </h1>
         <p className="text-muted-foreground mb-8">
-          Kutilmagan xatolik yuz berdi. Iltimos, qayta urinib ko&apos;ring yoki
-          keyinroq qaytib keling.
+          {t('ui.errorDesc')}
         </p>
 
         <button
@@ -35,7 +37,7 @@ export default function Error({ error, reset }: ErrorProps) {
           className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-md font-medium hover:bg-primary/90 transition-colors duration-200 shadow-warm"
         >
           <Icon name="ArrowPathIcon" size={16} />
-          Qayta urinish
+          {t('ui.tryAgain')}
         </button>
       </div>
     </div>

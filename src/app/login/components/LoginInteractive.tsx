@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import LoginForm from './LoginForm';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 const LoginBanner = () => {
   const searchParams = useSearchParams();
+  const { t } = useI18n();
   const isRegistered = searchParams.get('registered') === 'true';
   const isVerified = searchParams.get('verified') === 'true';
   const registeredEmail = searchParams.get('email') || '';
@@ -19,16 +21,16 @@ const LoginBanner = () => {
       <div>
         <p className="text-sm font-medium text-success">
           {isVerified
-            ? "Email muvaffaqiyatli tasdiqlandi!" :"Ro'yxatdan o'tish muvaffaqiyatli yakunlandi!"}
+            ? t('auth.emailVerifiedSuccess') : t('auth.registrationSuccess')}
         </p>
         {registeredEmail && (
           <p className="text-xs text-success/80 mt-1">
-            {registeredEmail} — endi tizimga kiring
+            {registeredEmail} — {t('auth.nowLogin')}
           </p>
         )}
         {isRegistered && !isVerified && (
           <p className="text-xs text-success/80 mt-1">
-            Emailingizni tasdiqlang, so'ng quyida tizimga kiring.
+            {t('auth.verifyThenLogin')}
           </p>
         )}
       </div>
@@ -37,30 +39,13 @@ const LoginBanner = () => {
 };
 
 const LoginInteractive = () => {
-  const [currentLanguage, setCurrentLanguage] = useState('uz');
-
-  useEffect(() => {
-    const savedLanguage = localStorage.getItem('preferredLanguage');
-    if (savedLanguage) {
-      setCurrentLanguage(savedLanguage);
-    }
-  }, []);
-
-  const handleLanguageChange = (lang: string) => {
-    setCurrentLanguage(lang);
-    localStorage.setItem('preferredLanguage', lang);
-  };
-
   return (
     <div className="space-y-4">
       <Suspense fallback={null}>
         <LoginBanner />
       </Suspense>
 
-      <LoginForm
-        onLanguageChange={handleLanguageChange}
-        currentLanguage={currentLanguage}
-      />
+      <LoginForm />
     </div>
   );
 };

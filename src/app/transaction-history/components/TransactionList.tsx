@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Transaction {
   id: string;
@@ -30,22 +31,23 @@ const statusColors = {
   refunded: 'bg-purple-500/15 text-purple-700 dark:text-purple-400'
 };
 
-const statusLabels = {
-  pending: 'Kutilmoqda',
-  processing: 'Jarayonda',
-  completed: 'Muvaffaqiyatli',
-  failed: 'Muvaffaqiyatsiz',
-  cancelled: 'Bekor qilingan',
-  refunded: 'Qaytarilgan'
-};
-
-const paymentMethodLabels = {
-  click: 'Click',
-  payme: 'Payme'
-};
-
 export default function TransactionList({ transactions }: TransactionListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { t } = useI18n();
+
+  const statusLabels = {
+    pending: t('payment.statusPending'),
+    processing: t('payment.statusProcessing'),
+    completed: t('payment.statusCompleted'),
+    failed: t('payment.statusFailed'),
+    cancelled: t('payment.statusCancelled'),
+    refunded: t('payment.statusRefunded')
+  };
+
+  const paymentMethodLabels = {
+    click: 'Click',
+    payme: 'Payme'
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -82,9 +84,9 @@ export default function TransactionList({ transactions }: TransactionListProps) 
             d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
           />
         </svg>
-        <h3 className="mt-2 text-sm font-medium text-foreground">To&apos;lovlar topilmadi</h3>
+        <h3 className="mt-2 text-sm font-medium text-foreground">{t('payment.noPaymentsFound')}</h3>
         <p className="mt-1 text-sm text-muted-foreground">
-          Hozircha hech qanday to&apos;lov amalga oshirilmagan
+          {t('payment.noPaymentsYet')}
         </p>
       </div>
     );
@@ -97,22 +99,22 @@ export default function TransactionList({ transactions }: TransactionListProps) 
           <thead className="bg-muted">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Sana
+                {t('payment.date')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Kurs
+                {t('payment.courseName')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Summa
+                {t('payment.amount')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                To&apos;lov usuli
+                {t('payment.paymentMethod')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Holat
+                {t('payment.status')}
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Amallar
+                {t('payment.actions')}
               </th>
             </tr>
           </thead>
@@ -146,7 +148,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                       onClick={() => toggleExpand(transaction.id)}
                       className="text-primary hover:text-primary/80"
                     >
-                      {expandedId === transaction.id ? 'Yopish' : 'Batafsil'}
+                      {expandedId === transaction.id ? t('payment.collapse') : t('payment.details')}
                     </button>
                   </td>
                 </tr>
@@ -156,13 +158,13 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                       <div className="space-y-2 text-sm">
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <span className="font-medium text-muted-foreground">Tranzaksiya ID:</span>
+                            <span className="font-medium text-muted-foreground">{t('payment.transactionId')}:</span>
                             <p className="text-foreground mt-1 font-mono text-xs">
                               {transaction.merchant_trans_id}
                             </p>
                           </div>
                           <div>
-                            <span className="font-medium text-muted-foreground">Kurs ID:</span>
+                            <span className="font-medium text-muted-foreground">{t('payment.courseId')}:</span>
                             <p className="text-foreground mt-1 font-mono text-xs">
                               {transaction.course_id}
                             </p>
@@ -170,7 +172,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                         </div>
                         {transaction.completed_at && (
                           <div>
-                            <span className="font-medium text-muted-foreground">Yakunlangan sana:</span>
+                            <span className="font-medium text-muted-foreground">{t('payment.completedDate')}:</span>
                             <p className="text-foreground mt-1">
                               {formatDate(transaction.completed_at)}
                             </p>
@@ -182,7 +184,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                               href={`/learning-interface?courseId=${transaction.course_id}`}
                               className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
                             >
-                              Kursga o&apos;tish
+                              {t('payment.goToCourse')}
                             </a>
                           )}
                         </div>

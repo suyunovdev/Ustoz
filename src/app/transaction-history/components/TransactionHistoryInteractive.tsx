@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
 import TransactionList from './TransactionList';
 import FilterPanel from './FilterPanel';
 import ExportControls from './ExportControls';
@@ -32,6 +33,7 @@ interface FilterState {
 
 export default function TransactionHistoryInteractive() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,7 +60,7 @@ export default function TransactionHistoryInteractive() {
     try {
       setLoading(true);
       const res = await fetch('/api/payments/my', { credentials: 'include' });
-      if (!res.ok) throw new Error('To\'lovlar tarixini yuklashda xatolik');
+      if (!res.ok) throw new Error(t('payment.historyLoadError'));
       const data = await res.json();
       setTransactions(
         (data.transactions || []).map((t: Record<string, unknown>) => ({
@@ -69,7 +71,7 @@ export default function TransactionHistoryInteractive() {
       setError('');
     } catch (err: unknown) {
       console.error('Error fetching transactions:', err);
-      setError(err instanceof Error ? err.message : "To'lovlar tarixini yuklashda xatolik");
+      setError(err instanceof Error ? err.message : t('payment.historyLoadError'));
     } finally {
       setLoading(false);
     }
@@ -130,9 +132,9 @@ export default function TransactionHistoryInteractive() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-foreground">To&apos;lov Tarixi</h1>
+          <h1 className="text-3xl font-bold text-foreground">{t('payment.transactionHistory')}</h1>
           <p className="mt-2 text-muted-foreground">
-            Barcha to&apos;lovlar va kurs sotib olishlar haqida ma&apos;lumot
+            {t('payment.transactionHistoryDesc')}
           </p>
         </div>
 

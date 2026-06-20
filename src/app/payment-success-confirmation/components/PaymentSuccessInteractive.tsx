@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
 import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
 
@@ -33,6 +34,7 @@ const PaymentSuccessInteractive = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  const { t } = useI18n();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -181,7 +183,7 @@ const PaymentSuccessInteractive = () => {
 <html lang="uz">
 <head>
   <meta charset="UTF-8">
-  <title>To'lov cheki - ${transaction.merchant_trans_id}</title>
+  <title>${t('payment.receiptTitle')} - ${transaction.merchant_trans_id}</title>
   <style>
     body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; }
     .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
@@ -196,47 +198,47 @@ const PaymentSuccessInteractive = () => {
 <body>
   <div class="header">
     <div class="logo">Ustoz</div>
-    <p>To'lov cheki</p>
+    <p>${t('payment.receiptTitle')}</p>
   </div>
-  
+
   <div class="receipt-info">
     <div class="info-row">
-      <span class="label">Buyurtma raqami:</span>
+      <span class="label">${t('payment.receiptOrderNumber')}:</span>
       <span>${transaction.merchant_trans_id}</span>
     </div>
     <div class="info-row">
-      <span class="label">Tranzaksiya ID:</span>
+      <span class="label">${t('payment.receiptTransactionId')}:</span>
       <span>${transaction.id}</span>
     </div>
     <div class="info-row">
-      <span class="label">Sana:</span>
+      <span class="label">${t('payment.receiptDate')}:</span>
       <span>${formattedDate}</span>
     </div>
     <div class="info-row">
-      <span class="label">To'lov usuli:</span>
+      <span class="label">${t('payment.receiptPaymentMethod')}:</span>
       <span>${transaction.payment_method === 'click' ? 'Click' : 'Payme'}</span>
     </div>
     <div class="info-row">
-      <span class="label">Kurs:</span>
+      <span class="label">${t('payment.receiptCourse')}:</span>
       <span>${course.title}</span>
     </div>
     <div class="info-row">
-      <span class="label">O'qituvchi:</span>
+      <span class="label">${t('payment.receiptInstructor')}:</span>
       <span>${(course as any).user_profiles?.full_name || 'Ustoz'}</span>
     </div>
     <div class="info-row">
-      <span class="label">Holat:</span>
-      <span style="color: green;">Muvaffaqiyatli</span>
+      <span class="label">${t('payment.receiptStatus')}:</span>
+      <span style="color: green;">${t('payment.receiptStatusSuccess')}</span>
     </div>
   </div>
-  
+
   <div class="total">
-    Jami: ${formattedAmount} so'm
+    ${t('payment.receiptTotal')}: ${formattedAmount} so'm
   </div>
-  
+
   <div class="footer">
-    <p>Ustoz ta'lim platformasi</p>
-    <p>Ushbu chek to'lovning rasmiy tasdiqidir</p>
+    <p>${t('payment.receiptPlatformName')}</p>
+    <p>${t('payment.receiptConfirmation')}</p>
   </div>
 </body>
 </html>
@@ -272,13 +274,13 @@ const PaymentSuccessInteractive = () => {
       <div className="min-h-screen bg-background pt-20 pb-12 px-4">
         <div className="max-w-4xl mx-auto text-center py-20">
           <Icon name="ExclamationTriangleIcon" size={48} className="text-destructive mx-auto mb-4" />
-          <h2 className="text-2xl font-heading font-bold text-foreground mb-2">Ma'lumot topilmadi</h2>
-          <p className="text-muted-foreground mb-6">To'lov ma'lumotlari topilmadi yoki to'lov yakunlanmagan.</p>
+          <h2 className="text-2xl font-heading font-bold text-foreground mb-2">{t('payment.dataNotFound')}</h2>
+          <p className="text-muted-foreground mb-6">{t('payment.paymentDataNotFound')}</p>
           <button
             onClick={() => router.push('/student-dashboard')}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth font-medium"
           >
-            Bosh sahifaga qaytish
+            {t('payment.backToHome')}
           </button>
         </div>
       </div>
@@ -294,17 +296,17 @@ const PaymentSuccessInteractive = () => {
             <Icon name="CheckCircleIcon" size={48} className="text-success" variant="solid" />
           </div>
           <h1 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-2">
-            To'lov muvaffaqiyatli!
+            {t('payment.paymentSuccessful')}
           </h1>
           <p className="text-lg text-muted-foreground">
-            Kursga kirish huquqi faollashtirildi
+            {t('payment.courseAccessActivated')}
           </p>
         </div>
 
         {/* Transaction Receipt Card */}
         <div className="bg-card rounded-lg shadow-warm-lg p-6 md:p-8 mb-6">
           <div className="flex items-center justify-between mb-6 pb-4 border-b border-border">
-            <h2 className="text-xl font-heading font-bold text-foreground">To'lov cheki</h2>
+            <h2 className="text-xl font-heading font-bold text-foreground">{t('payment.paymentReceipt')}</h2>
             <button
               onClick={handleDownloadReceipt}
               disabled={downloadingReceipt}
@@ -315,31 +317,31 @@ const PaymentSuccessInteractive = () => {
               ) : (
                 <Icon name="ArrowDownTrayIcon" size={18} />
               )}
-              <span>Yuklab olish</span>
+              <span>{t('payment.download')}</span>
             </button>
           </div>
 
           <div className="space-y-4">
             <div className="flex justify-between py-2">
-              <span className="text-muted-foreground">Buyurtma raqami:</span>
+              <span className="text-muted-foreground">{t('payment.orderNumber')}:</span>
               <span className="font-data font-semibold text-foreground">{transaction.merchant_trans_id}</span>
             </div>
             <div className="flex justify-between py-2">
-              <span className="text-muted-foreground">Tranzaksiya ID:</span>
+              <span className="text-muted-foreground">{t('payment.transactionId')}:</span>
               <span className="font-data text-sm text-foreground">{transaction.id}</span>
             </div>
             <div className="flex justify-between py-2">
-              <span className="text-muted-foreground">To'lov sanasi:</span>
+              <span className="text-muted-foreground">{t('payment.paymentDate')}:</span>
               <span className="font-medium text-foreground">{formatDate(transaction.completed_at)}</span>
             </div>
             <div className="flex justify-between py-2">
-              <span className="text-muted-foreground">To'lov usuli:</span>
+              <span className="text-muted-foreground">{t('payment.paymentMethod')}:</span>
               <span className="font-medium text-foreground">
                 {transaction.payment_method === 'click' ? 'Click' : 'Payme'}
               </span>
             </div>
             <div className="flex justify-between py-2 border-t border-border pt-4">
-              <span className="text-lg font-semibold text-foreground">Jami summa:</span>
+              <span className="text-lg font-semibold text-foreground">{t('payment.totalAmount')}:</span>
               <span className="text-2xl font-bold text-primary">{formatAmount(transaction.amount_uzs)} so'm</span>
             </div>
           </div>
@@ -347,7 +349,7 @@ const PaymentSuccessInteractive = () => {
 
         {/* Course Access Card */}
         <div className="bg-card rounded-lg shadow-warm-lg p-6 md:p-8 mb-6">
-          <h2 className="text-xl font-heading font-bold text-foreground mb-4">Kursga kirish</h2>
+          <h2 className="text-xl font-heading font-bold text-foreground mb-4">{t('payment.courseAccess')}</h2>
           <div className="flex flex-col md:flex-row items-start md:items-center space-y-4 md:space-y-0 md:space-x-6">
             {course.cover_image && (
               <div className="w-full md:w-40 h-24 bg-muted rounded-md overflow-hidden flex-shrink-0">
@@ -360,10 +362,10 @@ const PaymentSuccessInteractive = () => {
             )}
             <div className="flex-1 min-w-0">
               <h3 className="text-lg font-heading font-semibold text-foreground mb-1">{course.title}</h3>
-              <p className="text-sm text-muted-foreground mb-3">O'qituvchi: {(course as any).user_profiles?.full_name || 'Ustoz'}</p>
+              <p className="text-sm text-muted-foreground mb-3">{t('payment.instructor')}: {(course as any).user_profiles?.full_name || 'Ustoz'}</p>
               {enrollment && (
                 <p className="text-xs text-success mb-3">
-                  ✓ Ro'yxatdan o'tgan: {formatDate(enrollment.enrolled_at)}
+                  ✓ {t('payment.registeredAt')}: {formatDate(enrollment.enrolled_at)}
                 </p>
               )}
               <button
@@ -371,7 +373,7 @@ const PaymentSuccessInteractive = () => {
                 className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth font-medium shadow-warm-md"
               >
                 <Icon name="PlayIcon" size={20} variant="solid" />
-                <span>O'qishni boshlash</span>
+                <span>{t('payment.startLearning')}</span>
               </button>
             </div>
           </div>
@@ -384,26 +386,26 @@ const PaymentSuccessInteractive = () => {
               <Icon name="AcademicCapIcon" size={24} className="text-primary-foreground" variant="solid" />
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-heading font-bold text-foreground mb-2">Sertifikat haqida</h3>
+              <h3 className="text-lg font-heading font-bold text-foreground mb-2">{t('payment.aboutCertificate')}</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Kursni muvaffaqiyatli yakunlaganingizdan so'ng rasmiy sertifikat olasiz.
+                {t('payment.certificateDesc')}
               </p>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex items-start space-x-2">
                   <Icon name="CheckIcon" size={16} className="text-success mt-0.5 flex-shrink-0" />
-                  <span>Barcha darslarni ko'rish (100% progress)</span>
+                  <span>{t('payment.watchAllLessons')}</span>
                 </li>
                 <li className="flex items-start space-x-2">
                   <Icon name="CheckIcon" size={16} className="text-success mt-0.5 flex-shrink-0" />
-                  <span>Testlardan o'tish (minimal 70% ball)</span>
+                  <span>{t('payment.passTests')}</span>
                 </li>
                 <li className="flex items-start space-x-2">
                   <Icon name="CheckIcon" size={16} className="text-success mt-0.5 flex-shrink-0" />
-                  <span>Yakuniy imtihonni topshirish</span>
+                  <span>{t('payment.passFinalExam')}</span>
                 </li>
               </ul>
               <p className="text-xs text-muted-foreground mt-3">
-                Taxminiy muddat: Kurs davomiyligiga bog'liq
+                {t('payment.estimatedDuration')}
               </p>
             </div>
           </div>
@@ -423,14 +425,14 @@ const PaymentSuccessInteractive = () => {
             className="flex items-center justify-center space-x-2 px-4 py-3 bg-card text-foreground rounded-md hover:bg-muted transition-smooth border border-border"
           >
             <Icon name="AcademicCapIcon" size={20} />
-            <span className="font-medium">Mening kurslarim</span>
+            <span className="font-medium">{t('payment.myCourses')}</span>
           </button>
           <button
             onClick={() => router.push('/course-marketplace')}
             className="flex items-center justify-center space-x-2 px-4 py-3 bg-card text-foreground rounded-md hover:bg-muted transition-smooth border border-border"
           >
             <Icon name="ShoppingBagIcon" size={20} />
-            <span className="font-medium">Bozorga qaytish</span>
+            <span className="font-medium">{t('payment.backToMarketplace')}</span>
           </button>
         </div>
       </div>

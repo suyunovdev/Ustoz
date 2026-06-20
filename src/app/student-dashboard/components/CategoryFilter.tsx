@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import { useCategories } from '@/hooks/queries/useCategories';
 
 interface CategoryFilterProps {
@@ -9,6 +10,7 @@ interface CategoryFilterProps {
 }
 
 const CategoryFilter = ({ selectedSlug, onSelect }: CategoryFilterProps) => {
+  const { t } = useI18n();
   const { data, isLoading: loading } = useCategories();
   const categories = data?.categories ?? [];
 
@@ -39,7 +41,7 @@ const CategoryFilter = ({ selectedSlug, onSelect }: CategoryFilterProps) => {
         className={`${baseBtn} ${selectedSlug === null ? active : inactive}`}
       >
         <Icon name="Squares2X2Icon" size={18} />
-        <span className="font-medium">Barchasi</span>
+        <span className="font-medium">{t('common.all')}</span>
       </button>
 
       {visibleCategories.map((cat) => {

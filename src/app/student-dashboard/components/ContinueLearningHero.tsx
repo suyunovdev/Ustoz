@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import type { DashboardEnrollment } from '@/types/dashboard.types';
 
 interface ContinueLearningHeroProps {
@@ -10,6 +11,7 @@ interface ContinueLearningHeroProps {
 }
 
 const ContinueLearningHero = ({ enrollment }: ContinueLearningHeroProps) => {
+  const { t } = useI18n();
   const { course, progress, nextTopic, completedTopicsCount, totalTopics } = enrollment;
 
   // Qolgan vaqt taxmini: har topic = totalDuration (soat) * 60 / totalTopics → daqiqa
@@ -23,8 +25,8 @@ const ContinueLearningHero = ({ enrollment }: ContinueLearningHeroProps) => {
     ? `/learning-interface?courseId=${enrollment.courseId}&topicId=${nextTopic.id}`
     : `/learning-interface?courseId=${enrollment.courseId}`;
 
-  const ctaLabel = isNotStarted ? 'Boshlash' : 'Davom etish';
-  const labelText = isNotStarted ? 'BOSHLASH' : 'DAVOM ETING';
+  const ctaLabel = isNotStarted ? t('student.start') : t('student.continueBtn');
+  const labelText = isNotStarted ? t('student.startUpper') : t('student.continueUpper');
 
   return (
     <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-secondary p-[2px] group transition-all hover:shadow-warm-xl">
@@ -68,7 +70,7 @@ const ContinueLearningHero = ({ enrollment }: ContinueLearningHeroProps) => {
             {/* Next topic */}
             {nextTopic ? (
               <p className="text-sm md:text-base text-muted-foreground">
-                Keyingi:{' '}
+                {t('student.next')}:{' '}
                 <span className="text-foreground font-medium">{nextTopic.title}</span>
               </p>
             ) : (
@@ -88,10 +90,10 @@ const ContinueLearningHero = ({ enrollment }: ContinueLearningHeroProps) => {
 
               {/* Meta */}
               <div className="flex items-center gap-x-3 gap-y-1 text-sm text-muted-foreground flex-wrap">
-                <span className="font-medium text-foreground">{progress}% tugatildi</span>
+                <span className="font-medium text-foreground">{progress}% {t('student.completed')}</span>
                 <span className="text-muted-foreground/40">·</span>
                 <span>
-                  {completedTopicsCount} / {totalTopics} mavzu
+                  {completedTopicsCount} / {totalTopics} {t('student.topics')}
                 </span>
                 {remainingMinutes > 0 && (
                   <>
@@ -99,8 +101,8 @@ const ContinueLearningHero = ({ enrollment }: ContinueLearningHeroProps) => {
                     <span className="flex items-center gap-1">
                       <Icon name="ClockIcon" size={14} />
                       {remainingMinutes < 60
-                        ? `${remainingMinutes} daq qoldi`
-                        : `${Math.round(remainingMinutes / 60)} soat qoldi`}
+                        ? `${remainingMinutes} ${t('student.minLeft')}`
+                        : `${Math.round(remainingMinutes / 60)} ${t('student.hoursLeft')}`}
                     </span>
                   </>
                 )}

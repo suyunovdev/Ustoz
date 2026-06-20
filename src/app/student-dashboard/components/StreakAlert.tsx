@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface StreakAlertProps {
   streak: { current: number; activeToday: boolean };
@@ -15,6 +16,7 @@ interface StreakAlertProps {
 const STORAGE_KEY = 'ustoz_streak_alert_dismissed';
 
 const StreakAlert = ({ streak, mostRecentEnrollment }: StreakAlertProps) => {
+  const { t } = useI18n();
   const [dismissed, setDismissed] = useState(true); // SSR-safe: avval hidden
 
   useEffect(() => {
@@ -49,10 +51,10 @@ const StreakAlert = ({ streak, mostRecentEnrollment }: StreakAlertProps) => {
     <div className="bg-warning/10 dark:bg-warning/15 border-l-4 border-warning rounded-md p-4 flex items-center gap-3">
       <span className="text-2xl flex-shrink-0" aria-hidden="true">🔥</span>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-foreground">Streak'ni saqlang!</p>
+        <p className="font-semibold text-foreground">{t('student.keepStreak')}</p>
         <p className="text-sm text-muted-foreground">
-          Bugun hali o'qimadingiz.{' '}
-          <span className="font-medium text-foreground">{streak.current} kunlik</span> streak'ingiz xavf ostida.
+          {t('student.notStudiedToday')}{' '}
+          <span className="font-medium text-foreground">{streak.current} {t('student.dayStreak')}</span> {t('student.streakAtRisk')}
         </p>
       </div>
 
@@ -60,13 +62,13 @@ const StreakAlert = ({ streak, mostRecentEnrollment }: StreakAlertProps) => {
         href={resumeHref}
         className="hidden sm:inline-flex items-center gap-1 px-4 py-2 bg-warning text-warning-foreground rounded-md text-sm font-medium hover:bg-warning/90 transition-colors flex-shrink-0"
       >
-        Davom etish
+        {t('student.continueBtn')}
         <Icon name="ArrowRightIcon" size={16} />
       </Link>
 
       <button
         onClick={handleDismiss}
-        aria-label="Yopish"
+        aria-label={t('common.close')}
         className="p-1.5 text-muted-foreground hover:text-foreground rounded-md hover:bg-muted/50 transition-colors flex-shrink-0"
       >
         <Icon name="XMarkIcon" size={20} />

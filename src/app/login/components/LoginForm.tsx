@@ -5,11 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useAuth } from '@/contexts/AuthContext';
-
-interface LoginFormProps {
-  onLanguageChange: (lang: string) => void;
-  currentLanguage: string;
-}
+import { useI18n } from '@/contexts/I18nContext';
 
 interface FormData {
   email: string;
@@ -24,10 +20,11 @@ interface FormErrors {
   general?: string;
 }
 
-const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
+const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { signIn, user, loading: authLoading } = useAuth();
+  const { t } = useI18n();
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Login qilingan bo'lsa dashboard'ga redirect
@@ -52,65 +49,6 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
-
-  const translations = {
-    uz: {
-      title: "Hisobingizga kiring",
-      subtitle: "O'qituvchi yoki talaba sifatida platformaga kiring",
-      email: "Elektron pochta",
-      emailPlaceholder: "sizning@email.uz",
-      password: "Parol",
-      passwordPlaceholder: "Parolingizni kiriting",
-      forgotPassword: "Parolni unutdingizmi?",
-      signIn: "Kirish",
-      orContinue: "Yoki davom eting",
-      googleSignIn: "Google orqali kirish",
-      noAccount: "Hisobingiz yo\'qmi?",
-      createAccount: "Hisob yaratish",
-      invalidEmail: "Yaroqli elektron pochta manzilini kiriting",
-      invalidPassword: "Parol kamida 6 ta belgidan iborat bo\'lishi kerak",
-      invalidCredentials: "Noto'g'ri elektron pochta yoki parol. Iltimos, qayta urinib ko'ring.",
-      emailNotConfirmed: "Email tasdiqlanmagan. Emailingizni tekshiring va tasdiqlash havolasini bosing.",
-    },
-    ru: {
-      title: "Войдите в свой аккаунт",
-      subtitle: "Войдите на платформу как учитель или студент",
-      email: "Электронная почта",
-      emailPlaceholder: "your@email.ru",
-      password: "Пароль",
-      passwordPlaceholder: "Введите ваш пароль",
-      forgotPassword: "Забыли пароль?",
-      signIn: "Войти",
-      orContinue: "Или продолжить с",
-      googleSignIn: "Войти через Google",
-      noAccount: "Нет аккаунта?",
-      createAccount: "Создать аккаунт",
-      invalidEmail: "Введите действительный адрес электронной почты",
-      invalidPassword: "Пароль должен содержать не менее 6 символов",
-      invalidCredentials: "Неверная электронная почта или пароль. Пожалуйста, попробуйте снова.",
-      emailNotConfirmed: "Email не подтверждён. Проверьте почту и нажмите ссылку подтверждения.",
-    },
-    en: {
-      title: "Sign in to your account",
-      subtitle: "Access the platform as a teacher or student",
-      email: "Email",
-      emailPlaceholder: "your@email.com",
-      password: "Password",
-      passwordPlaceholder: "Enter your password",
-      forgotPassword: "Forgot password?",
-      signIn: "Sign In",
-      orContinue: "Or continue with",
-      googleSignIn: "Sign in with Google",
-      noAccount: "Don\'t have an account?",
-      createAccount: "Create account",
-      invalidEmail: "Please enter a valid email address",
-      invalidPassword: "Password must be at least 6 characters",
-      invalidCredentials: "Invalid email or password. Please try again.",
-      emailNotConfirmed: "Email not confirmed. Check your inbox and click the confirmation link.",
-    }
-  };
-
-  const t = translations[currentLanguage as keyof typeof translations] || translations.uz;
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -137,22 +75,22 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
 
     if (authMethod === 'email') {
       if (!formData.email) {
-        newErrors.email = t.invalidEmail;
+        newErrors.email = t('auth.invalidEmail');
       } else if (!validateEmail(formData.email)) {
-        newErrors.email = t.invalidEmail;
+        newErrors.email = t('auth.invalidEmail');
       }
     } else {
       if (!formData.phone) {
-        newErrors.phone = 'Telefon raqamni kiriting';
+        newErrors.phone = t('auth.enterPhone');
       } else if (!validatePhone(formData.phone)) {
-        newErrors.phone = "Telefon raqam +998XXXXXXXXX formatida bo'lishi kerak";
+        newErrors.phone = t('auth.invalidPhoneFormat');
       }
     }
 
     if (!formData.password) {
-      newErrors.password = t.invalidPassword;
+      newErrors.password = t('auth.invalidPassword');
     } else if (formData.password.length < 6) {
-      newErrors.password = t.invalidPassword;
+      newErrors.password = t('auth.invalidPassword');
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -186,14 +124,14 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
         error.message?.includes('Email not confirmed') ||
         error.message?.includes('email_not_confirmed')
       ) {
-        setErrors({ general: t.emailNotConfirmed });
+        setErrors({ general: t('auth.emailNotConfirmed') });
       } else if (
         error.message?.includes('Invalid login credentials') ||
         error.message?.includes('invalid_credentials')
       ) {
-        setErrors({ general: t.invalidCredentials });
+        setErrors({ general: t('auth.invalidCredentialsDetailed') });
       } else {
-        setErrors({ general: error.message || t.invalidCredentials });
+        setErrors({ general: error.message || t('auth.invalidCredentialsDetailed') });
       }
     } finally {
       setIsLoading(false);
@@ -202,7 +140,7 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
 
   const handleGoogleSignIn = async () => {
     // Google OAuth hozircha yoqilmagan (JWT bilan ishlatish uchun Google OAuth setup kerak)
-    setErrors({ general: 'Google orqali kirish hozircha mavjud emas. Iltimos email orqali kiring.' });
+    setErrors({ general: t('auth.googleLoginUnavailable') });
   };
 
   if (!isHydrated) {
@@ -229,10 +167,10 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-2xl sm:text-3xl font-heading font-bold text-foreground">
-            {t.title}
+            {t('auth.loginFormTitle')}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground">
-            {t.subtitle}
+            {t('auth.loginFormSubtitle')}
           </p>
         </div>
 
@@ -259,7 +197,7 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
           >
             <div className="flex items-center justify-center gap-2">
               <Icon name="PhoneIcon" size={18} />
-              <span>Telefon</span>
+              <span>{t('auth.phoneTab')}</span>
             </div>
           </button>
         </div>
@@ -278,7 +216,7 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
           {authMethod === 'email' ? (
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-medium text-foreground">
-                {t.email}
+                {t('auth.emailLabel')}
               </label>
               <div className="relative">
                 <input
@@ -287,7 +225,7 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder={t.emailPlaceholder}
+                  placeholder={t('auth.emailPlaceholderLogin')}
                   className={`w-full px-4 py-3 pl-11 rounded-md border ${
                     errors.email ? 'border-destructive' : 'border-input'
                   } bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-smooth`}
@@ -306,7 +244,7 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
           ) : (
             <div className="space-y-2">
               <label htmlFor="phone" className="block text-sm font-medium text-foreground">
-                Telefon raqam
+                {t('auth.phoneLabel')}
               </label>
               <div className="relative">
                 <input
@@ -337,13 +275,13 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label htmlFor="password" className="block text-sm font-medium text-foreground">
-                {t.password}
+                {t('auth.passwordLabel')}
               </label>
               <Link
                 href="/register"
                 className="text-xs text-primary hover:underline"
               >
-                {t.forgotPassword}
+                {t('auth.forgotPasswordLink')}
               </Link>
             </div>
             <div className="relative">
@@ -353,7 +291,7 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                placeholder={t.passwordPlaceholder}
+                placeholder={t('auth.passwordPlaceholderLogin')}
                 className={`w-full px-4 py-3 pl-11 pr-11 rounded-md border ${
                   errors.password ? 'border-destructive' : 'border-input'
                 } bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-smooth`}
@@ -386,10 +324,10 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
             {isLoading ? (
               <>
                 <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                <span>Kirilmoqda...</span>
+                <span>{t('auth.signingIn')}</span>
               </>
             ) : (
-              <span>{t.signIn}</span>
+              <span>{t('auth.signInButton')}</span>
             )}
           </button>
         </form>
@@ -400,7 +338,7 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">{t.orContinue}</span>
+            <span className="bg-card px-2 text-muted-foreground">{t('auth.orContinue')}</span>
           </div>
         </div>
 
@@ -417,14 +355,14 @@ const LoginForm = ({ onLanguageChange, currentLanguage }: LoginFormProps) => {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          <span className="font-medium">{t.googleSignIn}</span>
+          <span className="font-medium">{t('auth.googleSignIn')}</span>
         </button>
 
         {/* Register Link */}
         <p className="text-center text-sm text-muted-foreground">
-          {t.noAccount}{' '}
+          {t('auth.noAccount')}{' '}
           <Link href="/register" className="text-primary font-medium hover:underline">
-            {t.createAccount}
+            {t('auth.createAccount')}
           </Link>
         </p>
       </div>

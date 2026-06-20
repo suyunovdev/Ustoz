@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Certificate {
   id: string;
@@ -16,6 +17,7 @@ interface Certificate {
 }
 
 const CertificatesPageClient = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
@@ -63,11 +65,11 @@ const CertificatesPageClient = () => {
               <Icon name="AcademicCapIcon" size={28} className="text-primary" />
             </div>
             <div>
-              <h1 className="text-3xl font-heading font-bold text-foreground">Sertifikatlarim</h1>
+              <h1 className="text-3xl font-heading font-bold text-foreground">{t('student.myCertificates')}</h1>
               <p className="text-sm text-muted-foreground">
                 {certificates.length > 0
-                  ? `Jami ${certificates.length} ta sertifikat`
-                  : 'Tugatgan kurslaringiz uchun sertifikatlar'}
+                  ? `${t('student.total')} ${certificates.length} ${t('student.certificateCount')}`
+                  : t('student.certificatesForCompleted')}
               </p>
             </div>
           </div>
@@ -90,25 +92,25 @@ const CertificatesPageClient = () => {
             <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
               <Icon name="AcademicCapIcon" size={40} className="text-muted-foreground" />
             </div>
-            <h2 className="text-2xl font-semibold text-foreground mb-3">Hali sertifikat yo'q</h2>
+            <h2 className="text-2xl font-semibold text-foreground mb-3">{t('student.noCertificates')}</h2>
             <p className="text-muted-foreground mb-2 max-w-md mx-auto">
-              Birinchi kursingizni 100% tugatganingizda avtomatik sertifikat olasiz.
+              {t('student.certificateAutoOnComplete')}
             </p>
             <p className="text-sm text-muted-foreground mb-8">
-              Sertifikatlarni keyin LinkedIn, Telegram va boshqa joylarda ulashishingiz mumkin.
+              {t('student.shareCertificates')}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <button
                 onClick={() => router.push('/student-dashboard?tab=my-courses')}
                 className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium"
               >
-                Mening kurslarim
+                {t('student.tabMyCourses')}
               </button>
               <button
                 onClick={() => router.push('/course-marketplace')}
                 className="px-6 py-3 bg-card border border-border text-foreground rounded-md hover:bg-muted transition-colors font-medium"
               >
-                Yangi kurs topish
+                {t('student.findNewCourse')}
               </button>
             </div>
           </div>
@@ -130,7 +132,7 @@ const CertificatesPageClient = () => {
                   </div>
                   <div>
                     <p className="text-xs text-primary-foreground/80 uppercase tracking-wider mb-1">
-                      Sertifikat
+                      {t('courses.certificate')}
                     </p>
                     <p className="text-sm text-primary-foreground/90">
                       {new Date(cert.issuedAt).toLocaleDateString('uz-UZ', {
@@ -158,12 +160,12 @@ const CertificatesPageClient = () => {
                       className="flex-1 inline-flex items-center justify-center space-x-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
                     >
                       <Icon name="ArrowDownTrayIcon" size={16} />
-                      <span>Yuklab olish</span>
+                      <span>{t('student.download')}</span>
                     </button>
                     <button
                       onClick={() => handleVerify(cert)}
                       className="inline-flex items-center justify-center px-3 py-2 bg-muted text-foreground rounded-md hover:bg-muted/70 transition-colors"
-                      title="Tasdiqlash"
+                      title={t('common.confirm')}
                     >
                       <Icon name="ShieldCheckIcon" size={16} />
                     </button>

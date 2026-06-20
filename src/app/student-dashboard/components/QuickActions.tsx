@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface QuickAction {
   id: string;
@@ -11,10 +12,11 @@ interface QuickAction {
 }
 
 const QuickActions = () => {
+  const { t } = useI18n();
   const actions: QuickAction[] = [
-    { id: 'history', label: 'Tarix', icon: 'ClockIcon', href: '/transaction-history' },
-    { id: 'courses', label: 'Kurslar', icon: 'BookOpenIcon', href: '/course-marketplace' },
-    { id: 'learning', label: 'Mening Kurslarim', icon: 'AcademicCapIcon', href: '/learning-interface' },
+    { id: 'history', label: t('student.history'), icon: 'ClockIcon', href: '/transaction-history' },
+    { id: 'courses', label: t('nav.courses'), icon: 'BookOpenIcon', href: '/course-marketplace' },
+    { id: 'learning', label: t('student.tabMyCourses'), icon: 'AcademicCapIcon', href: '/learning-interface' },
   ];
 
   return (

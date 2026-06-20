@@ -14,6 +14,7 @@
  */
 
 import { useMemo } from 'react';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ActivityRow {
   date: string;
@@ -133,6 +134,7 @@ function buildMonthLabels(weeks: DayCell[][]): Array<string | null> {
 }
 
 const ActivityHeatmap = ({ activities, days = 90, className = '' }: ActivityHeatmapProps) => {
+  const { t } = useI18n();
   const weeks = useMemo(() => buildWeeks(activities, days), [activities, days]);
   const monthLabels = useMemo(() => buildMonthLabels(weeks), [weeks]);
 
@@ -145,20 +147,20 @@ const ActivityHeatmap = ({ activities, days = 90, className = '' }: ActivityHeat
       <div className="flex items-start sm:items-center justify-between gap-4 mb-4 flex-wrap">
         <div>
           <h3 className="text-base sm:text-lg font-heading font-semibold text-foreground">
-            Sizning faolligingiz
+            {t('student.yourActivity')}
           </h3>
-          <p className="text-xs text-muted-foreground">Oxirgi {days} kun</p>
+          <p className="text-xs text-muted-foreground">{t('student.last')} {days} {t('student.days')}</p>
         </div>
 
         {/* Legend */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span>Kam</span>
+          <span>{t('student.less')}</span>
           <div className="w-3 h-3 rounded-sm bg-muted dark:bg-muted" />
           <div className="w-3 h-3 rounded-sm bg-green-200 dark:bg-green-900" />
           <div className="w-3 h-3 rounded-sm bg-green-400 dark:bg-green-700" />
           <div className="w-3 h-3 rounded-sm bg-green-600 dark:bg-green-500" />
           <div className="w-3 h-3 rounded-sm bg-green-800 dark:bg-green-400" />
-          <span>Ko'p</span>
+          <span>{t('student.more')}</span>
         </div>
       </div>
 
@@ -199,8 +201,8 @@ const ActivityHeatmap = ({ activities, days = 90, className = '' }: ActivityHeat
                   }
                   const title =
                     cell.count > 0
-                      ? `${formatUzDate(cell.date)}: ${cell.count} ta mavzu tugatildi`
-                      : `${formatUzDate(cell.date)}: faollik yo'q`;
+                      ? `${formatUzDate(cell.date)}: ${cell.count} ${t('student.topicsCompleted')}`
+                      : `${formatUzDate(cell.date)}: ${t('student.noActivity')}`;
                   return (
                     <div
                       key={wd}
@@ -219,10 +221,10 @@ const ActivityHeatmap = ({ activities, days = 90, className = '' }: ActivityHeat
       {/* Stats summary */}
       <div className="flex justify-between text-xs sm:text-sm text-muted-foreground mt-3 flex-wrap gap-2">
         <span>
-          <span className="font-medium text-foreground">{totalActiveDays}</span> faol kun ·{' '}
-          <span className="font-medium text-foreground">{totalTopics}</span> ta mavzu
+          <span className="font-medium text-foreground">{totalActiveDays}</span> {t('student.activeDays')} ·{' '}
+          <span className="font-medium text-foreground">{totalTopics}</span> {t('student.topics')}
         </span>
-        <span>Oxirgi {days} kunda</span>
+        <span>{t('student.last')} {days} {t('student.days')}</span>
       </div>
     </div>
   );

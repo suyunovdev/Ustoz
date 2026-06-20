@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/contexts/I18nContext';
+
 interface Transaction {
   id: string;
   amount_uzs: number;
@@ -13,6 +15,7 @@ interface PaymentStatsProps {
 }
 
 export default function PaymentStats({ transactions }: PaymentStatsProps) {
+  const { t } = useI18n();
   const totalSpent = transactions
     .filter((t) => t.status === 'completed')
     .reduce((sum, t) => sum + t.amount_uzs, 0);
@@ -49,7 +52,7 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-muted-foreground truncate">Jami sarflangan</dt>
+              <dt className="text-sm font-medium text-muted-foreground truncate">{t('payment.totalSpent')}</dt>
               <dd className="text-lg font-semibold text-foreground">{formatAmount(totalSpent)}</dd>
             </dl>
           </div>
@@ -76,8 +79,8 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-muted-foreground truncate">Muvaffaqiyatli</dt>
-              <dd className="text-lg font-semibold text-foreground">{completedCount} ta</dd>
+              <dt className="text-sm font-medium text-muted-foreground truncate">{t('payment.successful')}</dt>
+              <dd className="text-lg font-semibold text-foreground">{completedCount} {t('payment.count')}</dd>
             </dl>
           </div>
         </div>
@@ -103,8 +106,8 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-muted-foreground truncate">Kutilmoqda</dt>
-              <dd className="text-lg font-semibold text-foreground">{pendingCount} ta</dd>
+              <dt className="text-sm font-medium text-muted-foreground truncate">{t('payment.pending')}</dt>
+              <dd className="text-lg font-semibold text-foreground">{pendingCount} {t('payment.count')}</dd>
             </dl>
           </div>
         </div>
@@ -130,7 +133,7 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
           </div>
           <div className="ml-5 w-0 flex-1">
             <dl>
-              <dt className="text-sm font-medium text-muted-foreground truncate">To&apos;lov usullari</dt>
+              <dt className="text-sm font-medium text-muted-foreground truncate">{t('payment.paymentMethods')}</dt>
               <dd className="text-sm font-semibold text-foreground">
                 Click: {clickCount} | Payme: {paymeCount}
               </dd>

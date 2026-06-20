@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface UserInfo {
   id: string;
@@ -44,6 +45,7 @@ function applyTheme(theme: Theme) {
 
 const UserMenu = ({ user }: UserMenuProps) => {
   const router = useRouter();
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [language, setLanguage] = useState<Language>('uz');
   const [theme, setTheme] = useState<Theme>('light');
@@ -102,7 +104,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
   };
 
   const roleLabel =
-    user.role === 'teacher' ? "O'qituvchi" : user.role === 'admin' ? 'Admin' : 'Talaba';
+    user.role === 'teacher' ? t('ui.roleTeacher') : user.role === 'admin' ? t('ui.roleAdmin') : t('ui.roleStudent');
   const currentLang = LANGUAGES.find((l) => l.code === language) || LANGUAGES[0];
 
   return (
@@ -111,7 +113,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 p-1 rounded-full hover:bg-muted transition-smooth focus:outline-none focus:ring-2 focus:ring-primary"
-        aria-label="Foydalanuvchi menyusi"
+        aria-label={t('ui.userMenu')}
         aria-expanded={isOpen}
       >
         {user.avatarUrl ? (
@@ -153,7 +155,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
               )}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground truncate">
-                  {user.fullName || 'Foydalanuvchi'}
+                  {user.fullName || t('ui.user')}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                 <span className="inline-block mt-1 text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium uppercase tracking-wider">
@@ -171,7 +173,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
               className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-smooth"
             >
               <Icon name="UserCircleIcon" size={18} className="text-muted-foreground" />
-              <span>Profil sozlamalari</span>
+              <span>{t('ui.profileSettings')}</span>
             </Link>
 
             {user.role === 'student' && (
@@ -181,7 +183,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
                 className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-smooth"
               >
                 <Icon name="ClockIcon" size={18} className="text-muted-foreground" />
-                <span>To'lov tarixi</span>
+                <span>{t('ui.paymentHistory')}</span>
               </Link>
             )}
           </div>
@@ -189,7 +191,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
           {/* Language */}
           <div className="border-t border-border py-2">
             <p className="px-4 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Til · {currentLang.flag} {currentLang.label}
+              {t('ui.language')} · {currentLang.flag} {currentLang.label}
             </p>
             <div className="px-2 grid grid-cols-3 gap-1">
               {LANGUAGES.map((lang) => (
@@ -212,26 +214,26 @@ const UserMenu = ({ user }: UserMenuProps) => {
           {/* Theme */}
           <div className="border-t border-border py-2">
             <p className="px-4 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Mavzu
+              {t('ui.theme')}
             </p>
             <div className="px-2 grid grid-cols-3 gap-1">
-              {(['light', 'dark', 'system'] as Theme[]).map((t) => (
+              {(['light', 'dark', 'system'] as Theme[]).map((themeOption) => (
                 <button
-                  key={t}
-                  onClick={() => handleThemeChange(t)}
+                  key={themeOption}
+                  onClick={() => handleThemeChange(themeOption)}
                   className={`flex flex-col items-center justify-center py-2 rounded-md transition-smooth text-xs ${
-                    theme === t
+                    theme === themeOption
                       ? 'bg-primary text-primary-foreground'
                       : 'text-foreground hover:bg-muted'
                   }`}
-                  aria-label={t}
+                  aria-label={themeOption}
                 >
                   <Icon
-                    name={t === 'light' ? 'SunIcon' : t === 'dark' ? 'MoonIcon' : 'ComputerDesktopIcon'}
+                    name={themeOption === 'light' ? 'SunIcon' : themeOption === 'dark' ? 'MoonIcon' : 'ComputerDesktopIcon'}
                     size={18}
                   />
                   <span className="font-medium mt-0.5">
-                    {t === 'light' ? 'Yorug\'' : t === 'dark' ? 'Tun' : 'Avto'}
+                    {themeOption === 'light' ? t('ui.light') : themeOption === 'dark' ? t('ui.dark') : t('ui.auto')}
                   </span>
                 </button>
               ))}
@@ -246,7 +248,7 @@ const UserMenu = ({ user }: UserMenuProps) => {
               className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-destructive hover:bg-destructive/10 transition-smooth disabled:opacity-50"
             >
               <Icon name="ArrowRightOnRectangleIcon" size={18} />
-              <span>{isLoggingOut ? 'Chiqilmoqda...' : 'Chiqish'}</span>
+              <span>{isLoggingOut ? t('ui.loggingOut') : t('ui.logout')}</span>
             </button>
           </div>
         </div>

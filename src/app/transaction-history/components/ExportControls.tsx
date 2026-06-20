@@ -1,5 +1,7 @@
 'use client';
 
+import { useI18n } from '@/contexts/I18nContext';
+
 interface Transaction {
   id: string;
   course_id: string;
@@ -19,8 +21,10 @@ interface ExportControlsProps {
 }
 
 export default function ExportControls({ transactions }: ExportControlsProps) {
+  const { t } = useI18n();
+
   const exportToCSV = () => {
-    const headers = ['Sana', 'Kurs', 'Summa', "To\'lov usuli", 'Holat', 'Tranzaksiya ID'];
+    const headers = [t('payment.csvDate'), t('payment.csvCourse'), t('payment.csvAmount'), t('payment.csvPaymentMethod'), t('payment.csvStatus'), t('payment.csvTransactionId')];
     const rows = transactions.map((t) => [
       new Date(t.created_at).toLocaleDateString('uz-UZ'),
       t.courses.title,
@@ -67,7 +71,7 @@ export default function ExportControls({ transactions }: ExportControlsProps) {
               d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
             />
           </svg>
-          CSV yuklash
+          {t('payment.exportCSV')}
         </button>
 
         <button
@@ -88,7 +92,7 @@ export default function ExportControls({ transactions }: ExportControlsProps) {
               d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"
             />
           </svg>
-          Chop etish
+          {t('payment.print')}
         </button>
       </div>
     </div>

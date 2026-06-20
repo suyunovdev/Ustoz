@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
 import Icon from '@/components/ui/AppIcon';
 
 interface Transaction {
@@ -25,6 +26,7 @@ const PaymentProcessingInteractive = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
+  const { t } = useI18n();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -159,39 +161,39 @@ const PaymentProcessingInteractive = () => {
 
   const getStatusTitle = () => {
     if (paymentUrl && !hasRedirectedToGateway) {
-      return 'To\'lov tizimiga yo\'naltirilmoqda...';
+      return t('payment.redirectingToGateway');
     }
 
     switch (transaction?.status) {
       case 'completed':
-        return 'To\'lov muvaffaqiyatli!';
+        return t('payment.paymentSuccessful');
       case 'failed':
-        return 'To\'lov muvaffaqiyatsiz';
+        return t('payment.paymentFailed');
       case 'cancelled':
-        return 'To\'lov bekor qilindi';
+        return t('payment.paymentCancelled');
       case 'processing':
-        return 'To\'lov jarayonda...';
+        return t('payment.paymentProcessing');
       default:
-        return 'To\'lov kutilmoqda...';
+        return t('payment.paymentPending');
     }
   };
 
   const getStatusMessage = () => {
     if (paymentUrl && !hasRedirectedToGateway) {
-      return `${gatewayRedirectCountdown} soniyadan keyin to'lov tizimiga yo'naltirilasiz. Iltimos, sahifani yopmang.`;
+      return t('payment.redirectCountdown').replace('{count}', String(gatewayRedirectCountdown));
     }
 
     switch (transaction?.status) {
       case 'completed':
-        return 'Tabriklaymiz! Kursga muvaffaqiyatli yozildingiz. Endi darslarni boshlashingiz mumkin.';
+        return t('payment.successMessage');
       case 'failed':
-        return transaction?.error_message || 'To\'lov amalga oshmadi. Iltimos, qaytadan urinib ko\'ring.';
+        return transaction?.error_message || t('payment.failedMessage');
       case 'cancelled':
-        return 'To\'lov bekor qilindi. Iltimos, qaytadan urinib ko\'ring.';
+        return t('payment.cancelledMessage');
       case 'processing':
-        return 'To\'lovingiz tekshirilmoqda. Iltimos, kuting...';
+        return t('payment.processingMessage');
       default:
-        return 'To\'lov ma\'lumotlari yuklanmoqda...';
+        return t('payment.pendingMessage');
     }
   };
 
@@ -226,30 +228,30 @@ const PaymentProcessingInteractive = () => {
           {transaction && course && (
             <div className="bg-muted/50 rounded-lg p-6 mb-6 space-y-3">
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Kurs:</span>
+                <span className="text-sm text-muted-foreground">{t('payment.course')}:</span>
                 <span className="text-sm font-medium text-foreground">{course.title}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Summa:</span>
+                <span className="text-sm text-muted-foreground">{t('payment.sum')}:</span>
                 <span className="text-sm font-medium text-foreground">
                   {transaction.amount_uzs.toLocaleString()} so'm
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">To'lov tizimi:</span>
+                <span className="text-sm text-muted-foreground">{t('payment.paymentSystem')}:</span>
                 <span className="text-sm font-medium text-foreground capitalize">
                   {transaction.payment_method}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-muted-foreground">Tranzaksiya ID:</span>
+                <span className="text-sm text-muted-foreground">{t('payment.transactionId')}:</span>
                 <span className="text-sm font-mono text-foreground">
                   {transaction.id.slice(0, 8)}...
                 </span>
               </div>
               {transaction.completed_at && (
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Yakunlangan vaqt:</span>
+                  <span className="text-sm text-muted-foreground">{t('payment.completedAt')}:</span>
                   <span className="text-sm font-medium text-foreground">
                     {new Date(transaction.completed_at).toLocaleString('uz-UZ')}
                   </span>
@@ -266,19 +268,19 @@ const PaymentProcessingInteractive = () => {
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-success flex items-center justify-center">
                     <Icon name="CheckIcon" size={16} className="text-white" />
                   </div>
-                  <span className="text-sm text-foreground">Tranzaksiya yaratildi</span>
+                  <span className="text-sm text-foreground">{t('payment.transactionCreated')}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   </div>
-                  <span className="text-sm text-foreground">To'lov tizimiga yo'naltirilmoqda...</span>
+                  <span className="text-sm text-foreground">{t('payment.redirectingToPayment')}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                     <Icon name="CreditCardIcon" size={16} className="text-muted-foreground" />
                   </div>
-                  <span className="text-sm text-muted-foreground">To'lovni amalga oshirish</span>
+                  <span className="text-sm text-muted-foreground">{t('payment.completePayment')}</span>
                 </div>
               </div>
             </div>
@@ -292,19 +294,19 @@ const PaymentProcessingInteractive = () => {
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-success flex items-center justify-center">
                     <Icon name="CheckIcon" size={16} className="text-white" />
                   </div>
-                  <span className="text-sm text-foreground">To'lov boshlandi</span>
+                  <span className="text-sm text-foreground">{t('payment.paymentStarted')}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   </div>
-                  <span className="text-sm text-foreground">To'lov tekshirilmoqda</span>
+                  <span className="text-sm text-foreground">{t('payment.paymentVerifying')}</span>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center">
                     <Icon name="CheckIcon" size={16} className="text-muted-foreground" />
                   </div>
-                  <span className="text-sm text-muted-foreground">Kursga yozilish</span>
+                  <span className="text-sm text-muted-foreground">{t('payment.courseEnrollment')}</span>
                 </div>
               </div>
             </div>
@@ -316,7 +318,7 @@ const PaymentProcessingInteractive = () => {
               <div className="flex items-center space-x-2">
                 <Icon name="InformationCircleIcon" size={20} className="text-success" />
                 <p className="text-sm text-success">
-                  {redirectCountdown} soniyadan keyin kursga o'tkazilasiz...
+                  {t('payment.redirectToCourseSoon').replace('{count}', String(redirectCountdown))}
                 </p>
               </div>
             </div>
@@ -332,7 +334,7 @@ const PaymentProcessingInteractive = () => {
                 }}
                 className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-smooth"
               >
-                To'lov tizimiga o'tish
+                {t('payment.goToPaymentGateway')}
               </button>
             </div>
           )}
@@ -344,7 +346,7 @@ const PaymentProcessingInteractive = () => {
                 onClick={() => router.push(`/learning-interface?courseId=${transaction.course_id}`)}
                 className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-smooth"
               >
-                Kursni boshlash
+                {t('payment.startCourse')}
               </button>
             )}
 
@@ -354,13 +356,13 @@ const PaymentProcessingInteractive = () => {
                   onClick={() => router.push(`/payment-method-selection?courseId=${transaction.course_id}`)}
                   className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-smooth"
                 >
-                  Qaytadan urinish
+                  {t('payment.tryAgain')}
                 </button>
                 <button
                   onClick={() => router.push('/course-marketplace')}
                   className="w-full px-6 py-3 bg-muted text-foreground rounded-lg font-semibold hover:bg-muted/80 transition-smooth"
                 >
-                  Bosh sahifaga qaytish
+                  {t('payment.backToHome')}
                 </button>
               </>
             )}
@@ -370,7 +372,7 @@ const PaymentProcessingInteractive = () => {
                 onClick={() => router.push('/student-dashboard')}
                 className="w-full px-6 py-3 bg-muted text-foreground rounded-lg font-semibold hover:bg-muted/80 transition-smooth"
               >
-                Dashboard ga qaytish
+                {t('payment.backToDashboard')}
               </button>
             )}
           </div>
@@ -378,9 +380,9 @@ const PaymentProcessingInteractive = () => {
           {/* Support Info */}
           <div className="mt-6 pt-6 border-t border-border text-center">
             <p className="text-sm text-muted-foreground">
-              Muammo yuzaga keldimi?{' '}
+              {t('payment.haveProblem')}{' '}
               <a href="#" className="text-primary hover:underline">
-                Yordam markaziga murojaat qiling
+                {t('payment.contactSupport')}
               </a>
             </p>
           </div>
