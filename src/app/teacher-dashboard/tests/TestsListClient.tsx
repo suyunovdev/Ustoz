@@ -16,14 +16,16 @@ import {
   useDeleteTestMutation,
 } from '@/hooks/mutations/useTestMutations';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
-
-const STATUS_LABEL: Record<TestStatusDTO, { label: string; color: string }> = {
-  draft: { label: 'Qoralama', color: 'bg-muted text-muted-foreground' },
-  published: { label: "E'lon qilingan", color: 'bg-success/10 text-success' },
-  archived: { label: 'Arxiv', color: 'bg-warning/10 text-warning' },
-};
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function TestsListClient() {
+  const { t } = useI18n();
+
+  const STATUS_LABEL: Record<TestStatusDTO, { label: string; color: string }> = {
+    draft: { label: t('teacher.testStatusDraft'), color: 'bg-muted text-muted-foreground' },
+    published: { label: t('teacher.testStatusPublished'), color: 'bg-success/10 text-success' },
+    archived: { label: t('teacher.testStatusArchived'), color: 'bg-warning/10 text-warning' },
+  };
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<TestStatusDTO | 'all'>('all');
   const [createOpen, setCreateOpen] = useState(false);
@@ -44,7 +46,7 @@ export default function TestsListClient() {
     if (!pendingDelete) return;
     deleteMut.mutate(pendingDelete.id, {
       onSuccess: () => {
-        toast.success("Test o'chirildi");
+        toast.success(t('teacher.testDeleted'));
         setPendingDelete(null);
       },
       onError: (err) => toast.error(err.message),
@@ -60,11 +62,11 @@ export default function TestsListClient() {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Dashboard
+            {t('nav.dashboard')}
           </Link>
-          <h1 className="text-2xl font-heading font-semibold text-foreground">Testlar</h1>
+          <h1 className="text-2xl font-heading font-semibold text-foreground">{t('teacher.tests')}</h1>
           <p className="text-sm text-muted-foreground">
-            {tests.length} ta test · {tests.reduce((s, t) => s + t.attemptCount, 0)} urinish
+            {tests.length} {t('teacher.testCount')} · {tests.reduce((s, t) => s + t.attemptCount, 0)} {t('teacher.attempts')}
           </p>
         </div>
         <button
@@ -72,7 +74,7 @@ export default function TestsListClient() {
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center gap-2 text-sm font-medium"
         >
           <Icon name="PlusIcon" size={16} />
-          Yangi test
+          {t('teacher.newTest')}
         </button>
       </div>
 
@@ -87,7 +89,7 @@ export default function TestsListClient() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {s === 'all' ? 'Hammasi' : STATUS_LABEL[s].label}
+            {s === 'all' ? t('common.all') : STATUS_LABEL[s].label}
           </button>
         ))}
       </div>
@@ -107,12 +109,12 @@ export default function TestsListClient() {
       ) : tests.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-md">
           <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">Hali test yo'q</p>
+          <p className="text-muted-foreground mb-3">{t('teacher.noTests')}</p>
           <button
             onClick={() => setCreateOpen(true)}
             className="text-primary hover:underline text-sm"
           >
-            Birinchi testni yarating →
+            {t('teacher.createFirstTest')}
           </button>
         </div>
       ) : (
@@ -143,25 +145,25 @@ export default function TestsListClient() {
                   <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-1">
                       <Icon name="QuestionMarkCircleIcon" size={12} />
-                      {t.questionCount} savol
+                      {t.questionCount} {t('teacher.questions')}
                     </span>
                     <span className="flex items-center gap-1">
                       <Icon name="StarIcon" size={12} />
-                      {t.totalPoints} bal
+                      {t.totalPoints} {t('teacher.points')}
                     </span>
                     {t.timeLimitSec && (
                       <span className="flex items-center gap-1">
                         <Icon name="ClockIcon" size={12} />
-                        {Math.floor(t.timeLimitSec / 60)} daq
+                        {Math.floor(t.timeLimitSec / 60)} {t('teacher.minutes')}
                       </span>
                     )}
                     <span className="flex items-center gap-1">
                       <Icon name="UserGroupIcon" size={12} />
-                      {t.attemptCount} urinish
+                      {t.attemptCount} {t('teacher.attempts')}
                     </span>
                     <span className="flex items-center gap-1">
                       <Icon name="CheckCircleIcon" size={12} />
-                      {t.passingScore}% o'tish
+                      {t.passingScore}% {t('teacher.passing')}
                     </span>
                   </div>
                 </div>
@@ -171,7 +173,7 @@ export default function TestsListClient() {
                     setPendingDelete(t);
                   }}
                   className="p-2 hover:bg-destructive/10 rounded-md"
-                  aria-label="O'chirish"
+                  aria-label={t('common.delete')}
                 >
                   <Icon name="TrashIcon" size={14} className="text-destructive" />
                 </button>
@@ -188,7 +190,7 @@ export default function TestsListClient() {
           onCreate={(input) =>
             createMut.mutate(input, {
               onSuccess: ({ test }) => {
-                toast.success("Test yaratildi — endi savol qo'shing");
+                toast.success(t('teacher.testCreated'));
                 router.push(`/teacher-dashboard/tests/${test.id}`);
               },
               onError: (err) => toast.error(err.message),
@@ -201,9 +203,9 @@ export default function TestsListClient() {
       {pendingDelete && (
         <ConfirmModal
           open={true}
-          title="Testni o'chirish"
-          message={`"${pendingDelete.title}" va barcha savol/urinishlar o'chiriladi.`}
-          confirmLabel="O'chirish"
+          title={t('teacher.deleteTest')}
+          message={`"${pendingDelete.title}" ${t('teacher.deleteTestConfirm')}`}
+          confirmLabel={t('common.delete')}
           variant="danger"
           isLoading={deleteMut.isPending}
           onConfirm={handleDelete}
@@ -238,15 +240,16 @@ function CreateTestModal({
   const [passingScore, setPassingScore] = useState(70);
   const [timeLimitMin, setTimeLimitMin] = useState<number | ''>('');
   const [allowedAttempts, setAllowedAttempts] = useState(3);
+  const { t } = useI18n();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!courseId) {
-      toast.error("Kurs tanlang");
+      toast.error(t('teacher.selectCourse'));
       return;
     }
     if (title.trim().length < 2) {
-      toast.error("Sarlavha kamida 2 belgi");
+      toast.error(t('teacher.titleMinLength'));
       return;
     }
     onCreate({
@@ -273,12 +276,12 @@ function CreateTestModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-heading font-semibold text-foreground">Yangi test</h3>
+          <h3 className="text-lg font-heading font-semibold text-foreground">{t('teacher.newTest')}</h3>
           <button
             type="button"
             onClick={onClose}
             className="p-1 hover:bg-muted rounded"
-            aria-label="Yopish"
+            aria-label={t('common.close')}
           >
             <Icon name="XMarkIcon" size={20} />
           </button>
@@ -286,14 +289,14 @@ function CreateTestModal({
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Kurs *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('teacher.course')} *</label>
             <select
               value={courseId}
               onChange={(e) => setCourseId(e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
               required
             >
-              <option value="">— tanlang —</option>
+              <option value="">— {t('teacher.select')} —</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
@@ -302,18 +305,18 @@ function CreateTestModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Sarlavha *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('teacher.title')} *</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="Masalan: JavaScript asoslari testi"
+              placeholder={t('teacher.testTitlePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Tavsif</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('teacher.description')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -324,7 +327,7 @@ function CreateTestModal({
           <div className="grid grid-cols-3 gap-3">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                O'tish %
+                {t('teacher.passingPercent')}
               </label>
               <input
                 type="number"
@@ -337,7 +340,7 @@ function CreateTestModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Vaqt (daq)
+                {t('teacher.timeMinutes')}
               </label>
               <input
                 type="number"
@@ -347,13 +350,13 @@ function CreateTestModal({
                 onChange={(e) =>
                   setTimeLimitMin(e.target.value === '' ? '' : Number(e.target.value))
                 }
-                placeholder="cheklanmagan"
+                placeholder={t('teacher.unlimited')}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Urinish
+                {t('teacher.attempts')}
               </label>
               <input
                 type="number"
@@ -374,7 +377,7 @@ function CreateTestModal({
             disabled={isLoading}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor qilish
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -384,7 +387,7 @@ function CreateTestModal({
             {isLoading && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Yaratish
+            {t('teacher.create')}
           </button>
         </div>
       </form>

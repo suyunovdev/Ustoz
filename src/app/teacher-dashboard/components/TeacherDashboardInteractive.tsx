@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
+import { useI18n } from '@/contexts/I18nContext';
 import { type TeacherTabId } from './TeacherSidebar';
 import MetricsCard from './MetricsCard';
 import {
@@ -31,28 +32,28 @@ const VALID_TABS: ReadonlyArray<TeacherTabId> = [
   'reviews',
 ];
 
-const TAB_TITLES: Record<TeacherTabId, { title: string; subtitle: string }> = {
-  overview: { title: "Umumiy ko'rinish", subtitle: 'Bugungi holat va kurslar' },
-  courses: { title: 'Kurslarim', subtitle: 'Barcha kurslar va statusi' },
-  students: { title: 'Talabalarim', subtitle: "Yozilgan talabalar ro'yxati" },
-  groups: { title: 'Guruhlar', subtitle: 'Talabalar guruhlari' },
-  assignments: { title: 'Topshiriqlar', subtitle: 'Uy vazifalari' },
-  tests: { title: 'Testlar', subtitle: 'Quiz va testlar' },
-  analytics: { title: 'Tahlil', subtitle: 'Daromad va faollik' },
-  earnings: { title: 'Daromad', subtitle: "To'lov tarixi va withdraw" },
-  reviews: { title: 'Sharhlar', subtitle: 'Talaba sharhlari' },
-  certificates: { title: 'Sertifikatlar', subtitle: 'Berilgan sertifikatlar' },
-  messages: { title: 'Xabarlar', subtitle: 'Talabalar bilan aloqa' },
+const TAB_TITLE_KEYS: Record<TeacherTabId, { titleKey: string; subtitleKey: string }> = {
+  overview: { titleKey: 'teacher.tabOverviewTitle', subtitleKey: 'teacher.tabOverviewSubtitle' },
+  courses: { titleKey: 'teacher.tabCoursesTitle', subtitleKey: 'teacher.tabCoursesSubtitle' },
+  students: { titleKey: 'teacher.tabStudentsTitle', subtitleKey: 'teacher.tabStudentsSubtitle' },
+  groups: { titleKey: 'teacher.tabGroupsTitle', subtitleKey: 'teacher.tabGroupsSubtitle' },
+  assignments: { titleKey: 'teacher.tabAssignmentsTitle', subtitleKey: 'teacher.tabAssignmentsSubtitle' },
+  tests: { titleKey: 'teacher.tabTestsTitle', subtitleKey: 'teacher.tabTestsSubtitle' },
+  analytics: { titleKey: 'teacher.tabAnalyticsTitle', subtitleKey: 'teacher.tabAnalyticsSubtitle' },
+  earnings: { titleKey: 'teacher.tabEarningsTitle', subtitleKey: 'teacher.tabEarningsSubtitle' },
+  reviews: { titleKey: 'teacher.tabReviewsTitle', subtitleKey: 'teacher.tabReviewsSubtitle' },
+  certificates: { titleKey: 'teacher.tabCertificatesTitle', subtitleKey: 'teacher.tabCertificatesSubtitle' },
+  messages: { titleKey: 'teacher.tabMessagesTitle', subtitleKey: 'teacher.tabMessagesSubtitle' },
 };
 
-const STATUS_BADGE: Record<ModerationStatusDTO, { label: string; color: string }> = {
-  draft: { label: 'Qoralama', color: 'bg-muted text-muted-foreground' },
-  submitted: { label: 'Yuborilgan', color: 'bg-warning/10 text-warning' },
-  under_review: { label: "Ko'rib chiqilmoqda", color: 'bg-secondary/10 text-secondary' },
-  approved: { label: 'Tasdiqlangan', color: 'bg-success/10 text-success' },
-  rejected: { label: 'Rad etilgan', color: 'bg-destructive/10 text-destructive' },
+const STATUS_BADGE_KEYS: Record<ModerationStatusDTO, { labelKey: string; color: string }> = {
+  draft: { labelKey: 'teacher.statusDraft', color: 'bg-muted text-muted-foreground' },
+  submitted: { labelKey: 'teacher.statusSubmitted', color: 'bg-warning/10 text-warning' },
+  under_review: { labelKey: 'teacher.statusUnderReview', color: 'bg-secondary/10 text-secondary' },
+  approved: { labelKey: 'teacher.statusApproved', color: 'bg-success/10 text-success' },
+  rejected: { labelKey: 'teacher.statusRejected', color: 'bg-destructive/10 text-destructive' },
   revision_requested: {
-    label: "O'zgartirish so'ralgan",
+    labelKey: 'teacher.statusRevisionRequested',
     color: 'bg-primary/10 text-primary',
   },
 };
@@ -76,6 +77,7 @@ type PendingAction =
   | { type: 'duplicate'; course: TeacherDashboardCourse };
 
 const TeacherDashboardInteractive = () => {
+  const { t } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams?.get('tab');
@@ -124,47 +126,47 @@ const TeacherDashboardInteractive = () => {
 
   const modalProps = useMemo(() => {
     if (!pending) return null;
-    const title = pending.course.title;
+    const courseTitle = pending.course.title;
     switch (pending.type) {
       case 'archive':
         return {
-          title: 'Kursni arxivlash',
-          message: `"${title}" kursi marketplace'dan yashiriladi (talabalar ko'rmaydi). Qaytarish mumkin.`,
-          confirmLabel: 'Arxivlash',
+          title: t('teacher.confirmArchiveTitle'),
+          message: `"${courseTitle}" ${t('teacher.confirmArchiveMessage')}`,
+          confirmLabel: t('teacher.confirmArchiveBtn'),
           variant: 'default' as const,
         };
       case 'unarchive':
         return {
-          title: 'Kursni faollashtirish',
-          message: `"${title}" kursi yana ko'rinarli bo'ladi.`,
-          confirmLabel: 'Faollashtirish',
+          title: t('teacher.confirmUnarchiveTitle'),
+          message: `"${courseTitle}" ${t('teacher.confirmUnarchiveMessage')}`,
+          confirmLabel: t('teacher.confirmUnarchiveBtn'),
           variant: 'default' as const,
         };
       case 'delete':
         return {
-          title: "Kursni o'chirish",
-          message: `"${title}" kursini butunlay o'chiramizmi? Bu amalni qaytarib bo'lmaydi.`,
-          confirmLabel: "O'chirish",
+          title: t('teacher.confirmDeleteTitle'),
+          message: `"${courseTitle}" ${t('teacher.confirmDeleteMessage')}`,
+          confirmLabel: t('teacher.confirmDeleteBtn'),
           variant: 'danger' as const,
         };
       case 'duplicate':
         return {
-          title: 'Kursni nusxalash',
-          message: `"${title}" asosida yangi qoralama yaratiladi (barcha mavzular bilan).`,
-          confirmLabel: 'Nusxalash',
+          title: t('teacher.confirmDuplicateTitle'),
+          message: `"${courseTitle}" ${t('teacher.confirmDuplicateMessage')}`,
+          confirmLabel: t('teacher.confirmDuplicateBtn'),
           variant: 'default' as const,
         };
     }
-  }, [pending]);
+  }, [pending, t]);
 
   const handleConfirm = () => {
     if (!pending) return;
     const courseId = pending.course.id;
     const messages: Record<PendingAction['type'], string> = {
-      archive: 'Kurs arxivlandi',
-      unarchive: 'Kurs faollashtirildi',
-      delete: "Kurs o'chirildi",
-      duplicate: 'Nusxa yaratildi',
+      archive: t('teacher.toastArchived'),
+      unarchive: t('teacher.toastUnarchived'),
+      delete: t('teacher.toastDeleted'),
+      duplicate: t('teacher.toastDuplicated'),
     };
     const onSuccess = () => {
       toast.success(messages[pending.type]);
@@ -178,7 +180,7 @@ const TeacherDashboardInteractive = () => {
     if (pending.type === 'duplicate') duplicateMut.mutate(courseId, { onSuccess, onError });
   };
 
-  const headerInfo = TAB_TITLES[activeTab];
+  const headerKeys = TAB_TITLE_KEYS[activeTab];
   const courses = data?.courses ?? [];
   const needsAttention = data?.needsAttention ?? [];
 
@@ -187,16 +189,16 @@ const TeacherDashboardInteractive = () => {
         <div className="max-w-7xl mx-auto">
           <div className="mb-6 hidden md:block">
             <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground mb-1">
-              {headerInfo.title}
+              {t(headerKeys.titleKey)}
             </h1>
-            <p className="text-muted-foreground text-sm">{headerInfo.subtitle}</p>
+            <p className="text-muted-foreground text-sm">{t(headerKeys.subtitleKey)}</p>
           </div>
 
           {error && (
             <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-md text-destructive flex items-center justify-between">
-              <span>Xato: {error.message}</span>
+              <span>{t('teacher.errorPrefix')}: {error.message}</span>
               <button onClick={() => refetch()} className="underline text-xs">
-                Qayta urinish
+                {t('teacher.retryButton')}
               </button>
             </div>
           )}
@@ -251,6 +253,7 @@ function NeedsAttentionBanner({
   items: Array<{ type: string; courseId: string; courseTitle: string; feedback: string | null }>;
   onGoToCourses: () => void;
 }) {
+  const { t } = useI18n();
   if (items.length === 0) return null;
   return (
     <div className="mb-6 p-4 bg-warning/10 border border-warning/30 rounded-md">
@@ -258,7 +261,7 @@ function NeedsAttentionBanner({
         <Icon name="ExclamationTriangleIcon" size={24} className="text-warning shrink-0 mt-0.5" />
         <div className="flex-1 min-w-0">
           <h3 className="font-heading font-semibold text-foreground">
-            Diqqat talab qiladigan kurslar ({items.length})
+            {t('teacher.needsAttentionTitle')} ({items.length})
           </h3>
           <div className="mt-2 space-y-2">
             {items.slice(0, 3).map((it) => (
@@ -266,7 +269,7 @@ function NeedsAttentionBanner({
                 <p className="text-foreground">
                   <strong>{it.courseTitle}</strong> —{' '}
                   <span className="text-destructive">
-                    {it.type === 'rejected' ? 'Rad etilgan' : "O'zgartirish so'ralgan"}
+                    {it.type === 'rejected' ? t('teacher.rejectedLabel') : t('teacher.revisionRequestedLabel')}
                   </span>
                 </p>
                 {it.feedback && (
@@ -279,7 +282,7 @@ function NeedsAttentionBanner({
           </div>
           {items.length > 3 && (
             <button onClick={onGoToCourses} className="mt-2 text-xs text-primary underline">
-              Yana {items.length - 3} ta — barchasini ko'rish
+              {t('teacher.moreItems')} {items.length - 3} — {t('teacher.viewAllAttention')}
             </button>
           )}
         </div>
@@ -297,6 +300,7 @@ function OverviewTab({
   isLoading: boolean;
   onCreateCourse: () => void;
 }) {
+  const { t } = useI18n();
   const stats = data?.stats;
   const topCourses = data?.topCourses ?? [];
 
@@ -304,34 +308,34 @@ function OverviewTab({
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricsCard
-          title="Umumiy daromad"
+          title={t('teacher.overviewTotalRevenue')}
           value={isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0')}
           icon="CurrencyDollarIcon"
-          subtitle="Barcha kurslardan"
+          subtitle={t('teacher.overviewFromAllCourses')}
         />
         <MetricsCard
-          title="Faol kurslar"
+          title={t('teacher.overviewActiveCourses')}
           value={isLoading ? '—' : String(stats?.publishedCourses ?? 0)}
           icon="BookOpenIcon"
-          subtitle={`${stats?.draftCourses ?? 0} qoralama`}
+          subtitle={`${stats?.draftCourses ?? 0} ${t('teacher.overviewDraftSuffix')}`}
         />
         <MetricsCard
-          title="Jami talabalar"
+          title={t('teacher.overviewTotalStudents')}
           value={isLoading ? '—' : String(stats?.totalEnrollments ?? 0)}
           icon="UserGroupIcon"
-          subtitle={`O'rtacha reyting: ${(stats?.avgRating ?? 0).toFixed(1)} ⭐`}
+          subtitle={`${t('teacher.overviewAvgRating')}: ${(stats?.avgRating ?? 0).toFixed(1)} ⭐`}
         />
         <MetricsCard
-          title="Moderatsiyada"
+          title={t('teacher.overviewInModeration')}
           value={isLoading ? '—' : String(stats?.underReviewCourses ?? 0)}
           icon="ClockIcon"
-          subtitle={`${stats?.rejectedCourses ?? 0} rad etilgan`}
+          subtitle={`${stats?.rejectedCourses ?? 0} ${t('teacher.overviewRejectedSuffix')}`}
         />
       </div>
 
       <div className="bg-card rounded-md shadow-warm p-6">
         <h3 className="text-xl font-heading font-semibold text-foreground mb-4">
-          Top kurslar (daromad bo'yicha)
+          {t('teacher.overviewTopCourses')}
         </h3>
         {isLoading ? (
           <div className="space-y-2">
@@ -342,12 +346,12 @@ function OverviewTab({
         ) : topCourses.length === 0 ? (
           <div className="text-center py-8">
             <Icon name="BookOpenIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground mb-3">Hozircha kurslar yo'q</p>
+            <p className="text-muted-foreground mb-3">{t('teacher.overviewNoCourses')}</p>
             <button
               onClick={onCreateCourse}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth text-sm font-medium"
             >
-              Birinchi kursni yarating
+              {t('teacher.overviewCreateFirst')}
             </button>
           </div>
         ) : (
@@ -364,7 +368,7 @@ function OverviewTab({
                   <div className="min-w-0">
                     <p className="font-medium text-foreground truncate">{c.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {c.enrollmentCount} talaba · ⭐ {c.rating.toFixed(1)}
+                      {c.enrollmentCount} {t('teacher.overviewStudentLabel')} · ⭐ {c.rating.toFixed(1)}
                     </p>
                   </div>
                 </div>
@@ -379,7 +383,7 @@ function OverviewTab({
 
       <div className="bg-card rounded-md shadow-warm p-6">
         <h3 className="text-xl font-heading font-semibold text-foreground mb-4">
-          Oxirgi to'lovlar
+          {t('teacher.overviewRecentPayments')}
         </h3>
         {isLoading ? (
           <div className="space-y-2">
@@ -388,7 +392,7 @@ function OverviewTab({
             ))}
           </div>
         ) : (data?.recentTransactions.length ?? 0) === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Hozircha to'lovlar yo'q</p>
+          <p className="text-sm text-muted-foreground text-center py-6">{t('teacher.overviewNoPayments')}</p>
         ) : (
           <div className="space-y-2">
             {data?.recentTransactions.map((t) => (
@@ -427,17 +431,18 @@ function CoursesTab({
   onEdit: (id: string) => void;
 }) {
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+  const { t } = useI18n();
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">{courses.length} ta kurs</p>
+        <p className="text-sm text-muted-foreground">{courses.length} {t('teacher.coursesCount')}</p>
         <button
           onClick={onCreate}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth flex items-center gap-2 text-sm font-medium"
         >
           <Icon name="PlusIcon" size={18} />
-          Yangi kurs
+          {t('teacher.coursesNewCourse')}
         </button>
       </div>
 
@@ -450,19 +455,19 @@ function CoursesTab({
       ) : courses.length === 0 ? (
         <div className="bg-card rounded-md shadow-warm p-12 text-center">
           <Icon name="AcademicCapIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-foreground mb-2">Hali kurslar yo'q</h3>
-          <p className="text-muted-foreground mb-6">Birinchi kursingizni yarating</p>
+          <h3 className="text-xl font-semibold text-foreground mb-2">{t('teacher.coursesNoCourses')}</h3>
+          <p className="text-muted-foreground mb-6">{t('teacher.coursesCreateFirst')}</p>
           <button
             onClick={onCreate}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
           >
-            Kurs yaratish
+            {t('teacher.coursesCreateCourse')}
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {courses.map((course) => {
-            const badge = STATUS_BADGE[course.moderationStatus];
+            const badgeData = STATUS_BADGE_KEYS[course.moderationStatus];
             const menuOpen = openMenuFor === course.id;
             return (
               <div
@@ -483,9 +488,9 @@ function CoursesTab({
                     </div>
                   )}
                   <span
-                    className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
+                    className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-xs font-medium ${badgeData.color}`}
                   >
-                    {badge.label}
+                    {t(badgeData.labelKey)}
                   </span>
                 </div>
                 <div className="p-4">
@@ -500,9 +505,9 @@ function CoursesTab({
                   )}
 
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-3">
-                    <div>👥 {course.enrollmentCount} talaba</div>
+                    <div>👥 {course.enrollmentCount} {t('teacher.coursesStudentLabel')}</div>
                     <div>⭐ {course.rating.toFixed(1)} ({course.reviewCount})</div>
-                    <div>📚 {course.topicCount} mavzu</div>
+                    <div>📚 {course.topicCount} {t('teacher.coursesTopicLabel')}</div>
                     <div>📅 {formatDate(course.createdAt)}</div>
                   </div>
 
@@ -514,7 +519,7 @@ function CoursesTab({
                       <button
                         onClick={() => setOpenMenuFor(menuOpen ? null : course.id)}
                         className="p-1.5 hover:bg-muted rounded transition-smooth"
-                        aria-label="Amallar"
+                        aria-label={t('teacher.coursesActionsLabel')}
                       >
                         <Icon name="EllipsisVerticalIcon" size={18} className="text-muted-foreground" />
                       </button>
@@ -524,7 +529,7 @@ function CoursesTab({
                           <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-md shadow-warm-lg z-20 py-1">
                             <MenuItem
                               icon="ListBulletIcon"
-                              label="Mavzular"
+                              label={t('teacher.menuTopics')}
                               color="text-primary"
                               onClick={() => {
                                 setOpenMenuFor(null);
@@ -533,7 +538,7 @@ function CoursesTab({
                             />
                             <MenuItem
                               icon="PencilIcon"
-                              label="Tahrirlash"
+                              label={t('teacher.menuEdit')}
                               onClick={() => {
                                 setOpenMenuFor(null);
                                 onEdit(course.id);
@@ -541,7 +546,7 @@ function CoursesTab({
                             />
                             <MenuItem
                               icon="DocumentDuplicateIcon"
-                              label="Nusxalash"
+                              label={t('teacher.menuDuplicate')}
                               onClick={() => {
                                 setOpenMenuFor(null);
                                 onAction({ type: 'duplicate', course });
@@ -550,7 +555,7 @@ function CoursesTab({
                             {course.isPublished ? (
                               <MenuItem
                                 icon="ArchiveBoxIcon"
-                                label="Arxivlash"
+                                label={t('teacher.menuArchive')}
                                 onClick={() => {
                                   setOpenMenuFor(null);
                                   onAction({ type: 'archive', course });
@@ -559,7 +564,7 @@ function CoursesTab({
                             ) : (
                               <MenuItem
                                 icon="PlayCircleIcon"
-                                label="Faollashtirish"
+                                label={t('teacher.menuActivate')}
                                 color="text-success"
                                 onClick={() => {
                                   setOpenMenuFor(null);
@@ -570,7 +575,7 @@ function CoursesTab({
                             <div className="border-t border-border my-1" />
                             <MenuItem
                               icon="TrashIcon"
-                              label="O'chirish"
+                              label={t('teacher.menuDelete')}
                               color="text-destructive"
                               onClick={() => {
                                 setOpenMenuFor(null);
@@ -621,6 +626,7 @@ function EarningsTab({
   data: ReturnType<typeof useTeacherDashboard>['data'];
   isLoading: boolean;
 }) {
+  const { t } = useI18n();
   const stats = data?.stats;
   const transactions = data?.recentTransactions ?? [];
 
@@ -628,29 +634,29 @@ function EarningsTab({
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-card rounded-md shadow-warm p-6">
-          <p className="text-sm text-muted-foreground mb-1">Joriy balans</p>
+          <p className="text-sm text-muted-foreground mb-1">{t('teacher.earningsCurrentBalance')}</p>
           <p className="text-3xl font-heading font-bold text-foreground">
             {isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0')}
           </p>
         </div>
         <div className="bg-card rounded-md shadow-warm p-6">
-          <p className="text-sm text-muted-foreground mb-1">Kutilayotgan to'lov</p>
+          <p className="text-sm text-muted-foreground mb-1">{t('teacher.earningsPendingPayment')}</p>
           <p className="text-3xl font-heading font-bold text-foreground">0 so'm</p>
-          <p className="text-xs text-muted-foreground mt-1">(Withdraw flow keyingi phase'da)</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('teacher.earningsWithdrawPhase')}</p>
         </div>
         <div className="bg-card rounded-md shadow-warm p-6 flex items-center justify-center">
           <button
             disabled
             className="w-full px-6 py-3 bg-muted text-muted-foreground rounded-md cursor-not-allowed font-medium"
           >
-            Pulni yechib olish (Tez orada)
+            {t('teacher.earningsWithdrawBtn')}
           </button>
         </div>
       </div>
 
       <div className="bg-card rounded-md shadow-warm p-6">
         <h3 className="text-xl font-heading font-semibold text-foreground mb-4">
-          To'lov tarixi
+          {t('teacher.earningsPaymentHistory')}
         </h3>
         {isLoading ? (
           <div className="space-y-2">
@@ -659,7 +665,7 @@ function EarningsTab({
             ))}
           </div>
         ) : transactions.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">Hozircha to'lovlar yo'q</p>
+          <p className="text-sm text-muted-foreground text-center py-6">{t('teacher.earningsNoPayments')}</p>
         ) : (
           <div className="space-y-2">
             {transactions.map((t) => (
@@ -685,13 +691,15 @@ function EarningsTab({
 }
 
 function SidebarRedirectMessage({ tab }: { tab: TeacherTabId }) {
-  const tabTitle = TAB_TITLES[tab]?.title || tab;
+  const { t } = useI18n();
+  const keys = TAB_TITLE_KEYS[tab];
+  const tabTitle = keys ? t(keys.titleKey) : tab;
   return (
     <div className="bg-card rounded-md shadow-warm p-12 text-center">
       <Icon name="Bars3Icon" size={48} className="text-muted-foreground mx-auto mb-4" />
       <h3 className="text-xl font-heading font-semibold text-foreground mb-2">{tabTitle}</h3>
       <p className="text-muted-foreground">
-        Chap paneldagi menyudan foydalaning
+        {t('teacher.sidebarRedirectMessage')}
       </p>
     </div>
   );

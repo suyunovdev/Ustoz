@@ -20,56 +20,58 @@ import {
   useCancelWithdrawalMutation,
   useUpdatePayoutSettingsMutation,
 } from '@/hooks/mutations/useEarningsMutations';
+import { useI18n } from '@/contexts/I18nContext';
 
 function fmtUzs(s: string): string {
   const n = BigInt(s);
   return n.toLocaleString('uz-UZ').replace(/,/g, ' ');
 }
 
-const PAYMENT_STATUS: Record<
+const PAYMENT_STATUS_KEYS: Record<
   PaymentStatusDTO,
-  { label: string; color: string }
+  { labelKey: string; color: string }
 > = {
-  pending: { label: 'Kutilmoqda', color: 'bg-muted text-muted-foreground' },
-  processing: { label: 'Jarayonda', color: 'bg-warning/10 text-warning' },
-  completed: { label: 'Yakunlandi', color: 'bg-success/10 text-success' },
-  failed: { label: 'Xato', color: 'bg-destructive/10 text-destructive' },
-  cancelled: { label: 'Bekor', color: 'bg-muted text-muted-foreground' },
-  refunded: { label: 'Qaytarilgan', color: 'bg-warning/10 text-warning' },
+  pending: { labelKey: 'teacher.earningsPaymentPending', color: 'bg-muted text-muted-foreground' },
+  processing: { labelKey: 'teacher.earningsPaymentProcessing', color: 'bg-warning/10 text-warning' },
+  completed: { labelKey: 'teacher.earningsPaymentCompleted', color: 'bg-success/10 text-success' },
+  failed: { labelKey: 'teacher.earningsPaymentFailed', color: 'bg-destructive/10 text-destructive' },
+  cancelled: { labelKey: 'teacher.earningsPaymentCancelled', color: 'bg-muted text-muted-foreground' },
+  refunded: { labelKey: 'teacher.earningsPaymentRefunded', color: 'bg-warning/10 text-warning' },
 };
 
-const WITHDRAWAL_STATUS: Record<
+const WITHDRAWAL_STATUS_KEYS: Record<
   WithdrawalStatusDTO,
-  { label: string; color: string; icon: string }
+  { labelKey: string; color: string; icon: string }
 > = {
   pending: {
-    label: 'Kutilmoqda',
+    labelKey: 'teacher.earningsWithdrawalPending',
     color: 'bg-warning/10 text-warning',
     icon: 'ClockIcon',
   },
   processing: {
-    label: 'Jarayonda',
+    labelKey: 'teacher.earningsWithdrawalProcessing',
     color: 'bg-primary/10 text-primary',
     icon: 'ArrowPathIcon',
   },
   completed: {
-    label: "To'langan",
+    labelKey: 'teacher.earningsWithdrawalCompleted',
     color: 'bg-success/10 text-success',
     icon: 'CheckCircleIcon',
   },
   rejected: {
-    label: 'Rad etilgan',
+    labelKey: 'teacher.earningsWithdrawalRejected',
     color: 'bg-destructive/10 text-destructive',
     icon: 'XCircleIcon',
   },
   cancelled: {
-    label: 'Bekor qilingan',
+    labelKey: 'teacher.earningsWithdrawalCancelled',
     color: 'bg-muted text-muted-foreground',
     icon: 'NoSymbolIcon',
   },
 };
 
 export default function EarningsClient() {
+  const { t } = useI18n();
   const balance = useTeacherBalance();
   const withdrawals = useTeacherWithdrawals();
   const [tab, setTab] = useState<'payments' | 'withdrawals' | 'settings'>(
@@ -96,9 +98,9 @@ export default function EarningsClient() {
             <Icon name="ArrowLeftIcon" size={14} />
             Dashboard
           </Link>
-          <h1 className="text-2xl font-heading font-semibold">Daromad va to'lovlar</h1>
+          <h1 className="text-2xl font-heading font-semibold">{t('teacher.earningsPageTitle')}</h1>
           <p className="text-sm text-muted-foreground">
-            Balans, to'lov tarixi, pul yechib olish
+            {t('teacher.earningsPageSubtitle')}
           </p>
         </div>
         <button
@@ -107,33 +109,33 @@ export default function EarningsClient() {
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center gap-2 text-sm font-medium disabled:opacity-50"
         >
           <Icon name="BanknotesIcon" size={16} />
-          Pul yechib olish
+          {t('teacher.earningsWithdraw')}
         </button>
       </div>
 
       {b && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <BalanceCard
-            label="Mavjud balans"
+            label={t('teacher.earningsAvailableBalance')}
             value={fmtUzs(b.availableUzs)}
             sub="UZS"
             highlight
             icon="WalletIcon"
           />
           <BalanceCard
-            label="Yalpi daromad"
+            label={t('teacher.earningsGrossRevenue')}
             value={fmtUzs(b.grossRevenueUzs)}
-            sub={`${b.completedPaymentCount} ta to'lov`}
+            sub={`${b.completedPaymentCount} ${t('teacher.earningsPaymentCount')}`}
             icon="ArrowTrendingUpIcon"
           />
           <BalanceCard
-            label="Yechib olingan"
+            label={t('teacher.earningsWithdrawn')}
             value={fmtUzs(b.withdrawnUzs)}
-            sub={`Kutilayotgan: ${fmtUzs(b.pendingWithdrawalUzs)}`}
+            sub={`${t('teacher.earningsPendingLabel')}: ${fmtUzs(b.pendingWithdrawalUzs)}`}
             icon="BanknotesIcon"
           />
           <BalanceCard
-            label="Platform komissiyasi"
+            label={t('teacher.earningsPlatformFee')}
             value={`${b.platformFeePct}%`}
             sub={fmtUzs(b.platformFeeUzs) + ' UZS'}
             icon="ReceiptPercentIcon"
@@ -146,7 +148,7 @@ export default function EarningsClient() {
         <div className="mb-4 p-3 bg-warning/10 text-warning rounded-md text-sm flex items-center gap-2">
           <Icon name="ExclamationTriangleIcon" size={14} />
           <span>
-            <strong>{b.refundedPaymentCount} ta</strong> to'lov qaytarilgan —{' '}
+            <strong>{b.refundedPaymentCount}</strong> {t('teacher.earningsRefundWarning')} —{' '}
             {fmtUzs(b.refundedUzs)} UZS
           </span>
         </div>
@@ -154,20 +156,20 @@ export default function EarningsClient() {
 
       <div className="flex items-center gap-1 bg-muted/50 rounded-md p-1 mb-4 w-fit">
         {([
-          { id: 'payments', label: "To'lovlar" },
-          { id: 'withdrawals', label: 'Yechib olishlar' },
-          { id: 'settings', label: 'Sozlamalar' },
-        ] as const).map((t) => (
+          { id: 'payments', labelKey: 'teacher.earningsTabPayments' },
+          { id: 'withdrawals', labelKey: 'teacher.earningsTabWithdrawals' },
+          { id: 'settings', labelKey: 'teacher.earningsTabSettings' },
+        ] as const).map((tabItem) => (
           <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
+            key={tabItem.id}
+            onClick={() => setTab(tabItem.id)}
             className={`px-4 py-1.5 rounded text-sm font-medium ${
-              tab === t.id
+              tab === tabItem.id
                 ? 'bg-primary text-primary-foreground'
                 : 'text-muted-foreground hover:bg-muted'
             }`}
           >
-            {t.label}
+            {t(tabItem.labelKey)}
           </button>
         ))}
       </div>
@@ -183,7 +185,7 @@ export default function EarningsClient() {
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
-              Hammasi
+              {t('teacher.earningsFilterAll')}
             </button>
             {(['completed', 'refunded', 'failed', 'pending'] as const).map((s) => (
               <button
@@ -195,7 +197,7 @@ export default function EarningsClient() {
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >
-                {PAYMENT_STATUS[s].label}
+                {t(PAYMENT_STATUS_KEYS[s].labelKey)}
               </button>
             ))}
           </div>
@@ -208,7 +210,7 @@ export default function EarningsClient() {
             </div>
           ) : (payments.data?.payments.length ?? 0) === 0 ? (
             <p className="text-center text-muted-foreground py-12 italic">
-              To'lov topilmadi
+              {t('teacher.earningsNoPaymentsFound')}
             </p>
           ) : (
             <div className="space-y-2">
@@ -219,7 +221,7 @@ export default function EarningsClient() {
                 >
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      PAYMENT_STATUS[p.status].color
+                      PAYMENT_STATUS_KEYS[p.status].color
                     }`}
                   >
                     <Icon
@@ -240,10 +242,10 @@ export default function EarningsClient() {
                       </p>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full ${
-                          PAYMENT_STATUS[p.status].color
+                          PAYMENT_STATUS_KEYS[p.status].color
                         }`}
                       >
-                        {PAYMENT_STATUS[p.status].label}
+                        {t(PAYMENT_STATUS_KEYS[p.status].labelKey)}
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
@@ -251,7 +253,7 @@ export default function EarningsClient() {
                     </p>
                     {p.refundReason && (
                       <p className="text-xs text-warning mt-1">
-                        Sabab: {p.refundReason}
+                        {t('teacher.earningsRefundReason')}: {p.refundReason}
                       </p>
                     )}
                   </div>
@@ -286,11 +288,11 @@ export default function EarningsClient() {
             ))
           ) : (withdrawals.data?.withdrawals.length ?? 0) === 0 ? (
             <p className="text-center text-muted-foreground py-12 italic">
-              Hali so'rov yo'q
+              {t('teacher.earningsNoWithdrawals')}
             </p>
           ) : (
             withdrawals.data?.withdrawals.map((w) => {
-              const stat = WITHDRAWAL_STATUS[w.status];
+              const stat = WITHDRAWAL_STATUS_KEYS[w.status];
               return (
                 <div
                   key={w.id}
@@ -305,7 +307,7 @@ export default function EarningsClient() {
                         className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${stat.color}`}
                       >
                         <Icon name={stat.icon} size={10} />
-                        {stat.label}
+                        {t(stat.labelKey)}
                       </span>
                     </div>
                     {w.status === 'pending' && (
@@ -313,7 +315,7 @@ export default function EarningsClient() {
                         onClick={() => setPendingCancel(w)}
                         className="text-xs text-destructive hover:underline"
                       >
-                        Bekor qilish
+                        {t('teacher.earningsCancelRequest')}
                       </button>
                     )}
                   </div>
@@ -323,25 +325,25 @@ export default function EarningsClient() {
                         ? `${w.bankName} · ${w.bankAccountNumber}`
                         : `Karta ${w.cardNumber}`}
                     </p>
-                    <p>Qabul qiluvchi: {w.recipientName}</p>
-                    {w.note && <p>Izoh: {w.note}</p>}
+                    <p>{t('teacher.earningsRecipient')}: {w.recipientName}</p>
+                    {w.note && <p>{t('teacher.earningsNote')}: {w.note}</p>}
                     {w.adminNote && (
-                      <p className="text-primary">Admin: {w.adminNote}</p>
+                      <p className="text-primary">{t('teacher.earningsAdminNote')}: {w.adminNote}</p>
                     )}
                     {w.rejectionReason && (
                       <p className="text-destructive">
-                        Rad sababi: {w.rejectionReason}
+                        {t('teacher.earningsRejectionReason')}: {w.rejectionReason}
                       </p>
                     )}
                     <p>
-                      So'rov:{' '}
+                      {t('teacher.earningsRequestDate')}:{' '}
                       {new Date(w.requestedAt).toLocaleString('uz-UZ')}
                       {w.completedAt &&
-                        ` · To'langan: ${new Date(
+                        ` · ${t('teacher.earningsPaidDate')}: ${new Date(
                           w.completedAt,
                         ).toLocaleString('uz-UZ')}`}
                       {w.cancelledAt &&
-                        ` · Bekor: ${new Date(
+                        ` · ${t('teacher.earningsCancelledDate')}: ${new Date(
                           w.cancelledAt,
                         ).toLocaleString('uz-UZ')}`}
                     </p>
@@ -365,15 +367,15 @@ export default function EarningsClient() {
       {pendingCancel && (
         <ConfirmModal
           open={true}
-          title="So'rovni bekor qilish"
-          message={`${fmtUzs(pendingCancel.amountUzs)} UZS so'rovini bekor qilasizmi?`}
-          confirmLabel="Bekor qilish"
+          title={t('teacher.earningsCancelTitle')}
+          message={`${fmtUzs(pendingCancel.amountUzs)} ${t('teacher.earningsCancelMessage')}`}
+          confirmLabel={t('teacher.earningsCancelBtn')}
           variant="danger"
           isLoading={cancelMut.isPending}
           onConfirm={() => {
             cancelMut.mutate(pendingCancel.id, {
               onSuccess: () => {
-                toast.success('Bekor qilindi');
+                toast.success(t('teacher.earningsCancelled'));
                 setPendingCancel(null);
               },
               onError: (err) => toast.error(err.message),
@@ -438,6 +440,7 @@ function WithdrawalModal({
   available: string;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const [method, setMethod] = useState<WithdrawalMethodDTO>('bank_transfer');
   const [amount, setAmount] = useState('100000');
   const [bankName, setBankName] = useState('');
@@ -455,7 +458,7 @@ function WithdrawalModal({
     if (s.payoutBankName) setBankName(s.payoutBankName);
     if (s.payoutAccountNumber) setBankAccount(s.payoutAccountNumber);
     if (s.payoutRecipientName) setRecipientName(s.payoutRecipientName);
-    toast.info("Sozlamalardan olindi");
+    toast.info(t('teacher.withdrawModalFilledFromSettings'));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -472,7 +475,7 @@ function WithdrawalModal({
       },
       {
         onSuccess: () => {
-          toast.success("So'rov yuborildi — admin tekshiradi");
+          toast.success(t('teacher.withdrawModalSuccess'));
           onClose();
         },
         onError: (err) => toast.error(err.message),
@@ -493,20 +496,20 @@ function WithdrawalModal({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-heading font-semibold flex items-center gap-2">
             <Icon name="BanknotesIcon" size={18} />
-            Pul yechib olish
+            {t('teacher.withdrawModalTitle')}
           </h3>
           <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
           </button>
         </div>
         <p className="text-xs text-muted-foreground mb-4">
-          Mavjud balans:{' '}
+          {t('teacher.withdrawModalAvailable')}:{' '}
           <strong className="text-primary">{fmtUzs(available)} UZS</strong>
         </p>
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Summa (UZS) *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.withdrawModalAmountLabel')}</label>
             <input
               type="number"
               min={100_000}
@@ -517,12 +520,12 @@ function WithdrawalModal({
               className="w-full px-3 py-2 border border-border rounded-md text-sm"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Min: 100,000 UZS
+              {t('teacher.withdrawModalAmountMin')}
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Usul *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.withdrawModalMethodLabel')}</label>
             <div className="grid grid-cols-2 gap-2">
               {(['bank_transfer', 'card'] as const).map((m) => (
                 <button
@@ -539,7 +542,7 @@ function WithdrawalModal({
                     name={m === 'bank_transfer' ? 'BuildingLibraryIcon' : 'CreditCardIcon'}
                     size={14}
                   />
-                  {m === 'bank_transfer' ? 'Bank' : 'Karta'}
+                  {m === 'bank_transfer' ? t('teacher.withdrawModalBank') : t('teacher.withdrawModalCard')}
                 </button>
               ))}
             </div>
@@ -548,7 +551,7 @@ function WithdrawalModal({
           {method === 'bank_transfer' && (
             <>
               <div>
-                <label className="block text-sm font-medium mb-1">Bank nomi *</label>
+                <label className="block text-sm font-medium mb-1">{t('teacher.withdrawModalBankName')}</label>
                 <input
                   type="text"
                   value={bankName}
@@ -559,7 +562,7 @@ function WithdrawalModal({
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1">Hisob raqami *</label>
+                <label className="block text-sm font-medium mb-1">{t('teacher.withdrawModalAccountNumber')}</label>
                 <input
                   type="text"
                   value={bankAccount}
@@ -574,7 +577,7 @@ function WithdrawalModal({
 
           {method === 'card' && (
             <div>
-              <label className="block text-sm font-medium mb-1">Karta raqami *</label>
+              <label className="block text-sm font-medium mb-1">{t('teacher.withdrawModalCardNumber')}</label>
               <input
                 type="text"
                 value={cardNumber}
@@ -589,7 +592,7 @@ function WithdrawalModal({
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Qabul qiluvchi ism-familiya *
+              {t('teacher.withdrawModalRecipient')}
             </label>
             <input
               type="text"
@@ -603,7 +606,7 @@ function WithdrawalModal({
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Izoh (ixtiyoriy)
+              {t('teacher.withdrawModalNote')}
             </label>
             <input
               type="text"
@@ -620,7 +623,7 @@ function WithdrawalModal({
               onClick={useSettings}
               className="text-xs text-primary hover:underline"
             >
-              📋 Sozlamalardan to'ldirish
+              📋 {t('teacher.withdrawModalFillFromSettings')}
             </button>
           )}
         </div>
@@ -632,7 +635,7 @@ function WithdrawalModal({
             disabled={mut.isPending}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor
+            {t('teacher.withdrawModalCancel')}
           </button>
           <button
             type="submit"
@@ -642,7 +645,7 @@ function WithdrawalModal({
             {mut.isPending && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            So'rov yuborish
+            {t('teacher.withdrawModalSubmit')}
           </button>
         </div>
       </form>
@@ -651,6 +654,7 @@ function WithdrawalModal({
 }
 
 function PayoutSettingsPanel() {
+  const { t } = useI18n();
   const settings = usePayoutSettings();
   const mut = useUpdatePayoutSettingsMutation();
 
@@ -660,7 +664,7 @@ function PayoutSettingsPanel() {
   const [cardNumber, setCardNumber] = useState('');
   const [editing, setEditing] = useState(false);
 
-  if (settings.isLoading) return <div className="p-8">Yuklanmoqda…</div>;
+  if (settings.isLoading) return <div className="p-8">{t('teacher.payoutSettingsLoading')}</div>;
 
   const s = settings.data?.settings;
 
@@ -683,7 +687,7 @@ function PayoutSettingsPanel() {
       },
       {
         onSuccess: () => {
-          toast.success('Saqlandi');
+          toast.success(t('teacher.payoutSettingsSaved'));
           setEditing(false);
         },
         onError: (err) => toast.error(err.message),
@@ -695,24 +699,23 @@ function PayoutSettingsPanel() {
     return (
       <div className="bg-card border border-border rounded-md p-6 max-w-2xl">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="font-medium">To'lov ma'lumotlari</h3>
+          <h3 className="font-medium">{t('teacher.payoutSettingsTitle')}</h3>
           <button
             onClick={startEdit}
             className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs"
           >
             <Icon name="PencilIcon" size={12} className="inline mr-1" />
-            Tahrirlash
+            {t('teacher.payoutSettingsEdit')}
           </button>
         </div>
         <dl className="space-y-2 text-sm">
-          <Row label="Bank nomi" value={s?.payoutBankName} />
-          <Row label="Hisob raqami" value={s?.payoutAccountNumber} mono />
-          <Row label="Qabul qiluvchi" value={s?.payoutRecipientName} />
-          <Row label="Karta" value={s?.payoutCardNumber} mono />
+          <Row label={t('teacher.payoutSettingsBankName')} value={s?.payoutBankName} />
+          <Row label={t('teacher.payoutSettingsAccountNumber')} value={s?.payoutAccountNumber} mono />
+          <Row label={t('teacher.payoutSettingsRecipient')} value={s?.payoutRecipientName} />
+          <Row label={t('teacher.payoutSettingsCard')} value={s?.payoutCardNumber} mono />
         </dl>
         <p className="text-xs text-muted-foreground mt-3">
-          Bu ma'lumotlar yangi pul yechib olish so'rovlarida default sifatida
-          ishlatiladi.
+          {t('teacher.payoutSettingsNote')}
         </p>
       </div>
     );
@@ -720,9 +723,9 @@ function PayoutSettingsPanel() {
 
   return (
     <form onSubmit={handleSave} className="bg-card border border-border rounded-md p-6 max-w-2xl space-y-3">
-      <h3 className="font-medium mb-3">To'lov ma'lumotlarini yangilash</h3>
+      <h3 className="font-medium mb-3">{t('teacher.payoutSettingsUpdateTitle')}</h3>
       <div>
-        <label className="block text-sm font-medium mb-1">Bank nomi</label>
+        <label className="block text-sm font-medium mb-1">{t('teacher.payoutSettingsBankName')}</label>
         <input
           type="text"
           value={bankName}
@@ -732,7 +735,7 @@ function PayoutSettingsPanel() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Hisob raqami</label>
+        <label className="block text-sm font-medium mb-1">{t('teacher.payoutSettingsAccountNumber')}</label>
         <input
           type="text"
           value={account}
@@ -742,7 +745,7 @@ function PayoutSettingsPanel() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Qabul qiluvchi</label>
+        <label className="block text-sm font-medium mb-1">{t('teacher.payoutSettingsRecipient')}</label>
         <input
           type="text"
           value={recipient}
@@ -753,7 +756,7 @@ function PayoutSettingsPanel() {
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">
-          Karta raqami (faqat oxirgi 4 raqam saqlanadi)
+          {t('teacher.payoutSettingsCardHint')}
         </label>
         <input
           type="text"
@@ -770,7 +773,7 @@ function PayoutSettingsPanel() {
           disabled={mut.isPending}
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm disabled:opacity-50"
         >
-          Saqlash
+          {t('teacher.payoutSettingsSave')}
         </button>
         <button
           type="button"
@@ -778,7 +781,7 @@ function PayoutSettingsPanel() {
           disabled={mut.isPending}
           className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm"
         >
-          Bekor
+          {t('teacher.payoutSettingsCancel')}
         </button>
       </div>
     </form>
@@ -802,7 +805,7 @@ function Row({
           !value ? 'text-muted-foreground italic' : ''
         }`}
       >
-        {value || 'kiritilmagan'}
+        {value || '—'}
       </dd>
     </div>
   );

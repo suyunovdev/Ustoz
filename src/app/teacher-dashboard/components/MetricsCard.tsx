@@ -1,4 +1,5 @@
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface MetricsCardProps {
   title: string;
@@ -12,6 +13,7 @@ interface MetricsCardProps {
 }
 
 const MetricsCard = ({ title, value, icon, trend, subtitle }: MetricsCardProps) => {
+  const { t } = useI18n();
   return (
     <div className="bg-card rounded-md shadow-warm p-6 transition-smooth hover:shadow-warm-md">
       <div className="flex items-start justify-between mb-4">
@@ -36,7 +38,7 @@ const MetricsCard = ({ title, value, icon, trend, subtitle }: MetricsCardProps) 
           <span className={`text-sm font-medium ${trend.isPositive ? 'text-success' : 'text-destructive'}`}>
             {trend.value}%
           </span>
-          <span className="text-sm text-muted-foreground">vs last month</span>
+          <span className="text-sm text-muted-foreground">{t('teacher.vsLastMonth')}</span>
         </div>
       )}
     </div>

@@ -15,6 +15,7 @@ import {
   type TopicFormInput,
 } from '@/hooks/mutations/useCourseTopicMutations';
 import TopicMaterials from './TopicMaterials';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Props {
   courseId: string;
@@ -40,6 +41,7 @@ function groupByModule(topics: CourseTopicDTO[]): ModuleGroup[] {
 }
 
 const CourseDetailInteractive = ({ courseId }: Props) => {
+  const { t } = useI18n();
   const { data, isLoading, error, refetch } = useCourseTopics(courseId);
   const createMut = useCreateTopicMutation(courseId);
   const updateMut = useUpdateTopicMutation(courseId);
@@ -78,7 +80,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
         { topicId: editingTopic.id, input },
         {
           onSuccess: () => {
-            toast.success('Mavzu yangilandi');
+            toast.success(t('teacher.topicUpdated'));
             setEditorOpen(false);
             setEditingTopic(null);
           },
@@ -88,7 +90,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
     } else {
       createMut.mutate(input, {
         onSuccess: () => {
-          toast.success("Mavzu qo'shildi");
+          toast.success(t('teacher.topicAdded'));
           setEditorOpen(false);
         },
         onError: (err) => toast.error(err.message),
@@ -100,7 +102,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
     if (!pendingDelete) return;
     deleteMut.mutate(pendingDelete.id, {
       onSuccess: () => {
-        toast.success("Mavzu o'chirildi");
+        toast.success(t('teacher.topicDeleted'));
         setPendingDelete(null);
       },
       onError: (err) => toast.error(err.message),
@@ -128,17 +130,17 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
             className="text-sm text-muted-foreground hover:text-foreground transition-smooth flex items-center gap-1"
           >
             <Icon name="ChevronLeftIcon" size={16} />
-            Kurslarim'ga qaytish
+            {t('teacher.backToMyCourses')}
           </Link>
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
             <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground mb-1">
-              Mavzular
+              {t('teacher.topics')}
             </h1>
             <p className="text-muted-foreground text-sm">
-              Mavzular va sub-bo'limlar. Drag & drop bilan tartiblang.
+              {t('teacher.topicsSubtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -154,7 +156,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth flex items-center gap-2 font-medium text-sm"
             >
               <Icon name="PlusIcon" size={18} />
-              Yangi mavzu
+              {t('teacher.newTopic')}
             </button>
           </div>
         </div>
@@ -163,7 +165,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
           <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm flex items-center justify-between">
             <span>{error.message}</span>
             <button onClick={() => refetch()} className="underline text-xs">
-              Qayta urinish
+              {t('teacher.retry')}
             </button>
           </div>
         )}
@@ -177,16 +179,16 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
         ) : topics.length === 0 ? (
           <div className="bg-card rounded-md shadow-warm p-12 text-center">
             <Icon name="BookOpenIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">Hozircha mavzular yo'q</h3>
+            <h3 className="text-xl font-semibold text-foreground mb-2">{t('teacher.noTopicsYet')}</h3>
             <p className="text-muted-foreground mb-6">
-              Birinchi mavzuni qo'shib, kursingizni qurishni boshlang
+              {t('teacher.addFirstTopicDesc')}
             </p>
             <div className="flex items-center justify-center gap-2">
               <button
                 onClick={handleCreateNew}
                 className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium"
               >
-                Birinchi mavzu
+                {t('teacher.firstTopic')}
               </button>
               <button
                 onClick={() => setBulkOpen(true)}
@@ -245,13 +247,13 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                                     </h4>
                                     {topic.isFreePreview && (
                                       <span className="px-2 py-0.5 text-xs bg-success/10 text-success rounded-full">
-                                        Bepul
+                                        {t('courses.free')}
                                       </span>
                                     )}
                                     {topic.isLocked && (
                                       <span className="px-2 py-0.5 text-xs bg-warning/10 text-warning rounded-full flex items-center gap-1">
                                         <Icon name="LockClosedIcon" size={10} />
-                                        Qulflangan
+                                        {t('teacher.locked')}
                                       </span>
                                     )}
                                     {topic.hasQuiz && (
@@ -267,7 +269,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                                   )}
                                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                                     <span>⏱️ {topic.duration}</span>
-                                    {topic.videoUrl && <span>🎬 Video bor</span>}
+                                    {topic.videoUrl && <span>🎬 {t('teacher.hasVideo')}</span>}
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
@@ -357,9 +359,9 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
       {pendingDelete && (
         <ConfirmModal
           open={true}
-          title="Mavzuni o'chirish"
-          message={`"${pendingDelete.title}" mavzusi butunlay o'chiriladi. Tegishli materiallar ham yo'qoladi.`}
-          confirmLabel="O'chirish"
+          title={t('teacher.deleteTopic')}
+          message={`"${pendingDelete.title}" ${t('teacher.deleteTopicConfirm')}`}
+          confirmLabel={t('common.delete')}
           variant="danger"
           isLoading={deleteMut.isPending}
           onConfirm={handleDelete}
@@ -395,10 +397,11 @@ function TopicEditorModal({
   const [isFreePreview, setIsFreePreview] = useState(topic?.isFreePreview ?? false);
   const [isLocked, setIsLocked] = useState(topic?.isLocked ?? false);
   const [aiLoading, setAiLoading] = useState(false);
+  const { t } = useI18n();
 
   const handleAiSuggest = async () => {
     if (title.trim().length < 2) {
-      toast.error('Avval mavzu nomini kiriting');
+      toast.error(t('teacher.enterTopicName'));
       return;
     }
     setAiLoading(true);
@@ -419,7 +422,7 @@ function TopicEditorModal({
         return;
       }
       setDescription(json.description);
-      toast.success("AI tavsif yaratdi");
+      toast.success(t('teacher.aiDescriptionCreated'));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Xatolik');
     } finally {
@@ -430,7 +433,7 @@ function TopicEditorModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim().length < 2) {
-      toast.error('Mavzu nomi kamida 2 belgi');
+      toast.error(t('teacher.topicNameMinLength'));
       return;
     }
     onSave({
@@ -458,7 +461,7 @@ function TopicEditorModal({
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            {topic ? 'Mavzuni tahrirlash' : 'Yangi mavzu'}
+            {topic ? t('teacher.editTopic') : t('teacher.newTopic')}
           </h3>
           <button
             type="button"
@@ -473,7 +476,7 @@ function TopicEditorModal({
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Mavzu nomi *
+              {t('teacher.topicName')} *
             </label>
             <input
               type="text"
@@ -488,7 +491,7 @@ function TopicEditorModal({
           {/* Module selector */}
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Sub-bo'lim (module) — ixtiyoriy
+              {t('teacher.subModule')}
             </label>
             <input
               type="text"
@@ -510,7 +513,7 @@ function TopicEditorModal({
           {/* Description + AI button */}
           <div>
             <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-foreground">Tavsif</label>
+              <label className="block text-sm font-medium text-foreground">{t('teacher.description')}</label>
               <button
                 type="button"
                 onClick={handleAiSuggest}
@@ -522,7 +525,7 @@ function TopicEditorModal({
                 ) : (
                   <Icon name="SparklesIcon" size={12} />
                 )}
-                AI tavsiya
+                {t('teacher.aiSuggest')}
               </button>
             </div>
             <textarea
@@ -549,7 +552,7 @@ function TopicEditorModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Davomiyligi
+                {t('teacher.duration')}
               </label>
               <input
                 type="text"
@@ -563,7 +566,7 @@ function TopicEditorModal({
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Mavzu kontenti (matn)
+              {t('teacher.topicContent')}
             </label>
             <textarea
               value={content}
@@ -612,7 +615,7 @@ function TopicEditorModal({
             disabled={isLoading}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md transition-smooth font-medium disabled:opacity-50"
           >
-            Bekor qilish
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -622,7 +625,7 @@ function TopicEditorModal({
             {isLoading && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            {topic ? 'Saqlash' : "Qo'shish"}
+            {topic ? t('common.save') : t('teacher.add')}
           </button>
         </div>
       </form>
@@ -643,6 +646,7 @@ function BulkImportModal({
 }) {
   const [raw, setRaw] = useState('');
   const [loading, setLoading] = useState(false);
+  const { t } = useI18n();
 
   // Format: Title | Description | Duration | VideoURL | ModuleTitle
   // Har qator — bitta mavzu. | bilan ajratiladi.
@@ -665,7 +669,7 @@ function BulkImportModal({
 
   const handleImport = async () => {
     if (validCount === 0) {
-      toast.error("Hech qanday yaroqli mavzu yo'q");
+      toast.error(t('teacher.noValidTopics'));
       return;
     }
     setLoading(true);
@@ -738,7 +742,7 @@ function BulkImportModal({
               disabled={loading}
               className="px-4 py-2 text-foreground hover:bg-muted rounded-md transition-smooth font-medium disabled:opacity-50"
             >
-              Bekor qilish
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleImport}

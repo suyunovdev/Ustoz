@@ -10,6 +10,7 @@ import {
   type NotificationTypeDTO,
   type NotificationStatusDTO,
 } from '@/hooks/queries/useNotifications';
+import { useI18n } from '@/contexts/I18nContext';
 import {
   useMarkReadMutation,
   useMarkAllReadMutation,
@@ -17,52 +18,53 @@ import {
   useDeleteNotificationMutation,
 } from '@/hooks/mutations/useNotificationMutations';
 
-const TYPE_LABEL: Record<NotificationTypeDTO, { label: string; icon: string; color: string }> = {
-  enrollment: { label: 'Yozilish', icon: 'UserPlusIcon', color: 'text-primary' },
-  quiz_completion: { label: 'Test', icon: 'AcademicCapIcon', color: 'text-success' },
-  assignment_submission: {
-    label: 'Vazifa',
-    icon: 'ClipboardDocumentListIcon',
-    color: 'text-warning',
-  },
-  course_update: { label: 'Kurs yangiligi', icon: 'BookOpenIcon', color: 'text-secondary' },
-  achievement: { label: 'Yutuq', icon: 'TrophyIcon', color: 'text-warning' },
-  payment: { label: "To'lov", icon: 'CurrencyDollarIcon', color: 'text-success' },
-};
-
-function timeAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(ms / 60_000);
-  if (mins < 1) return 'hozir';
-  if (mins < 60) return `${mins} daq oldin`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} soat oldin`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} kun oldin`;
-  return new Date(iso).toLocaleDateString('uz-UZ');
-}
-
-function groupByDate(rows: NotificationDTO[]): Map<string, NotificationDTO[]> {
-  const groups = new Map<string, NotificationDTO[]>();
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  const yesterday = today - 86_400_000;
-  const weekAgo = today - 7 * 86_400_000;
-
-  for (const r of rows) {
-    const t = new Date(r.createdAt).getTime();
-    let bucket: string;
-    if (t >= today) bucket = 'Bugun';
-    else if (t >= yesterday) bucket = 'Kecha';
-    else if (t >= weekAgo) bucket = 'Bu hafta';
-    else bucket = 'Eskiroq';
-    if (!groups.has(bucket)) groups.set(bucket, []);
-    groups.get(bucket)!.push(r);
-  }
-  return groups;
-}
-
 export default function NotificationsClient() {
+  const { t } = useI18n();
+
+  const TYPE_LABEL: Record<NotificationTypeDTO, { label: string; icon: string; color: string }> = {
+    enrollment: { label: t('notifications.enrollment'), icon: 'UserPlusIcon', color: 'text-primary' },
+    quiz_completion: { label: t('notifications.quizCompletion'), icon: 'AcademicCapIcon', color: 'text-success' },
+    assignment_submission: {
+      label: t('notifications.assignment'),
+      icon: 'ClipboardDocumentListIcon',
+      color: 'text-warning',
+    },
+    course_update: { label: t('notifications.courseUpdate'), icon: 'BookOpenIcon', color: 'text-secondary' },
+    achievement: { label: t('notifications.achievement'), icon: 'TrophyIcon', color: 'text-warning' },
+    payment: { label: t('notifications.payment'), icon: 'CurrencyDollarIcon', color: 'text-success' },
+  };
+
+  function timeAgo(iso: string): string {
+    const ms = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(ms / 60_000);
+    if (mins < 1) return t('notifications.now');
+    if (mins < 60) return `${mins} ${t('notifications.minAgo')}`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} ${t('notifications.hoursAgo')}`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} ${t('notifications.daysAgo')}`;
+    return new Date(iso).toLocaleDateString('uz-UZ');
+  }
+
+  function groupByDate(rows: NotificationDTO[]): Map<string, NotificationDTO[]> {
+    const groups = new Map<string, NotificationDTO[]>();
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const yesterday = today - 86_400_000;
+    const weekAgo = today - 7 * 86_400_000;
+
+    for (const r of rows) {
+      const ts = new Date(r.createdAt).getTime();
+      let bucket: string;
+      if (ts >= today) bucket = t('notifications.today');
+      else if (ts >= yesterday) bucket = t('notifications.yesterday');
+      else if (ts >= weekAgo) bucket = t('notifications.thisWeek');
+      else bucket = t('notifications.older');
+      if (!groups.has(bucket)) groups.set(bucket, []);
+      groups.get(bucket)!.push(r);
+    }
+    return groups;
+  }
   const [statusFilter, setStatusFilter] = useState<NotificationStatusDTO | undefined>();
   const [typeFilter, setTypeFilter] = useState<NotificationTypeDTO | undefined>();
   const { data, isLoading, error } = useNotifications({
@@ -87,13 +89,13 @@ export default function NotificationsClient() {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Bosh sahifa
+            {t('nav.home')}
           </Link>
           <h1 className="text-2xl font-heading font-semibold">
-            Bildirishnomalar
+            {t('notifications.title')}
             {(data?.unreadCount ?? 0) > 0 && (
               <span className="ml-2 text-sm font-normal text-primary">
-                ({data?.unreadCount} o'qilmagan)
+                ({data?.unreadCount} {t('notifications.unread')})
               </span>
             )}
           </h1>
@@ -103,7 +105,7 @@ export default function NotificationsClient() {
             onClick={() =>
               markAllMut.mutate(undefined, {
                 onSuccess: ({ updated }) =>
-                  toast.success(`${updated} ta o'qilgan deb belgilandi`),
+                  toast.success(`${updated} ${t('notifications.markedAsRead')}`),
                 onError: (err) => toast.error(err.message),
               })
             }
@@ -111,7 +113,7 @@ export default function NotificationsClient() {
             className="px-3 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 text-sm flex items-center gap-2 disabled:opacity-50"
           >
             <Icon name="CheckCircleIcon" size={14} />
-            Hammasini o'qilgan
+            {t('notifications.markAllRead')}
           </button>
         )}
       </div>
@@ -119,10 +121,10 @@ export default function NotificationsClient() {
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         {(
           [
-            { value: undefined, label: 'Hammasi' },
-            { value: 'unread', label: "O'qilmagan" },
-            { value: 'read', label: "O'qilgan" },
-            { value: 'archived', label: 'Arxiv' },
+            { value: undefined, label: t('common.all') },
+            { value: 'unread', label: t('notifications.statusUnread') },
+            { value: 'read', label: t('notifications.statusRead') },
+            { value: 'archived', label: t('notifications.statusArchived') },
           ] as const
         ).map((s) => (
           <button
@@ -149,7 +151,7 @@ export default function NotificationsClient() {
                 : 'bg-muted/50 text-muted-foreground hover:bg-muted'
             }`}
           >
-            Barcha turlar
+            {t('notifications.allTypes')}
           </button>
           {data?.countsByType.map((c) => {
             const label = TYPE_LABEL[c.type as NotificationTypeDTO]?.label ?? c.type;
@@ -191,7 +193,7 @@ export default function NotificationsClient() {
       ) : rows.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-md">
           <Icon name="BellIcon" size={48} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">Bildirishnoma yo'q</p>
+          <p className="text-muted-foreground">{t('notifications.noNotifications')}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -208,13 +210,13 @@ export default function NotificationsClient() {
                     onMarkRead={() => markReadMut.mutate(n.id)}
                     onArchive={() =>
                       archiveMut.mutate(n.id, {
-                        onSuccess: () => toast.success("Arxivga qo'shildi"),
+                        onSuccess: () => toast.success(t('notifications.archived')),
                         onError: (err) => toast.error(err.message),
                       })
                     }
                     onDelete={() =>
                       deleteMut.mutate(n.id, {
-                        onSuccess: () => toast.success("O'chirildi"),
+                        onSuccess: () => toast.success(t('notifications.deleted')),
                         onError: (err) => toast.error(err.message),
                       })
                     }
@@ -240,6 +242,21 @@ function NotificationCard({
   onArchive: () => void;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
+
+  const TYPE_LABEL: Record<NotificationTypeDTO, { label: string; icon: string; color: string }> = {
+    enrollment: { label: t('notifications.enrollment'), icon: 'UserPlusIcon', color: 'text-primary' },
+    quiz_completion: { label: t('notifications.quizCompletion'), icon: 'AcademicCapIcon', color: 'text-success' },
+    assignment_submission: {
+      label: t('notifications.assignment'),
+      icon: 'ClipboardDocumentListIcon',
+      color: 'text-warning',
+    },
+    course_update: { label: t('notifications.courseUpdate'), icon: 'BookOpenIcon', color: 'text-secondary' },
+    achievement: { label: t('notifications.achievement'), icon: 'TrophyIcon', color: 'text-warning' },
+    payment: { label: t('notifications.payment'), icon: 'CurrencyDollarIcon', color: 'text-success' },
+  };
+
   const isUnread = notification.status === 'unread';
   const typeMeta = TYPE_LABEL[notification.type] ?? TYPE_LABEL.course_update;
   const handleClick = () => {
@@ -289,7 +306,7 @@ function NotificationCard({
               }}
               className="text-xs text-primary hover:underline"
             >
-              O'qilgan deb belgilash
+              {t('notifications.markAsRead')}
             </button>
           )}
           {notification.status !== 'archived' && (
@@ -300,7 +317,7 @@ function NotificationCard({
               }}
               className="text-xs text-muted-foreground hover:text-foreground"
             >
-              Arxiv
+              {t('notifications.archive')}
             </button>
           )}
           <button
@@ -310,7 +327,7 @@ function NotificationCard({
             }}
             className="text-xs text-destructive hover:underline ml-auto"
           >
-            O'chirish
+            {t('common.delete')}
           </button>
         </div>
       </div>

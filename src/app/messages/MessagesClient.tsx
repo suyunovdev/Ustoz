@@ -13,18 +13,7 @@ import {
   type ConversationListItemDTO,
 } from '@/hooks/queries/useConversations';
 import { useSendMessageMutation } from '@/hooks/mutations/useConversationMutations';
-
-function timeAgo(d: string): string {
-  const ms = Date.now() - new Date(d).getTime();
-  const mins = Math.floor(ms / 60_000);
-  if (mins < 1) return 'hozir';
-  if (mins < 60) return `${mins} daq`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} soat`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days} kun`;
-  return new Date(d).toLocaleDateString('uz-UZ');
-}
+import { useI18n } from '@/contexts/I18nContext';
 
 function timeOfDay(d: string): string {
   return new Date(d).toLocaleTimeString('uz-UZ', {
@@ -34,7 +23,20 @@ function timeOfDay(d: string): string {
 }
 
 export default function MessagesClient() {
+  const { t } = useI18n();
   const { user } = useAuth();
+
+  function timeAgo(d: string): string {
+    const ms = Date.now() - new Date(d).getTime();
+    const mins = Math.floor(ms / 60_000);
+    if (mins < 1) return t('messages.now');
+    if (mins < 60) return `${mins} ${t('messages.min')}`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} ${t('messages.hour')}`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} ${t('messages.day')}`;
+    return new Date(d).toLocaleDateString('uz-UZ');
+  }
   const searchParams = useSearchParams();
   const deepLinkId = searchParams.get('c');
   const inbox = useConversations();
@@ -77,10 +79,10 @@ export default function MessagesClient() {
             Dashboard
           </Link>
           <h1 className="text-2xl font-heading font-semibold">
-            Xabarlar
+            {t('messages.title')}
             {(inbox.data?.totalUnread ?? 0) > 0 && (
               <span className="ml-2 text-sm font-normal text-primary">
-                ({inbox.data?.totalUnread} o'qilmagan)
+                ({inbox.data?.totalUnread} {t('messages.unread')})
               </span>
             )}
           </h1>
@@ -100,7 +102,7 @@ export default function MessagesClient() {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Suhbat qidirish…"
+                placeholder={t('messages.searchConversation')}
                 className="w-full pl-9 pr-3 py-2 bg-muted/30 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
@@ -114,7 +116,7 @@ export default function MessagesClient() {
               </div>
             ) : filtered.length === 0 ? (
               <p className="text-center text-muted-foreground text-sm italic p-8">
-                {search ? 'Mos suhbat yo\'q' : 'Hali suhbat yo\'q'}
+                {search ? t('messages.noMatchingConversation') : t('messages.noConversations')}
               </p>
             ) : (
               <ul>
@@ -137,7 +139,7 @@ export default function MessagesClient() {
             <ConversationThread conversationId={selectedId} />
           ) : (
             <div className="flex-1 flex items-center justify-center text-muted-foreground italic">
-              Suhbat tanlang
+              {t('messages.selectConversation')}
             </div>
           )}
         </div>
@@ -183,7 +185,7 @@ function ConversationItem({
           </span>
         </div>
         <p className="text-xs text-muted-foreground truncate">
-          {conversation.lastMessagePreview ?? '— xabar yo\'q —'}
+          {conversation.lastMessagePreview ?? `— ${t('messages.noMessage')} —`}
         </p>
       </div>
       {conversation.unreadCount > 0 && (
@@ -196,6 +198,7 @@ function ConversationItem({
 }
 
 function ConversationThread({ conversationId }: { conversationId: string }) {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { data, isLoading, error } = useConversationMessages(conversationId);
   const sendMut = useSendMessageMutation(conversationId);
@@ -220,7 +223,7 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
   };
 
   if (isLoading || !data) {
-    return <div className="flex-1 flex items-center justify-center">Yuklanmoqda…</div>;
+    return <div className="flex-1 flex items-center justify-center">{t('common.loading')}</div>;
   }
   if (error) {
     return (
@@ -250,7 +253,7 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
         <div className="flex-1 min-w-0">
           <p className="font-medium text-foreground">{conversation.partner.fullName}</p>
           <p className="text-xs text-muted-foreground">
-            {conversation.partner.role === 'teacher' ? "O'qituvchi" : 'Talaba'}
+            {conversation.partner.role === 'teacher' ? t('messages.teacher') : t('messages.student')}
             {conversation.courseTitle && ` · ${conversation.courseTitle}`}
           </p>
         </div>
@@ -259,7 +262,7 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
             href={`/teacher-dashboard/students/${conversation.partner.id}`}
             className="text-xs text-primary hover:underline shrink-0"
           >
-            Profil →
+            {t('messages.profile')}
           </Link>
         )}
       </div>
@@ -267,7 +270,7 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
       <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-2">
         {messages.length === 0 ? (
           <p className="text-center text-muted-foreground italic text-sm py-8">
-            Birinchi xabarni yozing
+            {t('messages.writeFirstMessage')}
           </p>
         ) : (
           messages.map((m) => {
@@ -313,7 +316,7 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="Xabar yozing…"
+          placeholder={t('messages.writeMessage')}
           maxLength={4000}
           className="flex-1 px-4 py-2 bg-muted/30 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-primary"
         />
@@ -321,7 +324,7 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
           type="submit"
           disabled={!draft.trim() || sendMut.isPending}
           className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50"
-          aria-label="Yuborish"
+          aria-label={t('common.submit')}
         >
           {sendMut.isPending ? (
             <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />

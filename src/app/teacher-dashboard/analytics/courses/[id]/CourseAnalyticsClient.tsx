@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import { useCourseAnalytics } from '@/hooks/queries/useTeacherAnalytics';
+import { useI18n } from '@/contexts/I18nContext';
 
 function fmtUzs(s: string): string {
   const n = BigInt(s);
@@ -14,9 +15,10 @@ interface Props {
 }
 
 export default function CourseAnalyticsClient({ courseId }: Props) {
+  const { t } = useI18n();
   const { data, isLoading, error } = useCourseAnalytics(courseId);
 
-  if (isLoading || !data) return <div className="p-8">Yuklanmoqda…</div>;
+  if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
   if (error)
     return <div className="p-8 text-destructive">{(error as Error).message}</div>;
 
@@ -30,38 +32,38 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
         className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-3"
       >
         <Icon name="ArrowLeftIcon" size={14} />
-        Tahlil
+        {t('teacher.analytics')}
       </Link>
 
       <h1 className="text-2xl font-heading font-semibold mb-1">{course.courseTitle}</h1>
-      <p className="text-sm text-muted-foreground mb-6">Kurs bo'yicha to'liq statistika</p>
+      <p className="text-sm text-muted-foreground mb-6">{t('teacher.courseFullStats')}</p>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <KpiCard
-          label="Jami yozilgan"
+          label={t('teacher.totalEnrolled')}
           value={course.totalEnrollments}
-          sub={`${course.activeEnrollments} faol`}
+          sub={`${course.activeEnrollments} ${t('teacher.active')}`}
           icon="UsersIcon"
           color="text-primary"
         />
         <KpiCard
-          label="Tugatgan"
+          label={t('teacher.completed')}
           value={course.completedEnrollments}
           sub={`${course.completionRate}% completion rate`}
           icon="CheckCircleIcon"
           color="text-success"
         />
         <KpiCard
-          label="O'rtacha progress"
+          label={t('teacher.avgProgress')}
           value={`${course.avgProgress}%`}
-          sub="Hamma talabalar"
+          sub={t('teacher.allStudents')}
           icon="ChartBarIcon"
           color="text-warning"
         />
         <KpiCard
-          label="Daromad"
+          label={t('teacher.revenue')}
           value={fmtUzs(course.totalRevenueUzs) + ' UZS'}
-          sub={`Qaytarilgan: ${fmtUzs(course.totalRefundsUzs)}`}
+          sub={`${t('teacher.refunded')}: ${fmtUzs(course.totalRefundsUzs)}`}
           icon="CurrencyDollarIcon"
           color="text-success"
         />
@@ -69,15 +71,15 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         <MiniStat
-          label="Sharhlar"
+          label={t('teacher.reviews')}
           value={`${course.reviewCount} (⭐ ${course.avgRating})`}
         />
-        <MiniStat label="Testlar" value={`${testStats.length} ta test`} />
-        <MiniStat label="Vazifalar" value={`${assignmentStats.length} ta vazifa`} />
+        <MiniStat label={t('teacher.tests')} value={`${testStats.length} ${t('teacher.testCount')}`} />
+        <MiniStat label={t('teacher.assignments')} value={`${assignmentStats.length} ${t('teacher.assignmentCount')}`} />
       </div>
 
       {topicFunnel.length > 0 && (
-        <Section title="Mavzular funnel" subtitle="Har topic'ni nechi talaba tugatgan">
+        <Section title={t('teacher.topicsFunnel')} subtitle={t('teacher.topicsFunnelDesc')}>
           <div className="space-y-2">
             {topicFunnel.map((t) => (
               <div key={t.topicId} className="bg-card border border-border rounded-md p-3">
@@ -119,7 +121,7 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
       )}
 
       {testStats.length > 0 && (
-        <Section title="Testlar statistikasi" subtitle="Pass rate va o'rtacha bal">
+        <Section title={t('teacher.testStats')} subtitle={t('teacher.testStatsDesc')}>
           <div className="space-y-2">
             {testStats.map((t) => (
               <Link
@@ -131,7 +133,7 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{t.testTitle}</p>
                     <p className="text-xs text-muted-foreground">
-                      {t.totalAttempts} urinish · {t.passedAttempts} o'tgan
+                      {t.totalAttempts} {t('teacher.attempts')} · {t.passedAttempts} {t('teacher.passed')}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 text-xs shrink-0">
@@ -158,7 +160,7 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
       )}
 
       {assignmentStats.length > 0 && (
-        <Section title="Vazifalar statistikasi" subtitle="Grading va kechikkan">
+        <Section title={t('teacher.assignmentStats')} subtitle={t('teacher.assignmentStatsDesc')}>
           <div className="space-y-2">
             {assignmentStats.map((a) => (
               <Link
@@ -170,8 +172,8 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{a.title}</p>
                     <p className="text-xs text-muted-foreground">
-                      {a.submissionCount} topshirilgan · {a.gradedCount} baholangan
-                      {a.lateCount > 0 && ` · ${a.lateCount} kechikkan`}
+                      {a.submissionCount} {t('teacher.submitted')} · {a.gradedCount} {t('teacher.graded')}
+                      {a.lateCount > 0 && ` · ${a.lateCount} ${t('teacher.late')}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 text-xs shrink-0">
@@ -198,9 +200,9 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Section title="🏆 Eng faol talabalar" subtitle="Top 10 by progress">
+        <Section title={t('teacher.topStudents')} subtitle={t('teacher.topStudentsDesc')}>
           {topStudents.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">Yo'q</p>
+            <p className="text-xs text-muted-foreground italic">{t('common.noData')}</p>
           ) : (
             <ul className="space-y-2">
               {topStudents.map((s, i) => (
@@ -230,11 +232,11 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
         </Section>
 
         <Section
-          title="⚠ Yordam kerak"
-          subtitle="Past progress yoki 14+ kun faollik yo'q"
+          title={t('teacher.needHelp')}
+          subtitle={t('teacher.needHelpDesc')}
         >
           {strugglingStudents.length === 0 ? (
-            <p className="text-xs text-muted-foreground italic">Hech kim yo'q ✓</p>
+            <p className="text-xs text-muted-foreground italic">{t('teacher.noOneNeedsHelp')}</p>
           ) : (
             <ul className="space-y-2">
               {strugglingStudents.map((s) => (
@@ -251,8 +253,8 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
                     </Link>
                     <p className="text-xs text-muted-foreground">
                       Progress {s.progress}%
-                      {s.daysSinceActivity !== null && ` · ${s.daysSinceActivity} kun ko'rinmagan`}
-                      {s.daysSinceActivity === null && ' · hech qachon kirmagan'}
+                      {s.daysSinceActivity !== null && ` · ${s.daysSinceActivity} ${t('teacher.daysInactive')}`}
+                      {s.daysSinceActivity === null && ` · ${t('teacher.neverLoggedIn')}`}
                     </p>
                   </div>
                 </li>

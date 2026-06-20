@@ -17,6 +17,7 @@ import {
   useDeleteGroupMutation,
 } from '@/hooks/mutations/useGroupMutations';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
+import { useI18n } from '@/contexts/I18nContext';
 
 export const COLOR_CLASS: Record<GroupColorDTO, { bg: string; text: string; ring: string }> = {
   blue:   { bg: 'bg-blue-100 dark:bg-blue-500/20',   text: 'text-blue-700 dark:text-blue-400',   ring: 'ring-blue-300 dark:ring-blue-500/40' },
@@ -29,6 +30,7 @@ export const COLOR_CLASS: Record<GroupColorDTO, { bg: string; text: string; ring
 };
 
 export default function GroupsListClient() {
+  const { t } = useI18n();
   const router = useRouter();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<GroupStatusDTO | 'all'>('all');
@@ -58,9 +60,9 @@ export default function GroupsListClient() {
             <Icon name="ArrowLeftIcon" size={14} />
             Dashboard
           </Link>
-          <h1 className="text-2xl font-heading font-semibold text-foreground">Guruhlar</h1>
+          <h1 className="text-2xl font-heading font-semibold text-foreground">{t('teacher.groupsTitle')}</h1>
           <p className="text-sm text-muted-foreground">
-            {groups.length} ta guruh · {groups.reduce((s, g) => s + g.memberCount, 0)} a'zo
+            {groups.length} {t('teacher.groupsCount')} · {groups.reduce((s, g) => s + g.memberCount, 0)} {t('teacher.groupsMemberSuffix')}
           </p>
         </div>
         <button
@@ -68,7 +70,7 @@ export default function GroupsListClient() {
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center gap-2 text-sm font-medium"
         >
           <Icon name="PlusIcon" size={16} />
-          Yangi guruh
+          {t('teacher.groupsNewGroup')}
         </button>
       </div>
 
@@ -83,7 +85,7 @@ export default function GroupsListClient() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Guruh nomi…"
+            placeholder={t('teacher.groupsSearchPlaceholder')}
             className="w-full pl-9 pr-3 py-2 border border-border rounded-md text-sm"
           />
         </div>
@@ -97,7 +99,7 @@ export default function GroupsListClient() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {s === 'all' ? 'Hammasi' : s === 'active' ? 'Faol' : 'Arxiv'}
+            {s === 'all' ? t('teacher.groupsFilterAll') : s === 'active' ? t('teacher.groupsFilterActive') : t('teacher.groupsFilterArchived')}
           </button>
         ))}
       </div>
@@ -117,12 +119,12 @@ export default function GroupsListClient() {
       ) : groups.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-md">
           <Icon name="UsersIcon" size={48} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">Hali guruh yo'q</p>
+          <p className="text-muted-foreground mb-3">{t('teacher.groupsNoGroups')}</p>
           <button
             onClick={() => setCreateOpen(true)}
             className="text-primary hover:underline text-sm"
           >
-            Birinchi guruhni yarating →
+            {t('teacher.groupsCreateFirst')} →
           </button>
         </div>
       ) : (
@@ -156,7 +158,7 @@ export default function GroupsListClient() {
                       setPendingDelete(g);
                     }}
                     className="p-1 hover:bg-destructive/10 rounded text-destructive"
-                    aria-label="O'chirish"
+                    aria-label={t('teacher.groupsDeleteBtn')}
                   >
                     <Icon name="TrashIcon" size={12} />
                   </button>
@@ -179,7 +181,7 @@ export default function GroupsListClient() {
                   )}
                   {g.status === 'archived' && (
                     <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded-full">
-                      Arxiv
+                      {t('teacher.groupsArchiveLabel')}
                     </span>
                   )}
                 </div>
@@ -208,7 +210,7 @@ export default function GroupsListClient() {
           onCreate={(input) =>
             createMut.mutate(input, {
               onSuccess: ({ group }) => {
-                toast.success("Guruh yaratildi");
+                toast.success(t('teacher.groupsCreated'));
                 router.push(`/teacher-dashboard/groups/${group.id}`);
               },
               onError: (err) => toast.error(err.message),
@@ -221,15 +223,15 @@ export default function GroupsListClient() {
       {pendingDelete && (
         <ConfirmModal
           open={true}
-          title="Guruhni o'chirish"
-          message={`"${pendingDelete.name}" guruhi va a'zoligi o'chiriladi.`}
-          confirmLabel="O'chirish"
+          title={t('teacher.groupsDeleteTitle')}
+          message={`"${pendingDelete.name}" ${t('teacher.groupsDeleteMessage')}`}
+          confirmLabel={t('teacher.groupsDeleteBtn')}
           variant="danger"
           isLoading={deleteMut.isPending}
           onConfirm={() => {
             deleteMut.mutate(pendingDelete.id, {
               onSuccess: () => {
-                toast.success("Guruh o'chirildi");
+                toast.success(t('teacher.groupsDeleted'));
                 setPendingDelete(null);
               },
               onError: (err) => toast.error(err.message),
@@ -271,9 +273,11 @@ function CreateGroupModal({
   const [scheduleNote, setScheduleNote] = useState('');
   const [color, setColor] = useState<GroupColorDTO>('blue');
 
+  const { t } = useI18n();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim().length < 2) return toast.error("Nomi kamida 2 belgi");
+    if (name.trim().length < 2) return toast.error(t('teacher.createGroupNameMinLength'));
     onCreate({
       name: name.trim(),
       description: description.trim() || undefined,
@@ -296,7 +300,7 @@ function CreateGroupModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-heading font-semibold">Yangi guruh</h3>
+          <h3 className="text-lg font-heading font-semibold">{t('teacher.createGroupTitle')}</h3>
           <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
           </button>
@@ -304,18 +308,18 @@ function CreateGroupModal({
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Nom *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.createGroupNameLabel')}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              placeholder="React 2026 Spring guruh"
+              placeholder={t('teacher.createGroupNamePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Tavsif</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.createGroupDescLabel')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -325,13 +329,13 @@ function CreateGroupModal({
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Kurs (ixtiyoriy)</label>
+              <label className="block text-sm font-medium mb-1">{t('teacher.createGroupCourseLabel')}</label>
               <select
                 value={courseId}
                 onChange={(e) => setCourseId(e.target.value)}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
               >
-                <option value="">— hech qaysi —</option>
+                <option value="">{t('teacher.createGroupCourseNone')}</option>
                 {courses.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.title}
@@ -340,7 +344,7 @@ function CreateGroupModal({
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Max a'zo</label>
+              <label className="block text-sm font-medium mb-1">{t('teacher.createGroupMaxMembers')}</label>
               <input
                 type="number"
                 min={1}
@@ -352,7 +356,7 @@ function CreateGroupModal({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Meeting URL (ixtiyoriy)</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.createGroupMeetingUrl')}</label>
             <input
               type="url"
               value={meetingUrl}
@@ -362,17 +366,17 @@ function CreateGroupModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Jadval</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.createGroupSchedule')}</label>
             <input
               type="text"
               value={scheduleNote}
               onChange={(e) => setScheduleNote(e.target.value)}
-              placeholder="Du-Pa 19:00, Sha 10:00"
+              placeholder={t('teacher.createGroupSchedulePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Rang</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.createGroupColor')}</label>
             <div className="flex gap-2 flex-wrap">
               {COLORS.map((c) => {
                 const cls = COLOR_CLASS[c];
@@ -399,7 +403,7 @@ function CreateGroupModal({
             disabled={isLoading}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor
+            {t('teacher.createGroupCancel')}
           </button>
           <button
             type="submit"
@@ -409,7 +413,7 @@ function CreateGroupModal({
             {isLoading && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Yaratish
+            {t('teacher.createGroupSubmit')}
           </button>
         </div>
       </form>

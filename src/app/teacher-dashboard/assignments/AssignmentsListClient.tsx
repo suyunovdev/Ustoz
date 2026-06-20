@@ -17,21 +17,23 @@ import {
   useDeleteAssignmentMutation,
 } from '@/hooks/mutations/useAssignmentMutations';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
+import { useI18n } from '@/contexts/I18nContext';
 
-const STATUS_LABEL: Record<AssignmentStatusDTO, { label: string; color: string }> = {
-  draft: { label: 'Qoralama', color: 'bg-muted text-muted-foreground' },
-  published: { label: "E'lon", color: 'bg-success/10 text-success' },
-  archived: { label: 'Arxiv', color: 'bg-warning/10 text-warning' },
+const STATUS_LABEL_KEYS: Record<AssignmentStatusDTO, { labelKey: string; color: string }> = {
+  draft: { labelKey: 'teacher.assignmentsStatusDraft', color: 'bg-muted text-muted-foreground' },
+  published: { labelKey: 'teacher.assignmentsStatusPublished', color: 'bg-success/10 text-success' },
+  archived: { labelKey: 'teacher.assignmentsStatusArchived', color: 'bg-warning/10 text-warning' },
 };
 
-const TYPE_LABEL: Record<SubmissionTypeDTO, string> = {
-  text: '📝 Matn',
-  file: '📎 Fayl',
-  url: '🔗 URL',
-  any: '↕ Har qanday',
+const TYPE_LABEL_KEYS: Record<SubmissionTypeDTO, { icon: string; labelKey: string }> = {
+  text: { icon: '📝', labelKey: 'teacher.assignmentTypeText' },
+  file: { icon: '📎', labelKey: 'teacher.assignmentTypeFile' },
+  url: { icon: '🔗', labelKey: 'teacher.assignmentTypeUrl' },
+  any: { icon: '↕', labelKey: 'teacher.assignmentTypeAny' },
 };
 
 export default function AssignmentsListClient() {
+  const { t } = useI18n();
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<AssignmentStatusDTO | 'all'>('all');
   const [createOpen, setCreateOpen] = useState(false);
@@ -59,10 +61,10 @@ export default function AssignmentsListClient() {
             <Icon name="ArrowLeftIcon" size={14} />
             Dashboard
           </Link>
-          <h1 className="text-2xl font-heading font-semibold text-foreground">Vazifalar</h1>
+          <h1 className="text-2xl font-heading font-semibold text-foreground">{t('teacher.assignmentsTitle')}</h1>
           <p className="text-sm text-muted-foreground">
-            {assignments.length} ta vazifa ·{' '}
-            {assignments.reduce((s, a) => s + a.submissionCount, 0)} topshiriq
+            {assignments.length} {t('teacher.assignmentsCount')} ·{' '}
+            {assignments.reduce((s, a) => s + a.submissionCount, 0)} {t('teacher.assignmentsSubmissionCount')}
           </p>
         </div>
         <button
@@ -70,7 +72,7 @@ export default function AssignmentsListClient() {
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center gap-2 text-sm font-medium"
         >
           <Icon name="PlusIcon" size={16} />
-          Yangi vazifa
+          {t('teacher.assignmentsNewAssignment')}
         </button>
       </div>
 
@@ -85,7 +87,7 @@ export default function AssignmentsListClient() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {s === 'all' ? 'Hammasi' : STATUS_LABEL[s].label}
+            {s === 'all' ? t('teacher.assignmentsFilterAll') : t(STATUS_LABEL_KEYS[s].labelKey)}
           </button>
         ))}
       </div>
@@ -109,12 +111,12 @@ export default function AssignmentsListClient() {
             size={48}
             className="text-muted-foreground mx-auto mb-3"
           />
-          <p className="text-muted-foreground mb-3">Hali vazifa yo'q</p>
+          <p className="text-muted-foreground mb-3">{t('teacher.assignmentsNoAssignments')}</p>
           <button
             onClick={() => setCreateOpen(true)}
             className="text-primary hover:underline text-sm"
           >
-            Birinchi vazifani yarating →
+            {t('teacher.assignmentsCreateFirst')} →
           </button>
         </div>
       ) : (
@@ -135,14 +137,14 @@ export default function AssignmentsListClient() {
                       <h3 className="font-medium text-foreground">{a.title}</h3>
                       <span
                         className={`text-[10px] px-2 py-0.5 rounded-full ${
-                          STATUS_LABEL[a.status].color
+                          STATUS_LABEL_KEYS[a.status].color
                         }`}
                       >
-                        {STATUS_LABEL[a.status].label}
+                        {t(STATUS_LABEL_KEYS[a.status].labelKey)}
                       </span>
                       {ungraded > 0 && (
                         <span className="text-[10px] px-2 py-0.5 bg-warning/10 text-warning rounded-full">
-                          {ungraded} baholanmagan
+                          {ungraded} {t('teacher.assignmentsUngraded')}
                         </span>
                       )}
                     </div>
@@ -162,14 +164,14 @@ export default function AssignmentsListClient() {
                           minute: '2-digit',
                         })}
                       </span>
-                      <span>⭐ {a.maxScore} bal</span>
-                      <span>{TYPE_LABEL[a.submissionType]}</span>
+                      <span>⭐ {a.maxScore} {t('teacher.assignmentsScore')}</span>
+                      <span>{TYPE_LABEL_KEYS[a.submissionType].icon} {t(TYPE_LABEL_KEYS[a.submissionType].labelKey)}</span>
                       <span>
                         📥 {a.submissionCount} / ✓ {a.gradedCount}
                       </span>
                       {a.allowLateSubmission && (
                         <span className="text-warning">
-                          ⏳ Kech: -{a.latePenaltyPercent}%
+                          ⏳ {t('teacher.assignmentsLatePenalty')}: -{a.latePenaltyPercent}%
                         </span>
                       )}
                     </div>
@@ -180,7 +182,7 @@ export default function AssignmentsListClient() {
                       setPendingDelete(a);
                     }}
                     className="p-2 hover:bg-destructive/10 rounded-md"
-                    aria-label="O'chirish"
+                    aria-label={t('teacher.assignmentsDeleteBtn')}
                   >
                     <Icon name="TrashIcon" size={14} className="text-destructive" />
                   </button>
@@ -198,7 +200,7 @@ export default function AssignmentsListClient() {
           onCreate={(input) =>
             createMut.mutate(input, {
               onSuccess: ({ assignment }) => {
-                toast.success("Vazifa yaratildi");
+                toast.success(t('teacher.assignmentsCreated'));
                 router.push(`/teacher-dashboard/assignments/${assignment.id}`);
               },
               onError: (err) => toast.error(err.message),
@@ -211,15 +213,15 @@ export default function AssignmentsListClient() {
       {pendingDelete && (
         <ConfirmModal
           open={true}
-          title="Vazifani o'chirish"
-          message={`"${pendingDelete.title}" va barcha topshiriqlar o'chiriladi.`}
-          confirmLabel="O'chirish"
+          title={t('teacher.assignmentsDeleteTitle')}
+          message={`"${pendingDelete.title}" ${t('teacher.assignmentsDeleteMessage')}`}
+          confirmLabel={t('teacher.assignmentsDeleteBtn')}
           variant="danger"
           isLoading={deleteMut.isPending}
           onConfirm={() => {
             deleteMut.mutate(pendingDelete.id, {
               onSuccess: () => {
-                toast.success("Vazifa o'chirildi");
+                toast.success(t('teacher.assignmentsDeleted'));
                 setPendingDelete(null);
               },
               onError: (err) => toast.error(err.message),
@@ -267,11 +269,13 @@ function CreateAssignmentModal({
   const [allowLate, setAllowLate] = useState(false);
   const [latePenalty, setLatePenalty] = useState(20);
 
+  const { t } = useI18n();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!courseId) return toast.error("Kurs tanlang");
-    if (title.trim().length < 2) return toast.error("Sarlavha kamida 2 belgi");
-    if (!dueDate) return toast.error("Muddat majburiy");
+    if (!courseId) return toast.error(t('teacher.createAssignmentSelectCourse'));
+    if (title.trim().length < 2) return toast.error(t('teacher.createAssignmentTitleMin'));
+    if (!dueDate) return toast.error(t('teacher.createAssignmentDueRequired'));
     onCreate({
       courseId,
       title: title.trim(),
@@ -296,7 +300,7 @@ function CreateAssignmentModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-heading font-semibold">Yangi vazifa</h3>
+          <h3 className="text-lg font-heading font-semibold">{t('teacher.createAssignmentTitle')}</h3>
           <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
           </button>
@@ -304,14 +308,14 @@ function CreateAssignmentModal({
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Kurs *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.createAssignmentCourseLabel')}</label>
             <select
               value={courseId}
               onChange={(e) => setCourseId(e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
               required
             >
-              <option value="">— tanlang —</option>
+              <option value="">{t('teacher.createAssignmentCourseSelect')}</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
@@ -320,18 +324,18 @@ function CreateAssignmentModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Sarlavha *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.createAssignmentTitleLabel')}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="React Hooks vazifasi"
+              placeholder={t('teacher.createAssignmentTitlePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Qisqa tavsif</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.createAssignmentDescLabel')}</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -341,19 +345,19 @@ function CreateAssignmentModal({
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
-              Batafsil yo'riqnoma (markdown)
+              {t('teacher.createAssignmentInstructionsLabel')}
             </label>
             <textarea
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
               rows={4}
-              placeholder="Vazifa qadamlari, kutilayotgan natija, baholash mezonlari…"
+              placeholder={t('teacher.createAssignmentInstructionsPlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y font-mono"
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Muddat *</label>
+              <label className="block text-sm font-medium mb-1">{t('teacher.createAssignmentDueLabel')}</label>
               <input
                 type="datetime-local"
                 value={dueDate}
@@ -363,7 +367,7 @@ function CreateAssignmentModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Max bal</label>
+              <label className="block text-sm font-medium mb-1">{t('teacher.createAssignmentMaxScore')}</label>
               <input
                 type="number"
                 min={1}
@@ -375,20 +379,20 @@ function CreateAssignmentModal({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Topshirish turi</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.createAssignmentSubmissionType')}</label>
             <div className="grid grid-cols-4 gap-2">
-              {(['text', 'file', 'url', 'any'] as const).map((t) => (
+              {(['text', 'file', 'url', 'any'] as const).map((st) => (
                 <button
-                  key={t}
+                  key={st}
                   type="button"
-                  onClick={() => setSubmissionType(t)}
+                  onClick={() => setSubmissionType(st)}
                   className={`p-2 rounded-md border text-xs ${
-                    submissionType === t
+                    submissionType === st
                       ? 'border-primary bg-primary/10 text-primary'
                       : 'border-border hover:bg-muted'
                   }`}
                 >
-                  {TYPE_LABEL[t]}
+                  {TYPE_LABEL_KEYS[st].icon} {t(TYPE_LABEL_KEYS[st].labelKey)}
                 </button>
               ))}
             </div>
@@ -400,12 +404,12 @@ function CreateAssignmentModal({
                 checked={allowLate}
                 onChange={(e) => setAllowLate(e.target.checked)}
               />
-              Kechikkan topshiriqlarga ruxsat
+              {t('teacher.createAssignmentAllowLate')}
             </label>
             {allowLate && (
               <div className="mt-2 ml-6">
                 <label className="block text-xs text-muted-foreground mb-1">
-                  Penalty (%) — kechikkan ish balidan ayriladi
+                  {t('teacher.createAssignmentPenaltyLabel')}
                 </label>
                 <input
                   type="number"
@@ -427,7 +431,7 @@ function CreateAssignmentModal({
             disabled={isLoading}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor qilish
+            {t('teacher.createAssignmentCancel')}
           </button>
           <button
             type="submit"
@@ -437,7 +441,7 @@ function CreateAssignmentModal({
             {isLoading && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Yaratish
+            {t('teacher.createAssignmentSubmit')}
           </button>
         </div>
       </form>

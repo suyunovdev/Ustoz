@@ -1,6 +1,7 @@
 'use client';
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface RevenueChartProps {
   data: Array<{
@@ -11,9 +12,10 @@ interface RevenueChartProps {
 }
 
 const RevenueChart = ({ data }: RevenueChartProps) => {
+  const { t } = useI18n();
   return (
     <div className="bg-card rounded-md shadow-warm p-6">
-      <h3 className="text-xl font-heading font-semibold text-foreground mb-6">Daromad tahlili</h3>
+      <h3 className="text-xl font-heading font-semibold text-foreground mb-6">{t('teacher.chartTitle')}</h3>
       <div className="w-full h-80" aria-label="Monthly Revenue Bar Chart">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -42,13 +44,13 @@ const RevenueChart = ({ data }: RevenueChartProps) => {
             <Bar 
               dataKey="revenue" 
               fill="#0F4C75" 
-              name="Umumiy daromad"
+              name={t('teacher.chartTotalRevenue')}
               radius={[8, 8, 0, 0]}
             />
             <Bar 
               dataKey="payout" 
               fill="#3282B8" 
-              name="To'lov (70%)"
+              name={t('teacher.chartPayout')}
               radius={[8, 8, 0, 0]}
             />
           </BarChart>

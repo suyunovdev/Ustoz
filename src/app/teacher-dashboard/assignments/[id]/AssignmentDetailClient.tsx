@@ -15,12 +15,13 @@ import {
   useGradeSubmissionMutation,
   useReturnSubmissionMutation,
 } from '@/hooks/mutations/useAssignmentMutations';
+import { useI18n } from '@/contexts/I18nContext';
 
-const STATUS_LABEL: Record<SubmissionStatusDTO, { label: string; color: string }> = {
-  submitted: { label: 'Topshirilgan', color: 'bg-primary/10 text-primary' },
-  graded: { label: 'Baholangan', color: 'bg-success/10 text-success' },
-  returned: { label: 'Qayta yuborilgan', color: 'bg-warning/10 text-warning' },
-  late: { label: 'Kechikkan', color: 'bg-destructive/10 text-destructive' },
+const STATUS_LABEL_KEYS: Record<SubmissionStatusDTO, { labelKey: string; color: string }> = {
+  submitted: { labelKey: 'teacher.submissionStatusSubmitted', color: 'bg-primary/10 text-primary' },
+  graded: { labelKey: 'teacher.submissionStatusGraded', color: 'bg-success/10 text-success' },
+  returned: { labelKey: 'teacher.submissionStatusReturned', color: 'bg-warning/10 text-warning' },
+  late: { labelKey: 'teacher.submissionStatusLate', color: 'bg-destructive/10 text-destructive' },
 };
 
 interface Props {
@@ -28,6 +29,7 @@ interface Props {
 }
 
 export default function AssignmentDetailClient({ assignmentId }: Props) {
+  const { t } = useI18n();
   const { data, isLoading } = useTeacherAssignment(assignmentId);
   const updateMut = useUpdateAssignmentMutation(assignmentId);
   const [statusFilter, setStatusFilter] = useState<SubmissionStatusDTO | 'all'>('all');
@@ -37,7 +39,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
   );
   const [grading, setGrading] = useState<SubmissionDTO | null>(null);
 
-  if (isLoading || !data) return <div className="p-8">Yuklanmoqda…</div>;
+  if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
 
   const a = data.assignment;
   const isPublished = a.status === 'published';
@@ -50,7 +52,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
       {
         onSuccess: () =>
           toast.success(
-            isPublished ? 'Qoralamaga qaytarildi' : "Vazifa e'lon qilindi",
+            isPublished ? t('teacher.assignmentDetailUnpublished') : t('teacher.assignmentDetailPublished'),
           ),
         onError: (err) => toast.error(err.message),
       },
@@ -68,7 +70,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Vazifalar
+            {t('teacher.assignmentDetailBack')}
           </Link>
           <h1 className="text-2xl font-heading font-semibold">{a.title}</h1>
           <p className="text-sm text-muted-foreground mt-1">{a.courseTitle}</p>
@@ -78,7 +80,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
           {a.instructions && (
             <details className="mt-2">
               <summary className="text-xs text-primary cursor-pointer hover:underline">
-                Yo'riqnomani ko'rsatish
+                {t('teacher.assignmentDetailShowInstructions')}
               </summary>
               <pre className="mt-2 p-3 bg-muted/30 rounded-md text-xs whitespace-pre-wrap font-mono">
                 {a.instructions}
@@ -89,13 +91,13 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
             <span className={overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}>
               ⏰ {due.toLocaleString('uz-UZ')}
             </span>
-            <span className="text-muted-foreground">⭐ {a.maxScore} bal</span>
+            <span className="text-muted-foreground">⭐ {a.maxScore} {t('teacher.assignmentsScore')}</span>
             <span className="text-muted-foreground">
-              📩 {a.submissionType === 'any' ? 'Har qanday' : a.submissionType}
+              📩 {a.submissionType === 'any' ? t('teacher.assignmentDetailAnyType') : a.submissionType}
             </span>
             {a.allowLateSubmission && (
               <span className="text-warning">
-                ⏳ Kech ruxsat, -{a.latePenaltyPercent}%
+                ⏳ {t('teacher.assignmentDetailLateAllowed')}, -{a.latePenaltyPercent}%
               </span>
             )}
           </div>
@@ -110,12 +112,12 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
           }`}
         >
           <Icon name={isPublished ? 'EyeSlashIcon' : 'EyeIcon'} size={14} />
-          {isPublished ? 'Qoralamaga' : "E'lon qilish"}
+          {isPublished ? t('teacher.assignmentDetailUnpublish') : t('teacher.assignmentDetailPublish')}
         </button>
       </div>
 
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-medium">Topshiriqlar ({submissions.length})</h2>
+        <h2 className="text-lg font-medium">{t('teacher.assignmentDetailSubmissions')} ({submissions.length})</h2>
         <div className="flex items-center gap-2">
           {(['all', 'submitted', 'graded', 'returned', 'late'] as const).map((s) => (
             <button
@@ -127,17 +129,17 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
                   : 'bg-muted text-muted-foreground hover:bg-muted/80'
               }`}
             >
-              {s === 'all' ? 'Barchasi' : STATUS_LABEL[s].label}
+              {s === 'all' ? t('teacher.submissionFilterAll') : t(STATUS_LABEL_KEYS[s].labelKey)}
             </button>
           ))}
         </div>
       </div>
 
       {subs.isLoading ? (
-        <p className="text-sm text-muted-foreground">Yuklanmoqda…</p>
+        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
       ) : submissions.length === 0 ? (
         <p className="text-center text-muted-foreground py-12 italic bg-muted/30 rounded-md">
-          Hali topshiriqlar yo'q
+          {t('teacher.submissionNoSubmissions')}
         </p>
       ) : (
         <div className="space-y-2">
@@ -152,14 +154,14 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
                     <p className="font-medium text-foreground">{s.studentName}</p>
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-full ${
-                        STATUS_LABEL[s.status].color
+                        STATUS_LABEL_KEYS[s.status].color
                       }`}
                     >
-                      {STATUS_LABEL[s.status].label}
+                      {t(STATUS_LABEL_KEYS[s.status].labelKey)}
                     </span>
                     {s.isLate && (
                       <span className="text-[10px] px-2 py-0.5 bg-destructive/10 text-destructive rounded-full">
-                        Kechikkan
+                        {t('teacher.submissionLateLabel')}
                       </span>
                     )}
                     {s.revisionNumber > 1 && (
@@ -182,7 +184,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
                     onClick={() => setGrading(s)}
                     className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium hover:opacity-90"
                   >
-                    {s.status === 'graded' ? "Qayta baholash" : 'Baholash'}
+                    {s.status === 'graded' ? t('teacher.submissionRegradeBtn') : t('teacher.submissionGradeBtn')}
                   </button>
                 </div>
               </div>
@@ -223,7 +225,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
 
               {s.feedback && (
                 <div className="mt-2 p-2 bg-warning/10 text-warning text-xs rounded-md">
-                  <strong>💬 Izoh:</strong> {s.feedback}
+                  <strong>💬 {t('teacher.submissionFeedbackLabel')}:</strong> {s.feedback}
                 </div>
               )}
             </div>
@@ -257,6 +259,7 @@ function GradeModal({
   allowLate: boolean;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const gradeMut = useGradeSubmissionMutation(assignmentId);
   const returnMut = useReturnSubmissionMutation(assignmentId);
   const [grade, setGrade] = useState(submission.grade ?? Math.floor(maxScore * 0.8));
@@ -268,7 +271,7 @@ function GradeModal({
       { submissionId: submission.id, input: { grade, feedback, applyLatePenalty: applyPenalty } },
       {
         onSuccess: () => {
-          toast.success('Baholandi');
+          toast.success(t('teacher.gradeModalGraded'));
           onClose();
         },
         onError: (err) => toast.error(err.message),
@@ -278,14 +281,14 @@ function GradeModal({
 
   const handleReturn = () => {
     if (feedback.trim().length < 5) {
-      toast.error("Feedback kamida 5 belgi");
+      toast.error(t('teacher.gradeModalFeedbackMinLength'));
       return;
     }
     returnMut.mutate(
       { submissionId: submission.id, feedback: feedback.trim() },
       {
         onSuccess: () => {
-          toast.success("Talabaga qaytarildi");
+          toast.success(t('teacher.gradeModalReturned'));
           onClose();
         },
         onError: (err) => toast.error(err.message),
@@ -305,7 +308,7 @@ function GradeModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-heading font-semibold">Baholash</h3>
+          <h3 className="text-lg font-heading font-semibold">{t('teacher.gradeModalTitle')}</h3>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
           </button>
@@ -313,14 +316,14 @@ function GradeModal({
         <p className="text-sm text-muted-foreground mb-4">
           {submission.studentName}
           {submission.isLate && (
-            <span className="ml-2 text-xs text-destructive">⚠ Kechikkan</span>
+            <span className="ml-2 text-xs text-destructive">⚠ {t('teacher.gradeModalLateWarning')}</span>
           )}
         </p>
 
         <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium mb-1">
-              Bal (0–{maxScore}) *
+              {t('teacher.gradeModalScoreLabel')} (0–{maxScore}) *
             </label>
             <input
               type="number"
@@ -338,18 +341,18 @@ function GradeModal({
                 checked={applyPenalty}
                 onChange={(e) => setApplyPenalty(e.target.checked)}
               />
-              Late penalty qo'llanilsin
+              {t('teacher.gradeModalApplyPenalty')}
             </label>
           )}
           <div>
             <label className="block text-sm font-medium mb-1">
-              Izoh / Feedback
+              {t('teacher.gradeModalFeedbackLabel')}
             </label>
             <textarea
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               rows={4}
-              placeholder="Yaxshi tomonlari, yaxshilash kerak bo'lgan joylar…"
+              placeholder={t('teacher.gradeModalFeedbackPlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
             />
           </div>
@@ -362,7 +365,7 @@ function GradeModal({
             className="px-3 py-2 bg-warning text-warning-foreground rounded-md text-sm flex items-center gap-2 disabled:opacity-50"
           >
             <Icon name="ArrowUturnLeftIcon" size={14} />
-            Qaytarish (revision)
+            {t('teacher.gradeModalReturn')}
           </button>
           <div className="flex items-center gap-2">
             <button
@@ -370,7 +373,7 @@ function GradeModal({
               disabled={isLoading}
               className="px-3 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
             >
-              Bekor
+              {t('teacher.gradeModalCancel')}
             </button>
             <button
               onClick={handleGrade}
@@ -380,7 +383,7 @@ function GradeModal({
               {gradeMut.isPending && (
                 <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               )}
-              Saqlash
+              {t('teacher.gradeModalSave')}
             </button>
           </div>
         </div>

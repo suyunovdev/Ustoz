@@ -9,6 +9,7 @@ import {
   type DailyPointDTO,
 } from '@/hooks/queries/useTeacherAnalytics';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
+import { useI18n } from '@/contexts/I18nContext';
 
 function fmtUzs(s: string): string {
   const n = BigInt(s);
@@ -18,14 +19,15 @@ function fmtUzs(s: string): string {
   return n.toString();
 }
 
-const RANGES = [
-  { value: 7, label: '7 kun' },
-  { value: 30, label: '30 kun' },
-  { value: 90, label: '90 kun' },
-  { value: 180, label: '6 oy' },
-] as const;
-
 export default function AnalyticsClient() {
+  const { t } = useI18n();
+
+  const RANGES = [
+    { value: 7, label: `7 ${t('teacher.daysLabel')}` },
+    { value: 30, label: `30 ${t('teacher.daysLabel')}` },
+    { value: 90, label: `90 ${t('teacher.daysLabel')}` },
+    { value: 180, label: `6 ${t('teacher.monthsLabel')}` },
+  ] as const;
   const [days, setDays] = useState<7 | 30 | 90 | 180>(30);
   const { data, isLoading, error } = useTeacherAnalytics(days);
   const dashboard = useTeacherDashboard();
@@ -40,11 +42,11 @@ export default function AnalyticsClient() {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Dashboard
+            {t('nav.dashboard')}
           </Link>
-          <h1 className="text-2xl font-heading font-semibold">Tahlil</h1>
+          <h1 className="text-2xl font-heading font-semibold">{t('teacher.analytics')}</h1>
           <p className="text-sm text-muted-foreground">
-            Daromad, yozilishlar va engagement metrikalar
+            {t('teacher.analyticsSubtitle')}
           </p>
         </div>
         <div className="flex items-center gap-1 bg-muted/50 rounded-md p-1">
@@ -80,36 +82,36 @@ export default function AnalyticsClient() {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <ComparisonCard
-              label="Daromad"
+              label={t('teacher.revenue')}
               value={fmtUzs(data.comparison.currentRevenue) + ' UZS'}
               prev={fmtUzs(data.comparison.previousRevenue)}
               delta={data.comparison.revenueDeltaPct}
               icon="CurrencyDollarIcon"
             />
             <ComparisonCard
-              label="Yozilishlar"
+              label={t('teacher.enrollments')}
               value={String(data.comparison.currentEnrollments)}
               prev={String(data.comparison.previousEnrollments)}
               delta={data.comparison.enrollmentsDeltaPct}
               icon="UserPlusIcon"
             />
             <EngagementCard
-              label="Material ko'rishlar"
+              label={t('teacher.materialViews')}
               value={data.engagement.totalMaterialViews}
-              sub={`${data.engagement.totalWatchHours} soat`}
+              sub={`${data.engagement.totalWatchHours} ${t('teacher.hours')}`}
               icon="EyeIcon"
             />
             <EngagementCard
-              label="Mavzular tugatildi"
+              label={t('teacher.topicsCompleted')}
               value={data.engagement.totalTopicCompletions}
-              sub={`${data.engagement.weeklyActiveStudents} haftalik faol`}
+              sub={`${data.engagement.weeklyActiveStudents} ${t('teacher.weeklyActive')}`}
               icon="CheckCircleIcon"
             />
           </div>
 
           <div className="bg-card border border-border rounded-md p-4 mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-medium">Kunlik daromad ({days} kun)</h2>
+              <h2 className="font-medium">{t('teacher.dailyRevenue')} ({days} {t('teacher.daysLabel')})</h2>
               <span className="text-xs text-muted-foreground">UZS</span>
             </div>
             <DailyChart points={data.dailyRevenue} />
@@ -117,19 +119,19 @@ export default function AnalyticsClient() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
             <SmallStat
-              label="Bugun faol"
+              label={t('teacher.activeToday')}
               value={data.engagement.dailyActiveStudents}
               icon="BoltIcon"
               color="bg-success/10 text-success"
             />
             <SmallStat
-              label="Hafta davomida faol"
+              label={t('teacher.activeThisWeek')}
               value={data.engagement.weeklyActiveStudents}
               icon="UsersIcon"
               color="bg-primary/10 text-primary"
             />
             <SmallStat
-              label="Oy davomida faol"
+              label={t('teacher.activeThisMonth')}
               value={data.engagement.monthlyActiveStudents}
               icon="ChartBarIcon"
               color="bg-warning/10 text-warning"
@@ -137,14 +139,14 @@ export default function AnalyticsClient() {
           </div>
 
           <div className="mb-3">
-            <h2 className="text-lg font-medium">Kurslar bo'yicha tahlil</h2>
+            <h2 className="text-lg font-medium">{t('teacher.analyticsByCourse')}</h2>
             <p className="text-xs text-muted-foreground">
-              Har kursning detali sahifasiga o'tib batafsil ma'lumot olishingiz mumkin
+              {t('teacher.analyticsByCourseDesc')}
             </p>
           </div>
           {courses.length === 0 ? (
             <p className="text-center text-muted-foreground py-12 bg-muted/30 rounded-md text-sm italic">
-              Kurslaringiz yo'q
+              {t('teacher.noCourses')}
             </p>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -168,7 +170,7 @@ export default function AnalyticsClient() {
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium truncate">{c.title}</h3>
                     <p className="text-xs text-muted-foreground">
-                      {c.enrollmentCount} yozilgan · ⭐ {c.rating || 0}
+                      {c.enrollmentCount} {t('teacher.enrolled')} · ⭐ {c.rating || 0}
                     </p>
                   </div>
                   <Icon name="ArrowRightIcon" size={14} className="text-muted-foreground" />
@@ -213,7 +215,7 @@ function ComparisonCard({
       </div>
       <p className="text-xs text-muted-foreground">{label}</p>
       <p className="text-xl font-bold text-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground mt-1">Avval: {prev}</p>
+      <p className="text-xs text-muted-foreground mt-1">{t('teacher.previous')}: {prev}</p>
     </div>
   );
 }
@@ -305,10 +307,10 @@ function DailyChart({ points }: { points: DailyPointDTO[] }) {
       </div>
       <div className="flex items-center gap-3 text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 bg-primary/40 rounded-sm" /> Daromad
+          <span className="w-2 h-2 bg-primary/40 rounded-sm" /> {t('teacher.revenue')}
         </span>
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 bg-success/60 rounded-sm" /> Yozilishlar
+          <span className="w-2 h-2 bg-success/60 rounded-sm" /> {t('teacher.enrollments')}
         </span>
         <span className="ml-auto">{points[0]?.date} → {points[points.length - 1]?.date}</span>
       </div>

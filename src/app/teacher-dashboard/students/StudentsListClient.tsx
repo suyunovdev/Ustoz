@@ -8,6 +8,7 @@ import { toast } from '@/components/common/Toaster';
 import { useTeacherStudents } from '@/hooks/queries/useTeacherStudents';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
 import { useBroadcastToCourseMutation } from '@/hooks/mutations/useTeacherStudentMutations';
+import { useI18n } from '@/contexts/I18nContext';
 
 function formatUzs(uzs: string): string {
   const n = BigInt(uzs);
@@ -17,19 +18,20 @@ function formatUzs(uzs: string): string {
   return n.toString();
 }
 
-function timeAgo(d: string | null): string {
-  if (!d) return 'hech qachon';
+function timeAgo(d: string | null, t: (key: string) => string): string {
+  if (!d) return t('teacher.studentsNever');
   const ms = Date.now() - new Date(d).getTime();
   const days = Math.floor(ms / 86_400_000);
-  if (days === 0) return 'bugun';
-  if (days === 1) return 'kecha';
-  if (days < 7) return `${days} kun oldin`;
-  if (days < 30) return `${Math.floor(days / 7)} hafta oldin`;
-  if (days < 365) return `${Math.floor(days / 30)} oy oldin`;
-  return `${Math.floor(days / 365)} yil oldin`;
+  if (days === 0) return t('teacher.studentsToday');
+  if (days === 1) return t('teacher.studentsYesterday');
+  if (days < 7) return `${days} ${t('teacher.studentsDaysAgo')}`;
+  if (days < 30) return `${Math.floor(days / 7)} ${t('teacher.studentsWeeksAgo')}`;
+  if (days < 365) return `${Math.floor(days / 30)} ${t('teacher.studentsMonthsAgo')}`;
+  return `${Math.floor(days / 365)} ${t('teacher.studentsYearsAgo')}`;
 }
 
 export default function StudentsListClient() {
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [courseFilter, setCourseFilter] = useState('');
   const [activeOnly, setActiveOnly] = useState(false);
@@ -56,8 +58,8 @@ export default function StudentsListClient() {
             <Icon name="ArrowLeftIcon" size={14} />
             Dashboard
           </Link>
-          <h1 className="text-2xl font-heading font-semibold text-foreground">Talabalar</h1>
-          <p className="text-sm text-muted-foreground">{students.length} ta talaba</p>
+          <h1 className="text-2xl font-heading font-semibold text-foreground">{t('teacher.studentsTitle')}</h1>
+          <p className="text-sm text-muted-foreground">{students.length} {t('teacher.studentsCount')}</p>
         </div>
         {courses.length > 0 && (
           <button
@@ -81,7 +83,7 @@ export default function StudentsListClient() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Ism yoki email…"
+            placeholder={t('teacher.studentsSearchPlaceholder')}
             className="w-full pl-9 pr-3 py-2 border border-border rounded-md text-sm"
           />
         </div>
@@ -90,7 +92,7 @@ export default function StudentsListClient() {
           onChange={(e) => setCourseFilter(e.target.value)}
           className="px-3 py-2 border border-border rounded-md text-sm bg-background"
         >
-          <option value="">Barcha kurslar</option>
+          <option value="">{t('teacher.studentsAllCourses')}</option>
           {courses.map((c) => (
             <option key={c.id} value={c.id}>
               {c.title}
@@ -103,7 +105,7 @@ export default function StudentsListClient() {
             checked={activeOnly}
             onChange={(e) => setActiveOnly(e.target.checked)}
           />
-          Faqat faol
+          {t('teacher.studentsActiveOnly')}
         </label>
       </div>
 
@@ -122,7 +124,7 @@ export default function StudentsListClient() {
       ) : students.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-md">
           <Icon name="UserGroupIcon" size={48} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground">Hali talaba yo'q yoki qidiruv natija bermadi</p>
+          <p className="text-muted-foreground">{t('teacher.studentsNoResults')}</p>
         </div>
       ) : (
         <div className="grid gap-2">
@@ -156,22 +158,22 @@ export default function StudentsListClient() {
               </div>
               <div className="flex items-center gap-4 text-xs flex-wrap">
                 <div className="text-right">
-                  <p className="text-muted-foreground">Kurslar</p>
+                  <p className="text-muted-foreground">{t('teacher.studentsCoursesLabel')}</p>
                   <p className="font-medium text-foreground">
                     {s.activeEnrollments}/{s.enrolledCourses}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-muted-foreground">Progress</p>
+                  <p className="text-muted-foreground">{t('teacher.studentsProgressLabel')}</p>
                   <p className="font-medium text-foreground">{s.avgProgress}%</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-muted-foreground">To'lov</p>
+                  <p className="text-muted-foreground">{t('teacher.studentsPaymentLabel')}</p>
                   <p className="font-medium text-foreground">{formatUzs(s.totalPayments)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-muted-foreground">Faollik</p>
-                  <p className="font-medium text-foreground">{timeAgo(s.lastActivityAt)}</p>
+                  <p className="text-muted-foreground">{t('teacher.studentsActivityLabel')}</p>
+                  <p className="font-medium text-foreground">{timeAgo(s.lastActivityAt, t)}</p>
                 </div>
               </div>
             </Link>
@@ -199,11 +201,13 @@ function BroadcastModal({
   const [activeOnly, setActiveOnly] = useState(true);
   const mut = useBroadcastToCourseMutation();
 
+  const { t } = useI18n();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!courseId) return toast.error("Kurs tanlang");
-    if (title.trim().length < 2) return toast.error("Sarlavha kamida 2 belgi");
-    if (message.trim().length < 2) return toast.error("Xabar kamida 2 belgi");
+    if (!courseId) return toast.error(t('teacher.broadcastSelectCourse'));
+    if (title.trim().length < 2) return toast.error(t('teacher.broadcastTitleMinLength'));
+    if (message.trim().length < 2) return toast.error(t('teacher.broadcastMessageMinLength'));
     mut.mutate(
       {
         courseId,
@@ -213,7 +217,7 @@ function BroadcastModal({
       },
       {
         onSuccess: ({ sent }) => {
-          toast.success(`${sent} talabaga yuborildi`);
+          toast.success(`${sent} ${t('teacher.broadcastSentSuccess')}`);
           onClose();
         },
         onError: (err) => toast.error(err.message),
@@ -234,7 +238,7 @@ function BroadcastModal({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-heading font-semibold flex items-center gap-2">
             <Icon name="MegaphoneIcon" size={18} />
-            Broadcast — barcha talabalarga
+            {t('teacher.broadcastTitle')}
           </h3>
           <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
@@ -243,14 +247,14 @@ function BroadcastModal({
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Kurs *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.broadcastCourseLabel')}</label>
             <select
               value={courseId}
               onChange={(e) => setCourseId(e.target.value)}
               required
               className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
             >
-              <option value="">— tanlang —</option>
+              <option value="">{t('teacher.broadcastCourseSelect')}</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
@@ -259,24 +263,24 @@ function BroadcastModal({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Sarlavha *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.broadcastTitleLabel')}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="Live dars eslatmasi"
+              placeholder={t('teacher.broadcastTitlePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Xabar *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.broadcastMessageLabel')}</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               required
               rows={5}
-              placeholder="Salom! Ertaga 10:00 da live dars boladi…"
+              placeholder={t('teacher.broadcastMessagePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
             />
           </div>
@@ -286,7 +290,7 @@ function BroadcastModal({
               checked={activeOnly}
               onChange={(e) => setActiveOnly(e.target.checked)}
             />
-            Faqat faol talabalarga
+            {t('teacher.broadcastActiveOnly')}
           </label>
         </div>
 
@@ -297,7 +301,7 @@ function BroadcastModal({
             disabled={mut.isPending}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor qilish
+            {t('teacher.broadcastCancel')}
           </button>
           <button
             type="submit"
@@ -307,7 +311,7 @@ function BroadcastModal({
             {mut.isPending && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Yuborish
+            {t('teacher.broadcastSend')}
           </button>
         </div>
       </form>

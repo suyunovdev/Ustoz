@@ -18,19 +18,22 @@ import {
   useUpdateQuestionMutation,
   useDeleteQuestionMutation,
 } from '@/hooks/mutations/useTestMutations';
-
-const TYPE_LABEL: Record<QuestionTypeDTO, { label: string; icon: string }> = {
-  single: { label: 'Bitta variant', icon: 'CheckCircleIcon' },
-  multiple: { label: "Ko'p variant", icon: 'CheckBadgeIcon' },
-  true_false: { label: 'Rost/Yolg\'on', icon: 'CheckIcon' },
-  text: { label: 'Matn javob', icon: 'PencilSquareIcon' },
-};
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Props {
   testId: string;
 }
 
 export default function TestBuilderClient({ testId }: Props) {
+  const { t } = useI18n();
+
+  const TYPE_LABEL: Record<QuestionTypeDTO, { label: string; icon: string }> = {
+    single: { label: t('teacher.singleChoice'), icon: 'CheckCircleIcon' },
+    multiple: { label: t('teacher.multipleChoice'), icon: 'CheckBadgeIcon' },
+    true_false: { label: t('teacher.trueFalse'), icon: 'CheckIcon' },
+    text: { label: t('teacher.textAnswer'), icon: 'PencilSquareIcon' },
+  };
+
   const { data, isLoading, error } = useTeacherTest(testId);
   const updateTest = useUpdateTestMutation(testId);
   const addQuestion = useAddQuestionMutation(testId);
@@ -44,9 +47,9 @@ export default function TestBuilderClient({ testId }: Props) {
 
   const attempts = useTeacherTestAttempts(testId, showAttempts);
 
-  if (isLoading) return <div className="p-8">Yuklanmoqda…</div>;
+  if (isLoading) return <div className="p-8">{t('common.loading')}</div>;
   if (error || !data)
-    return <div className="p-8 text-destructive">{(error as Error)?.message || 'Xato'}</div>;
+    return <div className="p-8 text-destructive">{(error as Error)?.message || t('common.error')}</div>;
 
   const test = data.test;
   const isPublished = test.status === 'published';
@@ -58,7 +61,7 @@ export default function TestBuilderClient({ testId }: Props) {
       {
         onSuccess: () => {
           toast.success(
-            newStatus === 'published' ? "Test e'lon qilindi" : 'Test qoralamaga qaytarildi',
+            newStatus === 'published' ? t('teacher.testPublished') : t('teacher.testUnpublished'),
           );
         },
         onError: (err) => toast.error(err.message),
@@ -75,7 +78,7 @@ export default function TestBuilderClient({ testId }: Props) {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Testlar
+            {t('teacher.tests')}
           </Link>
           <h1 className="text-2xl font-heading font-semibold text-foreground">
             {test.title}
@@ -84,11 +87,11 @@ export default function TestBuilderClient({ testId }: Props) {
             <p className="text-sm text-muted-foreground mt-1">{test.description}</p>
           )}
           <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground flex-wrap">
-            <span>📝 {test.questions.length} savol</span>
-            <span>⭐ {test.totalPoints} bal</span>
-            {test.timeLimitSec && <span>⏱ {Math.floor(test.timeLimitSec / 60)} daq</span>}
-            <span>🎯 {test.passingScore}% o'tish</span>
-            <span>🔁 {test.allowedAttempts || '∞'} urinish</span>
+            <span>📝 {test.questions.length} {t('teacher.questions')}</span>
+            <span>⭐ {test.totalPoints} {t('teacher.points')}</span>
+            {test.timeLimitSec && <span>⏱ {Math.floor(test.timeLimitSec / 60)} {t('teacher.minutes')}</span>}
+            <span>🎯 {test.passingScore}% {t('teacher.passing')}</span>
+            <span>🔁 {test.allowedAttempts || '∞'} {t('teacher.attempts')}</span>
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
@@ -97,7 +100,7 @@ export default function TestBuilderClient({ testId }: Props) {
             className="px-3 py-2 border border-border rounded-md hover:bg-muted text-sm flex items-center gap-2"
           >
             <Icon name="ChartBarIcon" size={14} />
-            Natijalar
+            {t('teacher.results')}
           </button>
           <button
             onClick={handlePublishToggle}
@@ -107,10 +110,10 @@ export default function TestBuilderClient({ testId }: Props) {
                 ? 'bg-warning text-warning-foreground'
                 : 'bg-success text-success-foreground'
             }`}
-            title={test.questions.length === 0 ? "Avval savol qo'shing" : ''}
+            title={test.questions.length === 0 ? t('teacher.addQuestionFirst') : ''}
           >
             <Icon name={isPublished ? 'EyeSlashIcon' : 'EyeIcon'} size={14} />
-            {isPublished ? 'Qoralamaga' : "E'lon qilish"}
+            {isPublished ? t('teacher.toDraft') : t('teacher.publish')}
           </button>
         </div>
       </div>
@@ -119,23 +122,23 @@ export default function TestBuilderClient({ testId }: Props) {
         <div className="bg-card border border-border rounded-md p-4 mb-6">
           <h3 className="font-medium mb-3 flex items-center gap-2">
             <Icon name="ChartBarIcon" size={16} />
-            Talabalar natijalari
+            {t('teacher.studentResults')}
           </h3>
           {attempts.isLoading ? (
-            <p className="text-sm text-muted-foreground">Yuklanmoqda…</p>
+            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
           ) : (attempts.data?.attempts.length ?? 0) === 0 ? (
             <p className="text-sm text-muted-foreground italic">
-              Hali topshirilgan urinishlar yo'q.
+              {t('teacher.noAttempts')}
             </p>
           ) : (
             <table className="w-full text-sm">
               <thead className="text-xs text-muted-foreground border-b border-border">
                 <tr>
-                  <th className="text-left py-2">Talaba</th>
-                  <th className="text-right">Bal</th>
+                  <th className="text-left py-2">{t('teacher.student')}</th>
+                  <th className="text-right">{t('teacher.points')}</th>
                   <th className="text-right">%</th>
-                  <th className="text-right">Status</th>
-                  <th className="text-right">Sana</th>
+                  <th className="text-right">{t('teacher.status')}</th>
+                  <th className="text-right">{t('teacher.date')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,11 +152,11 @@ export default function TestBuilderClient({ testId }: Props) {
                     <td className="text-right">
                       {a.passed ? (
                         <span className="text-xs px-2 py-0.5 bg-success/10 text-success rounded-full">
-                          O'tdi
+                          {t('teacher.passed')}
                         </span>
                       ) : (
                         <span className="text-xs px-2 py-0.5 bg-destructive/10 text-destructive rounded-full">
-                          O'tmadi
+                          {t('teacher.failed')}
                         </span>
                       )}
                     </td>
@@ -171,13 +174,13 @@ export default function TestBuilderClient({ testId }: Props) {
       )}
 
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-medium">Savollar ({test.questions.length})</h2>
+        <h2 className="text-lg font-medium">{t('teacher.questions')} ({test.questions.length})</h2>
         <button
           onClick={() => setAdderOpen(true)}
           className="px-3 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 text-sm flex items-center gap-2"
         >
           <Icon name="PlusIcon" size={14} />
-          Savol qo'shish
+          {t('teacher.addQuestion')}
         </button>
       </div>
 
@@ -188,12 +191,12 @@ export default function TestBuilderClient({ testId }: Props) {
             size={40}
             className="text-muted-foreground mx-auto mb-3"
           />
-          <p className="text-muted-foreground mb-2">Hali savol yo'q</p>
+          <p className="text-muted-foreground mb-2">{t('teacher.noQuestions')}</p>
           <button
             onClick={() => setAdderOpen(true)}
             className="text-primary hover:underline text-sm"
           >
-            Birinchi savolni qo'shing →
+            {t('teacher.addFirstQuestion')}
           </button>
         </div>
       ) : (
@@ -214,7 +217,7 @@ export default function TestBuilderClient({ testId }: Props) {
                       {TYPE_LABEL[q.questionType].label}
                     </span>
                     <span className="text-[10px] px-2 py-0.5 bg-warning/10 text-warning rounded-full">
-                      {q.points} bal
+                      {q.points} {t('teacher.points')}
                     </span>
                   </div>
                   {Array.isArray(q.options) && q.options.length > 0 && (
@@ -237,13 +240,13 @@ export default function TestBuilderClient({ testId }: Props) {
                   )}
                   {q.questionType === 'true_false' && (
                     <p className="text-sm text-success">
-                      To'g'ri javob:{' '}
-                      <strong>{q.correctAnswers?.[0] === 'true' ? 'Rost' : 'Yolg\'on'}</strong>
+                      {t('teacher.correctAnswer')}:{' '}
+                      <strong>{q.correctAnswers?.[0] === 'true' ? t('teacher.true') : t('teacher.false')}</strong>
                     </p>
                   )}
                   {q.questionType === 'text' && (
                     <p className="text-sm text-success">
-                      Qabul: <code className="bg-muted px-1 rounded">{q.correctAnswers?.join(', ')}</code>
+                      {t('teacher.accepted')}: <code className="bg-muted px-1 rounded">{q.correctAnswers?.join(', ')}</code>
                     </p>
                   )}
                   {q.explanation && (
@@ -256,14 +259,14 @@ export default function TestBuilderClient({ testId }: Props) {
                   <button
                     onClick={() => setEditing(q)}
                     className="p-2 hover:bg-muted rounded-md"
-                    aria-label="Tahrirlash"
+                    aria-label={t('common.edit')}
                   >
                     <Icon name="PencilIcon" size={14} className="text-primary" />
                   </button>
                   <button
                     onClick={() => setPendingDelete(q)}
                     className="p-2 hover:bg-destructive/10 rounded-md"
-                    aria-label="O'chirish"
+                    aria-label={t('common.delete')}
                   >
                     <Icon name="TrashIcon" size={14} className="text-destructive" />
                   </button>
@@ -280,7 +283,7 @@ export default function TestBuilderClient({ testId }: Props) {
           onSubmit={(input) =>
             addQuestion.mutate(input, {
               onSuccess: () => {
-                toast.success("Savol qo'shildi");
+                toast.success(t('teacher.questionAdded'));
                 setAdderOpen(false);
               },
               onError: (err) => toast.error(err.message),
@@ -299,7 +302,7 @@ export default function TestBuilderClient({ testId }: Props) {
               { questionId: editing.id, input },
               {
                 onSuccess: () => {
-                  toast.success('Savol yangilandi');
+                  toast.success(t('teacher.questionUpdated'));
                   setEditing(null);
                 },
                 onError: (err) => toast.error(err.message),
@@ -313,15 +316,15 @@ export default function TestBuilderClient({ testId }: Props) {
       {pendingDelete && (
         <ConfirmModal
           open={true}
-          title="Savolni o'chirish"
-          message="Savol o'chiriladi. Davom etamizmi?"
-          confirmLabel="O'chirish"
+          title={t('teacher.deleteQuestion')}
+          message={t('teacher.deleteQuestionConfirm')}
+          confirmLabel={t('common.delete')}
           variant="danger"
           isLoading={deleteQuestion.isPending}
           onConfirm={() => {
             deleteQuestion.mutate(pendingDelete.id, {
               onSuccess: () => {
-                toast.success("Savol o'chirildi");
+                toast.success(t('teacher.questionDeleted'));
                 setPendingDelete(null);
               },
               onError: (err) => toast.error(err.message),
@@ -378,6 +381,14 @@ function QuestionEditorModal({
   );
   const [points, setPoints] = useState(initial?.points ?? 1);
   const [explanation, setExplanation] = useState(initial?.explanation ?? '');
+  const { t } = useI18n();
+
+  const TYPE_LABEL: Record<QuestionTypeDTO, { label: string; icon: string }> = {
+    single: { label: t('teacher.singleChoice'), icon: 'CheckCircleIcon' },
+    multiple: { label: t('teacher.multipleChoice'), icon: 'CheckBadgeIcon' },
+    true_false: { label: t('teacher.trueFalse'), icon: 'CheckIcon' },
+    text: { label: t('teacher.textAnswer'), icon: 'PencilSquareIcon' },
+  };
 
   const addOption = () => setOptions((o) => [...o, { text: '', isCorrect: false }]);
   const removeOption = (i: number) =>
@@ -395,7 +406,7 @@ function QuestionEditorModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (questionText.trim().length < 2) {
-      toast.error("Savol matni kamida 2 belgi");
+      toast.error(t('teacher.questionMinLength'));
       return;
     }
 
@@ -409,16 +420,16 @@ function QuestionEditorModal({
     if (questionType === 'single' || questionType === 'multiple') {
       const cleaned = options.filter((o) => o.text.trim().length > 0);
       if (cleaned.length < 2) {
-        toast.error("Kamida 2 ta variant kerak");
+        toast.error(t('teacher.minTwoOptions'));
         return;
       }
       const correctCount = cleaned.filter((o) => o.isCorrect).length;
       if (questionType === 'single' && correctCount !== 1) {
-        toast.error("Aniq 1 ta to'g'ri javob tanlang");
+        toast.error(t('teacher.selectOneCorrect'));
         return;
       }
       if (questionType === 'multiple' && correctCount < 1) {
-        toast.error("Kamida 1 ta to'g'ri javob");
+        toast.error(t('teacher.minOneCorrect'));
         return;
       }
       input.options = cleaned;
@@ -430,7 +441,7 @@ function QuestionEditorModal({
         .map((s) => s.trim())
         .filter((s) => s.length > 0);
       if (answers.length === 0) {
-        toast.error("Kamida 1 ta to'g'ri javob kerak");
+        toast.error(t('teacher.minOneCorrect'));
         return;
       }
       input.correctAnswers = answers;
@@ -451,13 +462,13 @@ function QuestionEditorModal({
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-heading font-semibold">
-            {initial ? 'Savolni tahrirlash' : 'Yangi savol'}
+            {initial ? t('teacher.editQuestion') : t('teacher.newQuestion')}
           </h3>
           <button
             type="button"
             onClick={onClose}
             className="p-1 hover:bg-muted rounded"
-            aria-label="Yopish"
+            aria-label={t('common.close')}
           >
             <Icon name="XMarkIcon" size={20} />
           </button>
@@ -465,7 +476,7 @@ function QuestionEditorModal({
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Savol turi *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.questionType')} *</label>
             <div className="grid grid-cols-4 gap-2">
               {(Object.keys(TYPE_LABEL) as QuestionTypeDTO[]).map((t) => (
                 <button
@@ -486,20 +497,20 @@ function QuestionEditorModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Savol matni *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.questionText')} *</label>
             <textarea
               value={questionText}
               onChange={(e) => setQuestionText(e.target.value)}
               required
               rows={2}
-              placeholder="Savolni kiriting…"
+              placeholder={t('teacher.enterQuestion')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
             />
           </div>
 
           {(questionType === 'single' || questionType === 'multiple') && (
             <div>
-              <label className="block text-sm font-medium mb-1">Variantlar *</label>
+              <label className="block text-sm font-medium mb-1">{t('teacher.options')} *</label>
               <div className="space-y-2">
                 {options.map((opt, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -521,7 +532,7 @@ function QuestionEditorModal({
                       onClick={() => removeOption(i)}
                       disabled={options.length <= 2}
                       className="p-2 hover:bg-destructive/10 rounded-md disabled:opacity-30"
-                      aria-label="O'chirish"
+                      aria-label={t('common.delete')}
                     >
                       <Icon name="TrashIcon" size={14} className="text-destructive" />
                     </button>
@@ -533,7 +544,7 @@ function QuestionEditorModal({
                   className="text-xs text-primary hover:underline flex items-center gap-1"
                 >
                   <Icon name="PlusIcon" size={12} />
-                  Variant qo'shish
+                  {t('teacher.addOption')}
                 </button>
               </div>
             </div>
@@ -541,7 +552,7 @@ function QuestionEditorModal({
 
           {questionType === 'true_false' && (
             <div>
-              <label className="block text-sm font-medium mb-1">To'g'ri javob *</label>
+              <label className="block text-sm font-medium mb-1">{t('teacher.correctAnswer')} *</label>
               <div className="flex gap-2">
                 {(['true', 'false'] as const).map((v) => (
                   <button
@@ -554,7 +565,7 @@ function QuestionEditorModal({
                         : 'border-border hover:bg-muted'
                     }`}
                   >
-                    {v === 'true' ? '✓ Rost' : '✗ Yolg\'on'}
+                    {v === 'true' ? `✓ ${t('teacher.true')}` : `✗ ${t('teacher.false')}`}
                   </button>
                 ))}
               </div>
@@ -564,7 +575,7 @@ function QuestionEditorModal({
           {questionType === 'text' && (
             <div>
               <label className="block text-sm font-medium mb-1">
-                Qabul qilinadigan javoblar (vergul bilan ajrating) *
+                {t('teacher.acceptableAnswers')} *
               </label>
               <input
                 type="text"
@@ -574,14 +585,14 @@ function QuestionEditorModal({
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Katta-kichik harf hisoblanmaydi. Ortiqcha bo'shliqlar o'chiriladi.
+                {t('teacher.caseInsensitiveNote')}
               </p>
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Bal *</label>
+              <label className="block text-sm font-medium mb-1">{t('teacher.points')} *</label>
               <input
                 type="number"
                 min={0}
@@ -592,12 +603,12 @@ function QuestionEditorModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Izoh (ixtiyoriy)</label>
+              <label className="block text-sm font-medium mb-1">{t('teacher.explanationOptional')}</label>
               <input
                 type="text"
                 value={explanation}
                 onChange={(e) => setExplanation(e.target.value)}
-                placeholder="Javobdan keyin ko'rsatish"
+                placeholder={t('teacher.shownAfterAnswer')}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>
@@ -611,7 +622,7 @@ function QuestionEditorModal({
             disabled={isLoading}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor qilish
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -621,7 +632,7 @@ function QuestionEditorModal({
             {isLoading && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            {initial ? 'Saqlash' : "Qo'shish"}
+            {initial ? t('common.save') : t('teacher.add')}
           </button>
         </div>
       </form>

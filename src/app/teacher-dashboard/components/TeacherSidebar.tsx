@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
 
 export type TeacherTabId =
   | 'overview'
@@ -21,23 +22,23 @@ export type TeacherTabId =
 
 interface NavItem {
   id: TeacherTabId;
-  label: string;
+  labelKey: string;
   icon: string;
-  href?: string; // tashqi sahifaga link
+  href?: string;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { id: 'overview', label: "Umumiy ko'rinish", icon: 'HomeIcon' },
-  { id: 'courses', label: 'Kurslarim', icon: 'BookOpenIcon' },
-  { id: 'students', label: 'Talabalarim', icon: 'UserGroupIcon', href: '/teacher-dashboard/students' },
-  { id: 'groups', label: 'Guruhlar', icon: 'UsersIcon', href: '/teacher-dashboard/groups' },
-  { id: 'assignments', label: 'Topshiriqlar', icon: 'ClipboardDocumentListIcon', href: '/teacher-dashboard/assignments' },
-  { id: 'tests', label: 'Testlar', icon: 'AcademicCapIcon', href: '/teacher-dashboard/tests' },
-  { id: 'analytics', label: 'Tahlil', icon: 'ChartBarIcon', href: '/teacher-dashboard/analytics' },
-  { id: 'earnings', label: 'Daromad', icon: 'CurrencyDollarIcon', href: '/teacher-dashboard/earnings' },
-  { id: 'reviews', label: 'Sharhlar', icon: 'ChatBubbleLeftRightIcon', href: '/teacher-dashboard/reviews' },
-  { id: 'certificates', label: 'Sertifikatlar', icon: 'TrophyIcon', href: '/teacher-dashboard/certificates' },
-  { id: 'messages', label: 'Xabarlar', icon: 'ChatBubbleOvalLeftIcon', href: '/messages' },
+  { id: 'overview', labelKey: 'teacher.navOverview', icon: 'HomeIcon' },
+  { id: 'courses', labelKey: 'teacher.navCourses', icon: 'BookOpenIcon' },
+  { id: 'students', labelKey: 'teacher.navStudents', icon: 'UserGroupIcon', href: '/teacher-dashboard/students' },
+  { id: 'groups', labelKey: 'teacher.navGroups', icon: 'UsersIcon', href: '/teacher-dashboard/groups' },
+  { id: 'assignments', labelKey: 'teacher.navAssignments', icon: 'ClipboardDocumentListIcon', href: '/teacher-dashboard/assignments' },
+  { id: 'tests', labelKey: 'teacher.navTests', icon: 'AcademicCapIcon', href: '/teacher-dashboard/tests' },
+  { id: 'analytics', labelKey: 'teacher.navAnalytics', icon: 'ChartBarIcon', href: '/teacher-dashboard/analytics' },
+  { id: 'earnings', labelKey: 'teacher.navEarnings', icon: 'CurrencyDollarIcon', href: '/teacher-dashboard/earnings' },
+  { id: 'reviews', labelKey: 'teacher.navReviews', icon: 'ChatBubbleLeftRightIcon', href: '/teacher-dashboard/reviews' },
+  { id: 'certificates', labelKey: 'teacher.navCertificates', icon: 'TrophyIcon', href: '/teacher-dashboard/certificates' },
+  { id: 'messages', labelKey: 'teacher.navMessages', icon: 'ChatBubbleOvalLeftIcon', href: '/messages' },
 ];
 
 interface TeacherSidebarProps {
@@ -73,6 +74,7 @@ export default function TeacherSidebar({
   const router = useRouter();
   const activeTab = activeTabProp ?? resolveActiveFromPath(pathname);
   const { user } = useAuth();
+  const { t } = useI18n();
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -123,7 +125,7 @@ export default function TeacherSidebar({
         </div>
         <div className="min-w-0">
           <p className="text-lg font-heading font-bold text-foreground leading-tight">Ustoz</p>
-          <p className="text-xs text-muted-foreground">O'qituvchi paneli</p>
+          <p className="text-xs text-muted-foreground">{t('teacher.sidebarTeacherPanel')}</p>
         </div>
       </Link>
 
@@ -135,7 +137,7 @@ export default function TeacherSidebar({
           onClick={onMobileClose}
         >
           <Icon name="PlusCircleIcon" size={18} />
-          Yangi kurs
+          {t('teacher.sidebarNewCourse')}
         </Link>
       </div>
 
@@ -163,7 +165,7 @@ export default function TeacherSidebar({
                   size={20}
                   className={isActive ? '' : 'text-muted-foreground'}
                 />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate">{t(item.labelKey)}</span>
               </Link>
             );
           }
@@ -182,7 +184,7 @@ export default function TeacherSidebar({
                   size={20}
                   className={isActive ? '' : 'text-muted-foreground'}
                 />
-                <span className="truncate">{item.label}</span>
+                <span className="truncate">{t(item.labelKey)}</span>
               </Link>
             );
           }
@@ -201,7 +203,7 @@ export default function TeacherSidebar({
                 size={20}
                 className={isActive ? '' : 'text-muted-foreground'}
               />
-              <span className="truncate">{item.label}</span>
+              <span className="truncate">{t(item.labelKey)}</span>
             </button>
           );
         })}
@@ -222,7 +224,7 @@ export default function TeacherSidebar({
                 {user.fullName ?? user.email}
               </p>
               <p className="text-xs text-muted-foreground truncate">
-                {user.role === 'teacher' ? "O'qituvchi" : user.role === 'admin' ? 'Admin' : 'Talaba'}
+                {user.role === 'teacher' ? t('teacher.sidebarRoleTeacher') : user.role === 'admin' ? t('teacher.sidebarRoleAdmin') : t('teacher.sidebarRoleStudent')}
               </p>
             </div>
             <Icon name="ChevronRightIcon" size={16} className="text-muted-foreground flex-shrink-0" />
@@ -238,7 +240,7 @@ export default function TeacherSidebar({
             className="w-full flex items-center gap-3 px-3 py-2 mt-1 rounded-md text-destructive hover:bg-destructive/10 transition-smooth text-sm"
           >
             <Icon name="ArrowRightOnRectangleIcon" size={18} />
-            <span>Chiqish</span>
+            <span>{t('teacher.sidebarLogout')}</span>
           </button>
         </div>
       )}

@@ -15,8 +15,10 @@ import {
 } from '@/hooks/mutations/useCertificateMutations';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
 import { useTeacherStudents } from '@/hooks/queries/useTeacherStudents';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function CertificatesClient() {
+  const { t } = useI18n();
   const [search, setSearch] = useState('');
   const [courseFilter, setCourseFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<CertStatusDTO | 'all'>('all');
@@ -42,11 +44,11 @@ export default function CertificatesClient() {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Dashboard
+            {t('nav.dashboard')}
           </Link>
-          <h1 className="text-2xl font-heading font-semibold">Sertifikatlar</h1>
+          <h1 className="text-2xl font-heading font-semibold">{t('teacher.certificates')}</h1>
           <p className="text-sm text-muted-foreground">
-            {rows.length} ta sertifikat
+            {rows.length} {t('teacher.certificateCount')}
           </p>
         </div>
         <button
@@ -54,7 +56,7 @@ export default function CertificatesClient() {
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center gap-2 text-sm font-medium"
         >
           <Icon name="TrophyIcon" size={16} />
-          Yangi sertifikat
+          {t('teacher.newCertificate')}
         </button>
       </div>
 
@@ -78,7 +80,7 @@ export default function CertificatesClient() {
           onChange={(e) => setCourseFilter(e.target.value)}
           className="px-3 py-2 border border-border rounded-md text-sm bg-background"
         >
-          <option value="">Barcha kurslar</option>
+          <option value="">{t('teacher.allCourses')}</option>
           {courses.map((c) => (
             <option key={c.id} value={c.id}>
               {c.title}
@@ -95,7 +97,7 @@ export default function CertificatesClient() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {s === 'all' ? 'Hammasi' : s === 'active' ? 'Aktiv' : 'Bekor'}
+            {s === 'all' ? t('common.all') : s === 'active' ? t('teacher.certActive') : t('teacher.certRevoked')}
           </button>
         ))}
       </div>
@@ -115,12 +117,12 @@ export default function CertificatesClient() {
       ) : rows.length === 0 ? (
         <div className="text-center py-16 bg-muted/30 rounded-md">
           <Icon name="TrophyIcon" size={48} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground mb-3">Hali sertifikat yo'q</p>
+          <p className="text-muted-foreground mb-3">{t('teacher.noCertificates')}</p>
           <button
             onClick={() => setIssueOpen(true)}
             className="text-primary hover:underline text-sm"
           >
-            Birinchisini bering →
+            {t('teacher.issueFirst')}
           </button>
         </div>
       ) : (
@@ -159,6 +161,7 @@ function CertCard({
   cert: CertificateDTO;
   onRevoke: () => void;
 }) {
+  const { t } = useI18n();
   const isRevoked = cert.status === 'revoked';
   return (
     <div
@@ -181,11 +184,11 @@ function CertCard({
                     : 'bg-success/10 text-success'
                 }`}
               >
-                {isRevoked ? 'Bekor' : 'Aktiv'}
+                {isRevoked ? t('teacher.certRevoked') : t('teacher.certActive')}
               </span>
               {cert.issueSource === 'manual' && (
                 <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full">
-                  Qo'lda
+                  {t('teacher.manual')}
                 </span>
               )}
             </div>
@@ -220,14 +223,14 @@ function CertCard({
           className="text-xs text-primary hover:underline inline-flex items-center gap-1"
         >
           <Icon name="EyeIcon" size={10} />
-          Sertifikatni ko'rish
+          {t('teacher.viewCertificate')}
         </Link>
         {!isRevoked && (
           <button
             onClick={onRevoke}
             className="text-xs text-destructive hover:underline"
           >
-            Bekor qilish
+            {t('teacher.revoke')}
           </button>
         )}
       </div>
@@ -247,6 +250,7 @@ function IssueModal({
   const [studentSearch, setStudentSearch] = useState('');
   const [finalGrade, setFinalGrade] = useState<number | ''>(80);
   const [forceIssue, setForceIssue] = useState(false);
+  const { t } = useI18n();
   const mut = useIssueCertificateMutation();
   const students = useTeacherStudents({
     courseId: courseId || undefined,
@@ -255,8 +259,8 @@ function IssueModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!courseId) return toast.error("Kurs tanlang");
-    if (!studentId) return toast.error("Talaba tanlang");
+    if (!courseId) return toast.error(t('teacher.selectCourse'));
+    if (!studentId) return toast.error(t('teacher.selectStudent'));
     mut.mutate(
       {
         courseId,
@@ -268,8 +272,8 @@ function IssueModal({
         onSuccess: ({ certificateNumber, created }) => {
           toast.success(
             created
-              ? `Berildi: ${certificateNumber}`
-              : `Sertifikat allaqachon mavjud: ${certificateNumber}`,
+              ? `${t('teacher.issued')}: ${certificateNumber}`
+              : `${t('teacher.certAlreadyExists')}: ${certificateNumber}`,
           );
           onClose();
         },
@@ -291,7 +295,7 @@ function IssueModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-heading font-semibold">Sertifikat berish</h3>
+          <h3 className="text-lg font-heading font-semibold">{t('teacher.issueCertificate')}</h3>
           <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
           </button>
@@ -299,7 +303,7 @@ function IssueModal({
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Kurs *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.course')} *</label>
             <select
               value={courseId}
               onChange={(e) => {
@@ -309,7 +313,7 @@ function IssueModal({
               required
               className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
             >
-              <option value="">— tanlang —</option>
+              <option value="">— {t('teacher.select')} —</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
@@ -319,7 +323,7 @@ function IssueModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Talaba *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.student')} *</label>
             <input
               type="text"
               value={studentSearch}
@@ -330,7 +334,7 @@ function IssueModal({
             <ul className="max-h-48 overflow-y-auto border border-border rounded-md divide-y divide-border">
               {studentRows.length === 0 ? (
                 <li className="p-3 text-center text-sm text-muted-foreground italic">
-                  {students.isLoading ? 'Yuklanmoqda…' : "Mos talaba yo'q"}
+                  {students.isLoading ? t('common.loading') : t('teacher.noMatchingStudent')}
                 </li>
               ) : (
                 studentRows.map((s) => (
@@ -354,7 +358,7 @@ function IssueModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Yakuniy bal (0-100)</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.finalGrade')} (0-100)</label>
             <input
               type="number"
               min={0}
@@ -375,7 +379,7 @@ function IssueModal({
               className="mt-0.5"
             />
             <span>
-              <strong>Force issue</strong> — talaba kursni tugatmagan bo'lsa ham bering
+              <strong>{t('teacher.forceIssue')}</strong> — {t('teacher.forceIssueDesc')}
             </span>
           </label>
         </div>
@@ -387,7 +391,7 @@ function IssueModal({
             disabled={mut.isPending}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -397,7 +401,7 @@ function IssueModal({
             {mut.isPending && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Berish
+            {t('teacher.issue')}
           </button>
         </div>
       </form>
@@ -413,19 +417,20 @@ function RevokeModal({
   onClose: () => void;
 }) {
   const [reason, setReason] = useState('');
+  const { t } = useI18n();
   const mut = useRevokeCertificateMutation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (reason.trim().length < 5) {
-      toast.error("Sabab kamida 5 belgi");
+      toast.error(t('teacher.reasonMinLength'));
       return;
     }
     mut.mutate(
       { certificateId: cert.id, reason: reason.trim() },
       {
         onSuccess: () => {
-          toast.success("Sertifikat bekor qilindi");
+          toast.success(t('teacher.certRevokedSuccess'));
           onClose();
         },
         onError: (err) => toast.error(err.message),
@@ -445,7 +450,7 @@ function RevokeModal({
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-heading font-semibold text-destructive">
-            Sertifikatni bekor qilish
+            {t('teacher.revokeCertificate')}
           </h3>
           <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
@@ -460,7 +465,7 @@ function RevokeModal({
 
         <div>
           <label className="block text-sm font-medium mb-1">
-            Sabab * (kamida 5 belgi)
+            {t('teacher.reason')} * ({t('teacher.reasonMinLengthLabel')})
           </label>
           <textarea
             value={reason}
@@ -479,7 +484,7 @@ function RevokeModal({
             disabled={mut.isPending}
             className="px-3 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor
+            {t('common.cancel')}
           </button>
           <button
             type="submit"
@@ -489,7 +494,7 @@ function RevokeModal({
             {mut.isPending && (
               <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Bekor qilish
+            {t('teacher.revoke')}
           </button>
         </div>
       </form>

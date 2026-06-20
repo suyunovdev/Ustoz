@@ -16,14 +16,7 @@ import {
   useDeleteReviewReplyMutation,
 } from '@/hooks/mutations/useReviewMutations';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
-
-const SORT_OPTIONS: { value: ReviewSortDTO; label: string }[] = [
-  { value: 'newest', label: 'Yangi' },
-  { value: 'oldest', label: 'Eski' },
-  { value: 'highest_rating', label: '5⭐ yuqori' },
-  { value: 'lowest_rating', label: '1⭐ yuqori' },
-  { value: 'most_helpful', label: 'Eng foydali' },
-];
+import { useI18n } from '@/contexts/I18nContext';
 
 function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
   return (
@@ -40,17 +33,26 @@ function Stars({ rating, size = 14 }: { rating: number; size?: number }) {
   );
 }
 
-function timeAgo(d: string): string {
-  const ms = Date.now() - new Date(d).getTime();
-  const days = Math.floor(ms / 86_400_000);
-  if (days === 0) return 'bugun';
-  if (days === 1) return 'kecha';
-  if (days < 30) return `${days} kun oldin`;
-  if (days < 365) return `${Math.floor(days / 30)} oy oldin`;
-  return `${Math.floor(days / 365)} yil oldin`;
-}
-
 export default function ReviewsClient() {
+  const { t } = useI18n();
+
+  const SORT_OPTIONS: { value: ReviewSortDTO; label: string }[] = [
+    { value: 'newest', label: t('teacher.sortNewest') },
+    { value: 'oldest', label: t('teacher.sortOldest') },
+    { value: 'highest_rating', label: t('teacher.sortHighest') },
+    { value: 'lowest_rating', label: t('teacher.sortLowest') },
+    { value: 'most_helpful', label: t('teacher.sortMostHelpful') },
+  ];
+
+  function timeAgo(d: string): string {
+    const ms = Date.now() - new Date(d).getTime();
+    const days = Math.floor(ms / 86_400_000);
+    if (days === 0) return t('teacher.today');
+    if (days === 1) return t('teacher.yesterday');
+    if (days < 30) return `${days} ${t('teacher.daysAgo')}`;
+    if (days < 365) return `${Math.floor(days / 30)} ${t('teacher.monthsAgo')}`;
+    return `${Math.floor(days / 365)} ${t('teacher.yearsAgo')}`;
+  }
   const [courseId, setCourseId] = useState<string>('');
   const [ratingFilter, setRatingFilter] = useState<number | undefined>();
   const [withoutReply, setWithoutReply] = useState(false);
@@ -76,11 +78,11 @@ export default function ReviewsClient() {
           className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
         >
           <Icon name="ArrowLeftIcon" size={14} />
-          Dashboard
+          {t('nav.dashboard')}
         </Link>
-        <h1 className="text-2xl font-heading font-semibold">Sharhlar</h1>
+        <h1 className="text-2xl font-heading font-semibold">{t('teacher.reviews')}</h1>
         <p className="text-sm text-muted-foreground">
-          Talabalar sharhlari va sizning javoblaringiz
+          {t('teacher.reviewsSubtitle')}
         </p>
       </div>
 
@@ -95,7 +97,7 @@ export default function ReviewsClient() {
             onChange={(e) => setCourseId(e.target.value)}
             className="px-3 py-1.5 border border-border rounded-md text-sm bg-background"
           >
-            <option value="">Barcha kurslar</option>
+            <option value="">{t('teacher.allCourses')}</option>
             {courses.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.title}
@@ -121,7 +123,7 @@ export default function ReviewsClient() {
               checked={withoutReply}
               onChange={(e) => setWithoutReply(e.target.checked)}
             />
-            Javobsiz
+            {t('teacher.withoutReply')}
           </label>
         </div>
 
@@ -134,7 +136,7 @@ export default function ReviewsClient() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            Barcha reyting
+            {t('teacher.allRatings')}
           </button>
           {[5, 4, 3, 2, 1].map((n) => (
             <button
@@ -172,7 +174,7 @@ export default function ReviewsClient() {
             className="text-muted-foreground mx-auto mb-3"
           />
           <p className="text-muted-foreground">
-            Sharh topilmadi
+            {t('teacher.noReviews')}
           </p>
         </div>
       ) : (
@@ -193,10 +195,10 @@ function StatsCard({ stats }: { stats: NonNullable<ReturnType<typeof useCourseRe
         <p className="text-5xl font-bold text-foreground">{stats.avgRating || 0}</p>
         <Stars rating={Math.round(stats.avgRating)} size={20} />
         <p className="text-xs text-muted-foreground mt-1">
-          {stats.totalReviews} sharh · {stats.withCommentCount} izoh
+          {stats.totalReviews} {t('teacher.reviewsCount')} · {stats.withCommentCount} {t('teacher.commentsCount')}
         </p>
         <p className="text-xs text-success mt-1">
-          {stats.repliedRatePct}% javob berilgan
+          {stats.repliedRatePct}% {t('teacher.replied')}
         </p>
       </div>
       <div className="space-y-1">
@@ -220,6 +222,7 @@ function StatsCard({ stats }: { stats: NonNullable<ReturnType<typeof useCourseRe
 }
 
 function ReviewCard({ review }: { review: ReviewDTO }) {
+  const { t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [replyText, setReplyText] = useState(review.teacherReply ?? '');
   const setMut = useSetReviewReplyMutation();
@@ -228,14 +231,14 @@ function ReviewCard({ review }: { review: ReviewDTO }) {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (replyText.trim().length < 2) {
-      toast.error("Javob kamida 2 belgi");
+      toast.error(t('teacher.replyMinLength'));
       return;
     }
     setMut.mutate(
       { reviewId: review.id, reply: replyText },
       {
         onSuccess: () => {
-          toast.success(review.teacherReply ? 'Javob yangilandi' : 'Javob saqlandi');
+          toast.success(review.teacherReply ? t('teacher.replyUpdated') : t('teacher.replySaved'));
           setEditing(false);
         },
         onError: (err) => toast.error(err.message),
@@ -244,10 +247,10 @@ function ReviewCard({ review }: { review: ReviewDTO }) {
   };
 
   const handleDelete = () => {
-    if (!confirm("Javobni o'chirasizmi?")) return;
+    if (!confirm(t('teacher.deleteReplyConfirm'))) return;
     delMut.mutate(review.id, {
       onSuccess: () => {
-        toast.success("Javob o'chirildi");
+        toast.success(t('teacher.replyDeleted'));
         setReplyText('');
         setEditing(false);
       },
@@ -275,7 +278,7 @@ function ReviewCard({ review }: { review: ReviewDTO }) {
             <Stars rating={review.rating} />
             {review.isVerifiedPurchase && (
               <span className="text-[10px] px-2 py-0.5 bg-success/10 text-success rounded-full">
-                ✓ Tasdiqlangan
+                ✓ {t('teacher.verified')}
               </span>
             )}
             {review.helpfulCount > 0 && (
@@ -298,27 +301,27 @@ function ReviewCard({ review }: { review: ReviewDTO }) {
         <div className="border-l-2 border-primary/40 pl-3 py-2 bg-primary/5 rounded-r-md mt-2">
           <div className="flex items-center justify-between mb-1">
             <p className="text-xs font-medium text-primary">
-              💬 Sizning javobingiz
+              {t('teacher.yourReply')}
             </p>
             <div className="flex items-center gap-2 text-xs">
               {review.teacherReplyAt && (
                 <span className="text-muted-foreground">
                   {timeAgo(review.teacherReplyAt)}
-                  {review.teacherReplyEditedAt && ' · tahrirlangan'}
+                  {review.teacherReplyEditedAt && ` · ${t('teacher.edited')}`}
                 </span>
               )}
               <button
                 onClick={() => setEditing(true)}
                 className="text-primary hover:underline"
               >
-                Tahrirlash
+                {t('common.edit')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={delMut.isPending}
                 className="text-destructive hover:underline"
               >
-                O'chirish
+                {t('common.delete')}
               </button>
             </div>
           </div>
@@ -332,7 +335,7 @@ function ReviewCard({ review }: { review: ReviewDTO }) {
           className="text-xs text-primary hover:underline inline-flex items-center gap-1 mt-2"
         >
           <Icon name="ArrowUturnLeftIcon" size={10} />
-          Javob yozish
+          {t('teacher.writeReply')}
         </button>
       )}
 
@@ -343,7 +346,7 @@ function ReviewCard({ review }: { review: ReviewDTO }) {
             onChange={(e) => setReplyText(e.target.value)}
             rows={3}
             maxLength={2000}
-            placeholder="Javobingizni yozing…"
+            placeholder={t('teacher.writeReplyPlaceholder')}
             className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
           />
           <div className="flex items-center justify-end gap-2">
@@ -356,7 +359,7 @@ function ReviewCard({ review }: { review: ReviewDTO }) {
               disabled={setMut.isPending}
               className="px-3 py-1.5 text-foreground hover:bg-muted rounded text-sm disabled:opacity-50"
             >
-              Bekor
+              {t('common.cancel')}
             </button>
             <button
               type="submit"
@@ -366,7 +369,7 @@ function ReviewCard({ review }: { review: ReviewDTO }) {
               {setMut.isPending && (
                 <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
               )}
-              {review.teacherReply ? 'Saqlash' : 'Yuborish'}
+              {review.teacherReply ? t('common.save') : t('common.submit')}
             </button>
           </div>
         </form>
