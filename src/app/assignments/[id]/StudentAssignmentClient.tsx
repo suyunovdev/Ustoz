@@ -24,6 +24,7 @@ interface Props {
 }
 
 export default function StudentAssignmentClient({ assignmentId }: Props) {
+  const { t } = useI18n();
   const assignment = useAssignmentForStudent(assignmentId);
   const mySub = useMyAssignmentSubmission(assignmentId);
   const submitMut = useSubmitAssignmentMutation(assignmentId);

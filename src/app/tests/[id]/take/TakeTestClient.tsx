@@ -36,6 +36,7 @@ interface Props {
 }
 
 export default function TakeTestClient({ testId }: Props) {
+  const { t } = useI18n();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);

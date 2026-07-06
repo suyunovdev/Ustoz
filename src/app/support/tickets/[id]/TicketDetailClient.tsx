@@ -34,6 +34,7 @@ interface Props {
 }
 
 export default function TicketDetailClient({ ticketId }: Props) {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { data, isLoading, error } = useTicket(ticketId);
   const replyMut = useReplyToTicketMutation(ticketId);

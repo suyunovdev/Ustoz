@@ -25,6 +25,7 @@ const PRIORITIES: { value: TicketPriorityDTO; label: string; desc: string }[] = 
 ];
 
 export default function NewTicketClient() {
+  const { t } = useI18n();
   const router = useRouter();
   const mut = useCreateTicketMutation();
   const [subject, setSubject] = useState('');

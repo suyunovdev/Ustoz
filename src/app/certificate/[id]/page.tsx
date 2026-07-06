@@ -21,6 +21,7 @@ interface Certificate {
 }
 
 export default function CertificatePage() {
+  const { t } = useI18n();
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;

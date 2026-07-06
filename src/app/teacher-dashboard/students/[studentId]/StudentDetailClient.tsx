@@ -29,6 +29,7 @@ function formatUzs(s: string): string {
 }
 
 export default function StudentDetailClient({ studentId }: Props) {
+  const { t } = useI18n();
   const router = useRouter();
   const { data, isLoading, error } = useStudentDetail(studentId);
   const toggle = useToggleEnrollmentMutation(studentId);
