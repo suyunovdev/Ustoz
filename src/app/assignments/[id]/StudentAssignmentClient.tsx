@@ -73,7 +73,6 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
   const canSubmit = !isOverdue || a.allowLateSubmission;
 
   const fmt = (ms: number) => {
-  const { t } = useI18n();
     const abs = Math.abs(ms);
     const days = Math.floor(abs / 86_400_000);
     const hours = Math.floor((abs % 86_400_000) / 3_600_000);

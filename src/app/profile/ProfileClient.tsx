@@ -87,7 +87,6 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
   const [social, setSocial] = useState<Record<string, string>>(profile.socialLinks);
 
   const handleSubmit = (e: React.FormEvent) => {
-  const { t } = useI18n();
     e.preventDefault();
     const expertise = expertiseStr
       .split(',')

@@ -114,7 +114,6 @@ export default function TakeTestClient({ testId }: Props) {
   };
 
   const handleAnswer = (qId: string, value: string | string[]) => {
-  const { t } = useI18n();
     setAnswers((a) => ({ ...a, [qId]: value }));
   };
 

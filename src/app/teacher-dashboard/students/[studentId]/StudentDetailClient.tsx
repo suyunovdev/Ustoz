@@ -39,7 +39,6 @@ export default function StudentDetailClient({ studentId }: Props) {
   const [pendingRemove, setPendingRemove] = useState<StudentEnrollmentDTO | null>(null);
 
   const handleStartChat = () => {
-  const { t } = useI18n();
     startConv.mutate(
       { studentId },
       {

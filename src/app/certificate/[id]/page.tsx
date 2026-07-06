@@ -40,7 +40,6 @@ export default function CertificatePage() {
   }, [id]);
 
   const handleCopyLink = () => {
-  const { t } = useI18n();
     if (certificate?.verification_url) {
       navigator.clipboard.writeText(certificate.verification_url);
       setCopied(true);

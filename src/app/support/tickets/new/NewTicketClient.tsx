@@ -33,7 +33,6 @@ export default function NewTicketClient() {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
-  const { t } = useI18n();
     e.preventDefault();
     if (subject.trim().length < 5) return toast.error("Sarlavha kamida 5 belgi");
     if (message.trim().length < 10) return toast.error("Tavsif kamida 10 belgi");

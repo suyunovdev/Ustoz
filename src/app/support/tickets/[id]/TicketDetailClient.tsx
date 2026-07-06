@@ -50,7 +50,6 @@ export default function TicketDetailClient({ ticketId }: Props) {
   }, [messages.length]);
 
   const handleSend = (e: React.FormEvent) => {
-  const { t } = useI18n();
     e.preventDefault();
     const text = draft.trim();
     if (text.length < 2) return toast.error("Xabar kamida 2 belgi");
