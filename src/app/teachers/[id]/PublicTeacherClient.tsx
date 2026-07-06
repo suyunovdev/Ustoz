@@ -52,37 +52,37 @@ export default function PublicTeacherClient({ teacherId }: Props) {
     );
   }
 
-  const t = teacher.data.teacher;
+  const teacherData = teacher.data.teacher;
   const courseRows = courses.data?.courses ?? [];
-  const socials = Object.entries(t.socialLinks).filter(([, v]) => v.length > 0);
+  const socials = Object.entries(teacherData.socialLinks).filter(([, v]) => v.length > 0);
 
   return (
     <div className="min-h-screen bg-background">
       <div className="bg-gradient-to-br from-primary/10 via-background to-warning/5 border-b border-border">
         <div className="max-w-5xl mx-auto px-6 py-12">
           <div className="flex items-start gap-6 flex-wrap">
-            {t.avatarUrl ? (
+            {teacherData.avatarUrl ? (
               <AppImage
-                src={t.avatarUrl}
-                alt={t.fullName}
+                src={teacherData.avatarUrl}
+                alt={teacherData.fullName}
                 className="w-32 h-32 rounded-full object-cover ring-4 ring-card shadow-warm-lg"
               />
             ) : (
               <div className="w-32 h-32 rounded-full bg-primary/10 text-primary flex items-center justify-center text-5xl font-medium ring-4 ring-card shadow-warm-lg">
-                {t.fullName.charAt(0)}
+                {teacherData.fullName.charAt(0)}
               </div>
             )}
 
             <div className="flex-1 min-w-0">
               <h1 className="text-3xl font-heading font-bold text-foreground">
-                {t.fullName}
+                {teacherData.fullName}
               </h1>
-              {t.headline && (
-                <p className="text-primary mt-1">{t.headline}</p>
+              {teacherData.headline && (
+                <p className="text-primary mt-1">{teacherData.headline}</p>
               )}
               <p className="text-xs text-muted-foreground mt-2">
                 Platformaga qo'shilgan:{' '}
-                {new Date(t.joinedAt).toLocaleDateString('uz-UZ', {
+                {new Date(teacherData.joinedAt).toLocaleDateString('uz-UZ', {
                   year: 'numeric',
                   month: 'long',
                 })}
@@ -111,40 +111,40 @@ export default function PublicTeacherClient({ teacherId }: Props) {
             <StatCard
               icon="BookOpenIcon"
               label="Kurslar"
-              value={t.totalCourses}
+              value={teacherData.totalCourses}
             />
             <StatCard
               icon="UserGroupIcon"
               label="Talabalar"
-              value={t.totalStudents.toLocaleString('uz-UZ')}
+              value={teacherData.totalStudents.toLocaleString('uz-UZ')}
             />
             <StatCard
               icon="StarIcon"
               label="Reyting"
-              value={t.avgRating > 0 ? `${t.avgRating} ⭐` : '—'}
+              value={teacherData.avgRating > 0 ? `${teacherData.avgRating} ⭐` : '—'}
             />
             <StatCard
               icon="ChatBubbleLeftRightIcon"
               label="Sharhlar"
-              value={t.totalReviews}
+              value={teacherData.totalReviews}
             />
           </div>
         </div>
       </div>
 
       <div className="max-w-5xl mx-auto px-6 py-8">
-        {t.bio && (
+        {teacherData.bio && (
           <div className="bg-card border border-border rounded-md p-6 mb-6">
             <h2 className="font-medium mb-2">Haqida</h2>
-            <p className="text-sm text-foreground whitespace-pre-wrap">{t.bio}</p>
+            <p className="text-sm text-foreground whitespace-pre-wrap">{teacherData.bio}</p>
           </div>
         )}
 
-        {t.expertise.length > 0 && (
+        {teacherData.expertise.length > 0 && (
           <div className="bg-card border border-border rounded-md p-6 mb-6">
             <h2 className="font-medium mb-3">Mavzular</h2>
             <div className="flex flex-wrap gap-2">
-              {t.expertise.map((e) => (
+              {teacherData.expertise.map((e) => (
                 <span
                   key={e}
                   className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium"
