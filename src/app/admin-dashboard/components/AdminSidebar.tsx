@@ -164,7 +164,7 @@ export default function AdminSidebar({
           </button>
           <button
             onClick={async () => {
-              try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch {}
+              try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch (_) {}
               router.push('/login');
               router.refresh();
             }}
