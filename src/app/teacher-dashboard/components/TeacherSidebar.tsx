@@ -233,7 +233,7 @@ export default function TeacherSidebar({
             onClick={async () => {
               try {
                 await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-              } catch (_) { /* ignore */ }
+              } catch {}
               router.push('/login');
               router.refresh();
             }}

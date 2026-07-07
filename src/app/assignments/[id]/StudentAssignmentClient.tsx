@@ -24,7 +24,6 @@ interface Props {
 }
 
 export default function StudentAssignmentClient({ assignmentId }: Props) {
-  const { t } = useI18n();
   const assignment = useAssignmentForStudent(assignmentId);
   const mySub = useMyAssignmentSubmission(assignmentId);
   const submitMut = useSubmitAssignmentMutation(assignmentId);
@@ -36,9 +35,11 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
   const [attachmentName, setAttachmentName] = useState('');
   const [now, setNow] = useState(Date.now());
 
+  const { t } = useI18n();
+
   useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 30_000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
   }, []);
 
   // Mavjud submission'dan formni to'ldirish

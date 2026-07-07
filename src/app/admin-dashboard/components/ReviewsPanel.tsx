@@ -386,6 +386,7 @@ function FeedbackOverlay({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div
       className="fixed left-1/2 -translate-x-1/2 z-[210] w-full max-w-md pointer-events-none"

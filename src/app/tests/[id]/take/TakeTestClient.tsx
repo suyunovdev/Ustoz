@@ -36,7 +36,6 @@ interface Props {
 }
 
 export default function TakeTestClient({ testId }: Props) {
-  const { t } = useI18n();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -115,6 +114,7 @@ export default function TakeTestClient({ testId }: Props) {
   };
 
   const handleAnswer = (qId: string, value: string | string[]) => {
+  const { t } = useI18n();
     setAnswers((a) => ({ ...a, [qId]: value }));
   };
 

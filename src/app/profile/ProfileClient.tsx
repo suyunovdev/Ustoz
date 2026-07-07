@@ -17,14 +17,14 @@ import { useI18n } from '@/contexts/I18nContext';
 
 type TabId = 'profile' | 'password' | 'notifications' | 'account';
 
+const TABS: { id: TabId; label: string; icon: string }[] = [
+  { id: 'profile', label: t('profile.profileTab'), icon: 'UserIcon' },
+  { id: 'password', label: t('profile.passwordTab'), icon: 'KeyIcon' },
+  { id: 'notifications', label: t('profile.notificationsTab'), icon: 'BellIcon' },
+  { id: 'account', label: t('profile.accountTab'), icon: 'Cog6ToothIcon' },
+];
+
 export default function ProfileClient() {
-  const { t } = useI18n();
-  const TABS: { id: TabId; label: string; icon: string }[] = [
-    { id: 'profile', label: t('profile.profileTab'), icon: 'UserIcon' },
-    { id: 'password', label: t('profile.passwordTab'), icon: 'KeyIcon' },
-    { id: 'notifications', label: t('profile.notificationsTab'), icon: 'BellIcon' },
-    { id: 'account', label: t('profile.accountTab'), icon: 'Cog6ToothIcon' },
-  ];
   const { data, isLoading, error } = useMyProfile();
   const [activeTab, setActiveTab] = useState<TabId>('profile');
 
@@ -87,6 +87,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
   const [social, setSocial] = useState<Record<string, string>>(profile.socialLinks);
 
   const handleSubmit = (e: React.FormEvent) => {
+  const { t } = useI18n();
     e.preventDefault();
     const expertise = expertiseStr
       .split(',')

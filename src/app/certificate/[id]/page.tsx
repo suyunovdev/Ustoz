@@ -21,7 +21,6 @@ interface Certificate {
 }
 
 export default function CertificatePage() {
-  const { t } = useI18n();
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
@@ -41,6 +40,7 @@ export default function CertificatePage() {
   }, [id]);
 
   const handleCopyLink = () => {
+  const { t } = useI18n();
     if (certificate?.verification_url) {
       navigator.clipboard.writeText(certificate.verification_url);
       setCopied(true);

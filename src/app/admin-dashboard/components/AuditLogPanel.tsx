@@ -248,6 +248,7 @@ function LogRow({
   isOpen: boolean;
   onToggle: () => void;
 }) {
+  const { t } = useI18n();
   const { color, icon } = getActionInfo(log.action);
   return (
     <div className="border border-border rounded-md hover:bg-muted/30 transition-smooth">

@@ -91,12 +91,12 @@ const CourseOversightPanel = () => {
 
   const confirmInfo = useMemo(() => {
     if (!pending) return null;
-    const t = pending.course.title;
+    const courseTitle = pending.course.title;
     switch (pending.type) {
       case 'approve':
         return {
           title: t('admin.approveCourse'),
-          message: `"${t}" kursini tasdiqlaysizmi? Marketplace'da darrov ko'rinadi.`,
+          message: `"${courseTitle}" kursini tasdiqlaysizmi? Marketplace'da darrov ko'rinadi.`,
           confirmLabel: t('admin.approve'),
           variant: 'default' as const,
           requireFeedback: false,
@@ -105,7 +105,7 @@ const CourseOversightPanel = () => {
       case 'reject':
         return {
           title: t('admin.rejectCourse'),
-          message: `"${t}" kursini rad etyapsiz. Sabab ko'rsating (kamida 5 belgi).`,
+          message: `"${courseTitle}" kursini rad etyapsiz. Sabab ko'rsating (kamida 5 belgi).`,
           confirmLabel: t('admin.reject'),
           variant: 'danger' as const,
           requireFeedback: true,
@@ -114,7 +114,7 @@ const CourseOversightPanel = () => {
       case 'request_revision':
         return {
           title: t('admin.requestRevision'),
-          message: `"${t}" kursi uchun teacher'ga aniq izoh yozing.`,
+          message: `"${courseTitle}" kursi uchun teacher'ga aniq izoh yozing.`,
           confirmLabel: t('admin.sendRequest'),
           variant: 'default' as const,
           requireFeedback: true,
@@ -123,7 +123,7 @@ const CourseOversightPanel = () => {
       case 'feature':
         return {
           title: t('admin.markFeatured'),
-          message: `"${t}" kursi marketplace'da yuqorida ko'rsatiladi.`,
+          message: `"${courseTitle}" kursi marketplace'da yuqorida ko'rsatiladi.`,
           confirmLabel: t('admin.markFeaturedBtn'),
           variant: 'default' as const,
           requireFeedback: false,
@@ -132,7 +132,7 @@ const CourseOversightPanel = () => {
       case 'unfeature':
         return {
           title: t('admin.unmarkFeatured'),
-          message: `"${t}" kursi oddiy ro'yxatga qaytadi.`,
+          message: `"${courseTitle}" kursi oddiy ro'yxatga qaytadi.`,
           confirmLabel: t('admin.unmarkFeaturedBtn'),
           variant: 'default' as const,
           requireFeedback: false,
@@ -141,7 +141,7 @@ const CourseOversightPanel = () => {
       case 'suspend':
         return {
           title: t('admin.suspendCourse'),
-          message: `"${t}" kursi yashiriladi. Sabab ko'rsating.`,
+          message: `"${courseTitle}" kursi yashiriladi. Sabab ko'rsating.`,
           confirmLabel: t('admin.suspendBtn'),
           variant: 'danger' as const,
           requireFeedback: true,
@@ -150,7 +150,7 @@ const CourseOversightPanel = () => {
       case 'unsuspend':
         return {
           title: t('admin.unsuspendCourse'),
-          message: `"${t}" kursi qaytarib faollashtiriladi.`,
+          message: `"${courseTitle}" kursi qaytarib faollashtiriladi.`,
           confirmLabel: t('admin.unsuspendBtn'),
           variant: 'default' as const,
           requireFeedback: false,
@@ -557,6 +557,7 @@ function FeedbackOverlay({
   onChange: (v: string) => void;
   visible: boolean;
 }) {
+  const { t } = useI18n();
   if (!visible) return null;
   return (
     <div className="fixed left-1/2 -translate-x-1/2 z-[210] w-full max-w-md pointer-events-none"
