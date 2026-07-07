@@ -1,6 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') ??
   'http://localhost:4028';
@@ -44,11 +46,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   let courseRoutes: MetadataRoute.Sitemap = [];
   try {
-    const courses = await prisma.course.findMany({
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 5000)
+    );
+    const query = prisma.course.findMany({
       where: { isPublished: true },
       select: { id: true, updatedAt: true },
       take: 5000,
     });
+    const courses = await Promise.race([query, timeout]);
     courseRoutes = courses.map((c) => ({
       url: `${SITE_URL}/course-details/${c.id}`,
       lastModified: c.updatedAt,
@@ -56,7 +62,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     }));
   } catch {
-    // DB mavjud bo'lmasa (build vaqti) — faqat statik route'larni qaytaramiz
+    // DB mavjud bo'lmasa yoki timeout — faqat statik route'larni qaytaramiz
   }
 
   return [...staticRoutes, ...courseRoutes];

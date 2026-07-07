@@ -1,37 +1,23 @@
-import { NextRequest } from 'next/server';
-import { requireStudent, errorResponse } from '@/lib/auth-helpers';
-import { prisma } from '@/lib/prisma';
+/**
+ * GET /api/certificates/my
+ * Talabaning barcha sertifikatlari.
+ */
+import type { NextRequest } from 'next/server';
+import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
+import { certificateRepo } from '@/lib/repositories';
 
-// GET /api/certificates/my — o'quvchining barcha sertifikatlari
-// Faqat student roli — teacher/admin uchun mantiqsiz.
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireStudent(req);
-
-    const certificates = await prisma.certificate.findMany({
-      where: { studentId: session.sub },
-      orderBy: { issuedAt: 'desc' },
-      include: {
-        course: {
-          select: {
-            title: true,
-            coverImage: true,
-            teacher: { select: { fullName: true } },
-          },
-        },
-      },
-    });
-
+    const session = await requireAuth(req);
+    const certs = await certificateRepo.findByStudent(session.sub);
     return jsonResponse({
-      certificates: certificates.map((c) => ({
+      certificates: certs.map((c) => ({
         id: c.id,
         courseId: c.courseId,
-        courseTitle: c.course.title,
-        courseCoverImage: c.course.coverImage,
-        teacherName: c.course.teacher.fullName,
+        courseTitle: (c as { course?: { title?: string } }).course?.title ?? '',
         certificateNumber: c.certificateNumber,
-        issuedAt: c.issuedAt,
+        issuedAt: c.issuedAt.toISOString(),
         verificationUrl: c.verificationUrl,
       })),
     });

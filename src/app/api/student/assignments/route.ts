@@ -1,26 +1,22 @@
 /**
  * GET /api/student/assignments
- *
- * Talabaning enroll bo'lgan kurslari uchun barcha published vazifalar va o'z topshiriqlari.
- * Mavjud topshiriq holatini birga qaytaradi (status/grade).
+ * Talabaning topshiriqlari (student dashboard uchun).
  */
-
 import type { NextRequest } from 'next/server';
 import { requireStudent, errorResponse } from '@/lib/auth-helpers';
-import { jsonResponse } from '@/lib/json';
+import { jsonResponse, serializeData } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await requireStudent(req);
 
-    // Talaba qaysi kurslarga yozilgan
+    // Talabaning enrolled kurslaridagi published assignmentlar
     const enrollments = await prisma.enrollment.findMany({
-      where: { studentId: session.sub },
+      where: { studentId: session.sub, isActive: true },
       select: { courseId: true },
     });
     const courseIds = enrollments.map((e) => e.courseId);
-    if (courseIds.length === 0) return jsonResponse({ assignments: [] });
 
     const assignments = await prisma.assignment.findMany({
       where: { courseId: { in: courseIds }, status: 'published' },
@@ -28,42 +24,27 @@ export async function GET(req: NextRequest) {
         course: { select: { title: true } },
         submissions: {
           where: { studentId: session.sub },
-          orderBy: { revisionNumber: 'desc' },
+          select: { id: true, status: true, grade: true, submittedAt: true },
           take: 1,
         },
       },
       orderBy: { dueDate: 'asc' },
+      take: 50,
     });
 
-    const now = new Date();
     return jsonResponse({
-      assignments: assignments.map((a) => {
-        const sub = a.submissions[0] ?? null;
-        const isOverdue = !sub && a.dueDate < now;
-        return {
+      assignments: serializeData(
+        assignments.map((a) => ({
           id: a.id,
           title: a.title,
-          description: a.description,
-          courseId: a.courseId,
           courseTitle: a.course.title,
-          dueDate: a.dueDate,
+          courseId: a.courseId,
+          dueDate: a.dueDate.toISOString(),
           maxScore: a.maxScore,
           submissionType: a.submissionType,
-          allowLateSubmission: a.allowLateSubmission,
-          isOverdue,
-          mySubmission: sub
-            ? {
-                id: sub.id,
-                status: sub.status,
-                isLate: sub.isLate,
-                submittedAt: sub.submittedAt,
-                grade: sub.grade,
-                feedback: sub.feedback,
-                revisionNumber: sub.revisionNumber,
-              }
-            : null,
-        };
-      }),
+          submission: a.submissions[0] ?? null,
+        }))
+      ),
     });
   } catch (err) {
     return errorResponse(err);

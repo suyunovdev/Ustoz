@@ -1,0 +1,9 @@
+coverage
+e2e
+tasks
+docs
+scripts
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx

@@ -162,6 +162,7 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
     capped: boolean;
   } | null>(null);
 
+  const { t } = useI18n();
   const createMut = useCreateCampaignMutation();
   const previewMut = usePreviewRecipientsMutation();
 

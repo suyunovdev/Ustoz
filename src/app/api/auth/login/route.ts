@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
 
     // Timing attack himoyasi: user topilmasa ham bcrypt.compare chaqiriladi
     const hashToCompare = user?.passwordHash || DUMMY_HASH;
-    const isValid = await bcrypt.compare(password, hashToCompare);
+    const isValid = await bcrypt.compare(String(password), hashToCompare);
 
     if (!user || !isValid) {
       recordFailedAttempt(rateLimitKey);

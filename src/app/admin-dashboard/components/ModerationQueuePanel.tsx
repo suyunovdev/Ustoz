@@ -92,12 +92,12 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
 
   const modalProps = useMemo(() => {
     if (!pending) return null;
-    const t = pending.item.material.title;
+    const itemTitle = pending.item.material.title;
     switch (pending.type) {
       case 'start_review':
         return {
           title: t('admin.startReviewMod'),
-          message: `"${t}" materialining ko'rib chiqilishini boshlaymizmi?`,
+          message: `"${itemTitle}" materialining ko'rib chiqilishini boshlaymizmi?`,
           confirmLabel: t('admin.startBtn'),
           variant: 'default' as const,
           requireFeedback: false,
@@ -105,7 +105,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
       case 'approve':
         return {
           title: t('admin.approveMaterial'),
-          message: `"${t}" material tasdiqlanadi va kursda ko'rinadi.`,
+          message: `"${itemTitle}" material tasdiqlanadi va kursda ko'rinadi.`,
           confirmLabel: t('admin.approveBtn'),
           variant: 'default' as const,
           requireFeedback: false,
@@ -113,7 +113,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
       case 'reject':
         return {
           title: t('admin.rejectMaterial'),
-          message: `"${t}" material rad etiladi. Sabab kerak.`,
+          message: `"${itemTitle}" material rad etiladi. Sabab kerak.`,
           confirmLabel: t('admin.rejectBtn'),
           variant: 'danger' as const,
           requireFeedback: true,
@@ -121,7 +121,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
       case 'request_revision':
         return {
           title: t('admin.requestRevisionMod'),
-          message: `"${t}" material uchun teacher'ga aniq izoh yozing.`,
+          message: `"${itemTitle}" material uchun teacher'ga aniq izoh yozing.`,
           confirmLabel: t('admin.sendRequest'),
           variant: 'default' as const,
           requireFeedback: true,
@@ -501,6 +501,7 @@ function FeedbackOverlay({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <div
       className="fixed left-1/2 -translate-x-1/2 z-[210] w-full max-w-md pointer-events-none"

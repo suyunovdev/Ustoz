@@ -340,6 +340,7 @@ function FeedbackOverlay({
   onChange: (v: string) => void;
   visible: boolean;
 }) {
+  const { t } = useI18n();
   if (!visible) return null;
   return (
     <div

@@ -1,60 +1,32 @@
-import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
+/**
+ * GET /api/certificates/[id]
+ * Bitta sertifikat ma'lumoti yoki PDF yuklab olish.
+ */
+import type { NextRequest } from 'next/server';
+import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
+import { certificateRepo } from '@/lib/repositories';
 
-// GET /api/certificates/[id] — sertifikat ma'lumotlari (umumiy: verifikatsiya uchun)
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
+  try {
+    const session = await requireAuth(req);
+    const { id } = await params;
 
-  if (!id) {
-    return jsonResponse({ error: 'ID kiritilmagan' }, { status: 400 });
+    const cert = await certificateRepo.findById(id);
+    if (!cert) {
+      return jsonResponse({ error: 'Sertifikat topilmadi' }, { status: 404 });
+    }
+
+    // Faqat o'z sertifikati yoki admin
+    if (cert.studentId !== session.sub && session.role !== 'admin') {
+      return jsonResponse({ error: 'Ruxsat yo\'q' }, { status: 403 });
+    }
+
+    return jsonResponse({ certificate: cert });
+  } catch (err) {
+    return errorResponse(err);
   }
-
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-  const certificate = await prisma.certificate.findFirst({
-    where: uuidRegex.test(id)
-      ? { id }
-      : { certificateNumber: id.toUpperCase() },
-    include: {
-      student: { select: { fullName: true, avatarUrl: true } },
-      course: {
-        select: {
-          title: true,
-          coverImage: true,
-          teacher: { select: { fullName: true } },
-        },
-      },
-    },
-  });
-
-  if (!certificate) {
-    return jsonResponse({ error: 'Sertifikat topilmadi' }, { status: 404 });
-  }
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://ustoz.uz';
-
-  return jsonResponse({
-    certificate: {
-      id: certificate.id,
-      certificate_number: certificate.certificateNumber,
-      issued_at: certificate.issuedAt,
-      verification_url: `${appUrl}/verify/${certificate.certificateNumber}`,
-      metadata: certificate.metadata,
-      student: {
-        full_name: certificate.student.fullName,
-        avatar_url: certificate.student.avatarUrl,
-      },
-      course: {
-        title: certificate.course.title,
-        thumbnail_url: certificate.course.coverImage,
-        teacher: {
-          full_name: certificate.course.teacher.fullName,
-        },
-      },
-    },
-  });
 }

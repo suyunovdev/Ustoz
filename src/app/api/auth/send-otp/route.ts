@@ -70,44 +70,33 @@ export async function POST(req: NextRequest) {
       update: { otp, type, expiresAt, verified: false },
     });
 
-    // Email yuborish
-    const isDev = process.env.NODE_ENV !== 'production';
-    const resendKey = process.env.RESEND_API_KEY;
+    // Email yuborish (Gmail SMTP via Nodemailer)
     let emailDelivered = false;
 
-    if (resendKey && !resendKey.startsWith('your-')) {
-      const fromAddress = process.env.RESEND_FROM || 'Ustoz <onboarding@resend.dev>';
+    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
       try {
-        const resp = await fetch('https://api.resend.com/emails', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${resendKey}`,
-          },
-          body: JSON.stringify({
-            from: fromAddress,
-            to: [normalizedEmail],
-            subject: `Ustoz — Tasdiqlash kodi: ${otp}`,
-            html: `
-              <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:20px;">
-                <h2 style="color:#0f4c75;">Ustoz platformasi</h2>
-                <p>Sizning tasdiqlash kodingiz:</p>
-                <div style="font-size:40px;font-weight:bold;letter-spacing:10px;color:#0f4c75;padding:20px 0;">${otp}</div>
-                <p style="color:#6b7280;">Kod 10 daqiqa ichida amal qiladi.</p>
-                <p style="color:#9ca3af;font-size:12px;">Agar siz bu kodni so'ramagan bo'lsangiz, bu xabarni e'tiborsiz qoldiring.</p>
-              </div>
-            `,
-          }),
+        const { sendOne } = await import('@/lib/email/gmail-client');
+        const result = await sendOne({
+          to: normalizedEmail,
+          subject: `Ustoz — Tasdiqlash kodi: ${otp}`,
+          html: `
+            <div style="font-family:sans-serif;max-width:400px;margin:0 auto;padding:20px;">
+              <h2 style="color:#0f4c75;">Ustoz platformasi</h2>
+              <p>Sizning tasdiqlash kodingiz:</p>
+              <div style="font-size:40px;font-weight:bold;letter-spacing:10px;color:#0f4c75;padding:20px 0;">${otp}</div>
+              <p style="color:#6b7280;">Kod 10 daqiqa ichida amal qiladi.</p>
+              <p style="color:#9ca3af;font-size:12px;">Agar siz bu kodni so'ramagan bo'lsangiz, bu xabarni e'tiborsiz qoldiring.</p>
+            </div>
+          `,
         });
-        if (resp.ok) {
+        if (result.success) {
           emailDelivered = true;
-          console.log(`[resend] OTP sent to ${normalizedEmail}`);
+          console.log(`[gmail] OTP sent to ${normalizedEmail}`);
         } else {
-          const errBody = await resp.text();
-          console.error(`[resend] ${resp.status}:`, errBody);
+          console.error(`[gmail] error:`, result.error);
         }
       } catch (err) {
-        console.error('[resend] fetch error:', err);
+        console.error('[gmail] send error:', err);
       }
     }
 
