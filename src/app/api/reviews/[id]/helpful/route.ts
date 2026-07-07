@@ -1,15 +1,11 @@
 /**
  * POST /api/reviews/[id]/helpful
- * Foydalanuvchining "foydali" votini toggle qiladi.
+ * Sharhni foydali deb belgilash (toggle).
  */
-
 import type { NextRequest } from 'next/server';
 import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
-import {
-  toggleReviewHelpful,
-  ReviewNotFoundError,
-} from '@/lib/services/review.service';
+import { courseReviewRepo } from '@/lib/repositories';
 
 export async function POST(
   req: NextRequest,
@@ -17,13 +13,11 @@ export async function POST(
 ) {
   try {
     const session = await requireAuth(req);
-    const { id } = await params;
-    const result = await toggleReviewHelpful(id, session.sub);
+    const { id: reviewId } = await params;
+
+    const result = await courseReviewRepo.toggleHelpful(reviewId, session.sub);
     return jsonResponse(result);
   } catch (err) {
-    if (err instanceof ReviewNotFoundError) {
-      return jsonResponse({ error: err.message, code: err.code }, { status: 404 });
-    }
     return errorResponse(err);
   }
 }

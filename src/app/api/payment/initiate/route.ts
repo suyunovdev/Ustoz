@@ -1,144 +1,97 @@
-import { NextRequest } from 'next/server';
-import { getSessionFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+/**
+ * POST /api/payment/initiate
+ * To'lovni boshlash — Click yoki Payme orqali.
+ * Hozirda gateway sozlanmagan bo'lsa mock URL qaytaradi.
+ */
+import type { NextRequest } from 'next/server';
+import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { prisma } from '@/lib/prisma';
+import { ValidationError } from '@/lib/errors';
+import type { PaymentMethod } from '@/generated/prisma/client';
 
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SITE_URL = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? 'http://localhost:4028';
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const session = await getSessionFromRequest(request);
-    if (!session) {
-      return jsonResponse({ error: 'Kirish talab qilinadi' }, { status: 401 });
+    const session = await requireAuth(req);
+
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      throw new ValidationError('JSON formatida xato');
     }
 
-    // Rate limiting: foydalanuvchi uchun 10 so'rov / daqiqa
-    const rateLimitKey = `payment:${session.sub}`;
-    const { allowed, remaining, resetAt } = await checkRateLimit(rateLimitKey, 10, 60 * 1000);
+    const { courseId, paymentMethod, amount } = body;
 
-    if (!allowed) {
-      const retryAfterSec = Math.ceil((resetAt - Date.now()) / 1000);
-      return jsonResponse(
-        { error: 'Juda ko\'p to\'lov so\'rovi. 1 daqiqadan keyin urinib ko\'ring.' },
-        {
-          status: 429,
-          headers: { 'Retry-After': String(retryAfterSec) },
-        }
-      );
+    if (typeof courseId !== 'string') throw new ValidationError('courseId majburiy');
+    if (paymentMethod !== 'click' && paymentMethod !== 'payme') {
+      throw new ValidationError('paymentMethod: click yoki payme bo\'lishi kerak');
     }
 
-    const body = await request.json();
-    const { courseId, paymentMethod } = body;
-
-    // Input validation
-    if (!courseId || typeof courseId !== 'string') {
-      return jsonResponse({ error: 'courseId kiritilmagan' }, { status: 400 });
-    }
-
-    if (!UUID_RE.test(courseId)) {
-      return jsonResponse({ error: 'courseId formati noto\'g\'ri' }, { status: 400 });
-    }
-
-    if (!paymentMethod || !['click', 'payme'].includes(paymentMethod)) {
-      return jsonResponse(
-        { error: 'To\'lov usuli: click yoki payme bo\'lishi kerak' },
-        { status: 400 }
-      );
-    }
-
-    const course = await prisma.course.findUnique({
-      where: { id: courseId },
-      select: { id: true, title: true, priceUzs: true, isPublished: true },
+    // Kursni tekshirish
+    const course = await prisma.course.findFirst({
+      where: { id: courseId, isPublished: true },
+      select: { id: true, title: true, priceUzs: true },
     });
+    if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
 
-    if (!course) {
-      return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
+    const priceUzs = Number(course.priceUzs);
+    if (priceUzs <= 0) {
+      return jsonResponse({ error: 'Bu kurs bepul — /api/courses/[id]/enroll ishlatiladi' }, { status: 400 });
     }
 
-    if (!course.isPublished) {
-      return jsonResponse({ error: 'Kurs sotuvda mavjud emas' }, { status: 400 });
-    }
-
-    if (!course.priceUzs || course.priceUzs <= BigInt(0)) {
-      return jsonResponse({ error: 'Kurs narxi noto\'g\'ri' }, { status: 400 });
-    }
-
-    // Allaqachon yozilganmi?
-    const existingEnrollment = await prisma.enrollment.findUnique({
-      where: {
-        studentId_courseId: {
-          studentId: session.sub,
-          courseId,
-        },
-      },
-      select: { id: true },
+    // Allaqachon aktif enrollment bormi?
+    const existing = await prisma.enrollment.findUnique({
+      where: { studentId_courseId: { studentId: session.sub, courseId } },
+      select: { isActive: true },
     });
-
-    if (existingEnrollment) {
-      return jsonResponse(
-        { error: 'Siz bu kursga allaqachon yozilgansiz' },
-        { status: 400 }
-      );
+    if (existing?.isActive) {
+      return jsonResponse({ error: 'Siz allaqachon bu kursga yozilgansiz' }, { status: 409 });
     }
 
-    const merchantTransId = `${Date.now()}_${session.sub.substring(0, 8)}_${courseId.substring(0, 8)}`;
+    // Merchantga unique ID
+    const merchantTransId = `${session.sub.slice(0, 8)}-${courseId.slice(0, 8)}-${Date.now()}`;
 
+    // Transaction yaratish
     const transaction = await prisma.paymentTransaction.create({
       data: {
         studentId: session.sub,
         courseId,
-        amountUzs: course.priceUzs,
-        paymentMethod: paymentMethod as 'click' | 'payme',
+        amountUzs: BigInt(priceUzs),
+        currency: 'UZS',
+        paymentMethod: paymentMethod as PaymentMethod,
         status: 'pending',
         merchantTransId,
-        metadata: {
-          course_title: course.title,
-          created_from: 'web',
-        },
       },
     });
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4028';
+    // Payment URL yaratish
     let paymentUrl = '';
+    const clickMerchantId = process.env.CLICK_MERCHANT_ID;
+    const clickServiceId = process.env.CLICK_SERVICE_ID;
+    const paymeKey = process.env.PAYME_MERCHANT_ID;
 
-    if (paymentMethod === 'click') {
-      const clickMerchantId = process.env.CLICK_MERCHANT_ID;
-      const clickServiceId = process.env.CLICK_SERVICE_ID;
-
-      if (!clickMerchantId || !clickServiceId) {
-        return jsonResponse({ error: 'Click to\'lovi sozlanmagan' }, { status: 500 });
-      }
-
-      paymentUrl = `https://my.click.uz/services/pay?service_id=${clickServiceId}&merchant_id=${clickMerchantId}&amount=${course.priceUzs.toString()}&transaction_param=${merchantTransId}&return_url=${encodeURIComponent(appUrl + '/transaction-history')}`;
-    } else if (paymentMethod === 'payme') {
-      const paymeMerchantId = process.env.PAYME_MERCHANT_ID;
-
-      if (!paymeMerchantId) {
-        return jsonResponse({ error: 'Payme to\'lovi sozlanmagan' }, { status: 500 });
-      }
-
-      const paymeParams = {
-        m: paymeMerchantId,
-        ac: { order_id: merchantTransId },
-        a: Number(course.priceUzs) * 100, // tiyin
-        c: appUrl + '/transaction-history',
-      };
-
-      const encodedParams = Buffer.from(JSON.stringify(paymeParams)).toString('base64');
-      paymentUrl = `https://checkout.paycom.uz/${encodedParams}`;
+    if (paymentMethod === 'click' && clickMerchantId && clickServiceId) {
+      const returnUrl = encodeURIComponent(`${SITE_URL}/payment-success-confirmation?transaction_id=${transaction.id}`);
+      paymentUrl = `https://my.click.uz/services/pay?service_id=${clickServiceId}&merchant_id=${clickMerchantId}&amount=${priceUzs / 100}&transaction_param=${merchantTransId}&return_url=${returnUrl}`;
+    } else if (paymentMethod === 'payme' && paymeKey) {
+      // Payme checkout URL (amount in tiyins)
+      const params = Buffer.from(JSON.stringify({ m: paymeKey, ac: { order_id: transaction.id }, a: priceUzs * 100, l: 'uz' })).toString('base64');
+      paymentUrl = `https://checkout.paycom.uz/${params}`;
+    } else {
+      // Gateway sozlanmagan — mock URL (test/dev uchun)
+      paymentUrl = `${SITE_URL}/payment-success-confirmation?transaction_id=${transaction.id}&mock=1`;
     }
 
     return jsonResponse({
-      success: true,
       transactionId: transaction.id,
-      merchantTransId,
       paymentUrl,
-      amount: course.priceUzs,
-      remaining,
+      amount: priceUzs,
+      currency: 'UZS',
     });
-  } catch (error) {
-    console.error('Payment initiation error:', error);
-    return jsonResponse({ error: 'Server xatosi' }, { status: 500 });
+  } catch (err) {
+    return errorResponse(err);
   }
 }

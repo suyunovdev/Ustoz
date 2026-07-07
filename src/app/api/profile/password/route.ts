@@ -1,41 +1,33 @@
 /**
- * POST /api/profile/password
- * Body: { oldPassword, newPassword }
+ * PATCH /api/profile/password
+ * Parolni almashtirish.
  */
-
 import type { NextRequest } from 'next/server';
 import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
-import {
-  changePassword,
-  InvalidPasswordError,
-  ProfileNotFoundError,
-} from '@/lib/services/user-profile.service';
+import { changePassword, InvalidPasswordError } from '@/lib/services/user-profile.service';
 import { ValidationError } from '@/lib/errors';
 
-export async function POST(req: NextRequest) {
+export async function PATCH(req: NextRequest) {
   try {
     const session = await requireAuth(req);
-    let body: unknown;
+    let body: Record<string, unknown>;
     try {
       body = await req.json();
     } catch {
-      throw new ValidationError("JSON formatida xato");
+      throw new ValidationError('JSON formatida xato');
     }
-    const b = (body ?? {}) as Record<string, unknown>;
-    const oldPassword = typeof b.oldPassword === 'string' ? b.oldPassword : '';
-    const newPassword = typeof b.newPassword === 'string' ? b.newPassword : '';
-    if (!oldPassword || !newPassword) {
-      throw new ValidationError("oldPassword va newPassword majburiy");
+
+    const { currentPassword, newPassword } = body;
+    if (typeof currentPassword !== 'string' || typeof newPassword !== 'string') {
+      throw new ValidationError('currentPassword va newPassword majburiy');
     }
-    await changePassword(session.sub, oldPassword, newPassword);
+
+    await changePassword(session.sub, currentPassword, newPassword);
     return jsonResponse({ success: true });
   } catch (err) {
     if (err instanceof InvalidPasswordError) {
-      return jsonResponse({ error: err.message, code: err.code }, { status: 401 });
-    }
-    if (err instanceof ProfileNotFoundError) {
-      return jsonResponse({ error: err.message, code: err.code }, { status: 404 });
+      return jsonResponse({ error: 'Joriy parol noto\'g\'ri' }, { status: 400 });
     }
     return errorResponse(err);
   }
