@@ -189,6 +189,7 @@ export default function ReviewsClient() {
 }
 
 function StatsCard({ stats }: { stats: NonNullable<ReturnType<typeof useCourseReviewStats>['data']>['stats'] }) {
+  const { t } = useI18n();
   return (
     <div className="bg-card border border-border rounded-md p-4 mb-4 grid grid-cols-1 md:grid-cols-[200px_1fr] gap-4">
       <div className="flex flex-col items-center justify-center text-center">
@@ -224,6 +225,16 @@ function StatsCard({ stats }: { stats: NonNullable<ReturnType<typeof useCourseRe
 function ReviewCard({ review }: { review: ReviewDTO }) {
   const { t } = useI18n();
   const [editing, setEditing] = useState(false);
+
+  function timeAgo(d: string): string {
+    const ms = Date.now() - new Date(d).getTime();
+    const days = Math.floor(ms / 86_400_000);
+    if (days === 0) return t('teacher.today');
+    if (days === 1) return t('teacher.yesterday');
+    if (days < 30) return `${days} ${t('teacher.daysAgo')}`;
+    if (days < 365) return `${Math.floor(days / 30)} ${t('teacher.monthsAgo')}`;
+    return `${Math.floor(days / 365)} ${t('teacher.yearsAgo')}`;
+  }
   const [replyText, setReplyText] = useState(review.teacherReply ?? '');
   const setMut = useSetReviewReplyMutation();
   const delMut = useDeleteReviewReplyMutation();

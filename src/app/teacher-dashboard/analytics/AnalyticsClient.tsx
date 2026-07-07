@@ -197,6 +197,7 @@ function ComparisonCard({
   delta: number | null;
   icon: string;
 }) {
+  const { t } = useI18n();
   const isUp = delta !== null && delta > 0;
   const isDown = delta !== null && delta < 0;
   return (
@@ -266,6 +267,7 @@ function SmallStat({
 }
 
 function DailyChart({ points }: { points: DailyPointDTO[] }) {
+  const { t } = useI18n();
   const maxRevenue = useMemo(
     () => Math.max(...points.map((p) => Number(p.revenue)), 1),
     [points],

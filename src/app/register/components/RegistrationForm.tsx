@@ -31,6 +31,7 @@ interface FormErrors {
   terms?: string;
   submit?: string;
   otp?: string;
+  photo?: string;
 }
 
 interface PasswordStrength {
@@ -190,14 +191,15 @@ const RegistrationForm = () => {
     const maxSize = 5 * 1024 * 1024;
 
     if (!validTypes.includes(file.type)) {
-      alert(t('auth.photoInvalidType'));
+      setErrors((prev) => ({ ...prev, photo: t('auth.photoInvalidType') }));
       return;
     }
 
     if (file.size > maxSize) {
-      alert(t('auth.photoTooLarge'));
+      setErrors((prev) => ({ ...prev, photo: t('auth.photoTooLarge') }));
       return;
     }
+    setErrors((prev) => ({ ...prev, photo: undefined }));
 
     setFormData((prev) => ({ ...prev, profilePhoto: file }));
     const reader = new FileReader();
@@ -721,6 +723,12 @@ const RegistrationForm = () => {
                 </div>
               )}
             </div>
+            {errors.photo && (
+              <p className="mt-2 text-sm text-destructive flex items-center gap-1">
+                <Icon name="ExclamationCircleIcon" size={16} />
+                {errors.photo}
+              </p>
+            )}
           </div>
 
           {/* Role Selection */}
@@ -880,8 +888,9 @@ const RegistrationForm = () => {
 
         <button
           type="button"
-          onClick={handleGoogleSignUp}
-          className="w-full py-4 bg-card border-2 border-border text-foreground rounded-md font-medium hover:bg-muted transition-smooth flex items-center justify-center space-x-3"
+          disabled
+          className="w-full py-4 bg-card border-2 border-border text-foreground rounded-md font-medium opacity-50 cursor-not-allowed flex items-center justify-center space-x-3"
+          title="Tez kunda"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4"/>
@@ -890,6 +899,7 @@ const RegistrationForm = () => {
             <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#EA4335"/>
           </svg>
           <span>{t('auth.googleRegister')}</span>
+          <span className="text-xs px-1.5 py-0.5 bg-muted rounded font-medium">Tez kunda</span>
         </button>
 
         {/* Login Link */}

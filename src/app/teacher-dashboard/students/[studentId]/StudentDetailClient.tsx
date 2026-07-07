@@ -30,6 +30,7 @@ function formatUzs(s: string): string {
 
 export default function StudentDetailClient({ studentId }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
   const { data, isLoading, error } = useStudentDetail(studentId);
   const toggle = useToggleEnrollmentMutation(studentId);
   const remove = useRemoveEnrollmentMutation(studentId);
@@ -39,7 +40,6 @@ export default function StudentDetailClient({ studentId }: Props) {
   const [pendingRemove, setPendingRemove] = useState<StudentEnrollmentDTO | null>(null);
 
   const handleStartChat = () => {
-  const { t } = useI18n();
     startConv.mutate(
       { studentId },
       {

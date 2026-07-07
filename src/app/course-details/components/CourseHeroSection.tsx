@@ -42,7 +42,7 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
         <div className="p-6 space-y-4">
           <div>
             <div className="flex items-center space-x-2 mb-2">
-              <span className="px-3 py-1 bg-primary bg-opacity-10 text-primary text-sm font-medium rounded-full">
+              <span className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">
                 {course.level}
               </span>
               <span className="text-sm text-muted-foreground">{course.totalDuration}</span>

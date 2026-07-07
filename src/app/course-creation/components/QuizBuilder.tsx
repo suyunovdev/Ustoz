@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { toast } from '@/components/common/Toaster';
 
 interface QuizQuestion {
   id: string;
@@ -98,10 +99,10 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
       const data = await res.json();
       if (data.test?.id) setCurrentTestId(data.test.id);
 
-      alert(t('courseCreation.testSaved'));
+      toast.success(t('courseCreation.testSaved'));
     } catch (error: any) {
       console.error('Error saving test:', error);
-      alert(error.message || t('courseCreation.testSaveError'));
+      toast.error(error.message || t('courseCreation.testSaveError'));
     } finally {
       setIsSaving(false);
     }

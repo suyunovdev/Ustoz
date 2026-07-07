@@ -65,7 +65,7 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
           className={`w-full h-full object-cover group-hover:scale-105 transition-smooth ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
-          onClick={() => setImageLoaded(true)}
+          onLoad={() => setImageLoaded(true)}
         />
         {!imageLoaded && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -98,12 +98,12 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
         {/* Category and Subject */}
         <div className="flex items-center flex-wrap gap-2">
           {subjectDisplay && (
-            <span className="px-2 py-1 bg-primary bg-opacity-10 text-primary text-xs font-medium rounded">
+            <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded">
               {subjectDisplay}
             </span>
           )}
           {audienceDisplay && (
-            <span className="px-2 py-1 bg-secondary bg-opacity-10 text-secondary text-xs font-medium rounded">
+            <span className="px-2 py-1 bg-secondary/10 text-secondary text-xs font-medium rounded">
               {audienceDisplay}
             </span>
           )}

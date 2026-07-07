@@ -119,58 +119,58 @@ export default function TestsListClient() {
         </div>
       ) : (
         <div className="grid gap-3">
-          {tests.map((t) => (
+          {tests.map((test) => (
             <Link
-              key={t.id}
-              href={`/teacher-dashboard/tests/${t.id}`}
+              key={test.id}
+              href={`/teacher-dashboard/tests/${test.id}`}
               className="bg-card border border-border rounded-md p-4 hover:shadow-warm-md transition-smooth"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <h3 className="font-medium text-foreground">{t.title}</h3>
+                    <h3 className="font-medium text-foreground">{test.title}</h3>
                     <span
                       className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                        STATUS_LABEL[t.status as TestStatusDTO].color
+                        STATUS_LABEL[test.status as TestStatusDTO].color
                       }`}
                     >
-                      {STATUS_LABEL[t.status as TestStatusDTO].label}
+                      {STATUS_LABEL[test.status as TestStatusDTO].label}
                     </span>
                   </div>
-                  {t.description && (
+                  {test.description && (
                     <p className="text-sm text-muted-foreground line-clamp-2 mb-2">
-                      {t.description}
+                      {test.description}
                     </p>
                   )}
                   <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-1">
                       <Icon name="QuestionMarkCircleIcon" size={12} />
-                      {t.questionCount} {t('teacher.questions')}
+                      {test.questionCount} {t('teacher.questions')}
                     </span>
                     <span className="flex items-center gap-1">
                       <Icon name="StarIcon" size={12} />
-                      {t.totalPoints} {t('teacher.points')}
+                      {test.totalPoints} {t('teacher.points')}
                     </span>
-                    {t.timeLimitSec && (
+                    {test.timeLimitSec && (
                       <span className="flex items-center gap-1">
                         <Icon name="ClockIcon" size={12} />
-                        {Math.floor(t.timeLimitSec / 60)} {t('teacher.minutes')}
+                        {Math.floor(test.timeLimitSec / 60)} {t('teacher.minutes')}
                       </span>
                     )}
                     <span className="flex items-center gap-1">
                       <Icon name="UserGroupIcon" size={12} />
-                      {t.attemptCount} {t('teacher.attempts')}
+                      {test.attemptCount} {t('teacher.attempts')}
                     </span>
                     <span className="flex items-center gap-1">
                       <Icon name="CheckCircleIcon" size={12} />
-                      {t.passingScore}% {t('teacher.passing')}
+                      {test.passingScore}% {t('teacher.passing')}
                     </span>
                   </div>
                 </div>
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    setPendingDelete(t);
+                    setPendingDelete(test);
                   }}
                   className="p-2 hover:bg-destructive/10 rounded-md"
                   aria-label={t('common.delete')}
