@@ -23,6 +23,7 @@ interface Certificate {
 export default function CertificatePage() {
   const params = useParams();
   const router = useRouter();
+  const { t } = useI18n();
   const id = params?.id as string;
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,7 +41,6 @@ export default function CertificatePage() {
   }, [id]);
 
   const handleCopyLink = () => {
-  const { t } = useI18n();
     if (certificate?.verification_url) {
       navigator.clipboard.writeText(certificate.verification_url);
       setCopied(true);
@@ -66,8 +66,8 @@ export default function CertificatePage() {
   if (!certificate) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">
-        <Icon name="DocumentIcon" size={48} className="text-onBackground/20 mb-4" />
-        <h2 className="text-xl font-semibold text-onBackground mb-2">Sertifikat topilmadi</h2>
+        <Icon name="DocumentIcon" size={48} className="text-foreground/20 mb-4" />
+        <h2 className="text-xl font-semibold text-foreground mb-2">Sertifikat topilmadi</h2>
         <button
           onClick={() => router.push('/student-dashboard')}
           className="mt-4 text-primary hover:underline text-sm"
@@ -87,15 +87,15 @@ export default function CertificatePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-border bg-surface px-6 py-4 flex items-center justify-between">
+      <div className="border-b border-border bg-card px-6 py-4 flex items-center justify-between">
         <button
           onClick={() => router.back()}
-          className="flex items-center gap-2 text-onBackground/60 hover:text-onBackground transition-colors"
+          className="flex items-center gap-2 text-foreground/60 hover:text-foreground transition-colors"
         >
           <Icon name="ArrowLeftIcon" size={16} />
           <span className="text-sm">{t('common.back')}</span>
         </button>
-        <h1 className="font-semibold text-onBackground">Mening sertifikatim</h1>
+        <h1 className="font-semibold text-foreground">Mening sertifikatim</h1>
         <div className="w-20" />
       </div>
 
@@ -155,7 +155,7 @@ export default function CertificatePage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={handleCopyLink}
-            className="flex items-center justify-center gap-2 border border-border bg-surface text-onBackground px-4 py-3 rounded-xl font-medium hover:bg-accent transition-colors text-sm"
+            className="flex items-center justify-center gap-2 border border-border bg-card text-foreground px-4 py-3 rounded-xl font-medium hover:bg-accent transition-colors text-sm"
           >
             <Icon name={copied ? 'CheckIcon' : 'LinkIcon'} size={16} />
             {copied ? 'Nusxalandi!' : 'Havolani nusxalash'}
@@ -181,8 +181,8 @@ export default function CertificatePage() {
         </div>
 
         {/* Verifikatsiya URL */}
-        <div className="bg-surface border border-border rounded-xl p-4">
-          <p className="text-xs text-onBackground/50 mb-1">Verifikatsiya havolasi</p>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <p className="text-xs text-foreground/50 mb-1">Verifikatsiya havolasi</p>
           <p className="text-sm font-mono text-primary break-all">{certificate.verification_url}</p>
         </div>
       </div>

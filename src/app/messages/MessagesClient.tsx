@@ -157,6 +157,20 @@ function ConversationItem({
   selected: boolean;
   onSelect: () => void;
 }) {
+  const { t } = useI18n();
+
+  function timeAgo(d: string): string {
+    const ms = Date.now() - new Date(d).getTime();
+    const mins = Math.floor(ms / 60_000);
+    if (mins < 1) return t('messages.now');
+    if (mins < 60) return `${mins} ${t('messages.min')}`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} ${t('messages.hour')}`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} ${t('messages.day')}`;
+    return new Date(d).toLocaleDateString('uz-UZ');
+  }
+
   return (
     <button
       onClick={onSelect}

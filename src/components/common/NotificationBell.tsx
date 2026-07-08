@@ -28,11 +28,11 @@ function timeAgo(iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(ms / 60_000);
   if (mins < 1) return 'hozir';
-  if (mins < 60) return `${mins}d`;
+  if (mins < 60) return `${mins} daq`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}s`;
+  if (hours < 24) return `${hours} soat`;
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}k`;
+  if (days < 7) return `${days} kun`;
   return new Date(iso).toLocaleDateString('uz-UZ', {
     day: 'numeric',
     month: 'short',

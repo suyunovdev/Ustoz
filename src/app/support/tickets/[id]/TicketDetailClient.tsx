@@ -35,6 +35,7 @@ interface Props {
 
 export default function TicketDetailClient({ ticketId }: Props) {
   const { user } = useAuth();
+  const { t } = useI18n();
   const { data, isLoading, error } = useTicket(ticketId);
   const replyMut = useReplyToTicketMutation(ticketId);
   const [draft, setDraft] = useState('');
@@ -50,7 +51,6 @@ export default function TicketDetailClient({ ticketId }: Props) {
   }, [messages.length]);
 
   const handleSend = (e: React.FormEvent) => {
-  const { t } = useI18n();
     e.preventDefault();
     const text = draft.trim();
     if (text.length < 2) return toast.error("Xabar kamida 2 belgi");

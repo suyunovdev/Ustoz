@@ -244,6 +244,18 @@ function NotificationCard({
 }) {
   const { t } = useI18n();
 
+  function timeAgo(iso: string): string {
+    const ms = Date.now() - new Date(iso).getTime();
+    const mins = Math.floor(ms / 60_000);
+    if (mins < 1) return t('notifications.now');
+    if (mins < 60) return `${mins} ${t('notifications.minAgo')}`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} ${t('notifications.hoursAgo')}`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days} ${t('notifications.daysAgo')}`;
+    return new Date(iso).toLocaleDateString('uz-UZ');
+  }
+
   const TYPE_LABEL: Record<NotificationTypeDTO, { label: string; icon: string; color: string }> = {
     enrollment: { label: t('notifications.enrollment'), icon: 'UserPlusIcon', color: 'text-primary' },
     quiz_completion: { label: t('notifications.quizCompletion'), icon: 'AcademicCapIcon', color: 'text-success' },

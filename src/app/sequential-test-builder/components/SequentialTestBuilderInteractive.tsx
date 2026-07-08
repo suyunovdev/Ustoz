@@ -6,6 +6,7 @@ import TestStructurePanel from './TestStructurePanel';
 import QuestionEditor from './QuestionEditor';
 import PublishingPanel from './PublishingPanel';
 import { useI18n } from '@/contexts/I18nContext';
+import { toast } from '@/components/common/Toaster';
 
 interface TestQuestion {
   id: string;
@@ -118,7 +119,7 @@ const SequentialTestBuilderInteractive = () => {
 
   const handlePublish = () => {
     console.log('Publishing test:', { testConfig, questions });
-    alert(t('testBuilder.testPublished'));
+    toast.success(t('testBuilder.testPublished'));
   };
 
   const sections = [

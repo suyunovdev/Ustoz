@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { toast } from '@/components/common/Toaster';
 import ContentList from './ContentList';
 import PreviewPanel from './PreviewPanel';
 import ReviewControls from './ReviewControls';
@@ -88,10 +89,10 @@ const ModerationDashboardInteractive = () => {
         decision,
         notes
       });
-      alert(t('moderation.comingSoon'));
+      toast.info(t('moderation.comingSoon'));
     } catch (error) {
       console.error('Error reviewing content:', error);
-      alert(t('moderation.reviewError'));
+      toast.error(t('moderation.reviewError'));
     }
   };
 

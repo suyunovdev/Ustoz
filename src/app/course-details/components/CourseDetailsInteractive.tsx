@@ -278,7 +278,7 @@ const CourseDetailsInteractive = () => {
                   <p className="text-foreground leading-relaxed">{course.description}</p>
                 </div>
                 {course.hasCertificate && (
-                  <div className="bg-accent bg-opacity-10 border border-accent rounded-md p-4 flex items-start space-x-3">
+                  <div className="bg-accent/10 border border-accent rounded-md p-4 flex items-start space-x-3">
                     <Icon name="AcademicCapIcon" size={24} className="text-accent flex-shrink-0" />
                     <div>
                       <h4 className="font-semibold text-foreground mb-1">{t('courses.certificate')}</h4>
