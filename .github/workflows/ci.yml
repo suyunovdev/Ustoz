@@ -17,10 +17,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        # package-lock.json gitignore'da → npm ci EMAS. .npmrc'da omit=optional bo'lgani uchun
+        # rollup/swc native (Linux) binary'lari uchun --include=optional kerak.
+        run: npm install --legacy-peer-deps --include=optional
 
       - name: Generate Prisma client
         run: npx prisma generate
@@ -41,10 +42,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        # package-lock.json gitignore'da → npm ci EMAS. .npmrc'da omit=optional bo'lgani uchun
+        # rollup/swc native (Linux) binary'lari uchun --include=optional kerak.
+        run: npm install --legacy-peer-deps --include=optional
 
       - name: Generate Prisma client
         run: npx prisma generate
@@ -68,10 +70,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        # package-lock.json gitignore'da → npm ci EMAS. .npmrc'da omit=optional bo'lgani uchun
+        # rollup/swc native (Linux) binary'lari uchun --include=optional kerak.
+        run: npm install --legacy-peer-deps --include=optional
 
       - name: Build
         run: npm run build

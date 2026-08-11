@@ -70,12 +70,12 @@ export async function POST(req: NextRequest) {
       update: { otp, type, expiresAt, verified: false },
     });
 
-    // Email yuborish (Gmail SMTP via Nodemailer)
+    // Email yuborish (Resend)
     let emailDelivered = false;
 
-    if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
+    if (process.env.RESEND_API_KEY) {
       try {
-        const { sendOne } = await import('@/lib/email/gmail-client');
+        const { sendOne } = await import('@/lib/email/resend-client');
         const result = await sendOne({
           to: normalizedEmail,
           subject: `Ustoz — Tasdiqlash kodi: ${otp}`,
@@ -91,12 +91,12 @@ export async function POST(req: NextRequest) {
         });
         if (result.success) {
           emailDelivered = true;
-          console.log(`[gmail] OTP sent to ${normalizedEmail}`);
+          console.log(`[resend] OTP sent to ${normalizedEmail}`);
         } else {
-          console.error(`[gmail] error:`, result.error);
+          console.error(`[resend] error:`, result.error);
         }
       } catch (err) {
-        console.error('[gmail] send error:', err);
+        console.error('[resend] send error:', err);
       }
     }
 
