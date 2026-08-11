@@ -95,7 +95,23 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ─── SESSION TEKSHIRUVI ───
+  // ─── HIMOYALANGAN ROUTE'MI? ───
+  // Barcha real sahifalar public yoki quyidagi himoyalangan ro'yxatlarda.
+  // Agar yo'l hech qaysisiga mos kelmasa — bu MAVJUD BO'LMAGAN sahifa:
+  // Next'ga o'tkazamiz → not-found (404) ko'rsatiladi, /login'ga EMAS.
+  // Eslatma: yangi himoyalangan sahifa qo'shsangiz, uni tegishli ro'yxatga qo'shing.
+  const isProtected =
+    matchesRoutes(pathname, ADMIN_ONLY_ROUTES) ||
+    matchesRoutes(pathname, TEACHER_ONLY_ROUTES) ||
+    matchesRoutes(pathname, TEACHER_OR_ADMIN_ROUTES) ||
+    matchesRoutes(pathname, STUDENT_ONLY_ROUTES) ||
+    matchesRoutes(pathname, AUTHENTICATED_ROUTES);
+
+  if (!isProtected) {
+    return NextResponse.next();
+  }
+
+  // ─── SESSION TEKSHIRUVI (faqat himoyalangan route'lar uchun) ───
   const token = request.cookies.get(COOKIE_NAME)?.value;
   const session = token ? await verifyToken(token) : null;
 
@@ -143,10 +159,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ─── DEFAULT DENY ───
-  // Ro'yxatlarda yo'q sahifa → toza /login'ga yo'naltirish
-  // Bu yangi sahifa qo'shilganda unutilishini oldini oladi
-  return NextResponse.redirect(new URL('/login', request.url));
+  // Himoyalangan va authenticated — ruxsat (isProtected true bo'lgani uchun
+  // yuqoridagi bloklardan biri odatda javob beradi; bu xavfsiz default)
+  return NextResponse.next();
 }
 
 export const config = {
