@@ -100,10 +100,8 @@ export async function middleware(request: NextRequest) {
   const session = token ? await verifyToken(token) : null;
 
   if (!session) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    url.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(url);
+    // Toza /login — bormoqchi bo'lgan sahifa redirect param sifatida saqlanmaydi
+    return NextResponse.redirect(new URL('/login', request.url));
   }
 
   const role = session.role;
@@ -146,12 +144,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // ─── DEFAULT DENY ───
-  // Ro'yxatlarda yo'q sahifa → login'ga yo'naltirish
+  // Ro'yxatlarda yo'q sahifa → toza /login'ga yo'naltirish
   // Bu yangi sahifa qo'shilganda unutilishini oldini oladi
-  const url = request.nextUrl.clone();
-  url.pathname = '/login';
-  url.searchParams.set('redirect', pathname);
-  return NextResponse.redirect(url);
+  return NextResponse.redirect(new URL('/login', request.url));
 }
 
 export const config = {
