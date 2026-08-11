@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import RegistrationForm from './components/RegistrationForm';
 
 export const metadata: Metadata = {
@@ -11,9 +10,7 @@ export const metadata: Metadata = {
 export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-background">
-      <RoleBasedHeader userRole={null} currentPath="/register" />
-      
-      <main className="pt-24 pb-16 px-4 sm:px-6 lg:px-8">
+      <main className="pt-16 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
           {/* Header Section */}
           <div className="text-center mb-8">
