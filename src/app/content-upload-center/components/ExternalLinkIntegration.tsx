@@ -37,8 +37,8 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
 
     setIsSubmitting(true);
     try {
-      // TODO: add POST /api/teacher/external-links endpoint and call it via JWT-authenticated fetch.
-      // For now we build the link locally; persistence (localStorage) is handled by the parent.
+      // Havola obyektini tuzamiz; parent (ContentUploadInteractive) uni
+      // POST /api/teacher/external-links orqali server'ga saqlaydi.
       const link: ExternalLink = {
         id: `link-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         type: (newLink.type as ExternalLink['type']) || 'other',
@@ -61,7 +61,7 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
 
   const handleDeleteLink = useCallback(async (linkId: string) => {
     try {
-      // TODO: add DELETE /api/teacher/external-links/[id] endpoint
+      // Parent DELETE /api/teacher/external-links/[id] chaqiradi
       onLinkDelete(linkId);
     } catch (error) {
       console.error('Error deleting link:', error);
