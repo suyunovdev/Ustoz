@@ -51,17 +51,33 @@ export async function POST(req: NextRequest) {
     return jsonResponse({ error: 'Ruxsat yo\'q' }, { status: 403 });
   }
 
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return jsonResponse({ error: "Noto'g'ri so'rov tanasi" }, { status: 400 });
+  }
   const {
     title, description, category, targetAudience, subjectCategory,
     gradeLevel, priceUzs, coverImage, language, difficultyLevel, topics,
-  } = body;
+  } = body as Record<string, any>;
 
   if (!title || !category || !targetAudience || !subjectCategory || !language) {
     return jsonResponse({ error: 'Majburiy maydonlar to\'ldirilmagan' }, { status: 400 });
   }
 
-  const course = await prisma.course.create({
+  // Narx faqat butun, manfiy bo'lmagan son bo'lishi kerak
+  let priceBig: bigint;
+  try {
+    priceBig = BigInt(priceUzs ?? 0);
+    if (priceBig < BigInt(0)) throw new Error('negative');
+  } catch {
+    return jsonResponse({ error: "Narx noto'g'ri (butun musbat son bo'lishi kerak)" }, { status: 400 });
+  }
+
+  let course;
+  try {
+    course = await prisma.course.create({
     data: {
       teacherId: session.sub,
       title,
@@ -70,7 +86,7 @@ export async function POST(req: NextRequest) {
       targetAudience,
       subjectCategory,
       gradeLevel: gradeLevel ? Number(gradeLevel) : null,
-      priceUzs: BigInt(priceUzs || 0),
+      priceUzs: priceBig,
       coverImage,
       language,
       difficultyLevel,
@@ -87,8 +103,11 @@ export async function POST(req: NextRequest) {
           }
         : undefined,
     },
-    include: { topics: true },
-  });
+      include: { topics: true },
+    });
+  } catch {
+    return jsonResponse({ error: "Kursni yaratib bo'lmadi (ma'lumotlar noto'g'ri)" }, { status: 400 });
+  }
 
   return jsonResponse({ course }, { status: 201 });
 }

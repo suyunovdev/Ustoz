@@ -19,8 +19,8 @@ const PUBLIC_ROUTES = [
   '/teachers',
   '/help',
   '/unauthorized',
-  '/not-found',
   '/r',
+  '/auth/callback',
   '/',
 ];
 

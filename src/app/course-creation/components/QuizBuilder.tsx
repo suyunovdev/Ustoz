@@ -17,11 +17,12 @@ interface QuizBuilderProps {
   questions: QuizQuestion[];
   onQuestionsChange: (questions: QuizQuestion[]) => void;
   topicTitle: string;
-  teacherId: string;
+  courseId?: string;
+  topicId?: string;
   testId?: string;
 }
 
-const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, testId }: QuizBuilderProps) => {
+const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, courseId, topicId, testId }: QuizBuilderProps) => {
   const { t } = useI18n();
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -64,18 +65,25 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
 
   const saveTest = useCallback(async () => {
     if (questions.length < 5 || questions.length > 15 || isSaving) return;
+    if (!courseId) {
+      toast.error("Avval kursni saqlang, keyin test qo'shing");
+      return;
+    }
+    // Takroriy saqlashda dublikat test yaratilmasin (route'da update yo'q)
+    if (currentTestId) {
+      toast.error('Bu test allaqachon saqlangan');
+      return;
+    }
 
     setIsSaving(true);
     try {
-      const letterByIndex = ['A', 'B', 'C', 'D'];
+      // Backend AddQuestionInput shakli: {questionText, questionType, options:[{text,isCorrect}], ...}
       const payloadQuestions = questions.map((q) => ({
         questionText: q.question,
-        optionA: q.options[0],
-        optionB: q.options[1],
-        optionC: q.options[2],
-        optionD: q.options[3],
-        correctAnswer: letterByIndex[q.correctAnswer] || 'A',
+        questionType: 'single',
+        options: q.options.map((text, i) => ({ text, isCorrect: i === q.correctAnswer })),
         explanation: q.explanation,
+        points: 10,
       }));
 
       const res = await fetch('/api/teacher/tests', {
@@ -83,7 +91,8 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          testId: currentTestId,
+          courseId,
+          topicId: topicId || undefined,
           title: topicTitle || 'Untitled Test',
           description: `Test for ${topicTitle}`,
           passingScore: 80,
@@ -106,7 +115,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, teacherId, test
     } finally {
       setIsSaving(false);
     }
-  }, [questions, topicTitle, currentTestId, isSaving]);
+  }, [questions, topicTitle, courseId, topicId, isSaving, currentTestId]);
 
   const canAddMore = questions.length < 15;
   const meetsMinimum = questions.length >= 5;

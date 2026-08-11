@@ -65,7 +65,13 @@ export async function POST(request: NextRequest) {
       )
       .digest('hex');
 
-    if (signString !== body.sign_string) {
+    const providedSign = String(body.sign_string || '');
+    const expectedSignBuf = Buffer.from(signString);
+    const providedSignBuf = Buffer.from(providedSign);
+    const signValid =
+      expectedSignBuf.length === providedSignBuf.length &&
+      crypto.timingSafeEqual(expectedSignBuf, providedSignBuf);
+    if (!signValid) {
       return NextResponse.json(
         {
           click_trans_id: body.click_trans_id,

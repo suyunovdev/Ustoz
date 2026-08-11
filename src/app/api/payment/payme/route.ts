@@ -1,5 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+
+// Constant-time string taqqoslash — timing side-channel'ni oldini oladi
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB);
+}
 
 interface PaymeRequest {
   method: string;
@@ -64,7 +72,7 @@ export async function POST(request: NextRequest) {
     const expectedAuth = `Payme:${paymeKey}`;
     const providedAuth = `${username}:${password}`;
 
-    if (providedAuth !== expectedAuth) {
+    if (!safeEqual(providedAuth, expectedAuth)) {
       return createPaymeError(-32504, 'Insufficient privilege to perform this method', 0);
     }
 

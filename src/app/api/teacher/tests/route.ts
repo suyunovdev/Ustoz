@@ -8,11 +8,41 @@ import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import {
   createTest,
+  addQuestion,
+  assertValidQuestionInput,
   listTeacherTests,
   CourseAccessDeniedError,
+  type AddQuestionInput,
 } from '@/lib/services/test.service';
 import { ValidationError } from '@/lib/errors';
-import type { TestStatus } from '@/lib/repositories';
+import type { TestStatus, QuestionType, QuestionOption } from '@/lib/repositories';
+
+const VALID_QTYPES: ReadonlyArray<QuestionType> = ['single', 'multiple', 'true_false', 'text'];
+
+// Client yuborgan savolni AddQuestionInput shakliga xavfsiz o'giradi
+function normalizeQuestion(raw: unknown): AddQuestionInput {
+  const q = (raw ?? {}) as Record<string, unknown>;
+  const questionType =
+    typeof q.questionType === 'string' && VALID_QTYPES.includes(q.questionType as QuestionType)
+      ? (q.questionType as QuestionType)
+      : 'single';
+  const options = Array.isArray(q.options)
+    ? (q.options as QuestionOption[]).filter(
+        (o) => o && typeof o === 'object' && typeof o.text === 'string',
+      )
+    : undefined;
+  const correctAnswers = Array.isArray(q.correctAnswers)
+    ? (q.correctAnswers as unknown[]).filter((v): v is string => typeof v === 'string')
+    : undefined;
+  return {
+    questionText: typeof q.questionText === 'string' ? q.questionText : '',
+    questionType,
+    options,
+    correctAnswers,
+    points: typeof q.points === 'number' ? q.points : undefined,
+    explanation: typeof q.explanation === 'string' ? q.explanation : undefined,
+  };
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -47,6 +77,15 @@ export async function POST(req: NextRequest) {
     const courseId = typeof b.courseId === 'string' ? b.courseId : '';
     if (!courseId) throw new ValidationError("courseId majburiy");
 
+    // Savollarni AVVAL normalizatsiya + validatsiya qilamiz — shunda noto'g'ri savol
+    // bo'lsa, test yaratilishidan OLDIN 400 qaytaramiz (orphan test bo'lmaydi).
+    const questionInputs: AddQuestionInput[] = Array.isArray(b.questions)
+      ? b.questions.map(normalizeQuestion)
+      : [];
+    for (const q of questionInputs) {
+      assertValidQuestionInput(q);
+    }
+
     const test = await createTest(session.sub, {
       courseId,
       topicId: typeof b.topicId === 'string' ? b.topicId : null,
@@ -66,7 +105,12 @@ export async function POST(req: NextRequest) {
         typeof b.showCorrectAnswers === 'boolean' ? b.showCorrectAnswers : undefined,
     });
 
-    return jsonResponse({ test }, { status: 201 });
+    // Savollar allaqachon validatsiyadan o'tgan — endi yaratamiz
+    for (const q of questionInputs) {
+      await addQuestion(test.id, session.sub, q);
+    }
+
+    return jsonResponse({ test, questionsCreated: questionInputs.length }, { status: 201 });
   } catch (err) {
     if (err instanceof CourseAccessDeniedError) {
       return jsonResponse({ error: err.message, code: err.code }, { status: 403 });

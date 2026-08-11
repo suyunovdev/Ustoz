@@ -724,8 +724,8 @@ const CourseCreationInteractive = () => {
                       questions={selectedTopic.questions}
                       onQuestionsChange={handleQuestionsChange}
                       topicTitle={selectedTopic.title}
-                      teacherId={selectedTopic.dbId || selectedTopic.id}
-                      testId={selectedTopic.dbId}
+                      courseId={courseDbId ?? undefined}
+                      topicId={selectedTopic.dbId}
                     />
                   </>
                 ) : (

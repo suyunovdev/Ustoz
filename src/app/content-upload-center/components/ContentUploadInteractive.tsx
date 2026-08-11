@@ -7,6 +7,7 @@ import UploadArea from './UploadArea';
 import WatermarkSettings from './WatermarkSettings';
 import ExternalLinkIntegration from './ExternalLinkIntegration';
 import { useI18n } from '@/contexts/I18nContext';
+import { toast } from '@/components/common/Toaster';
 
 interface UploadedFile {
   id: string;
@@ -74,34 +75,18 @@ const ContentUploadInteractive = () => {
 
       setTeacherId(user.id);
 
-      // TODO: add /api/teacher/materials endpoint
-      // Fallback: read previously cached materials from localStorage so the UI isn't empty
-      try {
-        const cachedMaterials =
-          typeof window !== 'undefined'
-            ? JSON.parse(localStorage.getItem(`content_materials:${user.id}`) || '[]')
-            : [];
-        if (Array.isArray(cachedMaterials)) {
-          setUploadedFiles(cachedMaterials as UploadedFile[]);
-        }
-      } catch (e) {
-        console.warn('Failed to read cached materials from localStorage:', e);
-        setUploadedFiles([]);
+      // Materiallar va tashqi havolalarni server'dan yuklaymiz
+      const [matRes, linkRes] = await Promise.all([
+        fetch('/api/teacher/materials', { credentials: 'include' }),
+        fetch('/api/teacher/external-links', { credentials: 'include' }),
+      ]);
+      if (matRes.ok) {
+        const data = await matRes.json();
+        setUploadedFiles(Array.isArray(data.materials) ? data.materials : []);
       }
-
-      // TODO: add /api/teacher/external-links endpoint
-      // Fallback: read cached external links from localStorage
-      try {
-        const cachedLinks =
-          typeof window !== 'undefined'
-            ? JSON.parse(localStorage.getItem(`external_links:${user.id}`) || '[]')
-            : [];
-        if (Array.isArray(cachedLinks)) {
-          setExternalLinks(cachedLinks as ExternalLink[]);
-        }
-      } catch (e) {
-        console.warn('Failed to read cached external links from localStorage:', e);
-        setExternalLinks([]);
+      if (linkRes.ok) {
+        const data = await linkRes.json();
+        setExternalLinks(Array.isArray(data.links) ? data.links : []);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -128,42 +113,39 @@ const ContentUploadInteractive = () => {
     );
   }
 
-  const persistMaterials = (files: UploadedFile[]) => {
-    // TODO: add /api/teacher/materials endpoint and POST/DELETE here
-    try {
-      if (typeof window !== 'undefined' && teacherId) {
-        localStorage.setItem(`content_materials:${teacherId}`, JSON.stringify(files));
+  const handleFileUpload = async (files: UploadedFile[]) => {
+    // Har bir yuklangan faylni server'ga (content_materials) yozamiz
+    const saved: UploadedFile[] = [];
+    for (const f of files) {
+      try {
+        const res = await fetch('/api/teacher/materials', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ name: f.name, type: f.type, url: f.url, size: f.size }),
+        });
+        if (!res.ok) throw new Error(`(${res.status})`);
+        const data = await res.json();
+        if (data.material) saved.push(data.material as UploadedFile);
+      } catch (err) {
+        toast.error(`"${f.name}" ni saqlab bo'lmadi`);
       }
-    } catch (e) {
-      console.warn('Failed to persist materials to localStorage:', e);
     }
-  };
-
-  const persistLinks = (links: ExternalLink[]) => {
-    // TODO: add /api/teacher/external-links endpoint and POST/DELETE here
-    try {
-      if (typeof window !== 'undefined' && teacherId) {
-        localStorage.setItem(`external_links:${teacherId}`, JSON.stringify(links));
-      }
-    } catch (e) {
-      console.warn('Failed to persist external links to localStorage:', e);
-    }
-  };
-
-  const handleFileUpload = (files: UploadedFile[]) => {
-    const next = [...uploadedFiles, ...files];
-    setUploadedFiles(next);
-    persistMaterials(next);
+    if (saved.length) setUploadedFiles((prev) => [...saved, ...prev]);
   };
 
   const handleFileDelete = async (fileId: string) => {
-    // TODO: add DELETE /api/teacher/materials/[id] endpoint
+    const prev = uploadedFiles;
+    setUploadedFiles(uploadedFiles.filter((f) => f.id !== fileId)); // optimistik
     try {
-      const next = uploadedFiles.filter(f => f.id !== fileId);
-      setUploadedFiles(next);
-      persistMaterials(next);
+      const res = await fetch(`/api/teacher/materials/${fileId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`(${res.status})`);
     } catch (error) {
-      console.error('Error deleting file:', error);
+      setUploadedFiles(prev);
+      toast.error("Materialni o'chirib bo'lmadi");
     }
   };
 
@@ -171,16 +153,40 @@ const ContentUploadInteractive = () => {
     setWatermarkConfig(config);
   };
 
-  const handleLinkAdd = (link: ExternalLink) => {
-    const next = [...externalLinks, link];
-    setExternalLinks(next);
-    persistLinks(next);
+  const handleLinkAdd = async (link: ExternalLink) => {
+    try {
+      const res = await fetch('/api/teacher/external-links', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          type: link.type,
+          url: link.url,
+          title: link.title,
+          description: link.description,
+        }),
+      });
+      if (!res.ok) throw new Error(`(${res.status})`);
+      const data = await res.json();
+      if (data.link) setExternalLinks((prev) => [data.link as ExternalLink, ...prev]);
+    } catch (err) {
+      toast.error("Havolani qo'shib bo'lmadi");
+    }
   };
 
-  const handleLinkDelete = (linkId: string) => {
-    const next = externalLinks.filter(l => l.id !== linkId);
-    setExternalLinks(next);
-    persistLinks(next);
+  const handleLinkDelete = async (linkId: string) => {
+    const prev = externalLinks;
+    setExternalLinks(externalLinks.filter((l) => l.id !== linkId)); // optimistik
+    try {
+      const res = await fetch(`/api/teacher/external-links/${linkId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`(${res.status})`);
+    } catch (error) {
+      setExternalLinks(prev);
+      toast.error("Havolani o'chirib bo'lmadi");
+    }
   };
 
   const sections: { id: 'upload' | 'watermark' | 'links'; label: string; icon: string }[] = [

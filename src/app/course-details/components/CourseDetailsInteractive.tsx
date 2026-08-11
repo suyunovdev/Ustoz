@@ -201,7 +201,7 @@ const CourseDetailsInteractive = () => {
           credentials: 'include',
         });
         if (res.status === 401) {
-          router.push(`/login?redirect=/course-details?courseId=${course.id}`);
+          router.push(`/login?redirect=${encodeURIComponent(`/course-details?courseId=${course.id}`)}`);
           return;
         }
         if (res.ok) {

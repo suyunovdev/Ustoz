@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 interface RichTextEditorProps {
   content: string;
@@ -139,7 +140,7 @@ const RichTextEditor = ({
           contentEditable
           onInput={(e) => onContentChange(e.currentTarget.innerHTML)}
           className="min-h-[400px] p-4 text-foreground focus:outline-none"
-          dangerouslySetInnerHTML={{ __html: content }}
+          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
           data-placeholder={placeholder}
           style={{
             wordWrap: 'break-word',

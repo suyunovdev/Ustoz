@@ -62,9 +62,18 @@ const SequentialTestBuilderInteractive = () => {
     randomizeQuestions: false,
     showResults: true
   });
+  const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
+  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishedTestId, setPublishedTestId] = useState<string | null>(null);
 
   useEffect(() => {
     setIsHydrated(true);
+    // O'qituvchining kurslarini yuklaymiz (test qaysi kursga tegishli bo'lishini tanlash uchun)
+    fetch('/api/teacher/courses', { credentials: 'include' })
+      .then((res) => (res.ok ? res.json() : { courses: [] }))
+      .then((data) => setCourses(Array.isArray(data.courses) ? data.courses : []))
+      .catch(() => setCourses([]));
   }, []);
 
   if (!isHydrated) {
@@ -117,9 +126,90 @@ const SequentialTestBuilderInteractive = () => {
     setTestConfig(config);
   };
 
-  const handlePublish = () => {
-    console.log('Publishing test:', { testConfig, questions });
-    toast.success(t('testBuilder.testPublished'));
+  // Local savol shaklini backend DTO (AddQuestionInput)ga o'giradi
+  const mapQuestionToDTO = (q: TestQuestion) => {
+    const points = q.points || 1;
+    const explanation = q.explanation || undefined;
+    if (q.type === 'multiple-choice') {
+      const opts = (q.options || []).map((text, i) => ({
+        text,
+        isCorrect: i === Number(q.correctAnswer),
+      }));
+      return { questionText: q.question, questionType: 'single', options: opts, points, explanation };
+    }
+    if (q.type === 'true-false') {
+      const isTrue =
+        typeof q.correctAnswer === 'string'
+          ? q.correctAnswer.toLowerCase() === 'true'
+          : Number(q.correctAnswer) === 0;
+      return {
+        questionText: q.question,
+        questionType: 'true_false',
+        correctAnswers: [isTrue ? 'true' : 'false'],
+        points,
+        explanation,
+      };
+    }
+    // fill-blank | essay → text
+    const ca = String(q.correctAnswer ?? '').trim();
+    return {
+      questionText: q.question,
+      questionType: 'text',
+      correctAnswers: [ca || '—'],
+      points,
+      explanation,
+    };
+  };
+
+  const handlePublish = async () => {
+    if (isPublishing) return;
+    if (publishedTestId) {
+      toast.error('Bu test allaqachon chop etilgan');
+      return;
+    }
+    if (!selectedCourseId) {
+      toast.error('Iltimos, test uchun kursni tanlang');
+      return;
+    }
+    if (!testConfig.title.trim()) {
+      toast.error('Test nomi majburiy');
+      return;
+    }
+    if (questions.length === 0) {
+      toast.error("Kamida bitta savol qo'shing");
+      return;
+    }
+
+    setIsPublishing(true);
+    try {
+      const res = await fetch('/api/teacher/tests', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          courseId: selectedCourseId,
+          title: testConfig.title,
+          description: testConfig.description || undefined,
+          passingScore: testConfig.passingScore,
+          timeLimitSec: testConfig.timeLimit ? testConfig.timeLimit * 60 : undefined,
+          allowedAttempts: testConfig.retakePolicy === 'unlimited' ? 0 : testConfig.maxRetakes,
+          randomizeQuestions: testConfig.randomizeQuestions,
+          showCorrectAnswers: testConfig.showResults,
+          questions: questions.map(mapQuestionToDTO),
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `Xatolik (${res.status})`);
+      }
+      const data = await res.json().catch(() => ({}));
+      if (data?.test?.id) setPublishedTestId(data.test.id);
+      toast.success(t('testBuilder.testPublished'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Testni saqlab bo'lmadi");
+    } finally {
+      setIsPublishing(false);
+    }
   };
 
   const sections = [
@@ -220,12 +310,38 @@ const SequentialTestBuilderInteractive = () => {
             )}
 
             {activeSection === 'publish' && (
-              <PublishingPanel
-                config={testConfig}
-                questions={questions}
-                onConfigUpdate={handleConfigUpdate}
-                onPublish={handlePublish}
-              />
+              <div className="space-y-6">
+                {/* Kurs tanlash — test qaysi kursga tegishli bo'lishini belgilaydi */}
+                <div className="bg-card rounded-md shadow-warm p-6">
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    Kurs *
+                  </label>
+                  <select
+                    value={selectedCourseId}
+                    onChange={(e) => setSelectedCourseId(e.target.value)}
+                    className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">— Kursni tanlang —</option>
+                    {courses.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.title}
+                      </option>
+                    ))}
+                  </select>
+                  {courses.length === 0 && (
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Sizda hali kurs yo'q. Avval kurs yarating.
+                    </p>
+                  )}
+                </div>
+
+                <PublishingPanel
+                  config={testConfig}
+                  questions={questions}
+                  onConfigUpdate={handleConfigUpdate}
+                  onPublish={handlePublish}
+                />
+              </div>
             )}
           </div>
         </div>

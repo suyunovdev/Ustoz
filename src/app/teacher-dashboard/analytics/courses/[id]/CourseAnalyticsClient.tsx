@@ -123,17 +123,17 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
       {testStats.length > 0 && (
         <Section title={t('teacher.testStats')} subtitle={t('teacher.testStatsDesc')}>
           <div className="space-y-2">
-            {testStats.map((t) => (
+            {testStats.map((ts) => (
               <Link
-                key={t.testId}
-                href={`/teacher-dashboard/tests/${t.testId}`}
+                key={ts.testId}
+                href={`/teacher-dashboard/tests/${ts.testId}`}
                 className="block bg-card border border-border rounded-md p-3 hover:shadow-warm-md"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{t.testTitle}</p>
+                    <p className="text-sm font-medium truncate">{ts.testTitle}</p>
                     <p className="text-xs text-muted-foreground">
-                      {t.totalAttempts} {t('teacher.attempts')} · {t.passedAttempts} {t('teacher.passed')}
+                      {ts.totalAttempts} {t('teacher.attempts')} · {ts.passedAttempts} {t('teacher.passed')}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 text-xs shrink-0">
@@ -141,15 +141,15 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
                       <p className="text-muted-foreground">Pass rate</p>
                       <p
                         className={`font-bold ${
-                          t.passRate >= 70 ? 'text-success' : 'text-warning'
+                          ts.passRate >= 70 ? 'text-success' : 'text-warning'
                         }`}
                       >
-                        {t.passRate}%
+                        {ts.passRate}%
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-muted-foreground">Avg score</p>
-                      <p className="font-bold text-foreground">{t.avgScore}%</p>
+                      <p className="font-bold text-foreground">{ts.avgScore}%</p>
                     </div>
                   </div>
                 </div>

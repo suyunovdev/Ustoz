@@ -54,6 +54,17 @@ export async function PATCH(
     if (!body || typeof body !== 'object') throw new ValidationError("Body bo'sh");
     const b = body as Record<string, any>;
 
+    // Narxni oldindan tekshiramiz — BigInt noto'g'ri inputda 500 bermasin
+    let priceUpdate: bigint | undefined;
+    if (b.priceUzs !== undefined) {
+      try {
+        priceUpdate = BigInt(b.priceUzs);
+        if (priceUpdate < BigInt(0)) throw new Error('negative');
+      } catch {
+        throw new ValidationError("Narx noto'g'ri (butun musbat son bo'lishi kerak)");
+      }
+    }
+
     const updated = await prisma.course.update({
       where: { id },
       data: {
@@ -66,7 +77,7 @@ export async function PATCH(
         ...(b.gradeLevel !== undefined && {
           gradeLevel: b.gradeLevel ? Number(b.gradeLevel) : null,
         }),
-        ...(b.priceUzs !== undefined && { priceUzs: BigInt(b.priceUzs) }),
+        ...(priceUpdate !== undefined && { priceUzs: priceUpdate }),
         ...(b.coverImage !== undefined && { coverImage: b.coverImage }),
         ...(b.language && { language: b.language }),
         ...(b.difficultyLevel !== undefined && { difficultyLevel: b.difficultyLevel }),

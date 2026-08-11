@@ -3,17 +3,30 @@ import { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
 
+// Butun, manfiy bo'lmagan songina BigInt'ga aylantiriladi; noto'g'ri input → null (e'tiborsiz)
+function toPriceBigInt(raw: string | null): bigint | null {
+  if (!raw || !/^\d+$/.test(raw.trim())) return null;
+  try {
+    return BigInt(raw.trim());
+  } catch {
+    return null;
+  }
+}
+
 // GET /api/courses — Marketplace uchun kurslar
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const page = Math.max(1, Number(searchParams.get('page') || '1'));
-  const limit = Math.min(50, Number(searchParams.get('limit') || '12'));
+  const pageRaw = Number(searchParams.get('page'));
+  const limitRaw = Number(searchParams.get('limit'));
+  const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1;
+  const limit =
+    Number.isFinite(limitRaw) && limitRaw >= 1 ? Math.min(50, Math.floor(limitRaw)) : 12;
   const skip = (page - 1) * limit;
   const search = searchParams.get('search') || '';
   const category = searchParams.get('category');
   const targetAudience = searchParams.get('targetAudience');
-  const minPrice = searchParams.get('minPrice');
-  const maxPrice = searchParams.get('maxPrice');
+  const minPrice = toPriceBigInt(searchParams.get('minPrice'));
+  const maxPrice = toPriceBigInt(searchParams.get('maxPrice'));
   const sortBy = searchParams.get('sortBy') || 'createdAt';
 
   const where: Prisma.CourseWhereInput = { isPublished: true };
@@ -25,10 +38,10 @@ export async function GET(req: NextRequest) {
   }
   if (category) where.category = category;
   if (targetAudience) where.targetAudience = targetAudience as Prisma.EnumTargetAudienceFilter<"Course">;
-  if (minPrice || maxPrice) {
+  if (minPrice !== null || maxPrice !== null) {
     where.priceUzs = {};
-    if (minPrice) where.priceUzs.gte = BigInt(minPrice);
-    if (maxPrice) where.priceUzs.lte = BigInt(maxPrice);
+    if (minPrice !== null) where.priceUzs.gte = minPrice;
+    if (maxPrice !== null) where.priceUzs.lte = maxPrice;
   }
 
   const orderBy: Prisma.CourseOrderByWithRelationInput = {};
@@ -38,19 +51,32 @@ export async function GET(req: NextRequest) {
   else if (sortBy === 'enrollments') orderBy.enrollmentCount = 'desc';
   else orderBy.createdAt = 'desc';
 
-  const [courses, total] = await Promise.all([
-    prisma.course.findMany({
-      where,
-      include: {
-        teacher: { select: { fullName: true, avatarUrl: true } },
-        _count: { select: { enrollments: true } },
-      },
-      orderBy,
-      skip,
-      take: limit,
-    }),
-    prisma.course.count({ where }),
-  ]);
+  type CourseRow = Prisma.CourseGetPayload<{
+    include: {
+      teacher: { select: { fullName: true; avatarUrl: true } };
+      _count: { select: { enrollments: true } };
+    };
+  }>;
+  let courses: CourseRow[];
+  let total: number;
+  try {
+    [courses, total] = await Promise.all([
+      prisma.course.findMany({
+        where,
+        include: {
+          teacher: { select: { fullName: true, avatarUrl: true } },
+          _count: { select: { enrollments: true } },
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.course.count({ where }),
+    ]);
+  } catch {
+    // Noto'g'ri filtr (masalan yaroqsiz targetAudience) — 400
+    return jsonResponse({ error: "Noto'g'ri so'rov parametrlari" }, { status: 400 });
+  }
 
   const res = jsonResponse({
     courses: courses.map(c => ({

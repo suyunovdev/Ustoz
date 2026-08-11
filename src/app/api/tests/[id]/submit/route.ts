@@ -20,7 +20,14 @@ export async function POST(
   }
 
   const { id: testId } = await params;
-  const { answers = [], courseId }: { answers: SubmittedAnswer[]; courseId?: string } = await req.json();
+
+  let answers: SubmittedAnswer[] = [];
+  try {
+    const body = await req.json();
+    if (Array.isArray(body?.answers)) answers = body.answers;
+  } catch {
+    return jsonResponse({ error: "Noto'g'ri so'rov tanasi" }, { status: 400 });
+  }
 
   const test = await prisma.courseTest.findUnique({
     where: { id: testId },
@@ -28,6 +35,22 @@ export async function POST(
   });
   if (!test) {
     return jsonResponse({ error: 'Test topilmadi' }, { status: 404 });
+  }
+
+  // Kurs testiga faqat shu kursga yozilgan student topshira oladi.
+  // Client bergan courseId'ga ISHONMAYMIZ — faqat server'dagi test.courseId.
+  // Bu ham javob kalitini oshkor qilishni, ham begona kursga progress farming'ni oldini oladi.
+  if (test.courseId) {
+    const enrollment = await prisma.enrollment.findFirst({
+      where: { studentId: session.sub, courseId: test.courseId },
+      select: { id: true },
+    });
+    if (!enrollment) {
+      return jsonResponse(
+        { error: 'Bu testni topshirish uchun kursga yozilishingiz kerak' },
+        { status: 403 },
+      );
+    }
   }
 
   const questionById = new Map(test.questions.map((q) => [q.id, q]));
@@ -49,7 +72,7 @@ export async function POST(
   const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
   const passed = percentage >= (test.passingScore || 80);
 
-  const cid = courseId || test.courseId || '';
+  const cid = test.courseId || '';
   const passingThreshold = test.passingScore || 80;
 
   // Avval shu test bo'yicha allaqachon passed urinish bormi tekshirish
@@ -65,17 +88,20 @@ export async function POST(
       })
     : null;
 
-  // Quiz completion'ni saqlash (har urinish saqlanadi)
-  await prisma.quizCompletion.create({
-    data: {
-      studentId: session.sub,
-      courseId: cid,
-      quizId: testId,
-      score: correctCount,
-      maxScore: totalQuestions,
-      percentage,
-    },
-  });
+  // Quiz completion'ni saqlash (har urinish saqlanadi).
+  // courseId majburiy uuid — kursga bog'liq bo'lmagan (standalone) test bo'lsa saqlamaymiz.
+  if (cid) {
+    await prisma.quizCompletion.create({
+      data: {
+        studentId: session.sub,
+        courseId: cid,
+        quizId: testId,
+        score: correctCount,
+        maxScore: totalQuestions,
+        percentage,
+      },
+    });
+  }
 
   // Progress oshirilsin — faqat BIRINCHI passed urinishda
   if (passed && !alreadyPassed && cid) {

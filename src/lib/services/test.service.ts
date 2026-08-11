@@ -274,6 +274,11 @@ function validateQuestionShape(input: AddQuestionInput | UpdateQuestionInput, is
   }
 }
 
+// Savolni yaratmasdan oldin shaklini tekshirish (test yaratilishidan avval validatsiya uchun)
+export function assertValidQuestionInput(input: AddQuestionInput): void {
+  validateQuestionShape(input);
+}
+
 export async function addQuestion(
   testId: string,
   teacherId: string,

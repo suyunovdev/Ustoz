@@ -8,6 +8,7 @@ import StudentSelectionPanel from './StudentSelectionPanel';
 import GroupBalancingPanel from './GroupBalancingPanel';
 import GroupReviewPanel from './GroupReviewPanel';
 import { useI18n } from '@/contexts/I18nContext';
+import { toast } from '@/components/common/Toaster';
 
 interface Student {
   id: string;
@@ -59,73 +60,40 @@ const GroupCreationInteractive = () => {
   });
 
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
-  const [availableStudents] = useState<Student[]>([
-    {
-      id: '1',
-      name: 'Alisher Karimov',
-      email: 'alisher@example.com',
-      avatar: '/assets/images/no_image.png',
-      performance: 'high',
-      attendance: 95,
-      averageScore: 88,
-      enrolledCourses: ['Matematika', 'Fizika']
-    },
-    {
-      id: '2',
-      name: 'Dilnoza Rahimova',
-      email: 'dilnoza@example.com',
-      avatar: '/assets/images/no_image.png',
-      performance: 'high',
-      attendance: 92,
-      averageScore: 85,
-      enrolledCourses: ['Matematika', 'Kimyo']
-    },
-    {
-      id: '3',
-      name: 'Sardor Tursunov',
-      email: 'sardor@example.com',
-      avatar: '/assets/images/no_image.png',
-      performance: 'medium',
-      attendance: 78,
-      averageScore: 72,
-      enrolledCourses: ['Matematika']
-    },
-    {
-      id: '4',
-      name: 'Madina Yusupova',
-      email: 'madina@example.com',
-      avatar: '/assets/images/no_image.png',
-      performance: 'medium',
-      attendance: 85,
-      averageScore: 75,
-      enrolledCourses: ['Fizika', 'Kimyo']
-    },
-    {
-      id: '5',
-      name: 'Bobur Aliyev',
-      email: 'bobur@example.com',
-      avatar: '/assets/images/no_image.png',
-      performance: 'low',
-      attendance: 65,
-      averageScore: 58,
-      enrolledCourses: ['Matematika']
-    },
-    {
-      id: '6',
-      name: 'Zarina Nazarova',
-      email: 'zarina@example.com',
-      avatar: '/assets/images/no_image.png',
-      performance: 'low',
-      attendance: 70,
-      averageScore: 62,
-      enrolledCourses: ['Fizika']
-    }
-  ]);
+  const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
 
   useEffect(() => {
     setIsHydrated(true);
     loadGroups();
+    loadStudents();
   }, []);
+
+  // O'qituvchi kurslariga yozilgan real talabalarni yuklaymiz
+  const loadStudents = async () => {
+    try {
+      const res = await fetch('/api/teacher/students', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json();
+      const mapped: Student[] = (data.students || []).map((s: any) => {
+        const score = typeof s.avgProgress === 'number' ? s.avgProgress : 0;
+        const performance: Student['performance'] =
+          score >= 80 ? 'high' : score >= 50 ? 'medium' : 'low';
+        return {
+          id: s.studentId || s.id,
+          name: s.fullName || s.email || '—',
+          email: s.email || '',
+          avatar: s.avatarUrl || '/assets/images/no_image.png',
+          performance,
+          attendance: score,
+          averageScore: score,
+          enrolledCourses: [],
+        };
+      });
+      setAvailableStudents(mapped);
+    } catch {
+      setAvailableStudents([]);
+    }
+  };
 
   const loadGroups = async () => {
     setLoadingGroups(true);
@@ -196,19 +164,10 @@ const GroupCreationInteractive = () => {
   };
 
   const handleCreateGroup = async () => {
-    const newGroup: SavedGroup = {
-      id: `group-${Date.now()}`,
-      name: metadata.name,
-      description: metadata.description,
-      courseId: metadata.courseId,
-      studentCount: selectedStudents.length,
-      createdAt: new Date().toISOString(),
-      balancingStrategy: metadata.balancingStrategy
-    };
-
-    // Save via JWT API
+    // 1) Guruhni yaratamiz
+    let groupId: string | undefined;
     try {
-      await fetch('/api/teacher/groups', {
+      const res = await fetch('/api/teacher/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -217,19 +176,39 @@ const GroupCreationInteractive = () => {
           description: metadata.description,
           courseId: metadata.courseId || null,
           maxMembers: 30,
-          studentIds: selectedStudents,
         }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `Xatolik (${res.status})`);
+      }
+      const data = await res.json();
+      groupId = data.group?.id;
     } catch (err) {
-      console.warn('Could not save group to API:', err);
+      toast.error(err instanceof Error ? err.message : "Guruhni yaratib bo'lmadi");
+      return;
     }
 
-    // Always save to localStorage as fallback
-    const updatedGroups = [newGroup, ...savedGroups];
-    setSavedGroups(updatedGroups);
-    try {
-      localStorage.setItem('ustoz_groups', JSON.stringify(updatedGroups));
-    } catch (e) { /* ignore */ }
+    // 2) Tanlangan talabalarni guruhga qo'shamiz (alohida members endpoint)
+    const studentIds = selectedStudents.map((s) => s.id).filter(Boolean);
+    if (groupId && studentIds.length > 0) {
+      try {
+        const mRes = await fetch(`/api/teacher/groups/${groupId}/members/bulk`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ studentIds }),
+        });
+        if (!mRes.ok) {
+          toast.error("Guruh yaratildi, lekin ba'zi a'zolarni qo'shib bo'lmadi");
+        }
+      } catch {
+        toast.error("Guruh yaratildi, lekin a'zolarni qo'shishda xatolik");
+      }
+    }
+
+    // Ro'yxatni server'dan qayta yuklaymiz (real id bilan)
+    await loadGroups();
 
     setShowSuccessModal(true);
     setTimeout(() => {
@@ -252,12 +231,21 @@ const GroupCreationInteractive = () => {
     }
   };
 
-  const handleDeleteGroup = (groupId: string) => {
-    const updated = savedGroups.filter(g => g.id !== groupId);
-    setSavedGroups(updated);
+  const handleDeleteGroup = async (groupId: string) => {
+    const prev = savedGroups;
+    // Optimistik o'chirish
+    setSavedGroups(savedGroups.filter(g => g.id !== groupId));
     try {
-      localStorage.setItem('ustoz_groups', JSON.stringify(updated));
-    } catch (e) { /* ignore */ }
+      const res = await fetch(`/api/teacher/groups/${groupId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (!res.ok) throw new Error(`Xatolik (${res.status})`);
+    } catch (err) {
+      // Muvaffaqiyatsiz — ro'yxatni tiklaymiz
+      setSavedGroups(prev);
+      toast.error(err instanceof Error ? err.message : "Guruhni o'chirib bo'lmadi");
+    }
   };
 
   const formatDate = (dateStr: string) => {

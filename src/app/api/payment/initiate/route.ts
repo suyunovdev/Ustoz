@@ -75,7 +75,8 @@ export async function POST(req: NextRequest) {
 
     if (paymentMethod === 'click' && clickMerchantId && clickServiceId) {
       const returnUrl = encodeURIComponent(`${SITE_URL}/payment-success-confirmation?transaction_id=${transaction.id}`);
-      paymentUrl = `https://my.click.uz/services/pay?service_id=${clickServiceId}&merchant_id=${clickMerchantId}&amount=${priceUzs / 100}&transaction_param=${merchantTransId}&return_url=${returnUrl}`;
+      // Click summani so'mda kutadi (Payme esa tiyinda: priceUzs * 100). priceUzs allaqachon so'mda.
+      paymentUrl = `https://my.click.uz/services/pay?service_id=${clickServiceId}&merchant_id=${clickMerchantId}&amount=${priceUzs}&transaction_param=${merchantTransId}&return_url=${returnUrl}`;
     } else if (paymentMethod === 'payme' && paymeKey) {
       // Payme checkout URL (amount in tiyins)
       const params = Buffer.from(JSON.stringify({ m: paymeKey, ac: { order_id: transaction.id }, a: priceUzs * 100, l: 'uz' })).toString('base64');

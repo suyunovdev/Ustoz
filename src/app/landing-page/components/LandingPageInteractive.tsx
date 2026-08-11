@@ -376,7 +376,7 @@ const LandingPageInteractive = () => {
                   popularCourses.map((course) => (
                     <Link
                       key={course.id}
-                      href={`/course-details?id=${course.id}`}
+                      href={`/course-details?courseId=${course.id}`}
                       className="bg-card rounded-xl shadow-warm hover:shadow-warm-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden group"
                     >
                       <div className="relative h-48 overflow-hidden bg-muted">

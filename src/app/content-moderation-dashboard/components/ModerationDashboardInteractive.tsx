@@ -49,6 +49,13 @@ const ModerationDashboardInteractive = () => {
     loadModerationData();
   }, [filterType, filterStatus]);
 
+  const formatReviewTime = (minutes: number): string => {
+    if (!minutes || minutes <= 0) return '0h 0m';
+    const h = Math.floor(minutes / 60);
+    const m = Math.round(minutes % 60);
+    return `${h}h ${m}m`;
+  };
+
   const loadModerationData = async () => {
     setIsLoading(true);
     try {
@@ -59,16 +66,49 @@ const ModerationDashboardInteractive = () => {
         return;
       }
 
-      // TODO: add /api/admin/moderation endpoint that returns
-      //       { items: [...mat/link/test...], stats: { pending, approved, rejected, avgReviewTime } }
-      //       with ?type=material|link|test&status=pending|approved|rejected filters.
-      setStats({
-        pending: 0,
-        approved: 0,
-        rejected: 0,
-        avgReviewTime: '0h 0m'
+      const qs = new URLSearchParams();
+      qs.set('status', 'all'); // status'ni client tomonda filtrlaymiz (pending = submitted + under_review)
+      if (filterType === 'link') qs.set('contentType', 'external_link');
+      qs.set('limit', '100');
+
+      const res = await fetch(`/api/admin/moderation?${qs.toString()}`, {
+        credentials: 'include',
       });
-      setContentItems([]);
+      if (!res.ok) throw new Error(`Moderation ma'lumotlarini olishda xatolik (${res.status})`);
+      const data = await res.json();
+
+      const allItems: ContentItem[] = (data.items || []).map((row: any) => ({
+        id: row.id,
+        type: row.material?.contentType === 'external_link' ? 'link' : 'material',
+        title: row.material?.title || '—',
+        teacherName: row.material?.teacher?.fullName || '—',
+        submittedAt: row.submittedAt || row.createdAt || '',
+        status: row.status,
+        contentType: row.material?.contentType,
+        url: row.material?.fileUrl || row.material?.externalLink || undefined,
+      }));
+
+      // Status filtri: pending = submitted | under_review
+      const statusMatch = (s: string) => {
+        if (filterStatus === 'all') return true;
+        if (filterStatus === 'pending') return s === 'submitted' || s === 'under_review';
+        return s === filterStatus;
+      };
+      const typeMatch = (item: ContentItem) => {
+        if (filterType === 'all') return true;
+        if (filterType === 'test') return false; // moderation queue'da test turi yo'q
+        return item.type === filterType;
+      };
+
+      const filtered = allItems.filter((i) => statusMatch(i.status) && typeMatch(i));
+
+      setContentItems(filtered);
+      setStats({
+        pending: (data.stats?.submitted || 0) + (data.stats?.under_review || 0),
+        approved: data.stats?.approved || 0,
+        rejected: data.stats?.rejected || 0,
+        avgReviewTime: formatReviewTime(data.stats?.avgReviewMinutes || 0),
+      });
       setSelectedItem(null);
     } catch (error) {
       // Moderation data loading failed — reset to empty state
@@ -79,20 +119,32 @@ const ModerationDashboardInteractive = () => {
     }
   };
 
-  const handleReview = async (itemId: string, itemType: string, decision: 'approved' | 'rejected', notes?: string) => {
+  const handleReview = async (
+    itemId: string,
+    _itemType: string,
+    decision: 'approved' | 'rejected',
+    notes?: string,
+  ) => {
+    const action = decision === 'approved' ? 'approve' : 'reject';
+    if (action === 'reject' && !notes?.trim()) {
+      toast.error('Rad etish uchun sabab (izoh) majburiy');
+      return;
+    }
     try {
-      // TODO: add /api/admin/moderation/[type]/[id] PATCH endpoint that updates
-      //       moderation_status, reviewed_at, reviewed_by, rejection_reason.
-      console.warn('Moderation review endpoint not implemented yet:', {
-        itemId,
-        itemType,
-        decision,
-        notes
+      const res = await fetch(`/api/admin/moderation/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action, feedback: notes?.trim() || undefined }),
       });
-      toast.info(t('moderation.comingSoon'));
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || `Xatolik (${res.status})`);
+      }
+      toast.success(decision === 'approved' ? 'Tasdiqlandi' : 'Rad etildi');
+      await loadModerationData();
     } catch (error) {
-      console.error('Error reviewing content:', error);
-      toast.error(t('moderation.reviewError'));
+      toast.error(error instanceof Error ? error.message : t('moderation.reviewError'));
     }
   };
 
