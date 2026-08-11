@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
-import { useI18n } from '@/contexts/I18nContext';
 
 interface QuestionForStudent {
   id: string;
@@ -114,7 +113,6 @@ export default function TakeTestClient({ testId }: Props) {
   };
 
   const handleAnswer = (qId: string, value: string | string[]) => {
-  const { t } = useI18n();
     setAnswers((a) => ({ ...a, [qId]: value }));
   };
 
