@@ -9,7 +9,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { renderWithI18n as render, screen } from '@/test/renderWithI18n';
 import WelcomeSection from '../WelcomeSection';
 
 function makeStats(overrides: Partial<{
