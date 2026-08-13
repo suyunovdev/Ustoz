@@ -16,10 +16,10 @@ interface InstructorBioProps {
 }
 
 const InstructorBio = ({ instructor }: InstructorBioProps) => {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
-      <h2 className="text-2xl font-heading font-bold text-foreground">O\'qituvchi haqida</h2>
+      <h2 className="text-2xl font-heading font-bold text-foreground">{t('courseDetails.aboutInstructor')}</h2>
 
       {/* Instructor Profile */}
       <div className="flex items-start space-x-4">
@@ -37,15 +37,15 @@ const InstructorBio = ({ instructor }: InstructorBioProps) => {
           <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <Icon name="StarIcon" size={16} variant="solid" className="text-accent" />
-              <span className="text-sm font-data">{instructor.rating} o\'rtacha baho</span>
+              <span className="text-sm font-data">{instructor.rating} {t('courseDetails.averageRating')}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Icon name="UserGroupIcon" size={16} className="text-primary" />
-              <span className="text-sm">{formatNumber(instructor.studentsCount, locale)} o\'quvchi</span>
+              <span className="text-sm">{formatNumber(instructor.studentsCount, locale)} {t('courseDetails.studentsSuffix')}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Icon name="BookOpenIcon" size={16} className="text-primary" />
-              <span className="text-sm">{instructor.coursesCount} kurs</span>
+              <span className="text-sm">{instructor.coursesCount} {t('courseDetails.courses')}</span>
             </div>
           </div>
         </div>
@@ -53,13 +53,13 @@ const InstructorBio = ({ instructor }: InstructorBioProps) => {
 
       {/* Bio */}
       <div>
-        <h4 className="font-semibold text-foreground mb-2">Biografiya</h4>
+        <h4 className="font-semibold text-foreground mb-2">{t('courseDetails.biography')}</h4>
         <p className="text-foreground leading-relaxed">{instructor.bio}</p>
       </div>
 
       {/* Other Courses */}
       <div>
-        <h4 className="font-semibold text-foreground mb-3">Boshqa kurslari</h4>
+        <h4 className="font-semibold text-foreground mb-3">{t('courseDetails.otherCourses')}</h4>
         <div className="space-y-3">
           {[
             { id: '1', title: 'React.js: Zamonaviy Web Ilovalar', students: 8500, rating: 4.9 },

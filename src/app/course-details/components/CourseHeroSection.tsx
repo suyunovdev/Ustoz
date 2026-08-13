@@ -28,7 +28,7 @@ interface CourseHeroSectionProps {
 }
 
 const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSectionProps) => {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <div className="bg-card rounded-md shadow-warm-lg overflow-hidden">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -66,7 +66,7 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
               />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">O\'qituvchi</p>
+              <p className="text-sm text-muted-foreground">{t('courseDetails.instructor')}</p>
               <p className="font-semibold text-foreground">{course.instructor.name}</p>
               <div className="flex items-center space-x-2 mt-1">
                 <div className="flex items-center space-x-1">
@@ -75,7 +75,7 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
                 </div>
                 <span className="text-xs text-muted-foreground">•</span>
                 <span className="text-xs text-muted-foreground">
-                  {formatNumber(course.instructor.studentsCount, locale)} o\'quvchi
+                  {formatNumber(course.instructor.studentsCount, locale)} {t('courseDetails.studentsSuffix')}
                 </span>
               </div>
             </div>
@@ -91,7 +91,7 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
             <div className="flex items-center space-x-1">
               <Icon name="UserGroupIcon" size={18} className="text-primary" />
               <span className="text-sm text-muted-foreground">
-                {formatNumber(course.enrollmentCount, locale)} o\'quvchi
+                {formatNumber(course.enrollmentCount, locale)} {t('courseDetails.studentsSuffix')}
               </span>
             </div>
           </div>
@@ -102,11 +102,11 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
             disabled={isPurchasing}
             className="md:hidden w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPurchasing ? 'Yuklanmoqda...' : 'Kursni sotib olish'}
+            {isPurchasing ? t('courseDetails.loading') : t('courseDetails.buyCourse')}
           </button>
 
           <p className="text-xs text-muted-foreground">
-            Oxirgi yangilanish: {formatDate(course.lastUpdated, locale)}
+            {t('courseDetails.lastUpdatedLabel')} {formatDate(course.lastUpdated, locale)}
           </p>
         </div>
       </div>

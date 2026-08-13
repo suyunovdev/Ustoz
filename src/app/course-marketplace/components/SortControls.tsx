@@ -56,7 +56,7 @@ const SortControls = ({ currentSort, onSortChange }: SortControlsProps) => {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-4 py-2 bg-card border border-border rounded-md hover:bg-muted transition-smooth"
-        aria-label="Sort options"
+        aria-label={t('marketplace.sortOptions')}
       >
         <Icon name={currentOption.icon as any} size={20} />
         <span className="font-medium hidden sm:inline">{currentOption.label}</span>

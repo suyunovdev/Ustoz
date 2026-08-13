@@ -17,10 +17,10 @@ function fmtUzs(s: string, locale: Locale): string {
   return formatNumber(Number(s), locale);
 }
 
-const STATUS_LABEL: Record<EarningStatusDTO, { label: string; color: string }> = {
-  pending: { label: 'Kutilmoqda', color: 'bg-warning/10 text-warning' },
-  paid: { label: "To'langan", color: 'bg-success/10 text-success' },
-  cancelled: { label: 'Bekor', color: 'bg-destructive/10 text-destructive' },
+const STATUS_COLOR: Record<EarningStatusDTO, string> = {
+  pending: 'bg-warning/10 text-warning',
+  paid: 'bg-success/10 text-success',
+  cancelled: 'bg-destructive/10 text-destructive',
 };
 
 export default function ReferralsClient() {
@@ -42,15 +42,13 @@ export default function ReferralsClient() {
   const handleCopy = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`${label} nusxalandi`);
+      toast.success(t('referrals.copied', { label }));
     } catch {
-      toast.error("Nusxa olib bo'lmadi");
+      toast.error(t('referrals.copyFailed'));
     }
   };
 
-  const shareText = encodeURIComponent(
-    "Salom! Men Ustoz.uz onlayn ta'lim platformasidan foydalanaman. Sen ham qo'shil:",
-  );
+  const shareText = encodeURIComponent(t('referrals.shareText'));
 
   return (
     <div className="max-w-5xl mx-auto p-6">
@@ -59,40 +57,40 @@ export default function ReferralsClient() {
         className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-3"
       >
         <Icon name="ArrowLeftIcon" size={14} />
-        Profil
+        {t('referrals.profile')}
       </Link>
 
-      <h1 className="text-2xl font-heading font-semibold mb-1">Referral dasturi</h1>
+      <h1 className="text-2xl font-heading font-semibold mb-1">{t('referrals.title')}</h1>
       <p className="text-sm text-muted-foreground mb-6">
-        Do'stlaringizni taklif qiling — har to'lovidan komissiya oling
+        {t('referrals.subtitle')}
       </p>
 
       <div className="bg-gradient-to-br from-primary/10 via-card to-warning/5 border border-border rounded-md p-6 mb-6">
-        <p className="text-xs text-muted-foreground mb-1">Sizning referral kodingiz</p>
+        <p className="text-xs text-muted-foreground mb-1">{t('referrals.yourCode')}</p>
         <div className="flex items-center gap-2 mb-3">
           <code className="text-3xl font-mono font-bold text-primary tracking-wider">
             {ref.code}
           </code>
           <button
-            onClick={() => handleCopy(ref.code, 'Kod')}
+            onClick={() => handleCopy(ref.code, t('referrals.codeLabel'))}
             className="p-2 hover:bg-muted rounded-md"
-            aria-label="Nusxa olish"
+            aria-label={t('referrals.copyAria')}
           >
             <Icon name="ClipboardDocumentIcon" size={16} />
           </button>
         </div>
 
-        <p className="text-xs text-muted-foreground mb-1 mt-3">Yuborilishi mumkin bo'lgan havola</p>
+        <p className="text-xs text-muted-foreground mb-1 mt-3">{t('referrals.shareableLink')}</p>
         <div className="flex items-center gap-2 bg-card border border-border rounded-md p-2 mb-4">
           <code className="text-xs font-mono text-foreground flex-1 truncate">
             {refLink}
           </code>
           <button
-            onClick={() => handleCopy(refLink, 'Havola')}
+            onClick={() => handleCopy(refLink, t('referrals.linkLabel'))}
             className="px-2 py-1 bg-primary text-primary-foreground rounded text-xs flex items-center gap-1 shrink-0"
           >
             <Icon name="ClipboardDocumentIcon" size={12} />
-            Nusxa
+            {t('referrals.copy')}
           </button>
         </div>
 
@@ -139,26 +137,26 @@ export default function ReferralsClient() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard
           icon="CursorArrowRaysIcon"
-          label="Bosishlar"
+          label={t('referrals.statClicks')}
           value={ref.clicks}
           color="text-primary"
         />
         <StatCard
           icon="UserPlusIcon"
-          label="Ro'yxatdan o'tganlar"
+          label={t('referrals.statSignups')}
           value={ref.signups}
-          sub={`${ref.conversionPct}% conversion`}
+          sub={t('referrals.conversion', { pct: ref.conversionPct })}
           color="text-success"
         />
         <StatCard
           icon="ShoppingCartIcon"
-          label="Sotib oluvchilar"
+          label={t('referrals.statPaying')}
           value={ref.payingUsers}
           color="text-warning"
         />
         <StatCard
           icon="BanknotesIcon"
-          label="Jami daromad"
+          label={t('referrals.statTotalEarned')}
           value={fmtUzs(ref.totalEarnedUzs, locale)}
           sub="UZS"
           color="text-success"
@@ -167,20 +165,20 @@ export default function ReferralsClient() {
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="bg-warning/5 border border-warning/30 rounded-md p-4">
-          <p className="text-xs text-muted-foreground">Kutilayotgan</p>
+          <p className="text-xs text-muted-foreground">{t('referrals.pending')}</p>
           <p className="text-xl font-bold text-warning">
             {fmtUzs(ref.pendingEarningsUzs, locale)} UZS
           </p>
         </div>
         <div className="bg-success/5 border border-success/30 rounded-md p-4">
-          <p className="text-xs text-muted-foreground">To'langan</p>
+          <p className="text-xs text-muted-foreground">{t('referrals.paid')}</p>
           <p className="text-xl font-bold text-success">
             {fmtUzs(ref.paidEarningsUzs, locale)} UZS
           </p>
         </div>
       </div>
 
-      <h2 className="text-lg font-medium mb-3">Daromad tarixi</h2>
+      <h2 className="text-lg font-medium mb-3">{t('referrals.earningsHistory')}</h2>
 
       <div className="flex items-center gap-2 mb-3">
         <button
@@ -191,7 +189,7 @@ export default function ReferralsClient() {
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
           }`}
         >
-          Hammasi
+          {t('referrals.filterAll')}
         </button>
         {(['pending', 'paid', 'cancelled'] as const).map((s) => (
           <button
@@ -203,7 +201,7 @@ export default function ReferralsClient() {
                 : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
           >
-            {STATUS_LABEL[s].label}
+            {t(`referrals.status.${s}`)}
           </button>
         ))}
       </div>
@@ -222,7 +220,7 @@ export default function ReferralsClient() {
             className="text-muted-foreground mx-auto mb-3"
           />
           <p className="text-muted-foreground text-sm">
-            Hali daromad yo'q. Do'stlaringizni taklif qiling!
+            {t('referrals.empty')}
           </p>
         </div>
       ) : (
@@ -234,7 +232,7 @@ export default function ReferralsClient() {
             >
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                  STATUS_LABEL[e.status].color
+                  STATUS_COLOR[e.status]
                 }`}
               >
                 <Icon name="BanknotesIcon" size={16} />
@@ -246,10 +244,10 @@ export default function ReferralsClient() {
                   </p>
                   <span
                     className={`text-[10px] px-2 py-0.5 rounded-full ${
-                      STATUS_LABEL[e.status].color
+                      STATUS_COLOR[e.status]
                     }`}
                   >
-                    {STATUS_LABEL[e.status].label}
+                    {t(`referrals.status.${e.status}`)}
                   </span>
                 </div>
                 {e.courseTitle && (
@@ -259,7 +257,7 @@ export default function ReferralsClient() {
                 )}
                 <p className="text-xs text-muted-foreground">
                   {formatDate(e.createdAt, locale)} ·{' '}
-                  {e.commissionPct}% komissiya
+                  {t('referrals.commission', { pct: e.commissionPct })}
                 </p>
               </div>
               <p className="text-base font-bold text-success shrink-0">
@@ -271,12 +269,15 @@ export default function ReferralsClient() {
       )}
 
       <div className="mt-8 p-6 bg-muted/30 rounded-md text-sm text-muted-foreground">
-        <h3 className="font-medium text-foreground mb-2">Qanday ishlaydi?</h3>
+        <h3 className="font-medium text-foreground mb-2">{t('referrals.howTitle')}</h3>
         <ol className="space-y-1 list-decimal list-inside">
-          <li>Yuqoridagi referral havolasini do'stlaringizga yuboring</li>
-          <li>Do'stingiz havola orqali ro'yxatdan o'tadi</li>
-          <li>Ular kurs sotib olganda — siz <strong>10% komissiya</strong> olasiz</li>
-          <li>Komissiya darhol balansingizga qo'shiladi (admin tasdiqlagandan keyin to'lanadi)</li>
+          <li>{t('referrals.step1')}</li>
+          <li>{t('referrals.step2')}</li>
+          <li>
+            {t('referrals.step3Before')} <strong>{t('referrals.step3Bold')}</strong>{' '}
+            {t('referrals.step3After')}
+          </li>
+          <li>{t('referrals.step4')}</li>
         </ol>
       </div>
     </div>

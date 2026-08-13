@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { getServerLocale } from '@/lib/i18n/server';
+import { getServerLocale, getServerT } from '@/lib/i18n/server';
 import { formatDate } from '@/lib/i18n/format';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +42,7 @@ export default async function VerifyPage({
   if (!cert) return notFound();
 
   const locale = await getServerLocale();
+  const t = await getServerT();
   const isRevoked = cert.status === 'revoked';
   const issuedAt = new Date(cert.issuedAt);
 
@@ -57,7 +58,7 @@ export default async function VerifyPage({
             }`}
           >
             <div className="flex items-center gap-2 text-sm">
-              {isRevoked ? '⚠️ Bekor qilingan' : '✓ Tasdiqlandi'}
+              {isRevoked ? `⚠️ ${t('verify.revoked')}` : `✓ ${t('verify.verified')}`}
             </div>
             <div className="text-xs font-mono opacity-80">{cert.certificateNumber}</div>
           </div>
@@ -66,19 +67,19 @@ export default async function VerifyPage({
             <div className="mb-6">
               <div className="text-6xl mb-2">🏆</div>
               <p className="text-xs text-muted-foreground uppercase tracking-widest">
-                Sertifikat
+                {t('verify.certificate')}
               </p>
             </div>
 
             <p className="text-sm text-muted-foreground mb-2">
-              Quyidagi shaxsga taqdim etiladi
+              {t('verify.awardedTo')}
             </p>
             <h1 className="text-4xl font-heading font-bold text-foreground mb-6">
               {cert.studentName}
             </h1>
 
             <p className="text-sm text-muted-foreground mb-2">
-              Quyidagi kursni muvaffaqiyatli yakunlagani uchun
+              {t('verify.forCompleting')}
             </p>
             <h2 className="text-2xl font-medium text-primary mb-6">
               {cert.courseTitle}
@@ -86,21 +87,21 @@ export default async function VerifyPage({
 
             <div className="grid grid-cols-3 gap-4 mb-6 py-4 border-t border-b border-border">
               <div>
-                <p className="text-xs text-muted-foreground">Yakunlash</p>
+                <p className="text-xs text-muted-foreground">{t('verify.completion')}</p>
                 <p className="text-lg font-bold text-foreground">
                   {cert.completionPercent}%
                 </p>
               </div>
               {cert.finalGrade !== null && (
                 <div>
-                  <p className="text-xs text-muted-foreground">Yakuniy bal</p>
+                  <p className="text-xs text-muted-foreground">{t('verify.finalGrade')}</p>
                   <p className="text-lg font-bold text-foreground">
                     {cert.finalGrade}/100
                   </p>
                 </div>
               )}
               <div>
-                <p className="text-xs text-muted-foreground">Berilgan</p>
+                <p className="text-xs text-muted-foreground">{t('verify.issued')}</p>
                 <p className="text-lg font-bold text-foreground">
                   {formatDate(issuedAt, locale, {
                     year: 'numeric',
@@ -111,25 +112,25 @@ export default async function VerifyPage({
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground mb-1">O'qituvchi</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('verify.teacher')}</p>
             <p className="text-base font-medium text-foreground mb-6">
               {cert.teacherName}
             </p>
 
             {isRevoked && cert.revokeReason && (
               <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm mb-4">
-                <strong>Bekor qilish sababi:</strong> {cert.revokeReason}
+                <strong>{t('verify.revokeReason')}:</strong> {cert.revokeReason}
                 {cert.revokedAt && (
                   <p className="text-xs mt-1 opacity-80">
-                    Sana: {formatDate(cert.revokedAt, locale, {})}
+                    {t('verify.date')}: {formatDate(cert.revokedAt, locale, {})}
                   </p>
                 )}
               </div>
             )}
 
             <div className="text-xs text-muted-foreground font-mono pt-4 border-t border-border">
-              <p>Tekshirish kodi: {cert.certificateNumber}</p>
-              <p className="mt-1">Ustoz.uz · Onlayn ta'lim platformasi</p>
+              <p>{t('verify.checkCode')}: {cert.certificateNumber}</p>
+              <p className="mt-1">{t('verify.footer')}</p>
             </div>
           </div>
         </div>
@@ -139,7 +140,7 @@ export default async function VerifyPage({
             href="/"
             className="text-sm text-muted-foreground hover:text-primary"
           >
-            ← Bosh sahifa
+            ← {t('verify.home')}
           </Link>
         </div>
       </div>

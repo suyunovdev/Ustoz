@@ -42,7 +42,7 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
     if (!course.subjectCategory) return null;
     const subjectLabel = getSubjectLabel(course.subjectCategory);
     if (course.gradeLevel) {
-      return `${course.gradeLevel}-sinf ${subjectLabel}`;
+      return t('marketplace.gradeSubject', { grade: course.gradeLevel, subject: subjectLabel });
     }
     return subjectLabel;
   };
@@ -77,7 +77,7 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
         <button
           onClick={() => onWishlistToggle(course.id)}
           className="absolute top-3 right-3 p-2 bg-card rounded-full shadow-warm-md hover:scale-110 transition-smooth"
-          aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+          aria-label={isWishlisted ? t('marketplace.removeFromWishlist') : t('marketplace.addToWishlist')}
         >
           <Icon
             name="HeartIcon"

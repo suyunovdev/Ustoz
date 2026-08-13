@@ -22,7 +22,7 @@ interface CourseReviewsProps {
 }
 
 const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsProps) => {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const [sortBy, setSortBy] = useState<'recent' | 'helpful'>('recent');
 
   const ratingDistribution = [
@@ -42,7 +42,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
 
   return (
     <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
-      <h2 className="text-2xl font-heading font-bold text-foreground">O\'quvchi sharhlari</h2>
+      <h2 className="text-2xl font-heading font-bold text-foreground">{t('courseDetails.reviewsTitle')}</h2>
 
       {/* Rating Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-border">
@@ -60,7 +60,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
               />
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">{formatNumber(totalReviews, locale)} baho</p>
+          <p className="text-sm text-muted-foreground">{formatNumber(totalReviews, locale)} {t('courseDetails.ratings')}</p>
         </div>
 
         {/* Rating Distribution */}
@@ -87,14 +87,14 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
 
       {/* Sort Controls */}
       <div className="flex items-center space-x-2">
-        <span className="text-sm text-muted-foreground">Saralash:</span>
+        <span className="text-sm text-muted-foreground">{t('courseDetails.sortBy')}</span>
         <button
           onClick={() => setSortBy('recent')}
           className={`px-3 py-1 rounded-md text-sm font-medium transition-smooth ${
             sortBy === 'recent' ?'bg-primary text-primary-foreground' :'bg-muted text-foreground hover:bg-muted/80'
           }`}
         >
-          Eng yangi
+          {t('courseDetails.newest')}
         </button>
         <button
           onClick={() => setSortBy('helpful')}
@@ -102,7 +102,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
             sortBy === 'helpful' ?'bg-primary text-primary-foreground' :'bg-muted text-foreground hover:bg-muted/80'
           }`}
         >
-          Foydali
+          {t('courseDetails.helpful')}
         </button>
       </div>
 
@@ -149,7 +149,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
             <div className="flex items-center space-x-4 pt-2">
               <button className="flex items-center space-x-1 text-sm text-muted-foreground hover:text-foreground transition-smooth">
                 <Icon name="HandThumbUpIcon" size={16} />
-                <span>Foydali ({review.helpful})</span>
+                <span>{t('courseDetails.helpful')} ({review.helpful})</span>
               </button>
             </div>
           </div>

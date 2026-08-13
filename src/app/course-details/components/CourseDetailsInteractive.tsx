@@ -115,15 +115,15 @@ const CourseDetailsInteractive = () => {
         title: c.title,
         subtitle: c.description?.split('.')[0] || c.title,
         coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
-        coverImageAlt: `${c.title} kursi`,
+        coverImageAlt: `${c.title} ${t('courseDetails.courseImageAlt')}`,
         instructor: {
-          name: teacher.fullName || 'Ustoz',
+          name: teacher.fullName || t('courseDetails.defaultInstructor'),
           image: teacher.avatarUrl || 'https://img.rocket.new/generatedImages/rocket_gen_img_1f9f88657-1763292682460.png',
-          imageAlt: `${teacher.fullName || 'Ustoz'} rasmi`,
+          imageAlt: `${teacher.fullName || t('courseDetails.defaultInstructor')} ${t('courseDetails.instructorImageAlt')}`,
           rating: Number(c.rating) || 0,
           studentsCount: c.enrollmentCount || 0,
           coursesCount: 0,
-          bio: teacher.bio || `${teacher.fullName || 'Ustoz'} — tajribali o'qituvchi.`,
+          bio: teacher.bio || `${teacher.fullName || t('courseDetails.defaultInstructor')} ${t('courseDetails.defaultBioSuffix')}`,
         },
         pricing: {
           usd: Number(c.priceUsd) || 0,
@@ -138,15 +138,15 @@ const CourseDetailsInteractive = () => {
         hasCertificate: true,
         language: c.language || 'uz',
         lastUpdated: c.createdAt ? formatDate(c.createdAt, locale) : '',
-        totalDuration: `${c.totalDuration || 0} soat`,
-        level: c.difficultyLevel || "Boshlang'ich",
+        totalDuration: `${c.totalDuration || 0} ${t('courseDetails.hours')}`,
+        level: c.difficultyLevel || t('courseDetails.beginner'),
       };
       setCourse(mapped);
 
       if (topics.length > 0) {
         const section: CurriculumSection = {
           id: 'section-1',
-          title: 'Kurs Mavzulari',
+          title: t('courseDetails.courseTopics'),
           topics: topics.map((t: Record<string, string | boolean>, i: number) => ({
             id: t.id,
             title: t.title,
@@ -162,7 +162,7 @@ const CourseDetailsInteractive = () => {
       setReviews(
         reviewsData.map((r: { id: string; student?: { fullName?: string; avatarUrl?: string }; rating: number; createdAt: string; comment?: string; helpfulCount?: number }) => ({
           id: r.id,
-          userName: r.student?.fullName || 'Foydalanuvchi',
+          userName: r.student?.fullName || t('courseDetails.anonymousUser'),
           userImage: r.student?.avatarUrl || '',
           userImageAlt: r.student?.fullName || '',
           rating: r.rating,

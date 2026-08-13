@@ -80,6 +80,7 @@ export default function ProfileClient() {
 }
 
 function ProfileTab({ profile }: { profile: ProfileDTO }) {
+  const { t } = useI18n();
   const mut = useUpdateProfileMutation();
   const [fullName, setFullName] = useState(profile.fullName);
   const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl ?? '');
@@ -104,7 +105,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
         socialLinks: social,
       },
       {
-        onSuccess: () => toast.success('Profil yangilandi'),
+        onSuccess: () => toast.success(t('profile.profileUpdated2')),
         onError: (err) => toast.error(err.message),
       },
     );
@@ -115,10 +116,10 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
 
   return (
     <form onSubmit={handleSubmit} className="bg-card border border-border rounded-md p-6 space-y-4">
-      <h2 className="font-medium mb-3">Profil ma'lumotlari</h2>
+      <h2 className="font-medium mb-3">{t('profile.profileInfo')}</h2>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Ism-familiya *</label>
+        <label className="block text-sm font-medium mb-1">{t('profile.fullName')}</label>
         <input
           type="text"
           value={fullName}
@@ -129,7 +130,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1">Avatar URL</label>
+        <label className="block text-sm font-medium mb-1">{t('profile.avatarUrl')}</label>
         <input
           type="url"
           value={avatarUrl}
@@ -150,26 +151,26 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
         <>
           <div>
             <label className="block text-sm font-medium mb-1">
-              Tagline / Headline
+              {t('profile.tagline')}
             </label>
             <input
               type="text"
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
               maxLength={150}
-              placeholder="Senior JavaScript Engineer · 10 yil tajriba"
+              placeholder={t('profile.taglinePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Bio</label>
+            <label className="block text-sm font-medium mb-1">{t('profile.bio')}</label>
             <textarea
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={4}
               maxLength={1000}
-              placeholder="Kasbiy tajriba va dars berish uslubingiz haqida..."
+              placeholder={t('profile.bioPlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
             />
             <p className="text-xs text-muted-foreground mt-1">
@@ -179,7 +180,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
 
           <div>
             <label className="block text-sm font-medium mb-1">
-              Mavzular (vergul bilan ajratilgan)
+              {t('profile.topics')}
             </label>
             <input
               type="text"
@@ -191,7 +192,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Ijtimoiy tarmoqlar</label>
+            <label className="block text-sm font-medium mb-2">{t('profile.socialNetworks')}</label>
             <div className="space-y-2">
               {[
                 { key: 'website', label: 'Website', placeholder: 'https://…' },
@@ -225,7 +226,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
             className="text-sm text-primary hover:underline inline-flex items-center gap-1"
           >
             <Icon name="EyeIcon" size={12} />
-            Ommaviy profil
+            {t('profile.publicProfile')}
           </Link>
         )}
         <button
@@ -236,7 +237,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
           {mut.isPending && (
             <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
           )}
-          Saqlash
+          {t('profile.save')}
         </button>
       </div>
     </form>
@@ -244,6 +245,7 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
 }
 
 function PasswordTab() {
+  const { t } = useI18n();
   const mut = useChangePasswordMutation();
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -252,18 +254,18 @@ function PasswordTab() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirm) {
-      toast.error("Yangi parol va tasdiqlash mos kelmadi");
+      toast.error(t('profile.passwordMismatch'));
       return;
     }
     if (newPassword.length < 6) {
-      toast.error("Yangi parol kamida 6 belgi");
+      toast.error(t('profile.passwordTooShort'));
       return;
     }
     mut.mutate(
       { oldPassword, newPassword },
       {
         onSuccess: () => {
-          toast.success("Parol o'zgartirildi");
+          toast.success(t('profile.passwordChangedMsg'));
           setOldPassword('');
           setNewPassword('');
           setConfirm('');
@@ -275,9 +277,9 @@ function PasswordTab() {
 
   return (
     <form onSubmit={handleSubmit} className="bg-card border border-border rounded-md p-6 space-y-4 max-w-md">
-      <h2 className="font-medium mb-3">Parolni o'zgartirish</h2>
+      <h2 className="font-medium mb-3">{t('profile.changePassword2')}</h2>
       <div>
-        <label className="block text-sm font-medium mb-1">Eski parol *</label>
+        <label className="block text-sm font-medium mb-1">{t('profile.oldPassword')}</label>
         <input
           type="password"
           value={oldPassword}
@@ -287,7 +289,7 @@ function PasswordTab() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Yangi parol *</label>
+        <label className="block text-sm font-medium mb-1">{t('profile.newPasswordLabel')}</label>
         <input
           type="password"
           value={newPassword}
@@ -296,10 +298,10 @@ function PasswordTab() {
           minLength={6}
           className="w-full px-3 py-2 border border-border rounded-md text-sm"
         />
-        <p className="text-xs text-muted-foreground mt-1">Kamida 6 belgi</p>
+        <p className="text-xs text-muted-foreground mt-1">{t('profile.minChars')}</p>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">Yangi parolni tasdiqlang *</label>
+        <label className="block text-sm font-medium mb-1">{t('profile.confirmNewPasswordLabel')}</label>
         <input
           type="password"
           value={confirm}
@@ -316,13 +318,14 @@ function PasswordTab() {
         {mut.isPending && (
           <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
         )}
-        Parolni saqlash
+        {t('profile.savePassword')}
       </button>
     </form>
   );
 }
 
 function NotificationsTab({ profile }: { profile: ProfileDTO }) {
+  const { t } = useI18n();
   const mut = useUpdateNotificationPrefsMutation();
   const [prefs, setPrefs] = useState<Record<string, boolean>>(profile.notificationPrefs);
 
@@ -343,25 +346,25 @@ function NotificationsTab({ profile }: { profile: ProfileDTO }) {
   };
 
   const items = [
-    { key: 'email_enrollment', label: 'Yangi yozilishlar', desc: 'Talaba kursingizga yozilganda' },
+    { key: 'email_enrollment', label: t('profile.newEnrollments'), desc: t('profile.newEnrollmentsDesc') },
     {
       key: 'email_assignment_submission',
-      label: 'Vazifa topshirildi',
-      desc: 'Talaba vazifani yuborgan paytda',
+      label: t('profile.assignmentSubmitted'),
+      desc: t('profile.assignmentSubmittedDesc'),
     },
-    { key: 'email_quiz_completion', label: 'Test topshirildi', desc: 'Talaba testni tugatganda' },
-    { key: 'email_course_update', label: 'Kurs yangiliklari', desc: 'Sizning kurslaringizdagi yangiliklar' },
-    { key: 'email_achievement', label: 'Yutuqlar', desc: 'Sertifikat va mukofotlar' },
-    { key: 'email_payment', label: "To'lovlar", desc: "Yangi to'lov va withdraw holatlari" },
-    { key: 'email_message', label: 'Xabarlar', desc: 'Yangi DM xabar' },
-    { key: 'email_review', label: 'Sharhlar', desc: 'Talaba sharh qoldirgan paytda' },
+    { key: 'email_quiz_completion', label: t('profile.testSubmitted'), desc: t('profile.testSubmittedDesc') },
+    { key: 'email_course_update', label: t('profile.courseUpdates'), desc: t('profile.courseUpdatesDesc') },
+    { key: 'email_achievement', label: t('profile.achievementsLabel'), desc: t('profile.achievementsDesc') },
+    { key: 'email_payment', label: t('profile.paymentsLabel'), desc: t('profile.paymentsDesc') },
+    { key: 'email_message', label: t('profile.messagesLabel'), desc: t('profile.messagesDesc') },
+    { key: 'email_review', label: t('profile.reviewsLabel'), desc: t('profile.reviewsDesc') },
   ];
 
   return (
     <div className="bg-card border border-border rounded-md p-6">
-      <h2 className="font-medium mb-1">Email bildirishnomalari</h2>
+      <h2 className="font-medium mb-1">{t('profile.emailNotifications')}</h2>
       <p className="text-xs text-muted-foreground mb-4">
-        Qaysi turdagi email'larni olishni xohlaysiz
+        {t('profile.whichEmails')}
       </p>
 
       <div className="space-y-2">
@@ -393,9 +396,9 @@ function NotificationsTab({ profile }: { profile: ProfileDTO }) {
             className="mt-1"
           />
           <div className="flex-1">
-            <p className="text-sm font-medium">In-app bildirishnomalar</p>
+            <p className="text-sm font-medium">{t('profile.inAppNotifications')}</p>
             <p className="text-xs text-muted-foreground">
-              Web ilovada bell icon va dropdown orqali
+              {t('profile.inAppNotificationsDesc')}
             </p>
           </div>
         </label>
@@ -405,7 +408,7 @@ function NotificationsTab({ profile }: { profile: ProfileDTO }) {
 }
 
 function AccountTab({ profile }: { profile: ProfileDTO }) {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const requestMut = useRequestDeletionMutation();
   const cancelMut = useCancelDeletionMutation();
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -416,26 +419,26 @@ function AccountTab({ profile }: { profile: ProfileDTO }) {
   return (
     <div className="space-y-4">
       <div className="bg-card border border-border rounded-md p-6">
-        <h2 className="font-medium mb-1">Hisob ma'lumotlari</h2>
-        <p className="text-xs text-muted-foreground mb-4">Asosiy hisob ma'lumotlari</p>
+        <h2 className="font-medium mb-1">{t('profile.accountInfo')}</h2>
+        <p className="text-xs text-muted-foreground mb-4">{t('profile.accountInfoDesc')}</p>
 
         <dl className="space-y-2 text-sm">
           <div className="grid grid-cols-[100px_1fr]">
-            <dt className="text-muted-foreground">Email</dt>
+            <dt className="text-muted-foreground">{t('profile.emailLabel')}</dt>
             <dd className="text-foreground font-mono">{profile.email}</dd>
           </div>
           <div className="grid grid-cols-[100px_1fr]">
-            <dt className="text-muted-foreground">Rol</dt>
+            <dt className="text-muted-foreground">{t('profile.role')}</dt>
             <dd className="text-foreground capitalize">{profile.role}</dd>
           </div>
           <div className="grid grid-cols-[100px_1fr]">
-            <dt className="text-muted-foreground">Ro'yxat sanasi</dt>
+            <dt className="text-muted-foreground">{t('profile.registrationDate')}</dt>
             <dd className="text-foreground">
               {formatDate(profile.createdAt, locale)}
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr]">
-            <dt className="text-muted-foreground">Oxirgi kirish</dt>
+            <dt className="text-muted-foreground">{t('profile.lastLoginLabel')}</dt>
             <dd className="text-foreground">
               {profile.lastLoginAt
                 ? formatDateTime(profile.lastLoginAt, locale)
@@ -447,35 +450,34 @@ function AccountTab({ profile }: { profile: ProfileDTO }) {
 
       <div className="bg-destructive/5 border border-destructive/30 rounded-md p-6">
         <h2 className="font-medium text-destructive mb-1">
-          ⚠ Hisobni o'chirish
+          ⚠ {t('profile.deleteAccountLabel')}
         </h2>
         <p className="text-xs text-muted-foreground mb-4">
-          Hisobingizni o'chirish so'rovini yuborasiz. Admin ko'rib chiqadi va
-          tasdiqlaydi. Bu jarayonni bekor qilishingiz mumkin.
+          {t('profile.deleteAccountDesc')}
         </p>
 
         {hasRequested ? (
           <>
             <div className="bg-warning/10 text-warning p-3 rounded-md text-sm mb-3">
-              ⏳ So'rov yuborildi:{' '}
+              ⏳ {t('profile.requestSubmitted')}:{' '}
               {formatDateTime(profile.deletionRequestedAt!, locale)}
               {profile.deletionReason && (
                 <p className="text-xs mt-1 opacity-80">
-                  Sabab: {profile.deletionReason}
+                  {t('profile.reasonLabel')}: {profile.deletionReason}
                 </p>
               )}
             </div>
             <button
               onClick={() =>
                 cancelMut.mutate(undefined, {
-                  onSuccess: () => toast.success("So'rov bekor qilindi"),
+                  onSuccess: () => toast.success(t('profile.requestCancelled')),
                   onError: (err) => toast.error(err.message),
                 })
               }
               disabled={cancelMut.isPending}
               className="px-4 py-2 bg-warning text-warning-foreground rounded-md text-sm disabled:opacity-50"
             >
-              So'rovni bekor qilish
+              {t('profile.cancelRequestLabel')}
             </button>
           </>
         ) : (
@@ -483,7 +485,7 @@ function AccountTab({ profile }: { profile: ProfileDTO }) {
             onClick={() => setDeleteOpen(true)}
             className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm"
           >
-            Hisobni o'chirishni so'rash
+            {t('profile.requestDeletion')}
           </button>
         )}
       </div>
@@ -498,19 +500,19 @@ function AccountTab({ profile }: { profile: ProfileDTO }) {
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="text-lg font-heading font-semibold text-destructive mb-2">
-              Hisobni o'chirish so'rovi
+              {t('profile.deletionRequestTitle')}
             </h3>
             <p className="text-sm text-muted-foreground mb-3">
-              Bu jarayon admin tomonidan tasdiqlanishi kerak.
+              {t('profile.deletionRequestDesc')}
             </p>
-            <label className="block text-xs font-medium mb-1">Sabab (ixtiyoriy)</label>
+            <label className="block text-xs font-medium mb-1">{t('profile.reasonOptional')}</label>
             <textarea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}
               maxLength={500}
               className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y mb-4"
-              placeholder="Nima uchun hisobni o'chirmoqchisiz?"
+              placeholder={t('profile.reasonPlaceholder')}
             />
             <div className="flex items-center justify-end gap-2">
               <button
@@ -518,13 +520,13 @@ function AccountTab({ profile }: { profile: ProfileDTO }) {
                 disabled={requestMut.isPending}
                 className="px-3 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
               >
-                Bekor
+                {t('profile.cancel')}
               </button>
               <button
                 onClick={() =>
                   requestMut.mutate(reason || null, {
                     onSuccess: () => {
-                      toast.success("So'rov yuborildi");
+                      toast.success(t('profile.requestSubmitted'));
                       setDeleteOpen(false);
                     },
                     onError: (err) => toast.error(err.message),
@@ -536,7 +538,7 @@ function AccountTab({ profile }: { profile: ProfileDTO }) {
                 {requestMut.isPending && (
                   <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 )}
-                So'rovni yuborish
+                {t('profile.sendRequestLabel')}
               </button>
             </div>
           </div>

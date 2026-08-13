@@ -24,10 +24,10 @@ export default function HelpClient() {
       <div className="bg-gradient-to-br from-primary/10 via-background to-warning/5 border-b border-border">
         <div className="max-w-4xl mx-auto px-6 py-12 text-center">
           <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
-            Yordam markazi
+            {t('help.title')}
           </h1>
           <p className="text-sm text-muted-foreground mb-6">
-            Tez-tez beriladigan savollar va javoblar
+            {t('help.subtitle')}
           </p>
 
           <div className="relative max-w-xl mx-auto">
@@ -40,7 +40,7 @@ export default function HelpClient() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Savol qidiring..."
+              placeholder={t('help.searchPlaceholder')}
               className="w-full pl-12 pr-4 py-3 bg-card border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -54,7 +54,7 @@ export default function HelpClient() {
                   : 'bg-card border border-border text-muted-foreground hover:bg-muted'
               }`}
             >
-              Hammasi ({FAQS.length})
+              {t('help.allCount', { count: FAQS.length })}
             </button>
             {(Object.entries(CATEGORY_LABEL) as [FaqCategory, { label: string; icon: string }][]).map(
               ([key, meta]) => {
@@ -82,14 +82,14 @@ export default function HelpClient() {
       <div className="max-w-4xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-4">
           <p className="text-sm text-muted-foreground">
-            {results.length} ta savol topildi
+            {t('help.resultsCount', { count: results.length })}
           </p>
           <Link
             href="/support/tickets"
             className="text-sm text-primary hover:underline inline-flex items-center gap-1"
           >
             <Icon name="ChatBubbleLeftRightIcon" size={14} />
-            Mening murojaatlarim
+            {t('help.myTickets')}
           </Link>
         </div>
 
@@ -101,15 +101,14 @@ export default function HelpClient() {
               className="text-muted-foreground mx-auto mb-3"
             />
             <p className="text-muted-foreground mb-3">
-              Savol topilmadi. Boshqa kalit so'z bilan urinib ko'ring yoki yangi
-              murojaat yozing.
+              {t('help.noResults')}
             </p>
             <Link
               href="/support/tickets/new"
               className="inline-flex items-center gap-1 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm"
             >
               <Icon name="PlusIcon" size={14} />
-              Yangi murojaat
+              {t('help.newTicket')}
             </Link>
           </div>
         ) : (
@@ -151,16 +150,16 @@ export default function HelpClient() {
         )}
 
         <div className="mt-8 p-6 bg-primary/5 border border-primary/30 rounded-md text-center">
-          <h2 className="font-medium text-foreground mb-1">Javob topa olmadingizmi?</h2>
+          <h2 className="font-medium text-foreground mb-1">{t('help.notFoundTitle')}</h2>
           <p className="text-sm text-muted-foreground mb-3">
-            Bizning support jamoamiz sizga yordam beradi
+            {t('help.notFoundSubtitle')}
           </p>
           <Link
             href="/support/tickets/new"
             className="inline-flex items-center gap-1 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium"
           >
             <Icon name="ChatBubbleLeftRightIcon" size={14} />
-            Murojaat yuborish
+            {t('help.sendTicket')}
           </Link>
         </div>
       </div>

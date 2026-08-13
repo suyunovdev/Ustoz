@@ -14,12 +14,12 @@ import { useI18n } from '@/contexts/I18nContext';
 import { formatDateTime } from '@/lib/i18n/format';
 import type { Locale } from '@/lib/i18n';
 
-const STATUS_LABEL: Record<TicketStatusDTO, { label: string; color: string }> = {
-  open: { label: 'Ochiq', color: 'bg-primary/10 text-primary' },
-  in_progress: { label: 'Jarayonda', color: 'bg-warning/10 text-warning' },
-  waiting_user: { label: 'Sizdan kutilmoqda', color: 'bg-secondary/10 text-secondary' },
-  resolved: { label: 'Hal qilingan', color: 'bg-success/10 text-success' },
-  closed: { label: 'Yopilgan', color: 'bg-muted text-muted-foreground' },
+const STATUS_META: Record<TicketStatusDTO, { key: string; color: string }> = {
+  open: { key: 'support.statusOpen', color: 'bg-primary/10 text-primary' },
+  in_progress: { key: 'support.statusInProgress', color: 'bg-warning/10 text-warning' },
+  waiting_user: { key: 'support.statusWaitingUser', color: 'bg-secondary/10 text-secondary' },
+  resolved: { key: 'support.statusResolved', color: 'bg-success/10 text-success' },
+  closed: { key: 'support.statusClosed', color: 'bg-muted text-muted-foreground' },
 };
 
 function timeOfDay(iso: string, locale: Locale): string {
@@ -55,7 +55,7 @@ export default function TicketDetailClient({ ticketId }: Props) {
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
     const text = draft.trim();
-    if (text.length < 2) return toast.error("Xabar kamida 2 belgi");
+    if (text.length < 2) return toast.error(t('support.errReplyMin'));
     replyMut.mutate(text, {
       onSuccess: () => setDraft(''),
       onError: (err) => toast.error(err.message),
@@ -76,7 +76,7 @@ export default function TicketDetailClient({ ticketId }: Props) {
         className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-3"
       >
         <Icon name="ArrowLeftIcon" size={14} />
-        Murojaatlar
+        {t('support.ticketsLink')}
       </Link>
 
       <div className="bg-card border border-border rounded-md p-4 mb-3">
@@ -89,10 +89,10 @@ export default function TicketDetailClient({ ticketId }: Props) {
           </div>
           <span
             className={`text-xs px-3 py-1 rounded-full shrink-0 ${
-              STATUS_LABEL[ticket.status].color
+              STATUS_META[ticket.status].color
             }`}
           >
-            {STATUS_LABEL[ticket.status].label}
+            {t(STATUS_META[ticket.status].key)}
           </span>
         </div>
       </div>
@@ -103,7 +103,7 @@ export default function TicketDetailClient({ ticketId }: Props) {
       >
         {messages.length === 0 ? (
           <p className="text-center text-muted-foreground italic text-sm py-8">
-            Xabar yo'q
+            {t('support.noMessages')}
           </p>
         ) : (
           messages.map((m) => {
@@ -141,7 +141,7 @@ export default function TicketDetailClient({ ticketId }: Props) {
                       }`}
                     >
                       {m.author.fullName}
-                      {isAdmin && ' · Admin'}
+                      {isAdmin && ` · ${t('support.adminLabel')}`}
                     </p>
                   )}
                   <p className="text-sm whitespace-pre-wrap break-words">{m.body}</p>
@@ -161,12 +161,13 @@ export default function TicketDetailClient({ ticketId }: Props) {
 
       {isClosed ? (
         <div className="mt-3 bg-muted/30 text-muted-foreground rounded-md p-4 text-center text-sm">
-          Bu murojaat {ticket.status === 'resolved' ? 'hal qilindi' : 'yopildi'}.
-          Yangi muammo bo'lsa,{' '}
+          {t('support.thisTicket')}{' '}
+          {ticket.status === 'resolved' ? t('support.closedResolved') : t('support.closedClosed')}.{' '}
+          {t('support.newProblemPrompt')}{' '}
           <Link href="/support/tickets/new" className="text-primary hover:underline">
-            yangi murojaat
+            {t('support.newTicketLink')}
           </Link>{' '}
-          yuboring.
+          {t('support.sendVerb')}
         </div>
       ) : (
         <form
@@ -177,14 +178,14 @@ export default function TicketDetailClient({ ticketId }: Props) {
             type="text"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Javob yozing…"
+            placeholder={t('support.replyPlaceholder')}
             className="flex-1 px-3 py-2 bg-muted/30 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-primary"
           />
           <button
             type="submit"
             disabled={!draft.trim() || replyMut.isPending}
             className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center disabled:opacity-50"
-            aria-label="Yuborish"
+            aria-label={t('support.submit')}
           >
             {replyMut.isPending ? (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />

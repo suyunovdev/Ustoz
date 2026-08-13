@@ -10,18 +10,18 @@ import type { TicketPriorityDTO } from '@/hooks/queries/useSupportTickets';
 import { useI18n } from '@/contexts/I18nContext';
 
 const CATEGORIES = [
-  { value: 'billing', label: "To'lovlar" },
-  { value: 'technical', label: 'Texnik muammo' },
-  { value: 'course', label: 'Kurs masalasi' },
-  { value: 'account', label: 'Hisob' },
-  { value: 'other', label: 'Boshqa' },
+  { value: 'billing', labelKey: 'support.categoryBilling' },
+  { value: 'technical', labelKey: 'support.categoryTechnical' },
+  { value: 'course', labelKey: 'support.categoryCourse' },
+  { value: 'account', labelKey: 'support.categoryAccount' },
+  { value: 'other', labelKey: 'support.categoryOther' },
 ];
 
-const PRIORITIES: { value: TicketPriorityDTO; label: string; desc: string }[] = [
-  { value: 'low', label: 'Past', desc: 'Tezkor javob shart emas' },
-  { value: 'normal', label: 'Oddiy', desc: '1-3 ish kuni ichida' },
-  { value: 'high', label: 'Yuqori', desc: '24 soat ichida' },
-  { value: 'urgent', label: 'Shoshilinch', desc: 'Tezkor javob kerak' },
+const PRIORITIES: { value: TicketPriorityDTO; labelKey: string; descKey: string }[] = [
+  { value: 'low', labelKey: 'support.priorityLow', descKey: 'support.priorityLowDesc' },
+  { value: 'normal', labelKey: 'support.priorityNormal', descKey: 'support.priorityNormalDesc' },
+  { value: 'high', labelKey: 'support.priorityHigh', descKey: 'support.priorityHighDesc' },
+  { value: 'urgent', labelKey: 'support.priorityUrgent', descKey: 'support.priorityUrgentDesc' },
 ];
 
 export default function NewTicketClient() {
@@ -35,14 +35,14 @@ export default function NewTicketClient() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (subject.trim().length < 5) return toast.error("Sarlavha kamida 5 belgi");
-    if (message.trim().length < 10) return toast.error("Tavsif kamida 10 belgi");
+    if (subject.trim().length < 5) return toast.error(t('support.errSubjectMin'));
+    if (message.trim().length < 10) return toast.error(t('support.errMessageMin'));
 
     mut.mutate(
       { subject: subject.trim(), category, priority, message: message.trim() },
       {
         onSuccess: ({ ticket }) => {
-          toast.success("Murojaat yuborildi");
+          toast.success(t('support.ticketSent'));
           router.push(`/support/tickets/${ticket.id}`);
         },
         onError: (err) => toast.error(err.message),
@@ -57,17 +57,17 @@ export default function NewTicketClient() {
         className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-3"
       >
         <Icon name="ArrowLeftIcon" size={14} />
-        Mening murojaatlarim
+        {t('support.myTickets')}
       </Link>
 
-      <h1 className="text-2xl font-heading font-semibold mb-2">Yangi murojaat</h1>
+      <h1 className="text-2xl font-heading font-semibold mb-2">{t('support.newTicket')}</h1>
       <p className="text-sm text-muted-foreground mb-6">
-        Mavzuni aniq tasvirlang — bu javobni tezroq olishingizga yordam beradi
+        {t('support.newTicketSubtitle')}
       </p>
 
       <form onSubmit={handleSubmit} className="bg-card border border-border rounded-md p-6 space-y-4">
         <div>
-          <label className="block text-sm font-medium mb-1">Sarlavha *</label>
+          <label className="block text-sm font-medium mb-1">{t('support.subjectLabel')} *</label>
           <input
             type="text"
             value={subject}
@@ -75,13 +75,13 @@ export default function NewTicketClient() {
             required
             minLength={5}
             maxLength={200}
-            placeholder="Qisqacha sarlavha"
+            placeholder={t('support.subjectPlaceholder')}
             className="w-full px-3 py-2 border border-border rounded-md text-sm"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Kategoriya *</label>
+          <label className="block text-sm font-medium mb-1">{t('support.categoryLabel')} *</label>
           <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
             {CATEGORIES.map((c) => (
               <button
@@ -94,14 +94,14 @@ export default function NewTicketClient() {
                     : 'border-border hover:bg-muted'
                 }`}
               >
-                {c.label}
+                {t(c.labelKey)}
               </button>
             ))}
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">Muhimligi *</label>
+          <label className="block text-sm font-medium mb-1">{t('support.priorityLabel')} *</label>
           <div className="grid grid-cols-2 gap-2">
             {PRIORITIES.map((p) => (
               <button
@@ -114,8 +114,8 @@ export default function NewTicketClient() {
                     : 'border-border hover:bg-muted'
                 }`}
               >
-                <p className="text-sm font-medium text-foreground">{p.label}</p>
-                <p className="text-xs text-muted-foreground">{p.desc}</p>
+                <p className="text-sm font-medium text-foreground">{t(p.labelKey)}</p>
+                <p className="text-xs text-muted-foreground">{t(p.descKey)}</p>
               </button>
             ))}
           </div>
@@ -123,7 +123,7 @@ export default function NewTicketClient() {
 
         <div>
           <label className="block text-sm font-medium mb-1">
-            Batafsil tavsif * <span className="text-muted-foreground font-normal">(min 10 belgi)</span>
+            {t('support.descriptionLabel')} * <span className="text-muted-foreground font-normal">{t('support.minCharsHint')}</span>
           </label>
           <textarea
             value={message}
@@ -131,10 +131,10 @@ export default function NewTicketClient() {
             required
             minLength={10}
             rows={6}
-            placeholder="Muammo nima? Qanday harakatlar amalga oshirgansiz? Qanday natija kutgan edingiz?"
+            placeholder={t('support.messagePlaceholder')}
             className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
           />
-          <p className="text-xs text-muted-foreground mt-1">{message.length} belgi</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('support.charCount', { count: message.length })}</p>
         </div>
 
         <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
@@ -142,7 +142,7 @@ export default function NewTicketClient() {
             href="/support/tickets"
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm"
           >
-            Bekor
+            {t('support.cancel')}
           </Link>
           <button
             type="submit"
@@ -152,7 +152,7 @@ export default function NewTicketClient() {
             {mut.isPending && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Yuborish
+            {t('support.submit')}
           </button>
         </div>
       </form>

@@ -52,7 +52,7 @@ export default function CertificatePage() {
   const handleLinkedInShare = () => {
     if (!certificate) return;
     const url = encodeURIComponent(certificate.verification_url);
-    const title = encodeURIComponent(`Ustoz platformasida "${certificate.metadata?.course_title}" kursini yakunladim!`);
+    const title = encodeURIComponent(t('certificate.shareTitle', { course: certificate.metadata?.course_title }));
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&title=${title}`, '_blank');
   };
 
@@ -68,12 +68,12 @@ export default function CertificatePage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">
         <Icon name="DocumentIcon" size={48} className="text-foreground/20 mb-4" />
-        <h2 className="text-xl font-semibold text-foreground mb-2">Sertifikat topilmadi</h2>
+        <h2 className="text-xl font-semibold text-foreground mb-2">{t('certificate.notFound')}</h2>
         <button
           onClick={() => router.push('/student-dashboard')}
           className="mt-4 text-primary hover:underline text-sm"
         >
-          Dashboard'ga qaytish
+          {t('certificate.backToDashboard')}
         </button>
       </div>
     );
@@ -96,7 +96,7 @@ export default function CertificatePage() {
           <Icon name="ArrowLeftIcon" size={16} />
           <span className="text-sm">{t('common.back')}</span>
         </button>
-        <h1 className="font-semibold text-foreground">Mening sertifikatim</h1>
+        <h1 className="font-semibold text-foreground">{t('certificate.myCertificate')}</h1>
         <div className="w-20" />
       </div>
 
@@ -112,25 +112,25 @@ export default function CertificatePage() {
           <div className="p-10 text-center space-y-5">
             <div>
               <h1 className="text-4xl font-black tracking-widest text-primary mb-1">USTOZ</h1>
-              <p className="text-gray-400 text-xs uppercase tracking-widest">Online Ta'lim Platformasi</p>
+              <p className="text-gray-400 text-xs uppercase tracking-widest">{t('certificate.platformTagline')}</p>
             </div>
 
             <div className="w-20 h-0.5 bg-primary/20 mx-auto" />
 
             <div>
-              <p className="text-gray-500 text-sm mb-2">Ushbu sertifikat taqdim etiladi</p>
+              <p className="text-gray-500 text-sm mb-2">{t('certificate.awardedTo')}</p>
               <h2 className="text-3xl font-bold text-gray-800">
                 {certificate.metadata?.student_name || certificate.student?.full_name}
               </h2>
             </div>
 
             <div>
-              <p className="text-gray-500 text-sm">muvaffaqiyatli yakunlaganligi uchun</p>
+              <p className="text-gray-500 text-sm">{t('certificate.forCompleting')}</p>
               <h3 className="text-2xl font-semibold text-primary mt-2">
                 {certificate.metadata?.course_title || certificate.course?.title}
               </h3>
               <p className="text-gray-400 text-sm mt-1">
-                O'qituvchi: {certificate.metadata?.teacher_name || certificate.course?.teacher?.full_name}
+                {t('certificate.teacher')}: {certificate.metadata?.teacher_name || certificate.course?.teacher?.full_name}
               </p>
             </div>
 
@@ -138,11 +138,11 @@ export default function CertificatePage() {
 
             <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
               <div>
-                <p className="text-xs text-gray-400 mb-0.5">Sana</p>
+                <p className="text-xs text-gray-400 mb-0.5">{t('certificate.date')}</p>
                 <p className="font-medium">{issuedDate}</p>
               </div>
               <div>
-                <p className="text-xs text-gray-400 mb-0.5">Sertifikat №</p>
+                <p className="text-xs text-gray-400 mb-0.5">{t('certificate.number')}</p>
                 <p className="font-mono font-semibold text-primary">{certificate.certificate_number}</p>
               </div>
             </div>
@@ -159,7 +159,7 @@ export default function CertificatePage() {
             className="flex items-center justify-center gap-2 border border-border bg-card text-foreground px-4 py-3 rounded-xl font-medium hover:bg-accent transition-colors text-sm"
           >
             <Icon name={copied ? 'CheckIcon' : 'LinkIcon'} size={16} />
-            {copied ? 'Nusxalandi!' : 'Havolani nusxalash'}
+            {copied ? t('certificate.copied') : t('certificate.copyLink')}
           </button>
 
           <button
@@ -167,7 +167,7 @@ export default function CertificatePage() {
             className="flex items-center justify-center gap-2 bg-[#0077B5] text-white px-4 py-3 rounded-xl font-medium hover:bg-[#006396] transition-colors text-sm"
           >
             <Icon name="ShareIcon" size={16} />
-            LinkedIn'da ulashish
+            {t('certificate.shareLinkedIn')}
           </button>
 
           <a
@@ -177,13 +177,13 @@ export default function CertificatePage() {
             className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors text-sm"
           >
             <Icon name="ShieldCheckIcon" size={16} />
-            Verifikatsiya
+            {t('certificate.verify')}
           </a>
         </div>
 
         {/* Verifikatsiya URL */}
         <div className="bg-card border border-border rounded-xl p-4">
-          <p className="text-xs text-foreground/50 mb-1">Verifikatsiya havolasi</p>
+          <p className="text-xs text-foreground/50 mb-1">{t('certificate.verificationLink')}</p>
           <p className="text-sm font-mono text-primary break-all">{certificate.verification_url}</p>
         </div>
       </div>

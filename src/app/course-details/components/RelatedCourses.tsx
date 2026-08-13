@@ -9,7 +9,7 @@ interface RelatedCoursesProps {
 }
 
 const RelatedCourses = ({ currentCourseId }: RelatedCoursesProps) => {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const relatedCourses = [
   {
     id: '2',
@@ -45,7 +45,7 @@ const RelatedCourses = ({ currentCourseId }: RelatedCoursesProps) => {
 
   return (
     <div className="mt-12">
-      <h2 className="text-2xl font-heading font-bold text-foreground mb-6">O\'xshash kurslar</h2>
+      <h2 className="text-2xl font-heading font-bold text-foreground mb-6">{t('courseDetails.relatedCourses')}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {relatedCourses.map((course) =>
         <Link

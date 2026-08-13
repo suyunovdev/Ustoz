@@ -53,199 +53,82 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
     { value: 'all_levels', label: t('misc.allLevels') },
   ];
 
-  // Universal kategoriya guruhlari
+  // Universal kategoriya guruhlari (label -> categories.* tarjima kaliti orqali)
+  const cat = (value: string) => ({ value, label: t('categories.' + value) });
   const subjectGroups: Array<{ group: string; options: { value: string; label: string }[] }> = [
     {
-      group: 'Tabiiy fanlar',
-      options: [
-        { value: 'mathematics', label: 'Matematika' },
-        { value: 'physics', label: 'Fizika' },
-        { value: 'chemistry', label: 'Kimyo' },
-        { value: 'biology', label: 'Biologiya' },
-        { value: 'geometry', label: 'Geometriya' },
-        { value: 'algebra', label: 'Algebra' },
-        { value: 'astronomy', label: 'Astronomiya' },
-        { value: 'ecology', label: 'Ekologiya' },
-      ],
+      group: t('marketplace.groupNaturalSciences'),
+      options: ['mathematics', 'physics', 'chemistry', 'biology', 'geometry', 'algebra', 'astronomy', 'ecology'].map(cat),
     },
     {
-      group: 'Dasturlash va IT',
-      options: [
-        { value: 'informatics', label: 'Informatika' },
-        { value: 'programming', label: 'Dasturlash' },
-        { value: 'web_development', label: 'Web Development' },
-        { value: 'mobile_development', label: 'Mobile Development' },
-        { value: 'data_science', label: 'Data Science' },
-        { value: 'artificial_intelligence', label: "Sun\'iy Intellekt" },
-      ],
+      group: t('marketplace.groupProgrammingIt'),
+      options: ['informatics', 'programming', 'web_development', 'mobile_development', 'data_science', 'artificial_intelligence'].map(cat),
     },
     {
-      group: 'Tillar',
-      options: [
-        { value: 'uzbek_language', label: "O\'zbek tili" },
-        { value: 'english_language', label: 'Ingliz tili' },
-        { value: 'russian_language', label: 'Rus tili' },
-        { value: 'arabic_language', label: 'Arab tili' },
-        { value: 'chinese_language', label: 'Xitoy tili' },
-        { value: 'korean_language', label: 'Koreys tili' },
-        { value: 'german_language', label: 'Nemis tili' },
-        { value: 'french_language', label: 'Fransuz tili' },
-        { value: 'turkish_language', label: 'Turk tili' },
-        { value: 'spanish_language', label: 'Ispan tili' },
-        { value: 'japanese_language', label: 'Yapon tili' },
-      ],
+      group: t('marketplace.groupLanguages'),
+      options: ['uzbek_language', 'english_language', 'russian_language', 'arabic_language', 'chinese_language', 'korean_language', 'german_language', 'french_language', 'turkish_language', 'spanish_language', 'japanese_language'].map(cat),
     },
     {
-      group: 'Gumanitar fanlar',
-      options: [
-        { value: 'history', label: 'Tarix' },
-        { value: 'geography', label: 'Geografiya' },
-        { value: 'philosophy', label: 'Falsafa' },
-        { value: 'literature', label: 'Adabiyot' },
-        { value: 'sociology', label: 'Sotsiologiya' },
-      ],
+      group: t('marketplace.groupHumanities'),
+      options: ['history', 'geography', 'philosophy', 'literature', 'sociology'].map(cat),
     },
     {
-      group: "San\'at va ijodiyot",
-      options: [
-        { value: 'music', label: 'Musiqa' },
-        { value: 'singing', label: 'Ashula' },
-        { value: 'painting', label: 'Rangtasvir' },
-        { value: 'drawing', label: 'Rasm chizish' },
-        { value: 'photography', label: 'Fotografiya' },
-        { value: 'videography', label: 'Videografiya' },
-        { value: 'cinema', label: 'Kino' },
-        { value: 'theater', label: 'Teatr' },
-        { value: 'dance', label: 'Raqs' },
-        { value: 'design', label: 'Dizayn' },
-      ],
+      group: t('marketplace.groupArtCreativity'),
+      options: ['music', 'singing', 'painting', 'drawing', 'photography', 'videography', 'cinema', 'theater', 'dance', 'design'].map(cat),
     },
     {
-      group: 'Hunarmandchilik',
-      options: [
-        { value: 'pottery', label: 'Kulolchilik' },
-        { value: 'woodworking', label: "Yog\'och ustachiligi" },
-        { value: 'sewing', label: 'Tikuvchilik' },
-        { value: 'knitting', label: "To\'qish" },
-        { value: 'embroidery', label: 'Kashtachilik' },
-        { value: 'handcraft', label: "Qo\'l hunari" },
-        { value: 'jewelry', label: 'Zargarlik' },
-      ],
+      group: t('marketplace.groupHandicrafts'),
+      options: ['pottery', 'woodworking', 'sewing', 'knitting', 'embroidery', 'handcraft', 'jewelry'].map(cat),
     },
     {
-      group: 'Kasb-hunar',
-      options: [
-        { value: 'cooking', label: 'Pazandachilik' },
-        { value: 'confectionery', label: 'Qandolatchilik' },
-        { value: 'barbering', label: 'Sartaroshlik' },
-        { value: 'hairstyling', label: 'Soch turmaklash' },
-        { value: 'makeup', label: 'Vizaj' },
-        { value: 'manicure', label: 'Manikyur' },
-        { value: 'tailoring', label: 'Bichuv-tikuv' },
-      ],
+      group: t('marketplace.groupVocational'),
+      options: ['cooking', 'confectionery', 'barbering', 'hairstyling', 'makeup', 'manicure', 'tailoring'].map(cat),
     },
     {
-      group: 'Sport va salomatlik',
-      options: [
-        { value: 'fitness', label: 'Fitnes' },
-        { value: 'yoga', label: 'Yoga' },
-        { value: 'football', label: 'Futbol' },
-        { value: 'basketball', label: 'Basketbol' },
-        { value: 'martial_arts', label: "Jang san\'atlari" },
-        { value: 'swimming', label: 'Suzish' },
-        { value: 'chess', label: 'Shaxmat' },
-        { value: 'nutrition', label: "To\'g\'ri ovqatlanish" },
-        { value: 'sports_general', label: 'Sport (umumiy)' },
-      ],
+      group: t('marketplace.groupSportsHealth'),
+      options: ['fitness', 'yoga', 'football', 'basketball', 'martial_arts', 'swimming', 'chess', 'nutrition', 'sports_general'].map(cat),
     },
     {
-      group: 'Tibbiyot va psixologiya',
-      options: [
-        { value: 'pharmacy', label: 'Farmatsevtika' },
-        { value: 'nursing', label: 'Hamshiralik' },
-        { value: 'psychology', label: 'Psixologiya' },
-        { value: 'medicine_general', label: 'Tibbiyot (umumiy)' },
-        { value: 'first_aid', label: 'Ilk tibbiy yordam' },
-      ],
+      group: t('marketplace.groupMedicinePsychology'),
+      options: ['pharmacy', 'nursing', 'psychology', 'medicine_general', 'first_aid'].map(cat),
     },
     {
-      group: 'Huquq',
-      options: [
-        { value: 'law_general', label: 'Huquq (umumiy)' },
-        { value: 'civil_law', label: 'Fuqarolik huquqi' },
-        { value: 'tax_law', label: 'Soliq huquqi' },
-      ],
+      group: t('marketplace.groupLaw'),
+      options: ['law_general', 'civil_law', 'tax_law'].map(cat),
     },
     {
-      group: "Qishloq xo\'jaligi",
-      options: [
-        { value: 'agriculture', label: 'Dehqonchilik' },
-        { value: 'gardening', label: "Bog\'dorchilik" },
-        { value: 'livestock', label: 'Chorvachilik' },
-        { value: 'beekeeping', label: 'Asalarichilik' },
-      ],
+      group: t('marketplace.groupAgriculture'),
+      options: ['agriculture', 'gardening', 'livestock', 'beekeeping'].map(cat),
     },
     {
-      group: 'Texnika va muhandislik',
-      options: [
-        { value: 'engineering_general', label: 'Muhandislik (umumiy)' },
-        { value: 'electrical', label: 'Elektrik' },
-        { value: 'mechanics', label: 'Mexanika' },
-        { value: 'construction', label: 'Qurilish' },
-        { value: 'automotive', label: 'Avto' },
-        { value: 'plumbing', label: 'Santexnika' },
-      ],
+      group: t('marketplace.groupEngineering'),
+      options: ['engineering_general', 'electrical', 'mechanics', 'construction', 'automotive', 'plumbing'].map(cat),
     },
     {
-      group: 'Biznes va boshqaruv',
-      options: [
-        { value: 'business_management', label: 'Biznes boshqaruvi' },
-        { value: 'entrepreneurship', label: 'Tadbirkorlik' },
-        { value: 'marketing', label: 'Marketing' },
-        { value: 'finance', label: 'Moliya' },
-        { value: 'accounting', label: 'Buxgalteriya' },
-        { value: 'logistics', label: 'Logistika' },
-        { value: 'project_management', label: 'Loyiha boshqaruvi' },
-        { value: 'hr_management', label: 'HR boshqaruvi' },
-      ],
+      group: t('marketplace.groupBusinessManagement'),
+      options: ['business_management', 'entrepreneurship', 'marketing', 'finance', 'accounting', 'logistics', 'project_management', 'hr_management'].map(cat),
     },
     {
-      group: 'Shaxsiy rivojlanish',
-      options: [
-        { value: 'leadership', label: 'Yetakchilik' },
-        { value: 'public_speaking', label: 'Notiqlik' },
-        { value: 'time_management', label: 'Vaqt boshqaruvi' },
-        { value: 'sales', label: 'Sotuv' },
-        { value: 'negotiation', label: 'Muzokara olib borish' },
-        { value: 'personal_development', label: 'Shaxsiy rivojlanish' },
-      ],
+      group: t('marketplace.groupPersonalDevelopment'),
+      options: ['leadership', 'public_speaking', 'time_management', 'sales', 'negotiation', 'personal_development'].map(cat),
     },
     {
-      group: 'Bolalar va ota-onalar',
-      options: [
-        { value: 'early_development', label: 'Erta rivojlanish' },
-        { value: 'parenting', label: 'Ota-onalik' },
-        { value: 'child_psychology', label: 'Bola psixologiyasi' },
-      ],
+      group: t('marketplace.groupChildrenParents'),
+      options: ['early_development', 'parenting', 'child_psychology'].map(cat),
     },
     {
-      group: "Din va ma\'naviyat",
-      options: [
-        { value: 'religion_islam', label: 'Islom asoslari' },
-        { value: 'quran_studies', label: "Qur\'on ilmlari" },
-        { value: 'arabic_studies', label: 'Arab tili (diniy)' },
-        { value: 'religion_general', label: 'Din (umumiy)' },
-      ],
+      group: t('marketplace.groupReligionSpirituality'),
+      options: ['religion_islam', 'quran_studies', 'arabic_studies', 'religion_general'].map(cat),
     },
     {
-      group: 'Boshqa',
-      options: [{ value: 'other', label: 'Boshqa' }],
+      group: t('marketplace.groupOther'),
+      options: ['other'].map(cat),
     },
   ];
 
   const gradeLevels = Array.from({ length: 11 }, (_, i) => ({
     value: String(i + 1),
-    label: `${i + 1}-sinf`
+    label: t('marketplace.gradeLevel', { grade: i + 1 })
   }));
 
   const isSchoolAudience =
@@ -352,7 +235,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
               </div>
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground w-12">Min:</span>
+                  <span className="text-sm text-muted-foreground w-12">{t('marketplace.min')}:</span>
                   <input
                     type="number"
                     value={localFilters.priceRange[0]}
@@ -362,7 +245,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
                   />
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground w-12">Max:</span>
+                  <span className="text-sm text-muted-foreground w-12">{t('marketplace.max')}:</span>
                   <input
                     type="number"
                     value={localFilters.priceRange[1]}

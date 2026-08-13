@@ -1,4 +1,5 @@
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface CurriculumSection {
   id: string;
@@ -20,6 +21,7 @@ interface CourseCurriculumProps {
 }
 
 const CourseCurriculum = ({ sections, expandedSections, onToggleSection }: CourseCurriculumProps) => {
+  const { t } = useI18n();
   const totalTopics = sections.reduce((acc, section) => acc + section.topics.length, 0);
   const totalDuration = sections.reduce((acc, section) => {
     return acc + section.topics.reduce((topicAcc, topic) => {
@@ -37,9 +39,9 @@ const CourseCurriculum = ({ sections, expandedSections, onToggleSection }: Cours
   return (
     <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-heading font-bold text-foreground">O\'quv dasturi</h2>
+        <h2 className="text-2xl font-heading font-bold text-foreground">{t('courseDetails.curriculum')}</h2>
         <div className="text-sm text-muted-foreground">
-          {sections.length} bo\'lim • {totalTopics} mavzu • {formatTotalDuration(totalDuration)}
+          {sections.length} {t('courseDetails.sections')} • {totalTopics} {t('courseDetails.topics')} • {formatTotalDuration(totalDuration)}
         </div>
       </div>
 
@@ -67,7 +69,7 @@ const CourseCurriculum = ({ sections, expandedSections, onToggleSection }: Cours
                   <span className="font-semibold text-foreground">{section.title}</span>
                 </div>
                 <div className="text-sm text-muted-foreground">
-                  {section.topics.length} mavzu • {Math.floor(sectionDuration / 60)}d
+                  {section.topics.length} {t('courseDetails.topics')} • {Math.floor(sectionDuration / 60)}d
                 </div>
               </button>
 
@@ -94,12 +96,12 @@ const CourseCurriculum = ({ sections, expandedSections, onToggleSection }: Cours
                         {topic.hasQuiz && (
                           <div className="flex items-center space-x-1 text-xs text-accent">
                             <Icon name="AcademicCapIcon" size={16} />
-                            <span>Test</span>
+                            <span>{t('courseDetails.test')}</span>
                           </div>
                         )}
                         {topic.hasPreview && !topic.isLocked && (
                           <button className="text-xs text-primary hover:underline">
-                            Ko\'rish
+                            {t('courseDetails.preview')}
                           </button>
                         )}
                         <span className="text-xs text-muted-foreground font-data">

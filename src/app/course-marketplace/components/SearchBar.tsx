@@ -44,7 +44,7 @@ const SearchBar = ({ onSearch, placeholder }: SearchBarProps) => {
             type="button"
             onClick={handleClear}
             className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-smooth"
-            aria-label="Clear search"
+            aria-label={t('marketplace.clearSearch')}
           >
             <Icon name="XMarkIcon" size={20} className="text-muted-foreground" />
           </button>

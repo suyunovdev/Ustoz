@@ -19,7 +19,7 @@ interface CourseSidebarProps {
 }
 
 const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps) => {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <div className="sticky top-24 space-y-4">
       {/* Pricing Card */}
@@ -40,23 +40,23 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
           disabled={isPurchasing}
           className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isPurchasing ? 'Yuklanmoqda...' : 'Kursni sotib olish'}
+          {isPurchasing ? t('courseDetails.loading') : t('courseDetails.buyCourse')}
         </button>
 
         <p className="text-xs text-center text-muted-foreground">
-          30 kunlik pul qaytarish kafolati
+          {t('courseDetails.refundGuarantee')}
         </p>
       </div>
 
       {/* Course Info Card */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
-        <h3 className="font-heading font-semibold text-foreground">Kurs ma\'lumotlari</h3>
+        <h3 className="font-heading font-semibold text-foreground">{t('courseDetails.courseInfo')}</h3>
         
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-muted-foreground">
               <Icon name="ClockIcon" size={18} />
-              <span className="text-sm">Davomiyligi</span>
+              <span className="text-sm">{t('courseDetails.duration')}</span>
             </div>
             <span className="text-sm font-medium text-foreground">{course.totalDuration}</span>
           </div>
@@ -64,7 +64,7 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-muted-foreground">
               <Icon name="UserGroupIcon" size={18} />
-              <span className="text-sm">O\'quvchilar</span>
+              <span className="text-sm">{t('courseDetails.students')}</span>
             </div>
             <span className="text-sm font-medium text-foreground">
               {formatNumber(course.enrollmentCount, locale)}
@@ -74,7 +74,7 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-muted-foreground">
               <Icon name="LanguageIcon" size={18} />
-              <span className="text-sm">Til</span>
+              <span className="text-sm">{t('courseDetails.language')}</span>
             </div>
             <span className="text-sm font-medium text-foreground">{course.language}</span>
           </div>
@@ -82,7 +82,7 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-muted-foreground">
               <Icon name="CalendarIcon" size={18} />
-              <span className="text-sm">Yangilangan</span>
+              <span className="text-sm">{t('courseDetails.updated')}</span>
             </div>
             <span className="text-sm font-medium text-foreground">
               {formatDate(course.lastUpdated, locale)}
@@ -93,7 +93,7 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2 text-muted-foreground">
                 <Icon name="AcademicCapIcon" size={18} />
-                <span className="text-sm">Sertifikat</span>
+                <span className="text-sm">{t('courseDetails.certificate')}</span>
               </div>
               <Icon name="CheckCircleIcon" size={18} variant="solid" className="text-success" />
             </div>
@@ -103,7 +103,7 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
 
       {/* Share Card */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-3">
-        <h3 className="font-heading font-semibold text-foreground">Ulashish</h3>
+        <h3 className="font-heading font-semibold text-foreground">{t('courseDetails.share')}</h3>
         <div className="flex items-center space-x-2">
           <button className="flex-1 p-2 bg-muted rounded-md hover:bg-muted/80 transition-smooth">
             <Icon name="ShareIcon" size={20} className="mx-auto text-foreground" />
