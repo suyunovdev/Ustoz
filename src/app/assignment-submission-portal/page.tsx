@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -199,8 +198,7 @@ const AssignmentSubmissionPortalInteractive = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <RoleBasedHeader userRole="student" currentPath="/assignment-submission-portal" />
-        <main className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+        <main className="py-8 px-4 sm:px-6 lg:px-8">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-center h-64">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -213,9 +211,8 @@ const AssignmentSubmissionPortalInteractive = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <RoleBasedHeader userRole="student" currentPath="/assignment-submission-portal" />
       
-      <main className="pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+      <main className="py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">

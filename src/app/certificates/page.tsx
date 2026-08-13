@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import CertificatesPageClient from './CertificatesPageClient';
 
 export const metadata: Metadata = {
@@ -8,10 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function CertificatesPage() {
-  return (
-    <>
-      <RoleBasedHeader userRole="student" currentPath="/certificates" />
-      <CertificatesPageClient />
-    </>
-  );
+  return <CertificatesPageClient />;
 }

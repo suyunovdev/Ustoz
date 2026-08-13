@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import TransactionHistoryInteractive from './components/TransactionHistoryInteractive';
 
 export const metadata: Metadata = {
@@ -8,10 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function TransactionHistoryPage() {
-  return (
-    <>
-      <RoleBasedHeader userRole="student" currentPath="/transaction-history" />
-      <TransactionHistoryInteractive />
-    </>
-  );
+  return <TransactionHistoryInteractive />;
 }
