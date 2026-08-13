@@ -174,7 +174,7 @@ const StudentDashboardInteractive = () => {
 
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-background pt-20 pb-8 px-4">
+      <div className="min-h-screen bg-background py-8 px-4">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse space-y-6">
             <div className="h-40 bg-muted rounded-md"></div>
@@ -190,7 +190,7 @@ const StudentDashboardInteractive = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-20 pb-8">
+    <div className="min-h-screen bg-background py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}

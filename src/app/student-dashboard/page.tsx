@@ -6,7 +6,6 @@ import {
   dehydrate,
 } from '@tanstack/react-query';
 
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import StudentDashboardInteractive from './components/StudentDashboardInteractive';
 import { getSession } from '@/lib/auth';
 import { loadDashboardData } from '@/lib/services/dashboard.service';
@@ -47,11 +46,8 @@ export default async function StudentDashboardPage() {
   const dehydratedState = dehydrate(queryClient);
 
   return (
-    <>
-      <RoleBasedHeader userRole="student" currentPath="/student-dashboard" />
-      <HydrationBoundary state={dehydratedState}>
-        <StudentDashboardInteractive />
-      </HydrationBoundary>
-    </>
+    <HydrationBoundary state={dehydratedState}>
+      <StudentDashboardInteractive />
+    </HydrationBoundary>
   );
 }
