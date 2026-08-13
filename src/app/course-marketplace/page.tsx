@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import dynamic from 'next/dynamic';
 
 // Dynamic import to fix chunk loading issues
@@ -28,10 +27,5 @@ export const metadata: Metadata = {
 };
 
 export default function CourseMarketplacePage() {
-  return (
-    <>
-      <RoleBasedHeader userRole="student" currentPath="/course-marketplace" />
-      <MarketplaceInteractive />
-    </>
-  );
+  return <MarketplaceInteractive />;
 }
