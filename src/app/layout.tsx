@@ -8,6 +8,7 @@ import { Toaster } from '@/components/common/Toaster';
 import CookieConsent from '@/components/common/CookieConsent';
 import Analytics from '@/components/common/Analytics';
 import { CookieConsentProvider } from '@/contexts/CookieConsentContext';
+import { getServerLocale } from '@/lib/i18n/server';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -55,11 +56,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // SSR'da `<html lang>` cookie tiliga mos bo'lishi uchun (SEO + a11y).
+  // Client'da quyidagi inline script localStorage bo'yicha yana bir bor
+  // moslashtiradi (cookie va localStorage saveLocale'da sinxron saqlanadi).
+  const serverLocale = await getServerLocale();
   // Inline script to apply theme before paint (prevents flash of wrong theme)
   const themeScript = `
     (function() {
@@ -74,7 +79,7 @@ export default function RootLayout({
   `;
 
   return (
-    <html lang="uz" suppressHydrationWarning>
+    <html lang={serverLocale} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="manifest" href="/manifest.json" />
