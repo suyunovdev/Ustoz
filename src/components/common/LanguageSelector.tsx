@@ -18,12 +18,10 @@ interface LanguageSelectorProps {
 }
 
 const LanguageSelector = ({
-  defaultLanguage = 'uz',
   onLanguageChange
 }: LanguageSelectorProps) => {
-  const { locale, setLocale } = useI18n();
+  const { locale, setLocale, t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState(locale || defaultLanguage);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const languages: Language[] = [
@@ -32,7 +30,7 @@ const LanguageSelector = ({
     { code: 'en', name: 'English', nativeName: 'English', flag: '🇬🇧' },
   ];
 
-  const currentLanguage = languages.find(lang => lang.code === selectedLanguage) || languages[0];
+  const currentLanguage = languages.find(lang => lang.code === locale) || languages[0];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -59,7 +57,6 @@ const LanguageSelector = ({
   }, [isOpen]);
 
   const handleLanguageSelect = (languageCode: string) => {
-    setSelectedLanguage(languageCode as Locale);
     setLocale(languageCode as Locale);
     setIsOpen(false);
     if (onLanguageChange) {
@@ -73,7 +70,7 @@ const LanguageSelector = ({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-3 py-2 rounded-md text-foreground hover:bg-muted transition-smooth"
-        aria-label="Select language"
+        aria-label={t('common.selectLanguage')}
         aria-expanded={isOpen}
       >
         <span className="text-xl">{currentLanguage.flag}</span>
@@ -86,7 +83,7 @@ const LanguageSelector = ({
         <div className="hidden md:block absolute top-full right-0 mt-2 w-56 bg-popover rounded-md shadow-warm-lg border border-border z-200 overflow-hidden">
           <div className="py-2">
             {languages.map((language, index) => {
-              const isSelected = language.code === selectedLanguage;
+              const isSelected = language.code === locale;
               return (
                 <button
                   key={language.code}
@@ -120,18 +117,18 @@ const LanguageSelector = ({
       {isOpen && (
         <div className="md:hidden fixed inset-0 bg-background z-300 flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <h3 className="text-lg font-heading font-semibold">Select Language</h3>
+            <h3 className="text-lg font-heading font-semibold">{t('common.selectLanguage')}</h3>
             <button
               onClick={() => setIsOpen(false)}
               className="p-2 rounded-md hover:bg-muted transition-smooth"
-              aria-label="Close language selector"
+              aria-label={t('common.close')}
             >
               <Icon name="XMarkIcon" size={24} />
             </button>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-2">
             {languages.map((language) => {
-              const isSelected = language.code === selectedLanguage;
+              const isSelected = language.code === locale;
               return (
                 <button
                   key={language.code}

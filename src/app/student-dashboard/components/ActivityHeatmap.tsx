@@ -15,6 +15,7 @@
 
 import { useMemo } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
+import { LOCALE_TAG, type Locale } from '@/lib/i18n';
 
 interface ActivityRow {
   date: string;
@@ -36,14 +37,23 @@ interface DayCell {
   isOffset: boolean;
 }
 
-const UZ_MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
-const UZ_MONTH_FULL = [
-  'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
-  'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr',
-];
+// Locale-aware oy/hafta nomlari (Intl orqali — foydalanuvchi tiliga mos)
+function monthShort(monthIndex: number, locale: Locale): string {
+  return new Date(Date.UTC(2000, monthIndex, 1)).toLocaleDateString(LOCALE_TAG[locale], {
+    month: 'short',
+    timeZone: 'UTC',
+  });
+}
+function weekdayShort(dow: number, locale: Locale): string {
+  // dow: 0=Yak..6=Shan; 2024-01-07 — yakshanba
+  return new Date(Date.UTC(2024, 0, 7 + dow)).toLocaleDateString(LOCALE_TAG[locale], {
+    weekday: 'short',
+    timeZone: 'UTC',
+  });
+}
 // Dush yuqorida → Yak pastda
 const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Mon..Sat, Sun
-const WEEKDAY_LABELS: Record<number, string> = { 1: 'Du', 3: 'Cho', 5: 'Ju', 0: 'Ya' };
+const LABELED_WEEKDAYS = new Set([1, 3, 5, 0]); // faqat Du/Cho/Ju/Ya belgilanadi
 
 function getColor(count: number): string {
   if (count === 0) return 'bg-muted dark:bg-muted';
@@ -63,10 +73,14 @@ function toIsoDate(d: Date): string {
   return d.toISOString().split('T')[0];
 }
 
-function formatUzDate(iso: string): string {
-  // "2026-05-27" → "27 may 2026"
-  const [y, m, d] = iso.split('-').map(Number);
-  return `${d} ${UZ_MONTH_FULL[m - 1]} ${y}`;
+function formatCellDate(iso: string, locale: Locale): string {
+  // "2026-05-27" → tilга mos to'liq sana
+  return new Date(iso + 'T00:00:00Z').toLocaleDateString(LOCALE_TAG[locale], {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
 }
 
 /**
@@ -113,7 +127,7 @@ function buildWeeks(activities: ActivityRow[], days: number): DayCell[][] {
 /**
  * Har sutun yuqorisida oy nomi (faqat birinchi sutun yoki oy o'zgarganda).
  */
-function buildMonthLabels(weeks: DayCell[][]): Array<string | null> {
+function buildMonthLabels(weeks: DayCell[][], locale: Locale): Array<string | null> {
   const labels: Array<string | null> = [];
   let lastMonth = -1;
   for (const week of weeks) {
@@ -124,7 +138,7 @@ function buildMonthLabels(weeks: DayCell[][]): Array<string | null> {
       continue;
     }
     if (firstReal.monthIndex !== lastMonth) {
-      labels.push(UZ_MONTHS[firstReal.monthIndex]);
+      labels.push(monthShort(firstReal.monthIndex, locale));
       lastMonth = firstReal.monthIndex;
     } else {
       labels.push(null);
@@ -134,9 +148,9 @@ function buildMonthLabels(weeks: DayCell[][]): Array<string | null> {
 }
 
 const ActivityHeatmap = ({ activities, days = 90, className = '' }: ActivityHeatmapProps) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const weeks = useMemo(() => buildWeeks(activities, days), [activities, days]);
-  const monthLabels = useMemo(() => buildMonthLabels(weeks), [weeks]);
+  const monthLabels = useMemo(() => buildMonthLabels(weeks, locale), [weeks, locale]);
 
   const totalActiveDays = activities.filter((a) => a.topicsCompleted > 0).length;
   const totalTopics = activities.reduce((sum, a) => sum + a.topicsCompleted, 0);
@@ -186,7 +200,7 @@ const ActivityHeatmap = ({ activities, days = 90, className = '' }: ActivityHeat
                   className="w-3 h-3 text-[10px] text-muted-foreground flex items-center"
                   style={{ width: 18 }}
                 >
-                  {WEEKDAY_LABELS[wd] || ''}
+                  {LABELED_WEEKDAYS.has(wd) ? weekdayShort(wd, locale) : ''}
                 </div>
               ))}
             </div>
@@ -201,8 +215,8 @@ const ActivityHeatmap = ({ activities, days = 90, className = '' }: ActivityHeat
                   }
                   const title =
                     cell.count > 0
-                      ? `${formatUzDate(cell.date)}: ${cell.count} ${t('student.topicsCompleted')}`
-                      : `${formatUzDate(cell.date)}: ${t('student.noActivity')}`;
+                      ? `${formatCellDate(cell.date, locale)}: ${cell.count} ${t('student.topicsCompleted')}`
+                      : `${formatCellDate(cell.date, locale)}: ${t('student.noActivity')}`;
                   return (
                     <div
                       key={wd}

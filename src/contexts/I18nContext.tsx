@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import {
   type Locale,
+  type TParams,
   DEFAULT_LOCALE,
   getTranslation,
   getLocaleFromStorage,
@@ -12,7 +13,7 @@ import {
 interface I18nContextValue {
   locale: Locale;
   setLocale: (locale: Locale) => void;
-  t: (key: string) => string;
+  t: (key: string, params?: TParams) => string;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -32,13 +33,20 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     setLocaleState(getLocaleFromStorage());
   }, []);
 
+  // <html lang> ni joriy tilga moslash (a11y + SEO; skrinreader to'g'ri o'qiydi)
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.lang = locale;
+    }
+  }, [locale]);
+
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
     saveLocaleToStorage(newLocale);
   }, []);
 
   const t = useCallback(
-    (key: string) => getTranslation(locale, key),
+    (key: string, params?: TParams) => getTranslation(locale, key, params),
     [locale],
   );
 

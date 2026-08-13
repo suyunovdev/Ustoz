@@ -67,6 +67,8 @@ export default function RootLayout({
         var t = localStorage.getItem('ustoz_theme') || 'light';
         var isDark = t === 'dark' || (t === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
         if (isDark) document.documentElement.classList.add('dark');
+        var lang = localStorage.getItem('ustoz_lang');
+        if (lang === 'ru' || lang === 'en') document.documentElement.lang = lang;
       } catch (e) {}
     })();
   `;
