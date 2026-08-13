@@ -26,9 +26,19 @@ const nextConfig = {
     ],
   },
 
-  // Prisma client'ni server bundle'ga qo'shmaslik — node_modules'dan to'g'ridan-to'g'ri
-  // Bu generated TS graph'ni RSC bundle'iga kiritmaydi.
-  serverExternalPackages: ['@prisma/client', '@prisma/adapter-pg'],
+  // Server bundle'ga qo'shilmaydigan paketlar — node_modules'dan to'g'ridan-to'g'ri
+  // require qilinadi.
+  //  - @prisma/*      : generated TS graph'ni RSC bundle'iga kiritmaslik uchun
+  //  - isomorphic-dompurify / jsdom : jsdom o'zining `default-stylesheet.css`
+  //    faylini nisbiy yo'l orqali o'qiydi; bundle qilinsa Next uni
+  //    `.next/`ga ko'chirmaydi va prerender'da ENOENT beradi. Extern qilib
+  //    node_modules'da qoldiramiz.
+  serverExternalPackages: [
+    '@prisma/client',
+    '@prisma/adapter-pg',
+    'isomorphic-dompurify',
+    'jsdom',
+  ],
 
   images: {
     remotePatterns: [
