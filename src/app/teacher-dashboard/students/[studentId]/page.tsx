@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import LoadingFallback from '@/components/common/LoadingFallback';
 import StudentDetailClient from './StudentDetailClient';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,7 @@ export default async function Page({
 }) {
   const { studentId } = await params;
   return (
-    <Suspense fallback={<div className="p-8">Yuklanmoqda…</div>}>
+    <Suspense fallback={<LoadingFallback />}>
       <StudentDetailClient studentId={studentId} />
     </Suspense>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import LoadingFallback from '@/components/common/LoadingFallback';
 import ReferralsClient from './ReferralsClient';
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 export default function ReferralsPage() {
   return (
-    <Suspense fallback={<div className="p-8">Yuklanmoqda…</div>}>
+    <Suspense fallback={<LoadingFallback />}>
       <ReferralsClient />
     </Suspense>
   );

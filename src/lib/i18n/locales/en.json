@@ -200,7 +200,11 @@
     "phoneFormatHint": "Format: +998XXXXXXXXX",
     "phonePlaceholder": "+998901234567",
     "devOtpClickHint": "Click — fills in automatically",
-    "profilePreviewAlt": "Profile photo"
+    "profilePreviewAlt": "Profile photo",
+    "registerWelcome": "Welcome to the Ustoz platform. Create an account and start teaching or learning.",
+    "alreadyHaveAccount": "Already have an account?",
+    "helpCenter": "Help Center",
+    "copyright": "Ustoz. All rights reserved."
   },
   "nav": {
     "home": "Home",
@@ -2844,5 +2848,6 @@
     "unitDay": "d",
     "unitHour": "h",
     "unitMin": "min"
-  }
+  },
+  "transaction": {}
 }

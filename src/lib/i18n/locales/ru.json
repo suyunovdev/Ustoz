@@ -200,7 +200,11 @@
     "phoneFormatHint": "Формат: +998XXXXXXXXX",
     "phonePlaceholder": "+998901234567",
     "devOtpClickHint": "Нажмите — заполнится автоматически",
-    "profilePreviewAlt": "Фото профиля"
+    "profilePreviewAlt": "Фото профиля",
+    "registerWelcome": "Добро пожаловать на платформу Ustoz. Создайте аккаунт и начните преподавать или учиться.",
+    "alreadyHaveAccount": "Уже есть аккаунт?",
+    "helpCenter": "Центр помощи",
+    "copyright": "Ustoz. Все права защищены."
   },
   "nav": {
     "home": "Главная",
@@ -2844,5 +2848,6 @@
     "unitDay": "дн",
     "unitHour": "ч",
     "unitMin": "мин"
-  }
+  },
+  "transaction": {}
 }

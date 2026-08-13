@@ -200,7 +200,11 @@
     "phoneFormatHint": "Format: +998XXXXXXXXX",
     "phonePlaceholder": "+998901234567",
     "devOtpClickHint": "Bosing — avtomatik to'ldiriladi",
-    "profilePreviewAlt": "Profil rasmi"
+    "profilePreviewAlt": "Profil rasmi",
+    "registerWelcome": "Ustoz platformasiga xush kelibsiz. Akkaunt yarating va o'qitish yoki o'rganishni boshlang.",
+    "alreadyHaveAccount": "Allaqachon akkauntingiz bormi?",
+    "helpCenter": "Yordam markazi",
+    "copyright": "Ustoz. Barcha huquqlar himoyalangan."
   },
   "nav": {
     "home": "Bosh sahifa",
@@ -2844,5 +2848,6 @@
     "unitDay": "kun",
     "unitHour": "soat",
     "unitMin": "daq"
-  }
+  },
+  "transaction": {}
 }

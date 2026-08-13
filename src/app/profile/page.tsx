@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import LoadingFallback from '@/components/common/LoadingFallback';
 import ProfileClient from './ProfileClient';
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 export default function ProfilePage() {
   return (
-    <Suspense fallback={<div className="p-8">Yuklanmoqda…</div>}>
+    <Suspense fallback={<LoadingFallback />}>
       <ProfileClient />
     </Suspense>
   );

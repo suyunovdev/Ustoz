@@ -78,7 +78,7 @@ export default function MessagesClient() {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Dashboard
+            {t('nav.dashboard')}
           </Link>
           <h1 className="text-2xl font-heading font-semibold">
             {t('messages.title')}
