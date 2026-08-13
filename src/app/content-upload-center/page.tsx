@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
+import { getServerT } from '@/lib/i18n/server';
 import ContentUploadInteractive from './components/ContentUploadInteractive';
 
-export const metadata: Metadata = {
-  title: 'Kontent yuklash',
-  description: 'Dars materiallarini yuklang, watermark himoyasini qo\'llang va tashqi havolalarni integratsiya qiling. O\'qituvchilar uchun kontent boshqaruv markazi.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.uploadTitle'),
+    description: t('meta.uploadDesc'),
+  };
+}
 
 export default function ContentUploadCenterPage() {
   return <ContentUploadInteractive />;

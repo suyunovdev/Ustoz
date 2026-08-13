@@ -1,12 +1,16 @@
 import type { Metadata } from 'next';
+import { getServerT } from '@/lib/i18n/server';
 import { redirect } from 'next/navigation';
 import CourseDetailInteractive from './CourseDetailInteractive';
 import { getSession } from '@/lib/auth';
 
-export const metadata: Metadata = {
-  title: 'Kurs tafsilotlari',
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.courseDetailTitle'),
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = 'force-dynamic';
 

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
+import { getServerT } from '@/lib/i18n/server';
 
 // Dynamic import to fix chunk loading issues
 const MarketplaceInteractive = dynamic(
@@ -13,18 +14,20 @@ const MarketplaceInteractive = dynamic(
   }
 );
 
-export const metadata: Metadata = {
-  title: 'Kurslar bozori',
-  description:
-    "O'zbek tilidagi kurslarni kashf eting: maktab fanlari, tillar, san'at, hunarmandchilik, sport, tibbiyot, biznes va boshqa o'nlab yo'nalishlar. Narx, daraja va reyting bo'yicha filtr qiling, sizga mos kursni toping.",
-  alternates: { canonical: '/course-marketplace' },
-  openGraph: {
-    title: 'Kurslar bozori | Ustoz',
-    description: "O'zbek tilidagi onlayn kurslar katalogi.",
-    url: '/course-marketplace',
-    type: 'website',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.marketplaceTitle'),
+    description: t('meta.marketplaceDesc'),
+    alternates: { canonical: '/course-marketplace' },
+    openGraph: {
+      title: t('meta.marketplaceOgTitle'),
+      description: t('meta.marketplaceOgDesc'),
+      url: '/course-marketplace',
+      type: 'website',
+    },
+  };
+}
 
 export default function CourseMarketplacePage() {
   return <MarketplaceInteractive />;

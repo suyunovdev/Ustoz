@@ -2,11 +2,15 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import LearningInterfaceInteractive from './components/LearningInterfaceInteractive';
+import { getServerT } from '@/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: "Dars",
-  description: "Video darslar, interaktiv transkript, eslatmalar va o'quv jarayonini kuzatish.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.learningTitle'),
+    description: t('meta.learningDesc'),
+  };
+}
 
 export default function LearningInterfacePage() {
   return (

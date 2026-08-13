@@ -1,17 +1,20 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import CourseDetailsInteractive from './components/CourseDetailsInteractive';
+import { getServerT } from '@/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Kurs tafsilotlari',
-  description:
-    "Kurs haqida to'liq ma'lumot, o'quv dasturi, sharhlar va sotib olish imkoniyati.",
-  openGraph: {
-    title: 'Kurs tafsilotlari | Ustoz',
-    description: "Kurs sahifasi — dastur, sharhlar va o'qituvchi haqida.",
-    type: 'article',
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.courseDetailsTitle'),
+    description: t('meta.courseDetailsDesc'),
+    openGraph: {
+      title: t('meta.courseDetailsOgTitle'),
+      description: t('meta.courseDetailsOgDesc'),
+      type: 'article',
+    },
+  };
+}
 
 export default function CourseDetailsPage() {
   return (

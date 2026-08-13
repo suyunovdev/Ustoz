@@ -2,11 +2,15 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import QuizInterfaceInteractive from './components/QuizInterfaceInteractive';
+import { getServerT } from '@/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Test',
-  description: 'Interaktiv test topshirish interfeysi. Savollarni javoblang, vaqtni kuzating va natijalaringizni ko\'ring.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.quizTitle'),
+    description: t('meta.quizDesc'),
+  };
+}
 
 export default function QuizInterfacePage() {
   return (

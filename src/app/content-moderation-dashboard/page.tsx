@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
+import { getServerT } from '@/lib/i18n/server';
 import ModerationDashboardInteractive from './components/ModerationDashboardInteractive';
 
-export const metadata: Metadata = {
-  title: 'Moderatsiya',
-  description: 'O\'qituvchilar yuklagan dars materiallarini, testlarni va tashqi havolalarni ko\'rib chiqish va tasdiqlash. Administrator uchun kontent moderatsiya paneli.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.moderationTitle'),
+    description: t('meta.moderationDesc'),
+  };
+}
 
 export default function ContentModerationDashboardPage() {
   return <ModerationDashboardInteractive />;

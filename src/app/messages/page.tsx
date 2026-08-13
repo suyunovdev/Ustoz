@@ -1,12 +1,16 @@
 import type { Metadata } from 'next';
+import { getServerT } from '@/lib/i18n/server';
 import { Suspense } from 'react';
 import LoadingFallback from '@/components/common/LoadingFallback';
 import MessagesClient from './MessagesClient';
 
-export const metadata: Metadata = {
-  title: 'Xabarlar',
-  description: 'O\'qituvchilar va talabalar bilan xabar almashing. Shaxsiy yozishmalar va guruh muloqotlari.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.messagesTitle'),
+    description: t('meta.messagesDesc'),
+  };
+}
 
 export const dynamic = 'force-dynamic';
 

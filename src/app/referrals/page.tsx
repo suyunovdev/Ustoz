@@ -1,12 +1,16 @@
 import type { Metadata } from 'next';
+import { getServerT } from '@/lib/i18n/server';
 import { Suspense } from 'react';
 import LoadingFallback from '@/components/common/LoadingFallback';
 import ReferralsClient from './ReferralsClient';
 
-export const metadata: Metadata = {
-  title: 'Tavsiya dasturi',
-  description: 'Do\'stlaringizni taklif qiling va mukofotlar oling. Tavsiya havolangizni ulashing va daromad ishlang.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.referralsTitle'),
+    description: t('meta.referralsDesc'),
+  };
+}
 
 export const dynamic = 'force-dynamic';
 

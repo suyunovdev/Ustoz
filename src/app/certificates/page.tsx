@@ -1,10 +1,14 @@
 import type { Metadata } from 'next';
 import CertificatesPageClient from './CertificatesPageClient';
+import { getServerT } from '@/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Sertifikatlar',
-  description: "Tugatgan kurslaringiz uchun olgan sertifikatlaringizni ko'ring va yuklab oling.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.certificatesTitle'),
+    description: t('meta.certificatesDesc'),
+  };
+}
 
 export default function CertificatesPage() {
   return <CertificatesPageClient />;

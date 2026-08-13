@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getServerT } from '@/lib/i18n/server';
 import { redirect } from 'next/navigation';
 import {
   QueryClient,
@@ -11,12 +12,14 @@ import { getSession } from '@/lib/auth';
 import { getTeacherDashboard } from '@/lib/services/teacher-stats.service';
 import { queryKeys } from '@/hooks/queries/queryKeys';
 
-export const metadata: Metadata = {
-  title: "O'qituvchi paneli",
-  description:
-    "Kurslaringizni boshqaring, daromadingizni kuzating va talabalar faolligini tahlil qiling.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.teacherTitle'),
+    description: t('meta.teacherDesc'),
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = 'force-dynamic';
 

@@ -10,13 +10,16 @@ import StudentDashboardInteractive from './components/StudentDashboardInteractiv
 import { getSession } from '@/lib/auth';
 import { loadDashboardData } from '@/lib/services/dashboard.service';
 import { queryKeys } from '@/hooks/queries/queryKeys';
+import { getServerT } from '@/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Talaba paneli',
-  description:
-    "O'qish jarayonini kuzating, sotib olgan kurslaringizga kiring va yangi tavsiyalarni toping.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.studentDashboardTitle'),
+    description: t('meta.studentDashboardDesc'),
+    robots: { index: false, follow: false },
+  };
+}
 
 // Har request'da yangi data — auth bo'yicha personalized.
 export const dynamic = 'force-dynamic';

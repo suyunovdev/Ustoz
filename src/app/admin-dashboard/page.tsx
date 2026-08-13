@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getServerT } from '@/lib/i18n/server';
 import { redirect } from 'next/navigation';
 import {
   QueryClient,
@@ -10,12 +11,14 @@ import AdminDashboardInteractive from './components/AdminDashboardInteractive';
 import { getSession } from '@/lib/auth';
 import { getDashboardStats } from '@/lib/services/admin-stats.service';
 
-export const metadata: Metadata = {
-  title: 'Admin paneli',
-  description:
-    "Platformani boshqaring, foydalanuvchilarni nazorat qiling, kurslarni kuzating.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.adminTitle'),
+    description: t('meta.adminDesc'),
+    robots: { index: false, follow: false },
+  };
+}
 
 // Har request'da yangi data — auth'ga bog'liq, personalized.
 export const dynamic = 'force-dynamic';

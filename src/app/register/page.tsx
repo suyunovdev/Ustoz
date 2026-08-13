@@ -3,10 +3,13 @@ import Link from 'next/link';
 import RegistrationForm from './components/RegistrationForm';
 import { getServerT } from '@/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Ro\'yxatdan o\'tish',
-  description: 'Ustoz platformasida yangi akkaunt yarating. O\'qituvchi yoki talaba sifatida ro\'yxatdan o\'ting va ta\'lim jarayoniga qo\'shiling.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.registerTitle'),
+    description: t('meta.registerDesc'),
+  };
+}
 
 export default async function RegisterPage() {
   const t = await getServerT();

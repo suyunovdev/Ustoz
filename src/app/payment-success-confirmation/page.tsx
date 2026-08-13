@@ -1,12 +1,16 @@
 import type { Metadata } from 'next';
+import { getServerT } from '@/lib/i18n/server';
 import { Suspense } from 'react';
 import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import PaymentSuccessWrapper from './components/PaymentSuccessWrapper';
 
-export const metadata: Metadata = {
-  title: 'To\'lov muvaffaqiyatli',
-  description: 'To\'lov muvaffaqiyatli amalga oshirildi. Kursga kirish va chek yuklab olish.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.paymentSuccessTitle'),
+    description: t('meta.paymentSuccessDesc'),
+  };
+}
 
 export default function PaymentSuccessConfirmationPage() {
   return (

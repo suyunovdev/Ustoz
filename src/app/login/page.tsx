@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import LoginInteractive from './components/LoginInteractive';
+import { getServerT } from '@/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Kirish',
-  description: 'Ustoz platformasiga kiring. O\'qituvchi yoki talaba sifatida shaxsiy panelingizga kiring va ta\'lim jarayonini davom ettiring.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.loginTitle'),
+    description: t('meta.loginDesc'),
+  };
+}
 
 export default function LoginPage() {
   return (

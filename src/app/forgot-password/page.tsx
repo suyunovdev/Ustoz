@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import ForgotPasswordInteractive from './components/ForgotPasswordInteractive';
+import { getServerT } from '@/lib/i18n/server';
 
-export const metadata: Metadata = {
-  title: 'Parolni tiklash',
-  description: 'Parolingizni unutdingizmi? Emailingizga tasdiqlash kodi yuboramiz.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.forgotPasswordTitle'),
+    description: t('meta.forgotPasswordDesc'),
+  };
+}
 
 export default function ForgotPasswordPage() {
   return (
