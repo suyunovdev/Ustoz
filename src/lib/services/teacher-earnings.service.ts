@@ -19,6 +19,7 @@ import {
   type WithdrawalMethod,
 } from '@/lib/repositories';
 import { ValidationError } from '@/lib/errors';
+import { formatCurrency } from '@/lib/i18n/format';
 
 export const MIN_WITHDRAWAL_UZS = BigInt(100_000);
 
@@ -134,8 +135,9 @@ export async function requestWithdrawal(
     throw new ValidationError("Summa yaroqsiz");
   }
   if (amount < MIN_WITHDRAWAL_UZS) {
+    // TODO i18n: locale
     throw new ValidationError(
-      `Minimum summa: ${MIN_WITHDRAWAL_UZS.toLocaleString('uz-UZ')} UZS`,
+      `Minimum summa: ${formatCurrency(Number(MIN_WITHDRAWAL_UZS), 'uz', 'UZS')}`,
     );
   }
 

@@ -16,6 +16,7 @@ import CategoryFilter from './CategoryFilter';
 import QuickActions from './QuickActions';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 import type {
   DashboardEnrollment,
 } from '@/types/dashboard.types';
@@ -58,7 +59,7 @@ function getMostRecentInProgress(
 }
 
 const StudentDashboardInteractive = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialTab = (() => {
@@ -438,7 +439,7 @@ const StudentDashboardInteractive = () => {
                         certificate={{
                           id: cert.id,
                           courseTitle: cert.courseTitle,
-                          completionDate: new Date(cert.issuedAt).toLocaleDateString('uz-UZ'),
+                          completionDate: formatDate(cert.issuedAt, locale),
                           certificateNumber: cert.certificateNumber,
                         }}
                         onDownload={() => handleCertificateDownload(cert.id)}

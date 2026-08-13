@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 import type { DashboardEnrollment } from '@/types/dashboard.types';
 
 interface CourseCardProps {
@@ -9,20 +11,14 @@ interface CourseCardProps {
 
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449';
 
-function formatDate(iso: string | null): string {
-  if (!iso) return '';
-  try {
-    return new Date(iso).toLocaleDateString('uz-UZ', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  } catch {
-    return '';
-  }
-}
+const DATE_OPTS: Intl.DateTimeFormatOptions = {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+};
 
 const CourseCard = ({ enrollment }: CourseCardProps) => {
+  const { locale } = useI18n();
   const {
     courseId,
     progress,
@@ -104,12 +100,12 @@ const CourseCard = ({ enrollment }: CourseCardProps) => {
           {isCompleted ? (
             <div className="flex items-center space-x-1 text-success">
               <Icon name="CheckCircleIcon" size={14} variant="solid" />
-              <span>Tugatildi: {formatDate(completedAt)}</span>
+              <span>Tugatildi: {formatDate(completedAt, locale, DATE_OPTS)}</span>
             </div>
           ) : (
             <div className="flex items-center space-x-1">
               <Icon name="ClockIcon" size={14} />
-              <span>Yozilgan: {formatDate(enrolledAt)}</span>
+              <span>Yozilgan: {formatDate(enrolledAt, locale, DATE_OPTS)}</span>
             </div>
           )}
         </div>

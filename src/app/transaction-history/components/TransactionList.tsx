@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatCurrency } from '@/lib/i18n/format';
 
 interface Transaction {
   id: string;
@@ -33,7 +34,7 @@ const statusColors = {
 
 export default function TransactionList({ transactions }: TransactionListProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const statusLabels = {
     pending: t('payment.statusPending'),
@@ -49,19 +50,12 @@ export default function TransactionList({ transactions }: TransactionListProps) 
     payme: 'Payme'
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('uz-UZ', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('uz-UZ').format(amount) + ' so\'m';
+  const dateOpts: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
   };
 
   const toggleExpand = (id: string) => {
@@ -123,13 +117,13 @@ export default function TransactionList({ transactions }: TransactionListProps) 
               <>
                 <tr key={transaction.id} className="hover:bg-muted">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
-                    {formatDate(transaction.created_at)}
+                    {formatDate(transaction.created_at, locale, dateOpts)}
                   </td>
                   <td className="px-6 py-4 text-sm text-foreground">
                     <div className="max-w-xs truncate">{transaction.courses.title}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                    {formatAmount(transaction.amount_uzs)}
+                    {formatCurrency(transaction.amount_uzs, locale, 'UZS')}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {paymentMethodLabels[transaction.payment_method]}
@@ -174,7 +168,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                           <div>
                             <span className="font-medium text-muted-foreground">{t('payment.completedDate')}:</span>
                             <p className="text-foreground mt-1">
-                              {formatDate(transaction.completed_at)}
+                              {formatDate(transaction.completed_at, locale, dateOpts)}
                             </p>
                           </div>
                         )}

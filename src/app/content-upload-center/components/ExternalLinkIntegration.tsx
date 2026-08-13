@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 
 interface ExternalLink {
   id: string;
@@ -22,7 +23,7 @@ interface ExternalLinkIntegrationProps {
 }
 
 const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: ExternalLinkIntegrationProps) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newLink, setNewLink] = useState<Partial<ExternalLink>>({
     type: 'youtube',
@@ -157,7 +158,7 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
                       <Icon name="ArrowTopRightOnSquareIcon" size={14} />
                     </a>
                     <p className="caption text-muted-foreground mt-2">
-                      Qo'shilgan: {new Date(link.addedDate).toLocaleDateString('uz-UZ')}
+                      Qo'shilgan: {formatDate(link.addedDate, locale, {})}
                     </p>
                   </div>
                 </div>

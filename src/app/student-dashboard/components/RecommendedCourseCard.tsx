@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatCurrency } from '@/lib/i18n/format';
 import type { RecommendedCourse, RecommendReason } from '@/types/recommendation.types';
 
 interface RecommendedCourseCardProps {
@@ -36,6 +38,7 @@ const REASON_BADGES: Record<
 };
 
 const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
+  const { locale } = useI18n();
   const badge = REASON_BADGES[course.recommendReason];
   const duration =
     course.totalDuration > 0 ? `${course.totalDuration} soat` : course.difficultyLevel || '—';
@@ -103,7 +106,7 @@ const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
           <span className="text-xl font-heading font-bold text-primary">
             {course.priceUzs === 0
               ? 'Bepul'
-              : `${course.priceUzs.toLocaleString('uz-UZ')} UZS`}
+              : formatCurrency(course.priceUzs, locale, 'UZS')}
           </span>
           <Link
             href={`/course-details?courseId=${course.id}`}

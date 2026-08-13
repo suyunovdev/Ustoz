@@ -1,5 +1,7 @@
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatNumber } from '@/lib/i18n/format';
 
 interface InstructorBioProps {
   instructor: {
@@ -14,6 +16,7 @@ interface InstructorBioProps {
 }
 
 const InstructorBio = ({ instructor }: InstructorBioProps) => {
+  const { locale } = useI18n();
   return (
     <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
       <h2 className="text-2xl font-heading font-bold text-foreground">O\'qituvchi haqida</h2>
@@ -38,7 +41,7 @@ const InstructorBio = ({ instructor }: InstructorBioProps) => {
             </div>
             <div className="flex items-center space-x-2">
               <Icon name="UserGroupIcon" size={16} className="text-primary" />
-              <span className="text-sm">{instructor.studentsCount.toLocaleString()} o\'quvchi</span>
+              <span className="text-sm">{formatNumber(instructor.studentsCount, locale)} o\'quvchi</span>
             </div>
             <div className="flex items-center space-x-2">
               <Icon name="BookOpenIcon" size={16} className="text-primary" />
@@ -72,7 +75,7 @@ const InstructorBio = ({ instructor }: InstructorBioProps) => {
                 </div>
                 <div className="flex items-center space-x-1">
                   <Icon name="UserGroupIcon" size={12} />
-                  <span>{course.students.toLocaleString()}</span>
+                  <span>{formatNumber(course.students, locale)}</span>
                 </div>
               </div>
             </div>

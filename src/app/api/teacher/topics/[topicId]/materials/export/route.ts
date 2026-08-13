@@ -21,6 +21,7 @@ import {
 } from '@/lib/services/content-material.service';
 import JSZip from 'jszip';
 import { prisma } from '@/lib/prisma';
+import { formatDateTime } from '@/lib/i18n/format';
 
 export async function GET(
   req: NextRequest,
@@ -92,7 +93,8 @@ export async function GET(
       ``,
       `Kurs: **${topic.course.title}**`,
       `Jami: ${materials.length} ta material`,
-      `Yaratildi: ${new Date().toLocaleString('uz-UZ')}`,
+      // TODO i18n: locale — route handler'da request-scoped locale yo'q, default 'uz'
+      `Yaratildi: ${formatDateTime(new Date(), 'uz', {})}`,
       ``,
       `---`,
       ``,

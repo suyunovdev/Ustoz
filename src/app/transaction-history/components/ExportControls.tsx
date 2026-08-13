@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 
 interface Transaction {
   id: string;
@@ -21,12 +22,12 @@ interface ExportControlsProps {
 }
 
 export default function ExportControls({ transactions }: ExportControlsProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const exportToCSV = () => {
     const headers = [t('payment.csvDate'), t('payment.csvCourse'), t('payment.csvAmount'), t('payment.csvPaymentMethod'), t('payment.csvStatus'), t('payment.csvTransactionId')];
     const rows = transactions.map((t) => [
-      new Date(t.created_at).toLocaleDateString('uz-UZ'),
+      formatDate(t.created_at, locale, {}),
       t.courses.title,
       t.amount_uzs,
       t.payment_method,

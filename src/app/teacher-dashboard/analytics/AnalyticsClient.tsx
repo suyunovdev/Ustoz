@@ -10,6 +10,7 @@ import {
 } from '@/hooks/queries/useTeacherAnalytics';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatNumber } from '@/lib/i18n/format';
 
 function fmtUzs(s: string): string {
   const n = BigInt(s);
@@ -232,11 +233,12 @@ function EngagementCard({
   sub: string;
   icon: string;
 }) {
+  const { locale } = useI18n();
   return (
     <div className="bg-card border border-border rounded-md p-4">
       <Icon name={icon} size={20} className="text-primary mb-2" />
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="text-xl font-bold text-foreground">{value.toLocaleString('uz-UZ')}</p>
+      <p className="text-xl font-bold text-foreground">{formatNumber(value, locale)}</p>
       <p className="text-xs text-muted-foreground mt-1">{sub}</p>
     </div>
   );

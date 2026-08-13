@@ -8,6 +8,7 @@ import StudentSelectionPanel from './StudentSelectionPanel';
 import GroupBalancingPanel from './GroupBalancingPanel';
 import GroupReviewPanel from './GroupReviewPanel';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate as i18nFormatDate } from '@/lib/i18n/format';
 import { toast } from '@/components/common/Toaster';
 
 interface Student {
@@ -40,7 +41,7 @@ interface SavedGroup {
 }
 
 const GroupCreationInteractive = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
   const [view, setView] = useState<'list' | 'create'>('list');
@@ -250,7 +251,7 @@ const GroupCreationInteractive = () => {
 
   const formatDate = (dateStr: string) => {
     try {
-      return new Date(dateStr).toLocaleDateString('uz-UZ', { year: 'numeric', month: 'short', day: 'numeric' });
+      return i18nFormatDate(dateStr, locale, { year: 'numeric', month: 'short', day: 'numeric' });
     } catch { return dateStr; }
   };
 

@@ -16,6 +16,7 @@ import {
   useReturnSubmissionMutation,
 } from '@/hooks/mutations/useAssignmentMutations';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime } from '@/lib/i18n/format';
 
 const STATUS_LABEL_KEYS: Record<SubmissionStatusDTO, { labelKey: string; color: string }> = {
   submitted: { labelKey: 'teacher.submissionStatusSubmitted', color: 'bg-primary/10 text-primary' },
@@ -29,7 +30,7 @@ interface Props {
 }
 
 export default function AssignmentDetailClient({ assignmentId }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { data, isLoading } = useTeacherAssignment(assignmentId);
   const updateMut = useUpdateAssignmentMutation(assignmentId);
   const [statusFilter, setStatusFilter] = useState<SubmissionStatusDTO | 'all'>('all');
@@ -89,7 +90,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
           )}
           <div className="flex items-center gap-3 mt-3 text-xs flex-wrap">
             <span className={overdue ? 'text-destructive font-medium' : 'text-muted-foreground'}>
-              ⏰ {due.toLocaleString('uz-UZ')}
+              ⏰ {formatDateTime(due, locale)}
             </span>
             <span className="text-muted-foreground">⭐ {a.maxScore} {t('teacher.assignmentsScore')}</span>
             <span className="text-muted-foreground">
@@ -171,7 +172,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {new Date(s.submittedAt).toLocaleString('uz-UZ')}
+                    {formatDateTime(s.submittedAt, locale)}
                   </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">

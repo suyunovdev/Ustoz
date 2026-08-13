@@ -1,4 +1,8 @@
+'use client';
+
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatCurrency } from '@/lib/i18n/format';
 import RevenueChart from './RevenueChart';
 
 interface AnalyticsPanelProps {
@@ -23,6 +27,7 @@ interface AnalyticsPanelProps {
 }
 
 const AnalyticsPanel = ({ revenueData, topCourses, studentEngagement }: AnalyticsPanelProps) => {
+  const { locale } = useI18n();
   return (
     <div className="space-y-6">
       {/* Revenue Chart */}
@@ -92,7 +97,7 @@ const AnalyticsPanel = ({ revenueData, topCourses, studentEngagement }: Analytic
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-heading font-bold text-foreground">${course.revenue.toLocaleString()}</p>
+                <p className="font-heading font-bold text-foreground">{formatCurrency(course.revenue, locale, 'USD')}</p>
                 <p className="text-sm text-muted-foreground">daromad</p>
               </div>
             </div>

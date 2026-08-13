@@ -1,4 +1,8 @@
+'use client';
+
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatCurrency } from '@/lib/i18n/format';
 
 interface Transaction {
   id: string;
@@ -21,8 +25,9 @@ const EarningsPanel = ({
   totalEarnings, 
   pendingPayouts, 
   transactions,
-  onWithdraw 
+  onWithdraw
 }: EarningsPanelProps) => {
+  const { locale } = useI18n();
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -58,7 +63,7 @@ const EarningsPanel = ({
             <Icon name="WalletIcon" size={24} />
             <p className="text-sm opacity-90">Joriy balans</p>
           </div>
-          <h3 className="text-3xl font-heading font-bold">${currentBalance.toLocaleString()}</h3>
+          <h3 className="text-3xl font-heading font-bold">{formatCurrency(currentBalance, locale, 'USD')}</h3>
           <button
             onClick={onWithdraw}
             className="mt-4 w-full px-4 py-2 bg-primary-foreground text-primary rounded-md font-medium transition-smooth hover:bg-primary-foreground/90"
@@ -72,7 +77,7 @@ const EarningsPanel = ({
             <Icon name="CurrencyDollarIcon" size={24} className="text-success" />
             <p className="text-sm text-muted-foreground">Umumiy daromad</p>
           </div>
-          <h3 className="text-3xl font-heading font-bold text-foreground">${totalEarnings.toLocaleString()}</h3>
+          <h3 className="text-3xl font-heading font-bold text-foreground">{formatCurrency(totalEarnings, locale, 'USD')}</h3>
           <p className="text-sm text-muted-foreground mt-2">Barcha vaqt</p>
         </div>
 
@@ -81,7 +86,7 @@ const EarningsPanel = ({
             <Icon name="ClockIcon" size={24} className="text-warning" />
             <p className="text-sm text-muted-foreground">Kutilayotgan to'lovlar</p>
           </div>
-          <h3 className="text-3xl font-heading font-bold text-foreground">${pendingPayouts.toLocaleString()}</h3>
+          <h3 className="text-3xl font-heading font-bold text-foreground">{formatCurrency(pendingPayouts, locale, 'USD')}</h3>
           <p className="text-sm text-muted-foreground mt-2">Jarayonda</p>
         </div>
       </div>
@@ -134,7 +139,7 @@ const EarningsPanel = ({
               </div>
               <div className="flex items-center space-x-4">
                 <span className="font-heading font-semibold text-foreground">
-                  ${transaction.amount.toLocaleString()}
+                  {formatCurrency(transaction.amount, locale, 'USD')}
                 </span>
                 <span className={`px-3 py-1 rounded-full text-xs font-medium caption ${getStatusColor(transaction.status)}`}>
                   {getStatusLabel(transaction.status)}

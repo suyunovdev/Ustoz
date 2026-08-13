@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { headers } from 'next/headers';
+import { getServerLocale } from '@/lib/i18n/server';
+import { formatDate } from '@/lib/i18n/format';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +41,7 @@ export default async function VerifyPage({
   const cert = await fetchCertificate(number);
   if (!cert) return notFound();
 
+  const locale = await getServerLocale();
   const isRevoked = cert.status === 'revoked';
   const issuedAt = new Date(cert.issuedAt);
 
@@ -99,7 +102,7 @@ export default async function VerifyPage({
               <div>
                 <p className="text-xs text-muted-foreground">Berilgan</p>
                 <p className="text-lg font-bold text-foreground">
-                  {issuedAt.toLocaleDateString('uz-UZ', {
+                  {formatDate(issuedAt, locale, {
                     year: 'numeric',
                     month: 'short',
                     day: 'numeric',
@@ -118,7 +121,7 @@ export default async function VerifyPage({
                 <strong>Bekor qilish sababi:</strong> {cert.revokeReason}
                 {cert.revokedAt && (
                   <p className="text-xs mt-1 opacity-80">
-                    Sana: {new Date(cert.revokedAt).toLocaleDateString('uz-UZ')}
+                    Sana: {formatDate(cert.revokedAt, locale, {})}
                   </p>
                 )}
               </div>

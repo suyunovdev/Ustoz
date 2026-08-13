@@ -11,6 +11,8 @@ import {
 } from '@/hooks/queries/useAdminCourses';
 import { useCourseActionMutation } from '@/hooks/mutations/useCourseActionMutation';
 import { useI18n } from '@/contexts/I18nContext';
+import { type Locale } from '@/lib/i18n';
+import { formatDate } from '@/lib/i18n/format';
 
 type StatusFilter = ModerationStatusDTO | 'all';
 
@@ -45,9 +47,9 @@ type PendingAction =
   | { course: AdminCourseDTO; type: 'suspend' }
   | { course: AdminCourseDTO; type: 'unsuspend' };
 
-function formatDate(iso: string | null): string {
+function fmtDate(iso: string | null, locale: Locale): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('uz-UZ');
+  return formatDate(iso, locale);
 }
 
 function formatUzs(uzs: string): string {
@@ -58,7 +60,7 @@ function formatUzs(uzs: string): string {
 }
 
 const CourseOversightPanel = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('all');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -355,7 +357,7 @@ const CourseOversightPanel = () => {
                         <span>👥 {course._count.enrollments} talaba</span>
                         <span>⭐ {Number(course.rating).toFixed(1)} ({course._count.reviews})</span>
                         <span>💰 {formatUzs(course.priceUzs)}</span>
-                        <span>📅 {formatDate(course.createdAt)}</span>
+                        <span>📅 {fmtDate(course.createdAt, locale)}</span>
                       </div>
                       {course.adminFeedback && (
                         <div className="mt-2 p-2 bg-muted/50 rounded text-xs text-muted-foreground border-l-2 border-primary">

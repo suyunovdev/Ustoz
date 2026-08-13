@@ -7,6 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { teacherRepo, type TeacherCourseWithRevenue } from '@/lib/repositories';
+import { formatDate } from '@/lib/i18n/format';
 
 export interface TeacherDashboardData {
   courses: Array<{
@@ -187,7 +188,8 @@ export async function getTeacherDashboard(
     courses: coursesWithRevenue.map(courseToDTO),
     stats,
     monthlyRevenue: monthlyRows.map((m) => ({
-      month: m.month.toLocaleDateString('uz-UZ', { month: 'short', year: '2-digit' }),
+      // TODO i18n: locale — server servisda request-scoped locale yo'q, default 'uz'
+      month: formatDate(m.month, 'uz', { month: 'short', year: '2-digit' }),
       revenue: m.revenue.toString(),
       enrollments: Number(m.enrollments),
     })),

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 import CourseHeroSection from './CourseHeroSection';
 import CourseCurriculum from './CourseCurriculum';
 import CourseReviews from './CourseReviews';
@@ -66,7 +67,7 @@ interface Review {
 }
 
 const CourseDetailsInteractive = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
   const courseId = searchParams.get('courseId');
@@ -136,7 +137,7 @@ const CourseDetailsInteractive = () => {
         prerequisites: [],
         hasCertificate: true,
         language: c.language || 'uz',
-        lastUpdated: c.createdAt ? new Date(c.createdAt).toLocaleDateString('uz-UZ') : '',
+        lastUpdated: c.createdAt ? formatDate(c.createdAt, locale) : '',
         totalDuration: `${c.totalDuration || 0} soat`,
         level: c.difficultyLevel || "Boshlang'ich",
       };
@@ -165,7 +166,7 @@ const CourseDetailsInteractive = () => {
           userImage: r.student?.avatarUrl || '',
           userImageAlt: r.student?.fullName || '',
           rating: r.rating,
-          date: new Date(r.createdAt).toLocaleDateString('uz-UZ'),
+          date: formatDate(r.createdAt, locale),
           comment: r.comment || '',
           helpful: r.helpfulCount || 0,
         }))

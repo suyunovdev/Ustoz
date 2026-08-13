@@ -2,6 +2,7 @@
 
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 
 interface ContentItem {
   id: string;
@@ -21,7 +22,7 @@ interface ContentListProps {
 }
 
 const ContentList = ({ items, selectedItem, onSelectItem, isLoading }: ContentListProps) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const getTypeIcon = (type: string) => {
     const icons = {
       material: 'DocumentTextIcon',
@@ -87,7 +88,7 @@ const ContentList = ({ items, selectedItem, onSelectItem, isLoading }: ContentLi
                 <div className="flex-1 min-w-0">
                   <h4 className="font-medium text-foreground truncate">{item.title}</h4>
                   <p className="caption text-muted-foreground mt-1">
-                    {item.teacherName} • {new Date(item.submittedAt).toLocaleDateString('uz-UZ')}
+                    {item.teacherName} • {formatDate(item.submittedAt, locale, {})}
                   </p>
                   <div className="flex items-center space-x-2 mt-2">
                     <span className={`caption px-2 py-0.5 rounded-md ${statusBadge.color}`}>

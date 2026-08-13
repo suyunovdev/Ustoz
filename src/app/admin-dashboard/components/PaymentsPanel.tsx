@@ -12,6 +12,8 @@ import {
 } from '@/hooks/queries/useAdminPayments';
 import { useRefundMutation } from '@/hooks/mutations/useRefundMutation';
 import { useI18n } from '@/contexts/I18nContext';
+import { type Locale } from '@/lib/i18n';
+import { formatDateTime, formatCurrency } from '@/lib/i18n/format';
 
 type StatusFilter = TransactionStatusDTO | 'all';
 type MethodFilter = PaymentMethodDTO | 'all';
@@ -39,17 +41,17 @@ const METHOD_LABEL: Record<PaymentMethodDTO, string> = {
   payme: 'Payme',
 };
 
-function formatUzs(uzs: string): string {
+function formatUzs(uzs: string, locale: Locale): string {
   const n = Number(uzs);
-  if (!Number.isFinite(n)) return "0 so'm";
+  if (!Number.isFinite(n)) return formatCurrency(0, locale, 'UZS');
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M so'm`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K so'm`;
-  return `${n.toLocaleString('uz-UZ')} so'm`;
+  return formatCurrency(n, locale, 'UZS');
 }
 
-function formatDateTime(iso: string | null): string {
+function fmtDateTime(iso: string | null, locale: Locale): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('uz-UZ', {
+  return formatDateTime(iso, locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -59,7 +61,7 @@ function formatDateTime(iso: string | null): string {
 }
 
 const PaymentsPanel = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('all');
   const [method, setMethod] = useState<MethodFilter>('all');
   const [searchInput, setSearchInput] = useState('');
@@ -91,9 +93,9 @@ const PaymentsPanel = () => {
     if (!refundTarget) return null;
     return {
       title: t('admin.refundPayment'),
-      message: `${refundTarget.student.fullName} (${formatUzs(refundTarget.amountUzs)}) "${refundTarget.course.title}" kursi uchun to'lovni qaytaramizmi? Talaba kurs ro'yxatidan olib tashlanadi.`,
+      message: `${refundTarget.student.fullName} (${formatUzs(refundTarget.amountUzs, locale)}) "${refundTarget.course.title}" kursi uchun to'lovni qaytaramizmi? Talaba kurs ro'yxatidan olib tashlanadi.`,
     };
-  }, [refundTarget]);
+  }, [refundTarget, locale]);
 
   const handleRefund = () => {
     if (!refundTarget) return;
@@ -122,7 +124,7 @@ const PaymentsPanel = () => {
           <StatCard label={t('admin.paymentCompleted')} value={stats.completed} icon="CheckCircleIcon" color="text-success" />
           <StatCard label={t('admin.paymentPending')} value={stats.pending} icon="ClockIcon" color="text-warning" />
           <StatCard label={t('admin.paymentRefunded')} value={stats.refunded} icon="ArrowUturnLeftIcon" color="text-primary" />
-          <StatCard label={t('admin.revenue')} value={formatUzs(data?.totalRevenueUzs ?? '0')} icon="CurrencyDollarIcon" color="text-success" isText />
+          <StatCard label={t('admin.revenue')} value={formatUzs(data?.totalRevenueUzs ?? '0', locale)} icon="CurrencyDollarIcon" color="text-success" isText />
         </div>
       )}
 
@@ -235,9 +237,9 @@ const PaymentsPanel = () => {
                       </p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
                         <span className="font-semibold text-foreground">
-                          {formatUzs(tx.amountUzs)}
+                          {formatUzs(tx.amountUzs, locale)}
                         </span>
-                        <span>📅 {formatDateTime(tx.createdAt)}</span>
+                        <span>📅 {fmtDateTime(tx.createdAt, locale)}</span>
                         {tx.merchantTransId && <span>#{tx.merchantTransId.slice(0, 12)}</span>}
                       </div>
                       {tx.refundedAt && tx.refundReason && (
@@ -245,7 +247,7 @@ const PaymentsPanel = () => {
                           <strong>{t('admin.refundReason')}:</strong> {tx.refundReason}
                           <br />
                           <span className="text-[10px]">
-                            {t('admin.refundedAt')}: {formatDateTime(tx.refundedAt)}
+                            {t('admin.refundedAt')}: {fmtDateTime(tx.refundedAt, locale)}
                           </span>
                         </div>
                       )}

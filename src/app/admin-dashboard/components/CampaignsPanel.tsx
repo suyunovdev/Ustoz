@@ -13,6 +13,8 @@ import {
   usePreviewRecipientsMutation,
 } from '@/hooks/mutations/useCampaignMutations';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime as fmtDateTime } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 const STATUS_BADGE: Record<string, { label: string; color: string }> = {
   draft: { label: 'campaignDraft', color: 'bg-muted text-muted-foreground' },
@@ -21,9 +23,9 @@ const STATUS_BADGE: Record<string, { label: string; color: string }> = {
   failed: { label: 'campaignFailed', color: 'bg-destructive/10 text-destructive' },
 };
 
-function formatDateTime(iso: string | null): string {
+function formatDateTime(iso: string | null, locale: Locale): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('uz-UZ', {
+  return fmtDateTime(iso, locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -113,7 +115,7 @@ const CampaignsPanel = () => {
 };
 
 function CampaignRow({ campaign }: { campaign: CampaignDTO }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const badge = STATUS_BADGE[campaign.status] ?? STATUS_BADGE.draft;
   return (
     <div className="p-4 border border-border rounded-md hover:bg-muted/30 transition-smooth">
@@ -137,7 +139,7 @@ function CampaignRow({ campaign }: { campaign: CampaignDTO }) {
         {campaign.failedCount > 0 && (
           <span className="text-destructive">✗ {campaign.failedCount} xato</span>
         )}
-        <span>📅 {formatDateTime(campaign.createdAt)}</span>
+        <span>📅 {formatDateTime(campaign.createdAt, locale)}</span>
       </div>
 
       {campaign.errorSummary && (

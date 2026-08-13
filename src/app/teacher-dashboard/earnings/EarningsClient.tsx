@@ -21,10 +21,11 @@ import {
   useUpdatePayoutSettingsMutation,
 } from '@/hooks/mutations/useEarningsMutations';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatDateTime, formatCurrency } from '@/lib/i18n/format';
+import { type Locale } from '@/lib/i18n';
 
-function fmtUzs(s: string): string {
-  const n = BigInt(s);
-  return n.toLocaleString('uz-UZ').replace(/,/g, ' ');
+function fmtUzs(s: string, locale: Locale): string {
+  return formatCurrency(Number(s), locale, 'UZS');
 }
 
 const PAYMENT_STATUS_KEYS: Record<
@@ -71,7 +72,7 @@ const WITHDRAWAL_STATUS_KEYS: Record<
 };
 
 export default function EarningsClient() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const balance = useTeacherBalance();
   const withdrawals = useTeacherWithdrawals();
   const [tab, setTab] = useState<'payments' | 'withdrawals' | 'settings'>(
@@ -117,27 +118,27 @@ export default function EarningsClient() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <BalanceCard
             label={t('teacher.earningsAvailableBalance')}
-            value={fmtUzs(b.availableUzs)}
-            sub="UZS"
+            value={fmtUzs(b.availableUzs, locale)}
+            sub=""
             highlight
             icon="WalletIcon"
           />
           <BalanceCard
             label={t('teacher.earningsGrossRevenue')}
-            value={fmtUzs(b.grossRevenueUzs)}
+            value={fmtUzs(b.grossRevenueUzs, locale)}
             sub={`${b.completedPaymentCount} ${t('teacher.earningsPaymentCount')}`}
             icon="ArrowTrendingUpIcon"
           />
           <BalanceCard
             label={t('teacher.earningsWithdrawn')}
-            value={fmtUzs(b.withdrawnUzs)}
-            sub={`${t('teacher.earningsPendingLabel')}: ${fmtUzs(b.pendingWithdrawalUzs)}`}
+            value={fmtUzs(b.withdrawnUzs, locale)}
+            sub={`${t('teacher.earningsPendingLabel')}: ${fmtUzs(b.pendingWithdrawalUzs, locale)}`}
             icon="BanknotesIcon"
           />
           <BalanceCard
             label={t('teacher.earningsPlatformFee')}
             value={`${b.platformFeePct}%`}
-            sub={fmtUzs(b.platformFeeUzs) + ' UZS'}
+            sub={fmtUzs(b.platformFeeUzs, locale)}
             icon="ReceiptPercentIcon"
             warning
           />
@@ -149,7 +150,7 @@ export default function EarningsClient() {
           <Icon name="ExclamationTriangleIcon" size={14} />
           <span>
             <strong>{b.refundedPaymentCount}</strong> {t('teacher.earningsRefundWarning')} —{' '}
-            {fmtUzs(b.refundedUzs)} UZS
+            {fmtUzs(b.refundedUzs, locale)}
           </span>
         </div>
       )}
@@ -267,10 +268,10 @@ export default function EarningsClient() {
                           : 'text-foreground'
                       }`}
                     >
-                      {fmtUzs(p.amountUzs)} {p.currency}
+                      {fmtUzs(p.amountUzs, locale)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(p.createdAt).toLocaleDateString('uz-UZ')}
+                      {formatDate(p.createdAt, locale)}
                     </p>
                   </div>
                 </div>
@@ -301,7 +302,7 @@ export default function EarningsClient() {
                   <div className="flex items-start justify-between gap-3 mb-2">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-lg font-bold text-foreground">
-                        {fmtUzs(w.amountUzs)} UZS
+                        {fmtUzs(w.amountUzs, locale)}
                       </p>
                       <span
                         className={`text-xs px-2 py-0.5 rounded-full flex items-center gap-1 ${stat.color}`}
@@ -337,15 +338,17 @@ export default function EarningsClient() {
                     )}
                     <p>
                       {t('teacher.earningsRequestDate')}:{' '}
-                      {new Date(w.requestedAt).toLocaleString('uz-UZ')}
+                      {formatDateTime(w.requestedAt, locale)}
                       {w.completedAt &&
-                        ` · ${t('teacher.earningsPaidDate')}: ${new Date(
+                        ` · ${t('teacher.earningsPaidDate')}: ${formatDateTime(
                           w.completedAt,
-                        ).toLocaleString('uz-UZ')}`}
+                          locale,
+                        )}`}
                       {w.cancelledAt &&
-                        ` · ${t('teacher.earningsCancelledDate')}: ${new Date(
+                        ` · ${t('teacher.earningsCancelledDate')}: ${formatDateTime(
                           w.cancelledAt,
-                        ).toLocaleString('uz-UZ')}`}
+                          locale,
+                        )}`}
                     </p>
                   </div>
                 </div>
@@ -368,7 +371,7 @@ export default function EarningsClient() {
         <ConfirmModal
           open={true}
           title={t('teacher.earningsCancelTitle')}
-          message={`${fmtUzs(pendingCancel.amountUzs)} ${t('teacher.earningsCancelMessage')}`}
+          message={`${fmtUzs(pendingCancel.amountUzs, locale)} ${t('teacher.earningsCancelMessage')}`}
           confirmLabel={t('teacher.earningsCancelBtn')}
           variant="danger"
           isLoading={cancelMut.isPending}
@@ -440,7 +443,7 @@ function WithdrawalModal({
   available: string;
   onClose: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [method, setMethod] = useState<WithdrawalMethodDTO>('bank_transfer');
   const [amount, setAmount] = useState('100000');
   const [bankName, setBankName] = useState('');
@@ -504,7 +507,7 @@ function WithdrawalModal({
         </div>
         <p className="text-xs text-muted-foreground mb-4">
           {t('teacher.withdrawModalAvailable')}:{' '}
-          <strong className="text-primary">{fmtUzs(available)} UZS</strong>
+          <strong className="text-primary">{fmtUzs(available, locale)}</strong>
         </p>
 
         <div className="space-y-3">

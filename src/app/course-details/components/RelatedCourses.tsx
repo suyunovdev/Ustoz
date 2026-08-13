@@ -1,12 +1,15 @@
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatCurrency, formatNumber } from '@/lib/i18n/format';
 
 interface RelatedCoursesProps {
   currentCourseId: string;
 }
 
 const RelatedCourses = ({ currentCourseId }: RelatedCoursesProps) => {
+  const { locale } = useI18n();
   const relatedCourses = [
   {
     id: '2',
@@ -66,9 +69,9 @@ const RelatedCourses = ({ currentCourseId }: RelatedCoursesProps) => {
                 <div className="flex items-center space-x-2">
                   <Icon name="StarIcon" size={14} variant="solid" className="text-accent" />
                   <span className="text-sm font-data">{course.rating}</span>
-                  <span className="text-xs text-muted-foreground">({course.students.toLocaleString()})</span>
+                  <span className="text-xs text-muted-foreground">({formatNumber(course.students, locale)})</span>
                 </div>
-                <span className="text-lg font-heading font-bold text-primary">${course.price}</span>
+                <span className="text-lg font-heading font-bold text-primary">{formatCurrency(course.price, locale, 'USD')}</span>
               </div>
             </div>
           </Link>

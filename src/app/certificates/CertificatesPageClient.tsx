@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 
 interface Certificate {
   id: string;
@@ -17,7 +18,7 @@ interface Certificate {
 }
 
 const CertificatesPageClient = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
@@ -135,7 +136,7 @@ const CertificatesPageClient = () => {
                       {t('courses.certificate')}
                     </p>
                     <p className="text-sm text-primary-foreground/90">
-                      {new Date(cert.issuedAt).toLocaleDateString('uz-UZ', {
+                      {formatDate(cert.issuedAt, locale, {
                         year: 'numeric',
                         month: 'long',
                         day: 'numeric',

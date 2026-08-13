@@ -8,6 +8,8 @@ import { useAdminUsers, type AdminUserDTO } from '@/hooks/queries/useAdminUsers'
 import { useUserActionMutation } from '@/hooks/mutations/useUserActionMutation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate as fmtDate } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 type RoleFilter = 'all' | 'student' | 'teacher' | 'admin';
 
@@ -21,14 +23,14 @@ interface PendingAction {
 
 // FILTERS are now driven by t() inside the component
 
-function formatDate(iso: string | null): string {
+function formatDate(iso: string | null, locale: Locale): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('uz-UZ');
+  return fmtDate(iso, locale, {});
 }
 
 const UserManagementPanel = () => {
   const { user: currentUser } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const ROLE_LABELS: Record<string, { label: string; color: string }> = {
     admin: { label: t('admin.roleAdmin'), color: 'bg-destructive/10 text-destructive' },
@@ -232,8 +234,8 @@ const UserManagementPanel = () => {
                       </div>
                       <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {t('admin.joinedAt')}: {formatDate(user.createdAt)} · {t('admin.lastLogin')}:{' '}
-                        {formatDate(user.lastLoginAt)}
+                        {t('admin.joinedAt')}: {formatDate(user.createdAt, locale)} · {t('admin.lastLogin')}:{' '}
+                        {formatDate(user.lastLoginAt, locale)}
                       </p>
                     </div>
                   </div>

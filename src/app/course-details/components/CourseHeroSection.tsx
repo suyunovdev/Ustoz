@@ -1,5 +1,7 @@
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatNumber } from '@/lib/i18n/format';
 
 interface CourseHeroSectionProps {
   course: {
@@ -26,6 +28,7 @@ interface CourseHeroSectionProps {
 }
 
 const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSectionProps) => {
+  const { locale } = useI18n();
   return (
     <div className="bg-card rounded-md shadow-warm-lg overflow-hidden">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -72,7 +75,7 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
                 </div>
                 <span className="text-xs text-muted-foreground">•</span>
                 <span className="text-xs text-muted-foreground">
-                  {course.instructor.studentsCount.toLocaleString()} o\'quvchi
+                  {formatNumber(course.instructor.studentsCount, locale)} o\'quvchi
                 </span>
               </div>
             </div>
@@ -83,12 +86,12 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
             <div className="flex items-center space-x-1">
               <Icon name="StarIcon" size={18} variant="solid" className="text-accent" />
               <span className="font-data font-semibold">{course.rating}</span>
-              <span className="text-sm text-muted-foreground">({course.reviewCount.toLocaleString()})</span>
+              <span className="text-sm text-muted-foreground">({formatNumber(course.reviewCount, locale)})</span>
             </div>
             <div className="flex items-center space-x-1">
               <Icon name="UserGroupIcon" size={18} className="text-primary" />
               <span className="text-sm text-muted-foreground">
-                {course.enrollmentCount.toLocaleString()} o\'quvchi
+                {formatNumber(course.enrollmentCount, locale)} o\'quvchi
               </span>
             </div>
           </div>
@@ -103,7 +106,7 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
           </button>
 
           <p className="text-xs text-muted-foreground">
-            Oxirgi yangilanish: {new Date(course.lastUpdated).toLocaleDateString('uz-UZ')}
+            Oxirgi yangilanish: {formatDate(course.lastUpdated, locale)}
           </p>
         </div>
       </div>

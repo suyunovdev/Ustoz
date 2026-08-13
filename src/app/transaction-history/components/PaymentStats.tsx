@@ -1,6 +1,7 @@
 'use client';
 
 import { useI18n } from '@/contexts/I18nContext';
+import { formatCurrency } from '@/lib/i18n/format';
 
 interface Transaction {
   id: string;
@@ -15,7 +16,7 @@ interface PaymentStatsProps {
 }
 
 export default function PaymentStats({ transactions }: PaymentStatsProps) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const totalSpent = transactions
     .filter((t) => t.status === 'completed')
     .reduce((sum, t) => sum + t.amount_uzs, 0);
@@ -27,7 +28,7 @@ export default function PaymentStats({ transactions }: PaymentStatsProps) {
   const paymeCount = transactions.filter((t) => t.payment_method === 'payme' && t.status === 'completed').length;
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('uz-UZ').format(amount) + ' so\'m';
+    return formatCurrency(amount, locale, 'UZS');
   };
 
   return (

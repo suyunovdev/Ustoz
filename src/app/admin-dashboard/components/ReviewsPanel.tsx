@@ -11,6 +11,8 @@ import {
 } from '@/hooks/queries/useAdminReviews';
 import { useReviewActionMutation } from '@/hooks/mutations/useReviewActionMutation';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate as fmtDate } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 const STATUS_TABS: { id: ReviewStatusDTO; label: string }[] = [
   { id: 'all', label: 'reviewsAll' },
@@ -24,8 +26,8 @@ type PendingAction =
   | { review: AdminReviewDTO; type: 'unhide' }
   | { review: AdminReviewDTO; type: 'delete' };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('uz-UZ', {
+function formatDate(iso: string, locale: Locale): string {
+  return fmtDate(iso, locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -49,7 +51,7 @@ function Stars({ value }: { value: number }) {
 }
 
 const ReviewsPanel = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [status, setStatus] = useState<ReviewStatusDTO>('all');
   const [rating, setRating] = useState<number | 'all'>('all');
   const [searchInput, setSearchInput] = useState('');
@@ -280,7 +282,7 @@ const ReviewsPanel = () => {
                         )}
                       </div>
                       <p className="text-xs text-muted-foreground mb-2">
-                        {review.course.title} · {formatDate(review.createdAt)}
+                        {review.course.title} · {formatDate(review.createdAt, locale)}
                       </p>
                       {review.comment && (
                         <p className="text-sm text-foreground whitespace-pre-wrap break-words mb-2">

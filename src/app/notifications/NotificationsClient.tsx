@@ -11,6 +11,7 @@ import {
   type NotificationStatusDTO,
 } from '@/hooks/queries/useNotifications';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 import {
   useMarkReadMutation,
   useMarkAllReadMutation,
@@ -19,7 +20,7 @@ import {
 } from '@/hooks/mutations/useNotificationMutations';
 
 export default function NotificationsClient() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const TYPE_LABEL: Record<NotificationTypeDTO, { label: string; icon: string; color: string }> = {
     enrollment: { label: t('notifications.enrollment'), icon: 'UserPlusIcon', color: 'text-primary' },
@@ -43,7 +44,7 @@ export default function NotificationsClient() {
     if (hours < 24) return `${hours} ${t('notifications.hoursAgo')}`;
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days} ${t('notifications.daysAgo')}`;
-    return new Date(iso).toLocaleDateString('uz-UZ');
+    return formatDate(iso, locale);
   }
 
   function groupByDate(rows: NotificationDTO[]): Map<string, NotificationDTO[]> {
@@ -242,7 +243,7 @@ function NotificationCard({
   onArchive: () => void;
   onDelete: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   function timeAgo(iso: string): string {
     const ms = Date.now() - new Date(iso).getTime();
@@ -253,7 +254,7 @@ function NotificationCard({
     if (hours < 24) return `${hours} ${t('notifications.hoursAgo')}`;
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days} ${t('notifications.daysAgo')}`;
-    return new Date(iso).toLocaleDateString('uz-UZ');
+    return formatDate(iso, locale);
   }
 
   const TYPE_LABEL: Record<NotificationTypeDTO, { label: string; icon: string; color: string }> = {

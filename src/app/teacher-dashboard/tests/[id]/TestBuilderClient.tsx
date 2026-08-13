@@ -19,13 +19,14 @@ import {
   useDeleteQuestionMutation,
 } from '@/hooks/mutations/useTestMutations';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 
 interface Props {
   testId: string;
 }
 
 export default function TestBuilderClient({ testId }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const TYPE_LABEL: Record<QuestionTypeDTO, { label: string; icon: string }> = {
     single: { label: t('teacher.singleChoice'), icon: 'CheckCircleIcon' },
@@ -162,7 +163,7 @@ export default function TestBuilderClient({ testId }: Props) {
                     </td>
                     <td className="text-right text-xs text-muted-foreground">
                       {a.submittedAt
-                        ? new Date(a.submittedAt).toLocaleDateString('uz-UZ')
+                        ? formatDate(a.submittedAt, locale)
                         : '-'}
                     </td>
                   </tr>

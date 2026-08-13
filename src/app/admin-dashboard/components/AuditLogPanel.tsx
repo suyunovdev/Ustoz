@@ -8,6 +8,8 @@ import {
   type AuditLogEntryDTO,
 } from '@/hooks/queries/useAdminAuditLog';
 import { useI18n } from '@/contexts/I18nContext';
+import { type Locale } from '@/lib/i18n';
+import { formatDate, formatDateTime } from '@/lib/i18n/format';
 
 // Action prefiks bo'yicha rang
 const ACTION_COLOR: Record<string, string> = {
@@ -41,7 +43,7 @@ function getActionInfo(action: string) {
   };
 }
 
-function formatRelativeTime(iso: string): string {
+function formatRelativeTime(iso: string, locale: Locale): string {
   const now = Date.now();
   const t = new Date(iso).getTime();
   const diffSec = Math.round((now - t) / 1000);
@@ -50,11 +52,11 @@ function formatRelativeTime(iso: string): string {
   if (diffMin < 60) return `${diffMin}m oldin`;
   const diffHr = Math.round(diffMin / 60);
   if (diffHr < 24) return `${diffHr}s oldin`;
-  return new Date(iso).toLocaleDateString('uz-UZ');
+  return formatDate(iso, locale);
 }
 
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('uz-UZ', {
+function fmtDateTime(iso: string, locale: Locale): string {
+  return formatDateTime(iso, locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -248,7 +250,7 @@ function LogRow({
   isOpen: boolean;
   onToggle: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { color, icon } = getActionInfo(log.action);
   return (
     <div className="border border-border rounded-md hover:bg-muted/30 transition-smooth">
@@ -272,7 +274,7 @@ function LogRow({
             {log.targetType}
             {log.targetId && ` · ${log.targetId.slice(0, 8)}...`}
             <span className="mx-2">·</span>
-            {formatRelativeTime(log.createdAt)}
+            {formatRelativeTime(log.createdAt, locale)}
           </p>
         </div>
         <Icon
@@ -284,7 +286,7 @@ function LogRow({
 
       {isOpen && (
         <div className="px-3 pb-3 pt-0 border-t border-border space-y-2 text-sm">
-          <Field label={t('admin.time')} value={formatDateTime(log.createdAt)} />
+          <Field label={t('admin.time')} value={fmtDateTime(log.createdAt, locale)} />
           <Field label="Admin" value={`${log.admin.fullName} <${log.admin.email}>`} />
           <Field label="Action" value={log.action} mono />
           <Field label="Target" value={`${log.targetType}${log.targetId ? ` / ${log.targetId}` : ''}`} mono />

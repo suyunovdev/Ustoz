@@ -11,6 +11,8 @@ import {
 } from '@/hooks/queries/useSupportTickets';
 import { useReplyToTicketMutation } from '@/hooks/mutations/useUserTicketMutations';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 const STATUS_LABEL: Record<TicketStatusDTO, { label: string; color: string }> = {
   open: { label: 'Ochiq', color: 'bg-primary/10 text-primary' },
@@ -20,8 +22,8 @@ const STATUS_LABEL: Record<TicketStatusDTO, { label: string; color: string }> = 
   closed: { label: 'Yopilgan', color: 'bg-muted text-muted-foreground' },
 };
 
-function timeOfDay(iso: string): string {
-  return new Date(iso).toLocaleString('uz-UZ', {
+function timeOfDay(iso: string, locale: Locale): string {
+  return formatDateTime(iso, locale, {
     day: 'numeric',
     month: 'short',
     hour: '2-digit',
@@ -35,7 +37,7 @@ interface Props {
 
 export default function TicketDetailClient({ ticketId }: Props) {
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { data, isLoading, error } = useTicket(ticketId);
   const replyMut = useReplyToTicketMutation(ticketId);
   const [draft, setDraft] = useState('');
@@ -82,7 +84,7 @@ export default function TicketDetailClient({ ticketId }: Props) {
           <div className="flex-1 min-w-0">
             <h1 className="text-lg font-heading font-semibold">{ticket.subject}</h1>
             <p className="text-xs text-muted-foreground">
-              {ticket.category} · {ticket.priority} · {timeOfDay(ticket.createdAt)}
+              {ticket.category} · {ticket.priority} · {timeOfDay(ticket.createdAt, locale)}
             </p>
           </div>
           <span
@@ -148,7 +150,7 @@ export default function TicketDetailClient({ ticketId }: Props) {
                       isMine ? 'text-primary-foreground/70' : 'text-muted-foreground'
                     }`}
                   >
-                    {timeOfDay(m.createdAt)}
+                    {timeOfDay(m.createdAt, locale)}
                   </p>
                 </div>
               </div>

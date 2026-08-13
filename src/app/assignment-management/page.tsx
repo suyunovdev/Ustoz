@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate as i18nFormatDate } from '@/lib/i18n/format';
 
 interface Assignment {
   id: string;
@@ -37,7 +38,7 @@ interface Submission {
 }
 
 const AssignmentManagementInteractive = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [isHydrated, setIsHydrated] = useState(false);
   const [activeTab, setActiveTab] = useState<'list' | 'create' | 'grade'>('list');
@@ -216,8 +217,7 @@ const AssignmentManagementInteractive = () => {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('uz-UZ', {
+    return i18nFormatDate(dateString, locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

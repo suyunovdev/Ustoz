@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 import { useNotifications } from '@/hooks/queries/useNotifications';
 import {
   useMarkReadMutation,
@@ -24,7 +26,7 @@ const TYPE_ICON: Record<NotificationTypeDTO, string> = {
   payment: 'CurrencyDollarIcon',
 };
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, locale: Locale): string {
   const ms = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(ms / 60_000);
   if (mins < 1) return 'hozir';
@@ -33,14 +35,14 @@ function timeAgo(iso: string): string {
   if (hours < 24) return `${hours} soat`;
   const days = Math.floor(hours / 24);
   if (days < 7) return `${days} kun`;
-  return new Date(iso).toLocaleDateString('uz-UZ', {
+  return formatDate(iso, locale, {
     day: 'numeric',
     month: 'short',
   });
 }
 
 const NotificationBell = ({ userId }: NotificationBellProps) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { data, isLoading } = useNotifications();
@@ -144,7 +146,7 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
                             {n.message}
                           </p>
                           <p className="text-[10px] text-muted-foreground mt-0.5">
-                            {timeAgo(n.createdAt)}
+                            {timeAgo(n.createdAt, locale)}
                           </p>
                         </div>
                       </button>

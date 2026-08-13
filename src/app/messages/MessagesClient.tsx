@@ -14,16 +14,18 @@ import {
 } from '@/hooks/queries/useConversations';
 import { useSendMessageMutation } from '@/hooks/mutations/useConversationMutations';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatTime } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
-function timeOfDay(d: string): string {
-  return new Date(d).toLocaleTimeString('uz-UZ', {
+function timeOfDay(d: string, locale: Locale): string {
+  return formatTime(d, locale, {
     hour: '2-digit',
     minute: '2-digit',
   });
 }
 
 export default function MessagesClient() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { user } = useAuth();
 
   function timeAgo(d: string): string {
@@ -35,7 +37,7 @@ export default function MessagesClient() {
     if (hours < 24) return `${hours} ${t('messages.hour')}`;
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days} ${t('messages.day')}`;
-    return new Date(d).toLocaleDateString('uz-UZ');
+    return formatDate(d, locale);
   }
   const searchParams = useSearchParams();
   const deepLinkId = searchParams.get('c');
@@ -157,7 +159,7 @@ function ConversationItem({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   function timeAgo(d: string): string {
     const ms = Date.now() - new Date(d).getTime();
@@ -168,7 +170,7 @@ function ConversationItem({
     if (hours < 24) return `${hours} ${t('messages.hour')}`;
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days} ${t('messages.day')}`;
-    return new Date(d).toLocaleDateString('uz-UZ');
+    return formatDate(d, locale);
   }
 
   return (
@@ -212,7 +214,7 @@ function ConversationItem({
 }
 
 function ConversationThread({ conversationId }: { conversationId: string }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { user } = useAuth();
   const { data, isLoading, error } = useConversationMessages(conversationId);
   const sendMut = useSendMessageMutation(conversationId);
@@ -307,7 +309,7 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
                       isMine ? 'text-primary-foreground/70 justify-end' : 'text-muted-foreground'
                     }`}
                   >
-                    <span>{timeOfDay(m.createdAt)}</span>
+                    <span>{timeOfDay(m.createdAt, locale)}</span>
                     {isMine && (
                       <Icon
                         name={m.readAt ? 'CheckIcon' : 'ClockIcon'}

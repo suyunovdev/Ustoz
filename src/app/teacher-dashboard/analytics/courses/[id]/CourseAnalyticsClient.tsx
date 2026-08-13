@@ -4,10 +4,11 @@ import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import { useCourseAnalytics } from '@/hooks/queries/useTeacherAnalytics';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatCurrency } from '@/lib/i18n/format';
+import { type Locale } from '@/lib/i18n';
 
-function fmtUzs(s: string): string {
-  const n = BigInt(s);
-  return n.toLocaleString('uz-UZ').replace(/,/g, ' ');
+function fmtUzs(s: string, locale: Locale): string {
+  return formatCurrency(Number(s), locale, 'UZS');
 }
 
 interface Props {
@@ -15,7 +16,7 @@ interface Props {
 }
 
 export default function CourseAnalyticsClient({ courseId }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { data, isLoading, error } = useCourseAnalytics(courseId);
 
   if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
@@ -62,8 +63,8 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
         />
         <KpiCard
           label={t('teacher.revenue')}
-          value={fmtUzs(course.totalRevenueUzs) + ' UZS'}
-          sub={`${t('teacher.refunded')}: ${fmtUzs(course.totalRefundsUzs)}`}
+          value={fmtUzs(course.totalRevenueUzs, locale)}
+          sub={`${t('teacher.refunded')}: ${fmtUzs(course.totalRefundsUzs, locale)}`}
           icon="CurrencyDollarIcon"
           color="text-success"
         />

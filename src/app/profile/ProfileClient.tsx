@@ -14,6 +14,7 @@ import {
   useCancelDeletionMutation,
 } from '@/hooks/mutations/useProfileMutations';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatDateTime } from '@/lib/i18n/format';
 
 type TabId = 'profile' | 'password' | 'notifications' | 'account';
 
@@ -404,6 +405,7 @@ function NotificationsTab({ profile }: { profile: ProfileDTO }) {
 }
 
 function AccountTab({ profile }: { profile: ProfileDTO }) {
+  const { locale } = useI18n();
   const requestMut = useRequestDeletionMutation();
   const cancelMut = useCancelDeletionMutation();
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -429,14 +431,14 @@ function AccountTab({ profile }: { profile: ProfileDTO }) {
           <div className="grid grid-cols-[100px_1fr]">
             <dt className="text-muted-foreground">Ro'yxat sanasi</dt>
             <dd className="text-foreground">
-              {new Date(profile.createdAt).toLocaleDateString('uz-UZ')}
+              {formatDate(profile.createdAt, locale)}
             </dd>
           </div>
           <div className="grid grid-cols-[100px_1fr]">
             <dt className="text-muted-foreground">Oxirgi kirish</dt>
             <dd className="text-foreground">
               {profile.lastLoginAt
-                ? new Date(profile.lastLoginAt).toLocaleString('uz-UZ')
+                ? formatDateTime(profile.lastLoginAt, locale)
                 : '—'}
             </dd>
           </div>
@@ -456,7 +458,7 @@ function AccountTab({ profile }: { profile: ProfileDTO }) {
           <>
             <div className="bg-warning/10 text-warning p-3 rounded-md text-sm mb-3">
               ⏳ So'rov yuborildi:{' '}
-              {new Date(profile.deletionRequestedAt!).toLocaleString('uz-UZ')}
+              {formatDateTime(profile.deletionRequestedAt!, locale)}
               {profile.deletionReason && (
                 <p className="text-xs mt-1 opacity-80">
                   Sabab: {profile.deletionReason}

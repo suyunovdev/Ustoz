@@ -14,6 +14,8 @@ import {
   useTicketReplyMutation,
   useTicketStatusMutation,
 } from '@/hooks/mutations/useTicketMutations';
+import { type Locale } from '@/lib/i18n';
+import { formatDateTime } from '@/lib/i18n/format';
 
 type StatusFilter = TicketStatusDTO | 'all';
 
@@ -49,8 +51,8 @@ const CATEGORY_LABEL: Record<string, string> = {
   other: 'categoryOther',
 };
 
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString('uz-UZ', {
+function fmtDateTime(iso: string, locale: Locale): string {
+  return formatDateTime(iso, locale, {
     day: '2-digit',
     month: '2-digit',
     hour: '2-digit',
@@ -212,7 +214,7 @@ function TicketRow({
   active: boolean;
   onClick: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const priority = PRIORITY_BADGE[ticket.priority];
   const status = STATUS_BADGE[ticket.status];
   return (
@@ -235,7 +237,7 @@ function TicketRow({
       </p>
       <div className="flex items-center gap-2 text-xs">
         <span className={`px-2 py-0.5 rounded-full ${status.color}`}>{t(`admin.${status.label}`)}</span>
-        <span className="text-muted-foreground">{formatDateTime(ticket.lastMessageAt)}</span>
+        <span className="text-muted-foreground">{fmtDateTime(ticket.lastMessageAt, locale)}</span>
         <span className="text-muted-foreground ml-auto">💬 {ticket._count.messages}</span>
       </div>
     </button>
@@ -246,7 +248,7 @@ import type { TicketDetailDTO } from '@/hooks/queries/useAdminTickets';
 import { useI18n } from '@/contexts/I18nContext';
 
 function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [reply, setReply] = useState('');
   const replyMut = useTicketReplyMutation();
   const statusMut = useTicketStatusMutation();
@@ -299,7 +301,7 @@ function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
           <span>{ticket.user.fullName} · {ticket.user.email}</span>
           <span>{CATEGORY_LABEL[ticket.category] ?? ticket.category}</span>
           <span className={priorityBadge.color}>⚡ {t(`admin.${priorityBadge.label}`)}</span>
-          <span>📅 {formatDateTime(ticket.createdAt)}</span>
+          <span>📅 {fmtDateTime(ticket.createdAt, locale)}</span>
         </div>
 
         {!isClosed && (
@@ -351,7 +353,7 @@ function TicketDetail({ ticket }: { ticket: TicketDetailDTO }) {
             >
               <div className="flex items-center gap-2 mb-1 text-xs">
                 <span className="font-medium text-foreground">{msg.author.fullName}</span>
-                <span className="text-muted-foreground">{formatDateTime(msg.createdAt)}</span>
+                <span className="text-muted-foreground">{fmtDateTime(msg.createdAt, locale)}</span>
               </div>
               <p className="text-sm text-foreground whitespace-pre-wrap break-words">{msg.body}</p>
             </div>

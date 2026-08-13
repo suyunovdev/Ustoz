@@ -10,10 +10,11 @@ import {
   type EarningStatusDTO,
 } from '@/hooks/queries/useReferrals';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatNumber } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
-function fmtUzs(s: string): string {
-  const n = BigInt(s);
-  return n.toLocaleString('uz-UZ').replace(/,/g, ' ');
+function fmtUzs(s: string, locale: Locale): string {
+  return formatNumber(Number(s), locale);
 }
 
 const STATUS_LABEL: Record<EarningStatusDTO, { label: string; color: string }> = {
@@ -23,7 +24,7 @@ const STATUS_LABEL: Record<EarningStatusDTO, { label: string; color: string }> =
 };
 
 export default function ReferralsClient() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { data, isLoading, error } = useMyReferral();
   const [statusFilter, setStatusFilter] = useState<EarningStatusDTO | undefined>();
   const earnings = useMyEarnings(statusFilter);
@@ -158,7 +159,7 @@ export default function ReferralsClient() {
         <StatCard
           icon="BanknotesIcon"
           label="Jami daromad"
-          value={fmtUzs(ref.totalEarnedUzs)}
+          value={fmtUzs(ref.totalEarnedUzs, locale)}
           sub="UZS"
           color="text-success"
         />
@@ -168,13 +169,13 @@ export default function ReferralsClient() {
         <div className="bg-warning/5 border border-warning/30 rounded-md p-4">
           <p className="text-xs text-muted-foreground">Kutilayotgan</p>
           <p className="text-xl font-bold text-warning">
-            {fmtUzs(ref.pendingEarningsUzs)} UZS
+            {fmtUzs(ref.pendingEarningsUzs, locale)} UZS
           </p>
         </div>
         <div className="bg-success/5 border border-success/30 rounded-md p-4">
           <p className="text-xs text-muted-foreground">To'langan</p>
           <p className="text-xl font-bold text-success">
-            {fmtUzs(ref.paidEarningsUzs)} UZS
+            {fmtUzs(ref.paidEarningsUzs, locale)} UZS
           </p>
         </div>
       </div>
@@ -257,12 +258,12 @@ export default function ReferralsClient() {
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground">
-                  {new Date(e.createdAt).toLocaleDateString('uz-UZ')} ·{' '}
+                  {formatDate(e.createdAt, locale)} ·{' '}
                   {e.commissionPct}% komissiya
                 </p>
               </div>
               <p className="text-base font-bold text-success shrink-0">
-                +{fmtUzs(e.amountUzs)} UZS
+                +{fmtUzs(e.amountUzs, locale)} UZS
               </p>
             </div>
           ))}

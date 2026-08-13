@@ -16,6 +16,7 @@ import {
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
 import { useTeacherStudents } from '@/hooks/queries/useTeacherStudents';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 
 export default function CertificatesClient() {
   const { t } = useI18n();
@@ -161,7 +162,7 @@ function CertCard({
   cert: CertificateDTO;
   onRevoke: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const isRevoked = cert.status === 'revoked';
   return (
     <div
@@ -205,7 +206,7 @@ function CertCard({
             <p className="text-success font-bold text-base">{cert.finalGrade}/100</p>
           )}
           <p className="text-muted-foreground">
-            {new Date(cert.issuedAt).toLocaleDateString('uz-UZ')}
+            {formatDate(cert.issuedAt, locale)}
           </p>
         </div>
       </div>

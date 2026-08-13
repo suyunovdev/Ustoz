@@ -6,6 +6,8 @@ import Icon from '@/components/ui/AppIcon';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatCurrency } from '@/lib/i18n/format';
+import { type Locale } from '@/lib/i18n';
 import { type TeacherTabId } from './TeacherSidebar';
 import MetricsCard from './MetricsCard';
 import {
@@ -58,16 +60,10 @@ const STATUS_BADGE_KEYS: Record<ModerationStatusDTO, { labelKey: string; color: 
   },
 };
 
-function formatUzs(uzs: string | number): string {
+function formatUzs(uzs: string | number, locale: Locale): string {
   const n = typeof uzs === 'string' ? Number(uzs) : uzs;
-  if (!Number.isFinite(n) || n === 0) return "0 so'm";
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M so'm`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K so'm`;
-  return `${n.toLocaleString('uz-UZ')} so'm`;
-}
-
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('uz-UZ');
+  if (!Number.isFinite(n)) return formatCurrency(0, locale, 'UZS');
+  return formatCurrency(n, locale, 'UZS');
 }
 
 type PendingAction =
@@ -300,7 +296,7 @@ function OverviewTab({
   isLoading: boolean;
   onCreateCourse: () => void;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const stats = data?.stats;
   const topCourses = data?.topCourses ?? [];
 
@@ -309,7 +305,7 @@ function OverviewTab({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricsCard
           title={t('teacher.overviewTotalRevenue')}
-          value={isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0')}
+          value={isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0', locale)}
           icon="CurrencyDollarIcon"
           subtitle={t('teacher.overviewFromAllCourses')}
         />
@@ -373,7 +369,7 @@ function OverviewTab({
                   </div>
                 </div>
                 <span className="text-sm font-semibold text-success shrink-0">
-                  {formatUzs(c.revenueUzs)}
+                  {formatUzs(c.revenueUzs, locale)}
                 </span>
               </div>
             ))}
@@ -405,8 +401,8 @@ function OverviewTab({
                   <p className="text-xs text-muted-foreground truncate">{t.courseTitle}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-success">{formatUzs(t.amountUzs)}</p>
-                  <p className="text-xs text-muted-foreground">{formatDate(t.createdAt)}</p>
+                  <p className="text-sm font-semibold text-success">{formatUzs(t.amountUzs, locale)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(t.createdAt, locale)}</p>
                 </div>
               </div>
             ))}
@@ -431,7 +427,7 @@ function CoursesTab({
   onEdit: (id: string) => void;
 }) {
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   return (
     <div className="space-y-4">
@@ -508,12 +504,12 @@ function CoursesTab({
                     <div>👥 {course.enrollmentCount} {t('teacher.coursesStudentLabel')}</div>
                     <div>⭐ {course.rating.toFixed(1)} ({course.reviewCount})</div>
                     <div>📚 {course.topicCount} {t('teacher.coursesTopicLabel')}</div>
-                    <div>📅 {formatDate(course.createdAt)}</div>
+                    <div>📅 {formatDate(course.createdAt, locale)}</div>
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border">
                     <span className="text-sm font-semibold text-success">
-                      {formatUzs(course.revenueUzs)}
+                      {formatUzs(course.revenueUzs, locale)}
                     </span>
                     <div className="relative">
                       <button
@@ -626,7 +622,7 @@ function EarningsTab({
   data: ReturnType<typeof useTeacherDashboard>['data'];
   isLoading: boolean;
 }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const stats = data?.stats;
   const transactions = data?.recentTransactions ?? [];
 
@@ -636,12 +632,12 @@ function EarningsTab({
         <div className="bg-card rounded-md shadow-warm p-6">
           <p className="text-sm text-muted-foreground mb-1">{t('teacher.earningsCurrentBalance')}</p>
           <p className="text-3xl font-heading font-bold text-foreground">
-            {isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0')}
+            {isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0', locale)}
           </p>
         </div>
         <div className="bg-card rounded-md shadow-warm p-6">
           <p className="text-sm text-muted-foreground mb-1">{t('teacher.earningsPendingPayment')}</p>
-          <p className="text-3xl font-heading font-bold text-foreground">0 so'm</p>
+          <p className="text-3xl font-heading font-bold text-foreground">{formatCurrency(0, locale, 'UZS')}</p>
           <p className="text-xs text-muted-foreground mt-1">{t('teacher.earningsWithdrawPhase')}</p>
         </div>
         <div className="bg-card rounded-md shadow-warm p-6 flex items-center justify-center">
@@ -678,8 +674,8 @@ function EarningsTab({
                   <p className="text-xs text-muted-foreground truncate">{t.courseTitle}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-success">{formatUzs(t.amountUzs)}</p>
-                  <p className="text-xs text-muted-foreground">{formatDate(t.createdAt)}</p>
+                  <p className="text-sm font-semibold text-success">{formatUzs(t.amountUzs, locale)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(t.createdAt, locale)}</p>
                 </div>
               </div>
             ))}

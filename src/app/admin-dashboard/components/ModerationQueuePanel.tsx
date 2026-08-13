@@ -11,6 +11,8 @@ import {
 } from '@/hooks/queries/useAdminModeration';
 import { useModerateMaterialMutation } from '@/hooks/mutations/useModerateMaterialMutation';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime as fmtDateTime } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 interface ModerationQueuePanelProps {
   expanded?: boolean;
@@ -49,9 +51,9 @@ type PendingAction =
   | { item: ModerationQueueItemDTO; type: 'reject' }
   | { item: ModerationQueueItemDTO; type: 'request_revision' };
 
-function formatDateTime(iso: string | null): string {
+function formatDateTime(iso: string | null, locale: Locale): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('uz-UZ', {
+  return fmtDateTime(iso, locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -61,7 +63,7 @@ function formatDateTime(iso: string | null): string {
 }
 
 const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('submitted');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -356,7 +358,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
                         {item.material.course && ` · ${item.material.course.title}`}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        📅 {formatDateTime(item.submittedAt)}
+                        📅 {formatDateTime(item.submittedAt, locale)}
                       </p>
                     </div>
                     <Icon
@@ -400,7 +402,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
 
                       {item.reviewer && item.reviewedAt && (
                         <p className="text-xs text-muted-foreground">
-                          ✓ {item.reviewer.fullName} tomonidan {formatDateTime(item.reviewedAt)}'da
+                          ✓ {item.reviewer.fullName} tomonidan {formatDateTime(item.reviewedAt, locale)}'da
                         </p>
                       )}
 

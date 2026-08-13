@@ -20,13 +20,14 @@ import {
 } from '@/hooks/mutations/useGroupMutations';
 import { COLOR_CLASS } from '../GroupsListClient';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 
 interface Props {
   groupId: string;
 }
 
 export default function GroupDetailClient({ groupId }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const group = useTeacherGroup(groupId);
   const members = useGroupMembers(groupId);
   const updateMut = useUpdateGroupMutation(groupId);
@@ -185,7 +186,7 @@ export default function GroupDetailClient({ groupId }: Props) {
                 <p className="text-xs text-muted-foreground truncate">{m.email}</p>
               </div>
               <div className="text-xs text-muted-foreground shrink-0">
-                {new Date(m.joinedAt).toLocaleDateString('uz-UZ')}
+                {formatDate(m.joinedAt, locale)}
               </div>
               <button
                 onClick={() => setPendingRemove(m)}

@@ -11,6 +11,8 @@ import {
 } from '@/hooks/queries/useAdminTeacherApplications';
 import { useReviewTeacherAppMutation } from '@/hooks/mutations/useReviewTeacherAppMutation';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate as fmtDate } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 type StatusFilter = ApplicationStatusDTO | 'all';
 
@@ -34,8 +36,8 @@ type PendingAction =
   | { app: TeacherApplicationDTO; type: 'approve' }
   | { app: TeacherApplicationDTO; type: 'reject' };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('uz-UZ', {
+function formatDate(iso: string, locale: Locale): string {
+  return fmtDate(iso, locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -43,7 +45,7 @@ function formatDate(iso: string): string {
 }
 
 const TeacherApplicationsPanel = () => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('pending');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
@@ -251,7 +253,7 @@ const TeacherApplicationsPanel = () => {
                         {app.email} · {app.expertise}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        📅 {formatDate(app.createdAt)}
+                        📅 {formatDate(app.createdAt, locale)}
                       </p>
                     </div>
                     <Icon

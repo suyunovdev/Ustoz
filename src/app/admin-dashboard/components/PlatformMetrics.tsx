@@ -3,18 +3,20 @@
 import Icon from '@/components/ui/AppIcon';
 import { useAdminStats } from '@/hooks/queries/useAdminStats';
 import { useI18n } from '@/contexts/I18nContext';
+import { type Locale } from '@/lib/i18n';
+import { formatNumber, formatCurrency } from '@/lib/i18n/format';
 
-function formatUzs(uzs: string | number): string {
+function formatUzs(uzs: string | number, locale: Locale): string {
   const n = typeof uzs === 'string' ? Number(uzs) : uzs;
-  if (!Number.isFinite(n)) return "0 so'm";
+  if (!Number.isFinite(n)) return formatCurrency(0, locale, 'UZS');
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M so'm`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K so'm`;
-  return `${n.toLocaleString('uz-UZ')} so'm`;
+  return formatCurrency(n, locale, 'UZS');
 }
 
 const PlatformMetrics = () => {
   const { data, isLoading, error } = useAdminStats();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   if (isLoading || !data) {
     return (
@@ -39,7 +41,7 @@ const PlatformMetrics = () => {
   const metrics = [
     {
       title: t('admin.totalUsers'),
-      value: data.totalUsers.toLocaleString(),
+      value: formatNumber(data.totalUsers, locale),
       sub: `${data.usersByRole.student} ${t('admin.studentLabel')} · ${data.usersByRole.teacher} ${t('admin.teacherLabel')} · ${data.usersByRole.admin} ${t('admin.adminLabel')}`,
       icon: 'UserGroupIcon',
       trend: data.userGrowth,
@@ -47,7 +49,7 @@ const PlatformMetrics = () => {
     },
     {
       title: t('admin.activeCourses'),
-      value: data.activeCourses.toLocaleString(),
+      value: formatNumber(data.activeCourses, locale),
       sub: `+${data.newCoursesLast30d} ${t('admin.newCoursesLast30d')}`,
       icon: 'BookOpenIcon',
       trend: data.courseGrowth,
@@ -55,8 +57,8 @@ const PlatformMetrics = () => {
     },
     {
       title: t('admin.totalRevenue'),
-      value: formatUzs(data.totalRevenueUzs),
-      sub: `≈ $${data.totalRevenueUsd.toLocaleString()}`,
+      value: formatUzs(data.totalRevenueUzs, locale),
+      sub: `≈ ${formatCurrency(data.totalRevenueUsd, locale, 'USD')}`,
       icon: 'CurrencyDollarIcon',
       trend: data.revenueGrowth,
       color: 'text-secondary',

@@ -11,6 +11,7 @@ import {
 } from '@/hooks/queries/useAssignments';
 import { useSubmitAssignmentMutation } from '@/hooks/mutations/useAssignmentMutations';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime } from '@/lib/i18n/format';
 
 const STATUS_LABEL: Record<SubmissionStatusDTO, { label: string; color: string }> = {
   submitted: { label: 'Topshirilgan', color: 'bg-primary/10 text-primary' },
@@ -35,7 +36,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
   const [attachmentName, setAttachmentName] = useState('');
   const [now, setNow] = useState(Date.now());
 
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 30_000);
@@ -174,7 +175,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
                 isOverdue ? 'text-destructive' : remainingMs < 86400_000 ? 'text-warning' : 'text-foreground'
               }`}
             >
-              {due.toLocaleString('uz-UZ')}
+              {formatDateTime(due, locale, {})}
             </p>
           </div>
           <div>

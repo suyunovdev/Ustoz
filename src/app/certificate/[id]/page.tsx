@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
 
 interface Certificate {
   id: string;
@@ -23,7 +24,7 @@ interface Certificate {
 export default function CertificatePage() {
   const params = useParams();
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const id = params?.id as string;
   const [certificate, setCertificate] = useState<Certificate | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,7 +79,7 @@ export default function CertificatePage() {
     );
   }
 
-  const issuedDate = new Date(certificate.issued_at).toLocaleDateString('uz-UZ', {
+  const issuedDate = formatDate(certificate.issued_at, locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

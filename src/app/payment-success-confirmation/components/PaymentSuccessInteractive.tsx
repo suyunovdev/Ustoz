@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime, formatCurrency } from '@/lib/i18n/format';
 import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
 
@@ -34,7 +35,7 @@ const PaymentSuccessInteractive = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -246,7 +247,7 @@ const PaymentSuccessInteractive = () => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('uz-UZ', {
+    return formatDateTime(dateString, locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -256,7 +257,7 @@ const PaymentSuccessInteractive = () => {
   };
 
   const formatAmount = (amount: number) => {
-    return (amount / 100).toLocaleString('uz-UZ');
+    return formatCurrency(amount / 100, locale, 'UZS');
   };
 
   if (loading) {
@@ -342,7 +343,7 @@ const PaymentSuccessInteractive = () => {
             </div>
             <div className="flex justify-between py-2 border-t border-border pt-4">
               <span className="text-lg font-semibold text-foreground">{t('payment.totalAmount')}:</span>
-              <span className="text-2xl font-bold text-primary">{formatAmount(transaction.amount_uzs)} so'm</span>
+              <span className="text-2xl font-bold text-primary">{formatAmount(transaction.amount_uzs)}</span>
             </div>
           </div>
         </div>

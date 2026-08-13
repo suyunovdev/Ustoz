@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatNumber } from '@/lib/i18n/format';
 
 interface Review {
   id: string;
@@ -20,6 +22,7 @@ interface CourseReviewsProps {
 }
 
 const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsProps) => {
+  const { locale } = useI18n();
   const [sortBy, setSortBy] = useState<'recent' | 'helpful'>('recent');
 
   const ratingDistribution = [
@@ -57,7 +60,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
               />
             ))}
           </div>
-          <p className="text-sm text-muted-foreground">{totalReviews.toLocaleString()} baho</p>
+          <p className="text-sm text-muted-foreground">{formatNumber(totalReviews, locale)} baho</p>
         </div>
 
         {/* Rating Distribution */}
@@ -132,7 +135,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
                       ))}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(review.date).toLocaleDateString('uz-UZ')}
+                      {formatDate(review.date, locale)}
                     </span>
                   </div>
                 </div>

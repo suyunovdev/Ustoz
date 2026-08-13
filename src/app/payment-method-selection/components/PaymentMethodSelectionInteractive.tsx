@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatCurrency } from '@/lib/i18n/format';
 import AppImage from '@/components/ui/AppImage';
 
 interface Course {
@@ -19,7 +20,7 @@ export default function PaymentMethodSelectionInteractive() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [course, setCourse] = useState<Course | null>(null);
   const [selectedMethod, setSelectedMethod] = useState<'click' | 'payme' | null>(null);
   const [loading, setLoading] = useState(true);
@@ -139,7 +140,7 @@ export default function PaymentMethodSelectionInteractive() {
   };
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('uz-UZ').format(amount) + ' so\'m';
+    return formatCurrency(amount, locale, 'UZS');
   };
 
   if (loading) {

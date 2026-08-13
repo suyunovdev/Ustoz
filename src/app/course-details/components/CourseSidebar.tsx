@@ -1,4 +1,6 @@
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatCurrency, formatDate, formatNumber } from '@/lib/i18n/format';
 
 interface CourseSidebarProps {
   course: {
@@ -17,6 +19,7 @@ interface CourseSidebarProps {
 }
 
 const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps) => {
+  const { locale } = useI18n();
   return (
     <div className="sticky top-24 space-y-4">
       {/* Pricing Card */}
@@ -24,12 +27,11 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
         <div className="space-y-2">
           <div className="flex items-baseline space-x-2">
             <span className="text-3xl font-heading font-bold text-primary">
-              ${course.pricing.usd}
+              {formatCurrency(course.pricing.usd, locale, 'USD')}
             </span>
-            <span className="text-sm text-muted-foreground">USD</span>
           </div>
           <div className="text-lg text-muted-foreground">
-            {course.pricing.uzs.toLocaleString()} so\'m
+            {formatCurrency(course.pricing.uzs, locale, 'UZS')}
           </div>
         </div>
 
@@ -65,7 +67,7 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
               <span className="text-sm">O\'quvchilar</span>
             </div>
             <span className="text-sm font-medium text-foreground">
-              {course.enrollmentCount.toLocaleString()}
+              {formatNumber(course.enrollmentCount, locale)}
             </span>
           </div>
 
@@ -83,7 +85,7 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
               <span className="text-sm">Yangilangan</span>
             </div>
             <span className="text-sm font-medium text-foreground">
-              {new Date(course.lastUpdated).toLocaleDateString('uz-UZ')}
+              {formatDate(course.lastUpdated, locale)}
             </span>
           </div>
 

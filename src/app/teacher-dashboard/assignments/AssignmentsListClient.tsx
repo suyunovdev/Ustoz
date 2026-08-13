@@ -18,6 +18,7 @@ import {
 } from '@/hooks/mutations/useAssignmentMutations';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatTime } from '@/lib/i18n/format';
 
 const STATUS_LABEL_KEYS: Record<AssignmentStatusDTO, { labelKey: string; color: string }> = {
   draft: { labelKey: 'teacher.assignmentsStatusDraft', color: 'bg-muted text-muted-foreground' },
@@ -33,7 +34,7 @@ const TYPE_LABEL_KEYS: Record<SubmissionTypeDTO, { icon: string; labelKey: strin
 };
 
 export default function AssignmentsListClient() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const [statusFilter, setStatusFilter] = useState<AssignmentStatusDTO | 'all'>('all');
   const [createOpen, setCreateOpen] = useState(false);
@@ -158,8 +159,8 @@ export default function AssignmentsListClient() {
                       <span
                         className={overdue ? 'text-destructive font-medium' : ''}
                       >
-                        ⏰ {due.toLocaleDateString('uz-UZ')}{' '}
-                        {due.toLocaleTimeString('uz-UZ', {
+                        ⏰ {formatDate(due, locale)}{' '}
+                        {formatTime(due, locale, {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime, formatCurrency } from '@/lib/i18n/format';
 import Icon from '@/components/ui/AppIcon';
 
 interface Transaction {
@@ -26,7 +27,7 @@ const PaymentProcessingInteractive = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [course, setCourse] = useState<Course | null>(null);
@@ -234,7 +235,7 @@ const PaymentProcessingInteractive = () => {
               <div className="flex justify-between">
                 <span className="text-sm text-muted-foreground">{t('payment.sum')}:</span>
                 <span className="text-sm font-medium text-foreground">
-                  {transaction.amount_uzs.toLocaleString()} so'm
+                  {formatCurrency(transaction.amount_uzs, locale, 'UZS')}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -253,7 +254,7 @@ const PaymentProcessingInteractive = () => {
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">{t('payment.completedAt')}:</span>
                   <span className="text-sm font-medium text-foreground">
-                    {new Date(transaction.completed_at).toLocaleString('uz-UZ')}
+                    {formatDateTime(transaction.completed_at, locale, {})}
                   </span>
                 </div>
               )}

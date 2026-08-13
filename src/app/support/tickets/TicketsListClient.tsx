@@ -8,6 +8,8 @@ import {
   type TicketPriorityDTO,
 } from '@/hooks/queries/useSupportTickets';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 const STATUS_LABEL: Record<TicketStatusDTO, { label: string; color: string }> = {
   open: { label: 'Ochiq', color: 'bg-primary/10 text-primary' },
@@ -24,18 +26,18 @@ const PRIORITY_BADGE: Record<TicketPriorityDTO, string> = {
   urgent: 'bg-destructive/10 text-destructive',
 };
 
-function timeAgo(iso: string): string {
+function timeAgo(iso: string, locale: Locale): string {
   const ms = Date.now() - new Date(iso).getTime();
   const days = Math.floor(ms / 86_400_000);
   if (days === 0) return 'bugun';
   if (days === 1) return 'kecha';
   if (days < 7) return `${days} kun oldin`;
   if (days < 30) return `${Math.floor(days / 7)} hafta oldin`;
-  return new Date(iso).toLocaleDateString('uz-UZ');
+  return formatDate(iso, locale);
 }
 
 export default function TicketsListClient() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { data, isLoading, error } = useMyTickets();
   const tickets = data?.tickets ?? [];
 
@@ -125,7 +127,7 @@ export default function TicketsListClient() {
                     </div>
                     <p className="text-xs text-muted-foreground">
                       {t.category} · {t._count.messages} ta xabar · oxirgi{' '}
-                      {timeAgo(t.lastMessageAt)}
+                      {timeAgo(t.lastMessageAt, locale)}
                     </p>
                   </div>
                   <Icon

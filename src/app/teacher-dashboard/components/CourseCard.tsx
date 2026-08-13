@@ -1,5 +1,9 @@
+'use client';
+
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatCurrency } from '@/lib/i18n/format';
 
 interface CourseCardProps {
   course: {
@@ -20,6 +24,7 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: CourseCardProps) => {
+  const { locale } = useI18n();
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
@@ -81,7 +86,7 @@ const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: Cou
           
           <div className="flex items-center space-x-2 text-sm">
             <Icon name="CurrencyDollarIcon" size={16} className="text-success" />
-            <span className="font-medium text-foreground">${course.revenue.toLocaleString()}</span>
+            <span className="font-medium text-foreground">{formatCurrency(course.revenue, locale, 'USD')}</span>
             <span className="text-muted-foreground">daromad</span>
           </div>
         </div>

@@ -8,13 +8,13 @@ import {
   usePublicTeacherCourses,
 } from '@/hooks/queries/useProfile';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatNumber, formatCurrency } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
-function fmtUzs(s: string): string {
+function fmtUzs(s: string, locale: Locale): string {
   const n = BigInt(s);
   if (n === BigInt(0)) return 'Bepul';
-  if (n >= BigInt(1_000_000)) return `${(Number(n) / 1_000_000).toFixed(1)}M UZS`;
-  if (n >= BigInt(1_000)) return `${(Number(n) / 1_000).toFixed(0)}K UZS`;
-  return `${n.toString()} UZS`;
+  return formatCurrency(Number(n), locale, 'UZS');
 }
 
 const SOCIAL_ICON: Record<string, string> = {
@@ -33,7 +33,7 @@ interface Props {
 }
 
 export default function PublicTeacherClient({ teacherId }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const teacher = usePublicTeacher(teacherId);
   const courses = usePublicTeacherCourses(teacherId);
 
@@ -82,7 +82,7 @@ export default function PublicTeacherClient({ teacherId }: Props) {
               )}
               <p className="text-xs text-muted-foreground mt-2">
                 Platformaga qo'shilgan:{' '}
-                {new Date(prof.joinedAt).toLocaleDateString('uz-UZ', {
+                {formatDate(prof.joinedAt, locale, {
                   year: 'numeric',
                   month: 'long',
                 })}
@@ -116,7 +116,7 @@ export default function PublicTeacherClient({ teacherId }: Props) {
             <StatCard
               icon="UserGroupIcon"
               label="Talabalar"
-              value={prof.totalStudents.toLocaleString('uz-UZ')}
+              value={formatNumber(prof.totalStudents, locale)}
             />
             <StatCard
               icon="StarIcon"
@@ -201,7 +201,7 @@ export default function PublicTeacherClient({ teacherId }: Props) {
                       <span className="text-warning">⭐ {c.rating}</span>
                     )}
                     <span className="text-foreground font-medium">
-                      {fmtUzs(c.priceUzs)}
+                      {fmtUzs(c.priceUzs, locale)}
                     </span>
                   </div>
                 </div>

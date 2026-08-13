@@ -18,19 +18,20 @@ import {
 } from '@/hooks/mutations/useTeacherStudentMutations';
 import { useStartConversationMutation } from '@/hooks/mutations/useConversationMutations';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate, formatCurrency } from '@/lib/i18n/format';
+import { type Locale } from '@/lib/i18n';
 
 interface Props {
   studentId: string;
 }
 
-function formatUzs(s: string): string {
-  const n = BigInt(s);
-  return n.toLocaleString('uz-UZ').replace(/,/g, ' ');
+function formatUzs(s: string, locale: Locale): string {
+  return formatCurrency(Number(s), locale, 'UZS');
 }
 
 export default function StudentDetailClient({ studentId }: Props) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { data, isLoading, error } = useStudentDetail(studentId);
   const toggle = useToggleEnrollmentMutation(studentId);
   const remove = useRemoveEnrollmentMutation(studentId);
@@ -92,7 +93,7 @@ export default function StudentDetailClient({ studentId }: Props) {
             <h1 className="text-2xl font-heading font-semibold">{s.fullName}</h1>
             <p className="text-sm text-muted-foreground">{s.email}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Ro'yxatdan o'tgan: {new Date(s.createdAt).toLocaleDateString('uz-UZ')}
+              Ro'yxatdan o'tgan: {formatDate(s.createdAt, locale)}
             </p>
           </div>
         </div>
@@ -137,7 +138,7 @@ export default function StudentDetailClient({ studentId }: Props) {
         <StatCard
           label="Sertifikatlar"
           value={`${s.totalCertificates} ta`}
-          subValue={`${formatUzs(s.totalPaymentsUzs)} UZS`}
+          subValue={formatUzs(s.totalPaymentsUzs, locale)}
           icon="TrophyIcon"
         />
       </div>
@@ -217,9 +218,9 @@ export default function StudentDetailClient({ studentId }: Props) {
                 <span className="font-medium text-foreground">{e.progress}%</span>
               </div>
               <p>
-                Yozilgan: {new Date(e.enrolledAt).toLocaleDateString('uz-UZ')} ·{' '}
+                Yozilgan: {formatDate(e.enrolledAt, locale)} ·{' '}
                 Oxirgi: {e.lastAccessedAt
-                  ? new Date(e.lastAccessedAt).toLocaleDateString('uz-UZ')
+                  ? formatDate(e.lastAccessedAt, locale)
                   : 'hech qachon'}
               </p>
             </div>
