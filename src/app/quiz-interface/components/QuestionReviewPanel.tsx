@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface QuizQuestion {
   id: string;
@@ -32,31 +33,32 @@ const QuestionReviewPanel = ({
   currentQuestionIndex,
   onGoToQuestion
 }: QuestionReviewPanelProps) => {
+  const { t } = useI18n();
   return (
     <div className="bg-card rounded-lg shadow-warm-md p-6 sticky top-24">
       <h3 className="text-lg font-heading font-bold text-foreground mb-4">
-        Savollar ro\'yxati
+        {t('quiz.questionsList')}
       </h3>
 
       {/* Legend */}
       <div className="space-y-2 mb-4 pb-4 border-b border-border">
         <div className="flex items-center space-x-2 text-sm">
           <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center text-primary-foreground font-medium">1</div>
-          <span className="text-muted-foreground">Joriy savol</span>
+          <span className="text-muted-foreground">{t('quiz.currentQuestion')}</span>
         </div>
         <div className="flex items-center space-x-2 text-sm">
           <div className="w-8 h-8 rounded-md bg-success/20 border-2 border-success flex items-center justify-center text-success font-medium">2</div>
-          <span className="text-muted-foreground">Javoblangan</span>
+          <span className="text-muted-foreground">{t('quiz.answered')}</span>
         </div>
         <div className="flex items-center space-x-2 text-sm">
           <div className="w-8 h-8 rounded-md bg-warning/20 border-2 border-warning flex items-center justify-center text-warning font-medium">
             <Icon name="FlagIcon" size={16} variant="solid" />
           </div>
-          <span className="text-muted-foreground">Belgilangan</span>
+          <span className="text-muted-foreground">{t('quiz.flagged')}</span>
         </div>
         <div className="flex items-center space-x-2 text-sm">
           <div className="w-8 h-8 rounded-md border-2 border-border flex items-center justify-center text-muted-foreground font-medium">3</div>
-          <span className="text-muted-foreground">Javoblanmagan</span>
+          <span className="text-muted-foreground">{t('quiz.unanswered')}</span>
         </div>
       </div>
 
@@ -94,24 +96,24 @@ const QuestionReviewPanel = ({
       {/* Summary */}
       <div className="mt-4 pt-4 border-t border-border space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Jami savollar:</span>
+          <span className="text-muted-foreground">{t('quiz.totalQuestions')}:</span>
           <span className="font-medium text-foreground">{questions.length}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Javoblangan:</span>
+          <span className="text-muted-foreground">{t('quiz.answered')}:</span>
           <span className="font-medium text-success">
             {answers.filter(a => a.answer !== null && a.answer !== '').length}
           </span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Javoblanmagan:</span>
+          <span className="text-muted-foreground">{t('quiz.unanswered')}:</span>
           <span className="font-medium text-destructive">
             {answers.filter(a => a.answer === null || a.answer === '').length}
           </span>
         </div>
         {answers.filter(a => a.flagged).length > 0 && (
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Belgilangan:</span>
+            <span className="text-muted-foreground">{t('quiz.flagged')}:</span>
             <span className="font-medium text-warning">
               {answers.filter(a => a.flagged).length}
             </span>

@@ -1,10 +1,14 @@
+'use client';
+
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface ResourceDownloadsProps {
   topicId: string;
 }
 
 const ResourceDownloads = ({ topicId }: ResourceDownloadsProps) => {
+  const { t } = useI18n();
   const mockResources = [
     {
       id: '1',
@@ -43,9 +47,9 @@ const ResourceDownloads = ({ topicId }: ResourceDownloadsProps) => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h3 className="font-heading font-semibold text-foreground mb-2">Resurslar</h3>
+        <h3 className="font-heading font-semibold text-foreground mb-2">{t('learning.resources')}</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Ushbu mavzu uchun qo\'shimcha materiallar va fayllar
+          {t('learning.resourcesDescription')}
         </p>
       </div>
 
@@ -76,7 +80,7 @@ const ResourceDownloads = ({ topicId }: ResourceDownloadsProps) => {
       </div>
 
       <button className="w-full px-4 py-3 border-2 border-dashed border-border rounded-md text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary transition-smooth">
-        Barcha resurslarni yuklab olish
+        {t('learning.downloadAllResources')}
       </button>
     </div>
   );

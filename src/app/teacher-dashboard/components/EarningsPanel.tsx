@@ -27,7 +27,7 @@ const EarningsPanel = ({
   transactions,
   onWithdraw
 }: EarningsPanelProps) => {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -44,11 +44,11 @@ const EarningsPanel = ({
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'Bajarildi';
+        return t('teacher.txStatusCompleted');
       case 'pending':
-        return 'Kutilmoqda';
+        return t('teacher.earningsPaymentPending');
       case 'processing':
-        return 'Jarayonda';
+        return t('teacher.earningsPaymentProcessing');
       default:
         return status;
     }
@@ -61,58 +61,58 @@ const EarningsPanel = ({
         <div className="bg-primary text-primary-foreground rounded-md shadow-warm p-6">
           <div className="flex items-center space-x-3 mb-2">
             <Icon name="WalletIcon" size={24} />
-            <p className="text-sm opacity-90">Joriy balans</p>
+            <p className="text-sm opacity-90">{t('teacher.earningsCurrentBalance')}</p>
           </div>
           <h3 className="text-3xl font-heading font-bold">{formatCurrency(currentBalance, locale, 'USD')}</h3>
           <button
             onClick={onWithdraw}
             className="mt-4 w-full px-4 py-2 bg-primary-foreground text-primary rounded-md font-medium transition-smooth hover:bg-primary-foreground/90"
           >
-            Yechib olish
+            {t('teacher.earningsWithdrawShort')}
           </button>
         </div>
 
         <div className="bg-card rounded-md shadow-warm p-6">
           <div className="flex items-center space-x-3 mb-2">
             <Icon name="CurrencyDollarIcon" size={24} className="text-success" />
-            <p className="text-sm text-muted-foreground">Umumiy daromad</p>
+            <p className="text-sm text-muted-foreground">{t('teacher.overviewTotalRevenue')}</p>
           </div>
           <h3 className="text-3xl font-heading font-bold text-foreground">{formatCurrency(totalEarnings, locale, 'USD')}</h3>
-          <p className="text-sm text-muted-foreground mt-2">Barcha vaqt</p>
+          <p className="text-sm text-muted-foreground mt-2">{t('teacher.earningsAllTime')}</p>
         </div>
 
         <div className="bg-card rounded-md shadow-warm p-6">
           <div className="flex items-center space-x-3 mb-2">
             <Icon name="ClockIcon" size={24} className="text-warning" />
-            <p className="text-sm text-muted-foreground">Kutilayotgan to'lovlar</p>
+            <p className="text-sm text-muted-foreground">{t('teacher.earningsPendingPayouts')}</p>
           </div>
           <h3 className="text-3xl font-heading font-bold text-foreground">{formatCurrency(pendingPayouts, locale, 'USD')}</h3>
-          <p className="text-sm text-muted-foreground mt-2">Jarayonda</p>
+          <p className="text-sm text-muted-foreground mt-2">{t('teacher.earningsPaymentProcessing')}</p>
         </div>
       </div>
 
       {/* Revenue Split Info */}
       <div className="bg-card rounded-md shadow-warm p-6">
-        <h3 className="text-lg font-heading font-semibold text-foreground mb-4">Daromad taqsimoti</h3>
+        <h3 className="text-lg font-heading font-semibold text-foreground mb-4">{t('teacher.earningsRevenueSplit')}</h3>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-4 h-4 bg-primary rounded"></div>
-              <span className="text-foreground">Sizning ulushingiz</span>
+              <span className="text-foreground">{t('teacher.earningsYourShare')}</span>
             </div>
             <span className="font-heading font-semibold text-foreground">70%</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-4 h-4 bg-muted rounded"></div>
-              <span className="text-foreground">Platform komissiyasi</span>
+              <span className="text-foreground">{t('teacher.earningsPlatformFee')}</span>
             </div>
             <span className="font-heading font-semibold text-foreground">30%</span>
           </div>
         </div>
         <div className="mt-4 p-4 bg-muted rounded-md">
           <p className="text-sm text-muted-foreground">
-            Har bir kurs sotuvidan siz 70% daromad olasiz. Qolgan 30% platforma xizmatlari uchun ishlatiladi.
+            {t('teacher.earningsSplitNote')}
           </p>
         </div>
       </div>
@@ -120,9 +120,9 @@ const EarningsPanel = ({
       {/* Transaction History */}
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-heading font-semibold text-foreground">To'lovlar tarixi</h3>
+          <h3 className="text-lg font-heading font-semibold text-foreground">{t('teacher.earningsPaymentHistory')}</h3>
           <button className="flex items-center space-x-2 text-primary hover:text-primary/80 transition-smooth">
-            <span className="text-sm font-medium">Barchasini ko'rish</span>
+            <span className="text-sm font-medium">{t('teacher.earningsViewAll')}</span>
             <Icon name="ArrowRightIcon" size={16} />
           </button>
         </div>

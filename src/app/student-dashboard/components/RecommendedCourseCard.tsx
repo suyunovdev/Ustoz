@@ -13,35 +13,38 @@ const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616
 
 const REASON_BADGES: Record<
   RecommendReason,
-  { label: string; icon: string; classes: string }
+  { labelKey: string; icon: string; classes: string }
 > = {
   category_match: {
-    label: 'Sizning kategoriyangiz',
+    labelKey: 'student.reasonCategoryMatch',
     icon: '🎯',
     classes: 'bg-primary/10 text-primary dark:bg-primary/20',
   },
   popular: {
-    label: 'Mashhur',
+    labelKey: 'student.reasonPopular',
     icon: '🌟',
     classes: 'bg-warning/10 text-warning dark:bg-warning/20',
   },
   new_arrival: {
-    label: 'Yangi',
+    labelKey: 'student.reasonNewArrival',
     icon: '✨',
     classes: 'bg-green-500/10 text-green-700 dark:bg-green-500/20 dark:text-green-400',
   },
   top_rated: {
-    label: 'Top reytingli',
+    labelKey: 'student.reasonTopRated',
     icon: '🏆',
     classes: 'bg-purple-500/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-400',
   },
 };
 
 const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const badge = REASON_BADGES[course.recommendReason];
+  const badgeLabel = t(badge.labelKey);
   const duration =
-    course.totalDuration > 0 ? `${course.totalDuration} soat` : course.difficultyLevel || '—';
+    course.totalDuration > 0
+      ? t('student.durationHours', { count: course.totalDuration })
+      : course.difficultyLevel || '—';
 
   return (
     <div className="bg-card rounded-md shadow-warm hover:shadow-warm-md transition-smooth overflow-hidden group">
@@ -62,10 +65,10 @@ const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
         {/* Reason badge */}
         <div
           className={`absolute top-2 left-2 px-2.5 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${badge.classes}`}
-          title={badge.label}
+          title={badgeLabel}
         >
           <span aria-hidden="true">{badge.icon}</span>
-          <span className="hidden sm:inline">{badge.label}</span>
+          <span className="hidden sm:inline">{badgeLabel}</span>
         </div>
       </div>
 
@@ -105,14 +108,14 @@ const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
         <div className="flex items-center justify-between">
           <span className="text-xl font-heading font-bold text-primary">
             {course.priceUzs === 0
-              ? 'Bepul'
+              ? t('student.free')
               : formatCurrency(course.priceUzs, locale, 'UZS')}
           </span>
           <Link
             href={`/course-details?courseId=${course.id}`}
             className="flex items-center space-x-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth"
           >
-            <span className="font-medium text-sm">Ko'rish</span>
+            <span className="font-medium text-sm">{t('student.view')}</span>
             <Icon name="ArrowRightIcon" size={16} />
           </Link>
         </div>

@@ -54,7 +54,7 @@ export default function StudentDetailClient({ studentId }: Props) {
 
   if (isLoading) return <div className="p-8">{t('common.loading')}</div>;
   if (error || !data)
-    return <div className="p-8 text-destructive">{(error as Error)?.message || 'Xato'}</div>;
+    return <div className="p-8 text-destructive">{(error as Error)?.message || t('teacher.errorPrefix')}</div>;
 
   const s = data.student;
   const testPassRate =
@@ -73,7 +73,7 @@ export default function StudentDetailClient({ studentId }: Props) {
         className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-3"
       >
         <Icon name="ArrowLeftIcon" size={14} />
-        Talabalar
+        {t('teacher.studentsTitle')}
       </Link>
 
       <div className="bg-card border border-border rounded-md p-6 mb-4 flex items-start justify-between gap-4">
@@ -93,7 +93,7 @@ export default function StudentDetailClient({ studentId }: Props) {
             <h1 className="text-2xl font-heading font-semibold">{s.fullName}</h1>
             <p className="text-sm text-muted-foreground">{s.email}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Ro'yxatdan o'tgan: {formatDate(s.createdAt, locale)}
+              {t('teacher.registeredOn')}: {formatDate(s.createdAt, locale)}
             </p>
           </div>
         </div>
@@ -104,58 +104,58 @@ export default function StudentDetailClient({ studentId }: Props) {
             className="px-3 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 text-sm flex items-center gap-2 disabled:opacity-50"
           >
             <Icon name="ChatBubbleOvalLeftIcon" size={14} />
-            Suhbat
+            {t('teacher.chat')}
           </button>
           <button
             onClick={() => setNotifyOpen(true)}
             className="px-3 py-2 border border-border rounded-md hover:bg-muted text-sm flex items-center gap-2"
           >
             <Icon name="BellIcon" size={14} />
-            Bildirishnoma
+            {t('teacher.notification')}
           </button>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard
-          label="Kurslar"
+          label={t('teacher.studentsCoursesLabel')}
           value={`${s.enrollments.filter((e) => e.isActive).length} / ${s.enrollments.length}`}
-          subValue={`${s.enrollments.filter((e) => e.completedAt).length} tugatgan`}
+          subValue={`${s.enrollments.filter((e) => e.completedAt).length} ${t('teacher.completedSuffix')}`}
           icon="BookOpenIcon"
         />
         <StatCard
-          label="Testlar"
-          value={`${s.totalTestAttempts} ta`}
-          subValue={`${testPassRate}% o'tgan`}
+          label={t('teacher.tests')}
+          value={`${s.totalTestAttempts} ${t('teacher.countUnit')}`.trim()}
+          subValue={`${testPassRate}% ${t('teacher.passedSuffix')}`}
           icon="AcademicCapIcon"
         />
         <StatCard
-          label="Vazifalar"
-          value={`${s.totalAssignmentSubmissions} ta`}
-          subValue={`${assignmentGradeRate}% baholangan`}
+          label={t('teacher.assignments')}
+          value={`${s.totalAssignmentSubmissions} ${t('teacher.countUnit')}`.trim()}
+          subValue={`${assignmentGradeRate}% ${t('teacher.graded')}`}
           icon="ClipboardDocumentListIcon"
         />
         <StatCard
-          label="Sertifikatlar"
-          value={`${s.totalCertificates} ta`}
+          label={t('teacher.certificates')}
+          value={`${s.totalCertificates} ${t('teacher.countUnit')}`.trim()}
           subValue={formatUzs(s.totalPaymentsUzs, locale)}
           icon="TrophyIcon"
         />
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-        <SmallStat label="Mavzular tugatildi" value={s.totalTopicCompletions} />
+        <SmallStat label={t('teacher.topicsCompleted')} value={s.totalTopicCompletions} />
         <SmallStat
-          label="O'rtacha test"
+          label={t('teacher.avgTest')}
           value={s.avgTestScore !== null ? `${s.avgTestScore}%` : '—'}
         />
         <SmallStat
-          label="O'rtacha vazifa"
+          label={t('teacher.avgAssignment')}
           value={s.avgAssignmentGrade !== null ? `${s.avgAssignmentGrade}` : '—'}
         />
       </div>
 
-      <h2 className="text-lg font-medium mb-3">Yozilgan kurslar ({s.enrollments.length})</h2>
+      <h2 className="text-lg font-medium mb-3">{t('teacher.enrolledCourses')} ({s.enrollments.length})</h2>
       <div className="space-y-2">
         {s.enrollments.map((e) => (
           <div
@@ -167,12 +167,12 @@ export default function StudentDetailClient({ studentId }: Props) {
                 <h3 className="font-medium text-foreground">{e.courseTitle}</h3>
                 {!e.isActive && (
                   <span className="text-[10px] px-2 py-0.5 bg-destructive/10 text-destructive rounded-full">
-                    Bloklangan
+                    {t('teacher.blocked')}
                   </span>
                 )}
                 {e.completedAt && (
                   <span className="text-[10px] px-2 py-0.5 bg-success/10 text-success rounded-full">
-                    ✓ Tugatgan
+                    ✓ {t('teacher.completed')}
                   </span>
                 )}
               </div>
@@ -183,7 +183,7 @@ export default function StudentDetailClient({ studentId }: Props) {
                       { enrollmentId: e.enrollmentId, isActive: !e.isActive },
                       {
                         onSuccess: () =>
-                          toast.success(e.isActive ? 'Bloklangan' : 'Faollashtirildi'),
+                          toast.success(e.isActive ? t('teacher.blocked') : t('teacher.groupDetailActivated')),
                         onError: (err) => toast.error(err.message),
                       },
                     )
@@ -195,12 +195,12 @@ export default function StudentDetailClient({ studentId }: Props) {
                       : 'bg-success/10 text-success hover:bg-success/20'
                   } disabled:opacity-50`}
                 >
-                  {e.isActive ? 'Bloklash' : 'Ochish'}
+                  {e.isActive ? t('teacher.block') : t('teacher.unblock')}
                 </button>
                 <button
                   onClick={() => setPendingRemove(e)}
                   className="p-1.5 hover:bg-destructive/10 rounded text-destructive"
-                  aria-label="O'chirish"
+                  aria-label={t('teacher.menuDelete')}
                 >
                   <Icon name="TrashIcon" size={12} />
                 </button>
@@ -208,7 +208,7 @@ export default function StudentDetailClient({ studentId }: Props) {
             </div>
             <div className="text-xs text-muted-foreground space-y-1">
               <div className="flex items-center gap-2">
-                <span>Progress:</span>
+                <span>{t('teacher.studentsProgressLabel')}:</span>
                 <div className="flex-1 max-w-xs h-1.5 bg-muted rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary transition-all"
@@ -218,10 +218,10 @@ export default function StudentDetailClient({ studentId }: Props) {
                 <span className="font-medium text-foreground">{e.progress}%</span>
               </div>
               <p>
-                Yozilgan: {formatDate(e.enrolledAt, locale)} ·{' '}
-                Oxirgi: {e.lastAccessedAt
+                {t('teacher.enrolledLabel')}: {formatDate(e.enrolledAt, locale)} ·{' '}
+                {t('teacher.lastLabel')}: {e.lastAccessedAt
                   ? formatDate(e.lastAccessedAt, locale)
-                  : 'hech qachon'}
+                  : t('teacher.studentsNever')}
               </p>
             </div>
           </div>
@@ -238,7 +238,7 @@ export default function StudentDetailClient({ studentId }: Props) {
               { studentId, ...input },
               {
                 onSuccess: () => {
-                  toast.success("Xabar yuborildi");
+                  toast.success(t('teacher.messageSent'));
                   setNotifyOpen(false);
                 },
                 onError: (err) => toast.error(err.message),
@@ -252,15 +252,15 @@ export default function StudentDetailClient({ studentId }: Props) {
       {pendingRemove && (
         <ConfirmModal
           open={true}
-          title="Talabani kursdan olib tashlash"
-          message={`${s.fullName} "${pendingRemove.courseTitle}" kursdan olib tashlanadi. Bu progress, test va vazifalarni o'chiradi.`}
-          confirmLabel="Olib tashlash"
+          title={t('teacher.removeStudentTitle')}
+          message={t('teacher.removeStudentMessage', { name: s.fullName, course: pendingRemove.courseTitle })}
+          confirmLabel={t('teacher.groupDetailRemoveBtn')}
           variant="danger"
           isLoading={remove.isPending}
           onConfirm={() => {
             remove.mutate(pendingRemove.enrollmentId, {
               onSuccess: () => {
-                toast.success("Olib tashlandi");
+                toast.success(t('teacher.groupDetailRemoved'));
                 setPendingRemove(null);
               },
               onError: (err) => toast.error(err.message),
@@ -316,14 +316,15 @@ function NotifyModal({
   onSubmit: (input: { title: string; message: string; courseId?: string | null }) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [courseId, setCourseId] = useState<string>('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (title.trim().length < 2) return toast.error("Sarlavha kamida 2 belgi");
-    if (message.trim().length < 2) return toast.error("Xabar kamida 2 belgi");
+    if (title.trim().length < 2) return toast.error(t('teacher.broadcastTitleMinLength'));
+    if (message.trim().length < 2) return toast.error(t('teacher.broadcastMessageMinLength'));
     onSubmit({
       title: title.trim(),
       message: message.trim(),
@@ -343,7 +344,7 @@ function NotifyModal({
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-heading font-semibold">
-            {studentName}'ga xabar
+            {t('teacher.messageToStudent', { name: studentName })}
           </h3>
           <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
@@ -352,7 +353,7 @@ function NotifyModal({
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium mb-1">Sarlavha *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.broadcastTitleLabel')}</label>
             <input
               type="text"
               value={title}
@@ -362,7 +363,7 @@ function NotifyModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Xabar *</label>
+            <label className="block text-sm font-medium mb-1">{t('teacher.broadcastMessageLabel')}</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -373,14 +374,14 @@ function NotifyModal({
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">
-              Kurs bilan bog'liq (ixtiyoriy)
+              {t('teacher.relatedCourseLabel')}
             </label>
             <select
               value={courseId}
               onChange={(e) => setCourseId(e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
             >
-              <option value="">— umumiy —</option>
+              <option value="">{t('teacher.generalOption')}</option>
               {courses.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.title}
@@ -397,7 +398,7 @@ function NotifyModal({
             disabled={isLoading}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor
+            {t('teacher.gradeModalCancel')}
           </button>
           <button
             type="submit"
@@ -407,7 +408,7 @@ function NotifyModal({
             {isLoading && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Yuborish
+            {t('teacher.broadcastSend')}
           </button>
         </div>
       </form>

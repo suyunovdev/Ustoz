@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface TimerDisplayProps {
   timeRemaining: number; // in seconds
@@ -8,6 +9,7 @@ interface TimerDisplayProps {
 }
 
 const TimerDisplay = ({ timeRemaining, totalTime }: TimerDisplayProps) => {
+  const { t } = useI18n();
   const minutes = Math.floor(timeRemaining / 60);
   const seconds = timeRemaining % 60;
   const percentage = (timeRemaining / totalTime) * 100;
@@ -34,7 +36,7 @@ const TimerDisplay = ({ timeRemaining, totalTime }: TimerDisplayProps) => {
         <div className={`text-2xl font-data font-bold ${getTimerColor()}`}>
           {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
         </div>
-        <div className="text-xs text-muted-foreground">Qolgan vaqt</div>
+        <div className="text-xs text-muted-foreground">{t('quiz.timeRemaining')}</div>
       </div>
     </div>
   );

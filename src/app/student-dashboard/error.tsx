@@ -5,6 +5,7 @@
  * Server component yoki child render xatosida ko'rsatiladi.
  */
 import { useEffect } from 'react';
+import { useI18n } from '@/contexts/I18nContext';
 
 export default function ErrorBoundary({
   error,
@@ -13,6 +14,7 @@ export default function ErrorBoundary({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { t } = useI18n();
   useEffect(() => {
     console.error('[StudentDashboard ErrorBoundary]', error);
   }, [error]);
@@ -38,10 +40,10 @@ export default function ErrorBoundary({
         </div>
 
         <h2 className="text-2xl font-heading font-bold text-foreground mb-2">
-          Xato yuz berdi
+          {t('student.errorTitle')}
         </h2>
         <p className="text-muted-foreground mb-6">
-          Dashboard yuklanmadi. Iltimos, qayta urinib ko'ring.
+          {t('student.errorDesc')}
         </p>
 
         {process.env.NODE_ENV === 'development' && (
@@ -54,7 +56,7 @@ export default function ErrorBoundary({
           onClick={reset}
           className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium"
         >
-          Qayta urinish
+          {t('student.retry')}
         </button>
       </div>
     </div>

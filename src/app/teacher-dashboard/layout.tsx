@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import TeacherSidebar from './components/TeacherSidebar';
 
 export default function TeacherDashboardLayout({
@@ -9,6 +10,7 @@ export default function TeacherDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const { t } = useI18n();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
@@ -23,11 +25,11 @@ export default function TeacherDashboardLayout({
         <button
           onClick={() => setMobileNavOpen(true)}
           className="p-2 -ml-2 rounded-md hover:bg-muted transition-smooth"
-          aria-label="Menyu"
+          aria-label={t('teacher.menuAriaLabel')}
         >
           <Icon name="Bars3Icon" size={24} />
         </button>
-        <p className="font-heading font-semibold text-foreground">Teacher</p>
+        <p className="font-heading font-semibold text-foreground">{t('teacher.panelLabel')}</p>
         <div className="w-9" />
       </div>
 

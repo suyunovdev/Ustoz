@@ -30,12 +30,12 @@ interface Props {
   siblingTopics?: SiblingTopic[];
 }
 
-const TYPE_LABEL: Record<MaterialTypeDTO, { label: string; icon: string; color: string }> = {
-  video: { label: 'Video', icon: 'VideoCameraIcon', color: 'text-primary' },
-  document: { label: 'Hujjat', icon: 'DocumentTextIcon', color: 'text-warning' },
-  audio: { label: 'Audio', icon: 'MusicalNoteIcon', color: 'text-secondary' },
-  image: { label: 'Rasm', icon: 'PhotoIcon', color: 'text-success' },
-  external_link: { label: 'Havola', icon: 'LinkIcon', color: 'text-muted-foreground' },
+const TYPE_LABEL: Record<MaterialTypeDTO, { labelKey: string; icon: string; color: string }> = {
+  video: { labelKey: 'teacher.materialTypeVideo', icon: 'VideoCameraIcon', color: 'text-primary' },
+  document: { labelKey: 'teacher.materialTypeDocument', icon: 'DocumentTextIcon', color: 'text-warning' },
+  audio: { labelKey: 'teacher.materialTypeAudio', icon: 'MusicalNoteIcon', color: 'text-secondary' },
+  image: { labelKey: 'teacher.materialTypeImage', icon: 'PhotoIcon', color: 'text-success' },
+  external_link: { labelKey: 'teacher.materialTypeLink', icon: 'LinkIcon', color: 'text-muted-foreground' },
 };
 
 const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
@@ -58,7 +58,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
   const handleAdd = (input: MaterialFormInput) => {
     addMut.mutate(input, {
       onSuccess: () => {
-        toast.success("Material qo'shildi");
+        toast.success(t('teacher.materialAdded'));
         setAdderOpen(false);
       },
       onError: (err) => toast.error(err.message),
@@ -69,7 +69,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
     if (!pendingDelete) return;
     deleteMut.mutate(pendingDelete.id, {
       onSuccess: () => {
-        toast.success("Material o'chirildi");
+        toast.success(t('teacher.materialDeleted'));
         setPendingDelete(null);
       },
       onError: (err) => toast.error(err.message),
@@ -86,7 +86,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
       },
       {
         onSuccess: () => {
-          toast.success("Material ko'chirildi");
+          toast.success(t('teacher.materialMoved'));
           setPendingMove(null);
         },
         onError: (err) => toast.error(err.message),
@@ -100,7 +100,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
       { materialId: pendingReplace.id, ...input },
       {
         onSuccess: () => {
-          toast.success("Material almashtirildi (eski versiya saqlandi)");
+          toast.success(t('teacher.materialReplaced'));
           setPendingReplace(null);
         },
         onError: (err) => toast.error(err.message),
@@ -123,14 +123,14 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
       );
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(json.error || `Transkripsiya: HTTP ${res.status}`);
+        toast.error(json.error || t('teacher.transcribeHttpError', { status: res.status }));
         return;
       }
       try {
         await navigator.clipboard.writeText(json.transcript || '');
-        toast.success("Transkripsiya clipboard'ga nusxalandi");
+        toast.success(t('teacher.transcribeCopied'));
       } catch {
-        toast.success("Transkripsiya tayyor (clipboard ishlamadi)");
+        toast.success(t('teacher.transcribeReady'));
       }
     } finally {
       setTranscribingId(null);
@@ -145,14 +145,14 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
     <div className="mt-3 pt-3 border-t border-border">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-medium text-muted-foreground">
-          📎 Materiallar ({materials.length})
+          📎 {t('teacher.materialsLabel')} ({materials.length})
         </p>
         <div className="flex items-center gap-2">
           {materials.length > 0 && (
             <button
               onClick={handleExport}
               className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1"
-              title="ZIP yuklab olish"
+              title={t('teacher.downloadZip')}
             >
               <Icon name="ArrowDownTrayIcon" size={12} />
               ZIP
@@ -163,7 +163,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
             className="text-xs text-primary hover:underline flex items-center gap-1"
           >
             <Icon name="PlusIcon" size={12} />
-            Qo'shish
+            {t('teacher.add')}
           </button>
         </div>
       </div>
@@ -172,7 +172,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
         <div className="p-2 bg-destructive/10 text-xs text-destructive rounded flex items-center justify-between">
           <span>{error.message}</span>
           <button onClick={() => refetch()} className="underline">
-            qayta
+            {t('teacher.retryShort')}
           </button>
         </div>
       )}
@@ -185,7 +185,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
         </div>
       ) : materials.length === 0 ? (
         <p className="text-xs text-muted-foreground italic">
-          Hali materiallar yo'q. Qo'shish uchun "Qo'shish" bosing.
+          {t('teacher.materialsEmpty')}
         </p>
       ) : (
         <ul className="space-y-1">
@@ -204,7 +204,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
                     {m.viewCount > 0 && (
                       <span
                         className="text-[10px] px-1.5 py-0.5 bg-primary/10 text-primary rounded flex items-center gap-0.5"
-                        title="Ko'rishlar soni"
+                        title={t('teacher.viewCountTitle')}
                       >
                         <Icon name="EyeIcon" size={10} />
                         {m.viewCount}
@@ -213,7 +213,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
                     {m.currentVersion > 1 && (
                       <span
                         className="text-[10px] px-1.5 py-0.5 bg-warning/10 text-warning rounded"
-                        title="Versiya"
+                        title={t('teacher.versionTitle')}
                       >
                         v{m.currentVersion}
                       </span>
@@ -221,7 +221,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
                     {m.storageType === 'r2' && (
                       <span
                         className="text-[10px] px-1.5 py-0.5 bg-secondary/10 text-secondary rounded"
-                        title="R2 storage"
+                        title={t('teacher.r2StorageTitle')}
                       >
                         R2
                       </span>
@@ -238,15 +238,15 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
                     </a>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground shrink-0">{type.label}</span>
+                <span className="text-xs text-muted-foreground shrink-0">{t(type.labelKey)}</span>
 
                 {canTranscribe && (
                   <button
                     onClick={() => handleTranscribe(m)}
                     disabled={transcribingId === m.id}
                     className="p-1 hover:bg-secondary/10 rounded transition-smooth disabled:opacity-50"
-                    aria-label="Transkripsiya"
-                    title="AI transkripsiya"
+                    aria-label={t('teacher.transcribeAria')}
+                    title={t('teacher.transcribeTitle')}
                   >
                     {transcribingId === m.id ? (
                       <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin block" />
@@ -259,8 +259,8 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
                 <button
                   onClick={() => setPendingReplace(m)}
                   className="p-1 hover:bg-warning/10 rounded transition-smooth"
-                  aria-label="Almashtirish"
-                  title="Yangi versiya"
+                  aria-label={t('teacher.replace')}
+                  title={t('teacher.newVersionTitle')}
                 >
                   <Icon name="ArrowPathIcon" size={12} className="text-warning" />
                 </button>
@@ -269,8 +269,8 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
                   <button
                     onClick={() => setPendingMove(m)}
                     className="p-1 hover:bg-primary/10 rounded transition-smooth"
-                    aria-label="Ko'chirish"
-                    title="Boshqa mavzuga ko'chirish"
+                    aria-label={t('teacher.moveAria')}
+                    title={t('teacher.moveToTopicTitle')}
                   >
                     <Icon name="ArrowsRightLeftIcon" size={12} className="text-primary" />
                   </button>
@@ -279,7 +279,7 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
                 <button
                   onClick={() => setPendingDelete(m)}
                   className="p-1 hover:bg-destructive/10 rounded transition-smooth"
-                  aria-label="O'chirish"
+                  aria-label={t('teacher.menuDelete')}
                 >
                   <Icon name="TrashIcon" size={12} className="text-destructive" />
                 </button>
@@ -301,9 +301,9 @@ const TopicMaterials = ({ topicId, expanded, siblingTopics = [] }: Props) => {
       {pendingDelete && (
         <ConfirmModal
           open={true}
-          title="Materialni o'chirish"
-          message={`"${pendingDelete.title}" o'chiriladi.`}
-          confirmLabel="O'chirish"
+          title={t('teacher.deleteMaterialTitle')}
+          message={t('teacher.deleteMaterialMessage', { title: pendingDelete.title })}
+          confirmLabel={t('teacher.menuDelete')}
           variant="danger"
           isLoading={deleteMut.isPending}
           onConfirm={handleDelete}
@@ -344,6 +344,7 @@ function MaterialAdderModal({
   onAdd: (input: MaterialFormInput) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const [title, setTitle] = useState('');
   const [materialType, setMaterialType] = useState<MaterialTypeDTO>('video');
   const [fileUrl, setFileUrl] = useState('');
@@ -370,9 +371,9 @@ function MaterialAdderModal({
       const presignJson = await presignRes.json().catch(() => ({}));
       if (!presignRes.ok) {
         if (presignJson.code === 'R2_NOT_CONFIGURED') {
-          toast.error("R2 sozlanmagan — admindan so'rang. Hozircha URL yozing.");
+          toast.error(t('teacher.r2NotConfigured'));
         } else {
-          toast.error(presignJson.error || `Presign: HTTP ${presignRes.status}`);
+          toast.error(presignJson.error || t('teacher.presignHttpError', { status: presignRes.status }));
         }
         return;
       }
@@ -382,13 +383,13 @@ function MaterialAdderModal({
         body: file,
       });
       if (!putRes.ok) {
-        toast.error(`R2 upload: HTTP ${putRes.status}`);
+        toast.error(t('teacher.r2UploadHttpError', { status: putRes.status }));
         return;
       }
       setFileUrl(presignJson.publicUrl);
       setUploadedR2Key(presignJson.r2Key);
       if (!title) setTitle(file.name);
-      toast.success('Fayl R2 ga yuklandi');
+      toast.success(t('teacher.fileUploadedR2'));
     } finally {
       setUploading(false);
     }
@@ -397,7 +398,7 @@ function MaterialAdderModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim().length < 2) {
-      toast.error('Nomi kamida 2 belgi');
+      toast.error(t('teacher.createGroupNameMinLength'));
       return;
     }
     onAdd({
@@ -421,13 +422,13 @@ function MaterialAdderModal({
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-heading font-semibold text-foreground">
-            Yangi material
+            {t('teacher.newMaterial')}
           </h3>
           <button
             type="button"
             onClick={onClose}
             className="p-1 hover:bg-muted rounded"
-            aria-label="Yopish"
+            aria-label={t('teacher.close')}
           >
             <Icon name="XMarkIcon" size={20} />
           </button>
@@ -435,29 +436,29 @@ function MaterialAdderModal({
 
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Nomi *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('teacher.materialNameLabel')}</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="Masalan: React Hooks video darsi"
+              placeholder={t('teacher.materialNamePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Turi *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('teacher.typeLabel')}</label>
             <div className="grid grid-cols-5 gap-2">
               {(['video', 'document', 'audio', 'image', 'external_link'] as MaterialTypeDTO[]).map(
-                (t) => {
-                  const type = TYPE_LABEL[t];
-                  const selected = materialType === t;
+                (mt) => {
+                  const type = TYPE_LABEL[mt];
+                  const selected = materialType === mt;
                   return (
                     <button
-                      key={t}
+                      key={mt}
                       type="button"
-                      onClick={() => setMaterialType(t)}
+                      onClick={() => setMaterialType(mt)}
                       className={`flex flex-col items-center gap-1 p-2 rounded-md border transition-smooth ${
                         selected
                           ? 'border-primary bg-primary/10 text-primary'
@@ -465,7 +466,7 @@ function MaterialAdderModal({
                       }`}
                     >
                       <Icon name={type.icon} size={18} />
-                      <span className="text-xs">{type.label}</span>
+                      <span className="text-xs">{t(type.labelKey)}</span>
                     </button>
                   );
                 },
@@ -475,7 +476,7 @@ function MaterialAdderModal({
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              URL (havola)
+              {t('teacher.urlLabel')}
             </label>
             <input
               type="url"
@@ -501,20 +502,20 @@ function MaterialAdderModal({
                   onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
                   disabled={uploading}
                 />
-                {uploading ? 'Yuklanmoqda…' : '📤 Fayl yuklash (R2)'}
+                {uploading ? t('teacher.payoutSettingsLoading') : t('teacher.uploadFileR2')}
               </label>
               <span className="text-xs text-muted-foreground">
-                yoki tashqi URL yozing
+                {t('teacher.orExternalUrl')}
               </span>
               {uploadedR2Key && (
-                <span className="text-xs text-success">✓ R2'da</span>
+                <span className="text-xs text-success">{t('teacher.inR2')}</span>
               )}
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Tavsif (ixtiyoriy)
+              {t('teacher.descOptionalLabel')}
             </label>
             <textarea
               value={description}
@@ -532,7 +533,7 @@ function MaterialAdderModal({
             disabled={isLoading || uploading}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md transition-smooth font-medium disabled:opacity-50 text-sm"
           >
-            Bekor qilish
+            {t('teacher.broadcastCancel')}
           </button>
           <button
             type="submit"
@@ -542,7 +543,7 @@ function MaterialAdderModal({
             {isLoading && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Qo'shish
+            {t('teacher.add')}
           </button>
         </div>
       </form>
@@ -563,6 +564,7 @@ function MoveTopicModal({
   onMove: (destId: string) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
@@ -574,24 +576,24 @@ function MoveTopicModal({
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-heading font-semibold text-foreground">
-            Boshqa mavzuga ko'chirish
+            {t('teacher.moveToTopicTitle')}
           </h3>
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded" aria-label="Yopish">
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded" aria-label={t('teacher.close')}>
             <Icon name="XMarkIcon" size={20} />
           </button>
         </div>
         <p className="text-sm text-muted-foreground mb-3">
-          "<strong>{material.title}</strong>" qaysi mavzuga ko'chirilsin?
+          "<strong>{material.title}</strong>" {t('teacher.moveToTopicQuestion')}
         </p>
         <ul className="space-y-1 max-h-72 overflow-y-auto">
-          {topics.map((t) => (
-            <li key={t.id}>
+          {topics.map((topic) => (
+            <li key={topic.id}>
               <button
-                onClick={() => onMove(t.id)}
+                onClick={() => onMove(topic.id)}
                 disabled={isLoading}
                 className="w-full text-left px-3 py-2 rounded-md hover:bg-primary/10 text-sm disabled:opacity-50"
               >
-                {t.title}
+                {topic.title}
               </button>
             </li>
           ))}
@@ -612,13 +614,14 @@ function ReplaceMaterialModal({
   onReplace: (input: { newFileUrl: string; newFileName?: string }) => void;
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   const [newFileUrl, setNewFileUrl] = useState('');
   const [newFileName, setNewFileName] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFileUrl) {
-      toast.error("Yangi URL kerak");
+      toast.error(t('teacher.newUrlRequired'));
       return;
     }
     onReplace({ newFileUrl, newFileName: newFileName || undefined });
@@ -636,18 +639,18 @@ function ReplaceMaterialModal({
       >
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-heading font-semibold text-foreground">
-            Materialni almashtirish
+            {t('teacher.replaceMaterialTitle')}
           </h3>
-          <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded">
+          <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded" aria-label={t('teacher.close')}>
             <Icon name="XMarkIcon" size={20} />
           </button>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Eski versiya (v{material.currentVersion}) tarixda saqlanadi.
+          {t('teacher.oldVersionSaved', { version: material.currentVersion })}
         </p>
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">Yangi URL *</label>
+            <label className="block text-sm font-medium text-foreground mb-1">{t('teacher.newUrlLabel')}</label>
             <input
               type="url"
               value={newFileUrl}
@@ -659,7 +662,7 @@ function ReplaceMaterialModal({
           </div>
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
-              Fayl nomi (ixtiyoriy)
+              {t('teacher.fileNameLabel')}
             </label>
             <input
               type="text"
@@ -676,7 +679,7 @@ function ReplaceMaterialModal({
             disabled={isLoading}
             className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
           >
-            Bekor qilish
+            {t('teacher.broadcastCancel')}
           </button>
           <button
             type="submit"
@@ -686,7 +689,7 @@ function ReplaceMaterialModal({
             {isLoading && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Almashtirish
+            {t('teacher.replace')}
           </button>
         </div>
       </form>

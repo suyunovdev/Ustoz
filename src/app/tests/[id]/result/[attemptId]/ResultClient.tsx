@@ -57,7 +57,7 @@ export default function ResultClient({ testId, attemptId }: Props) {
         if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
         setData(json);
       } catch (e: any) {
-        setError(e?.message || 'Xato');
+        setError(e?.message || t('tests.error'));
       } finally {
         setLoading(false);
       }
@@ -68,7 +68,7 @@ export default function ResultClient({ testId, attemptId }: Props) {
   if (error || !data) {
     return (
       <div className="max-w-xl mx-auto p-8 text-center">
-        <p className="text-destructive">{error || 'Yuklab bo\'lmadi'}</p>
+        <p className="text-destructive">{error || t('tests.loadFailed')}</p>
       </div>
     );
   }
@@ -89,34 +89,34 @@ export default function ResultClient({ testId, attemptId }: Props) {
           className={`mx-auto mb-2 ${attempt.passed ? 'text-success' : 'text-destructive'}`}
         />
         <h1 className="text-2xl font-heading font-semibold mb-1">
-          {attempt.passed ? 'Tabriklaymiz! O\'tdingiz' : 'Afsus, o\'tmadingiz'}
+          {attempt.passed ? t('tests.passedTitle') : t('tests.failedTitle')}
         </h1>
         <p className="text-sm text-muted-foreground mb-3">{test.title}</p>
         <div className="flex items-center justify-center gap-6 flex-wrap">
           <div>
-            <p className="text-xs text-muted-foreground">Bal</p>
+            <p className="text-xs text-muted-foreground">{t('tests.score')}</p>
             <p className="text-3xl font-bold text-foreground">
               {attempt.score} / {attempt.maxScore}
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Foiz</p>
+            <p className="text-xs text-muted-foreground">{t('tests.percentage')}</p>
             <p className="text-3xl font-bold text-foreground">{attempt.percentage}%</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">To'g'ri</p>
+            <p className="text-xs text-muted-foreground">{t('tests.correct')}</p>
             <p className="text-3xl font-bold text-foreground">
               {correctCount} / {results.length}
             </p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">O'tish balli</p>
+            <p className="text-xs text-muted-foreground">{t('tests.passingScore')}</p>
             <p className="text-3xl font-bold text-foreground">{test.passingScore}%</p>
           </div>
         </div>
       </div>
 
-      <h2 className="text-lg font-medium mb-3">Savol-javoblar tahlili</h2>
+      <h2 className="text-lg font-medium mb-3">{t('tests.analysis')}</h2>
       <div className="space-y-3 mb-6">
         {results.map((r, i) => (
           <div
@@ -143,24 +143,24 @@ export default function ResultClient({ testId, attemptId }: Props) {
                       r.correct ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'
                     }`}
                   >
-                    {r.pointsEarned}/{r.points} bal
+                    {r.pointsEarned}/{r.points} {t('tests.pointsLabel')}
                   </span>
                 </div>
 
                 <div className="text-sm space-y-1">
                   <p>
-                    <span className="text-muted-foreground">Sizning javobingiz: </span>
+                    <span className="text-muted-foreground">{t('tests.yourAnswer')} </span>
                     <span
                       className={r.correct ? 'text-success font-medium' : 'text-destructive font-medium'}
                     >
                       {Array.isArray(r.userAnswer)
                         ? r.userAnswer.join(', ') || '—'
-                        : r.userAnswer || '— (javob berilmagan)'}
+                        : r.userAnswer || t('tests.notAnswered')}
                     </span>
                   </p>
                   {!r.correct && r.correctAnswer && (
                     <p>
-                      <span className="text-muted-foreground">To'g'ri javob: </span>
+                      <span className="text-muted-foreground">{t('tests.correctAnswer')} </span>
                       <span className="text-success font-medium">
                         {r.correctAnswer.join(', ')}
                       </span>
@@ -184,13 +184,13 @@ export default function ResultClient({ testId, attemptId }: Props) {
           href={`/tests/${testId}/take`}
           className="px-4 py-2 border border-border rounded-md hover:bg-muted text-sm"
         >
-          Qayta urinish
+          {t('tests.retry')}
         </Link>
         <Link
           href="/student-dashboard"
           className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 text-sm"
         >
-          Dashboard'ga qaytish
+          {t('tests.backToDashboard')}
         </Link>
       </div>
     </div>

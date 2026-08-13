@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 import type { DashboardEnrollment } from '@/types/dashboard.types';
 
 interface ContinueLearningCardProps {
@@ -10,6 +11,7 @@ interface ContinueLearningCardProps {
 const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449';
 
 const ContinueLearningCard = ({ enrollment }: ContinueLearningCardProps) => {
+  const { t } = useI18n();
   const {
     courseId,
     progress,
@@ -30,18 +32,18 @@ const ContinueLearningCard = ({ enrollment }: ContinueLearningCardProps) => {
 
   if (isCompleted) {
     ctaHref = '/certificates';
-    ctaLabel = "Sertifikatni ko'rish";
+    ctaLabel = t('student.viewCertificate');
     ctaClass = 'bg-success text-success-foreground hover:bg-success/90';
   } else if (isNotStarted && nextTopic) {
     ctaHref = `/learning-interface?courseId=${courseId}&topicId=${nextTopic.id}`;
-    ctaLabel = 'Boshlash';
+    ctaLabel = t('student.start');
   } else if (nextTopic) {
     ctaHref = `/learning-interface?courseId=${courseId}&topicId=${nextTopic.id}`;
-    ctaLabel = 'Davom etish';
+    ctaLabel = t('student.continueBtn');
   } else {
     // Topic'lar hali qo'shilmagan
     ctaHref = `/learning-interface?courseId=${courseId}`;
-    ctaLabel = "Kursni ochish";
+    ctaLabel = t('student.openCourse');
   }
 
   return (
@@ -65,7 +67,7 @@ const ContinueLearningCard = ({ enrollment }: ContinueLearningCardProps) => {
         {isCompleted && (
           <div className="absolute top-2 left-2 bg-success px-2.5 py-1 rounded-full flex items-center space-x-1">
             <Icon name="CheckCircleIcon" size={14} variant="solid" className="text-success-foreground" />
-            <span className="text-xs font-medium text-success-foreground">Tugatildi</span>
+            <span className="text-xs font-medium text-success-foreground">{t('student.completedBadge')}</span>
           </div>
         )}
       </div>
@@ -80,8 +82,8 @@ const ContinueLearningCard = ({ enrollment }: ContinueLearningCardProps) => {
         {/* Progress bar */}
         <div className="mb-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span>{completedTopicsCount} / {totalTopics} mavzu</span>
-            <span className="font-medium">{progress}% tugatildi</span>
+            <span>{t('student.topicsCount', { completed: completedTopicsCount, total: totalTopics })}</span>
+            <span className="font-medium">{t('student.percentCompleted', { progress })}</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
             <div
@@ -96,14 +98,14 @@ const ContinueLearningCard = ({ enrollment }: ContinueLearningCardProps) => {
           <div className="flex items-start space-x-2 mb-4 p-3 bg-muted/60 rounded-md">
             <Icon name="BookOpenIcon" size={16} className="text-primary mt-0.5 flex-shrink-0" />
             <div className="min-w-0">
-              <p className="text-xs text-muted-foreground mb-0.5">Keyingi mavzu:</p>
+              <p className="text-xs text-muted-foreground mb-0.5">{t('student.nextTopicLabel')}</p>
               <p className="text-sm font-medium text-foreground line-clamp-1">{nextTopic.title}</p>
             </div>
           </div>
         ) : (
           <div className="flex items-center space-x-2 mb-4 p-3 bg-success/10 rounded-md">
             <Icon name="CheckCircleIcon" size={16} variant="solid" className="text-success flex-shrink-0" />
-            <p className="text-sm font-medium text-success">Kurs to'liq tugatildi</p>
+            <p className="text-sm font-medium text-success">{t('student.courseFullyCompleted')}</p>
           </div>
         )}
 

@@ -27,7 +27,7 @@ interface AnalyticsPanelProps {
 }
 
 const AnalyticsPanel = ({ revenueData, topCourses, studentEngagement }: AnalyticsPanelProps) => {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   return (
     <div className="space-y-6">
       {/* Revenue Chart */}
@@ -35,12 +35,12 @@ const AnalyticsPanel = ({ revenueData, topCourses, studentEngagement }: Analytic
 
       {/* Student Engagement */}
       <div className="bg-card rounded-md shadow-warm p-6">
-        <h3 className="text-xl font-heading font-semibold text-foreground mb-6">Talabalar faolligi</h3>
+        <h3 className="text-xl font-heading font-semibold text-foreground mb-6">{t('teacher.studentEngagementTitle')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="p-4 bg-muted rounded-md">
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="UserGroupIcon" size={20} className="text-primary" />
-              <p className="text-sm text-muted-foreground">Jami talabalar</p>
+              <p className="text-sm text-muted-foreground">{t('teacher.overviewTotalStudents')}</p>
             </div>
             <p className="text-2xl font-heading font-bold text-foreground">{studentEngagement.totalStudents}</p>
           </div>
@@ -48,7 +48,7 @@ const AnalyticsPanel = ({ revenueData, topCourses, studentEngagement }: Analytic
           <div className="p-4 bg-muted rounded-md">
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="UserIcon" size={20} className="text-success" />
-              <p className="text-sm text-muted-foreground">Faol talabalar</p>
+              <p className="text-sm text-muted-foreground">{t('teacher.activeStudents')}</p>
             </div>
             <p className="text-2xl font-heading font-bold text-foreground">{studentEngagement.activeStudents}</p>
           </div>
@@ -56,7 +56,7 @@ const AnalyticsPanel = ({ revenueData, topCourses, studentEngagement }: Analytic
           <div className="p-4 bg-muted rounded-md">
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="ChartBarIcon" size={20} className="text-secondary" />
-              <p className="text-sm text-muted-foreground">O'rtacha progress</p>
+              <p className="text-sm text-muted-foreground">{t('teacher.avgProgress')}</p>
             </div>
             <p className="text-2xl font-heading font-bold text-foreground">{studentEngagement.averageProgress}%</p>
           </div>
@@ -64,7 +64,7 @@ const AnalyticsPanel = ({ revenueData, topCourses, studentEngagement }: Analytic
           <div className="p-4 bg-muted rounded-md">
             <div className="flex items-center space-x-2 mb-2">
               <Icon name="AcademicCapIcon" size={20} className="text-accent" />
-              <p className="text-sm text-muted-foreground">Tugatish darajasi</p>
+              <p className="text-sm text-muted-foreground">{t('teacher.completionRateLabel')}</p>
             </div>
             <p className="text-2xl font-heading font-bold text-foreground">{studentEngagement.completionRate}%</p>
           </div>
@@ -73,7 +73,7 @@ const AnalyticsPanel = ({ revenueData, topCourses, studentEngagement }: Analytic
 
       {/* Top Performing Courses */}
       <div className="bg-card rounded-md shadow-warm p-6">
-        <h3 className="text-xl font-heading font-semibold text-foreground mb-6">Eng yaxshi kurslar</h3>
+        <h3 className="text-xl font-heading font-semibold text-foreground mb-6">{t('teacher.topPerformingCourses')}</h3>
         <div className="space-y-4">
           {topCourses.map((course, index) => (
             <div 
@@ -88,17 +88,17 @@ const AnalyticsPanel = ({ revenueData, topCourses, studentEngagement }: Analytic
                 <div className="flex items-center space-x-4 text-sm text-muted-foreground">
                   <div className="flex items-center space-x-1">
                     <Icon name="UserGroupIcon" size={14} />
-                    <span>{course.enrollments} talaba</span>
+                    <span>{course.enrollments} {t('teacher.overviewStudentLabel')}</span>
                   </div>
                   <div className="flex items-center space-x-1">
                     <Icon name="CheckCircleIcon" size={14} />
-                    <span>{course.completionRate}% tugatgan</span>
+                    <span>{course.completionRate}% {t('teacher.completedSuffix')}</span>
                   </div>
                 </div>
               </div>
               <div className="text-right">
                 <p className="font-heading font-bold text-foreground">{formatCurrency(course.revenue, locale, 'USD')}</p>
-                <p className="text-sm text-muted-foreground">daromad</p>
+                <p className="text-sm text-muted-foreground">{t('teacher.revenueSuffix')}</p>
               </div>
             </div>
           ))}

@@ -1,4 +1,7 @@
+'use client';
+
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Topic {
   id: string;
@@ -22,10 +25,11 @@ interface CourseNavigationProps {
 }
 
 const CourseNavigation = ({ sections, currentTopicId, onTopicChange }: CourseNavigationProps) => {
+  const { t } = useI18n();
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b border-border">
-        <h2 className="font-heading font-semibold text-foreground">Kurs mavzulari</h2>
+        <h2 className="font-heading font-semibold text-foreground">{t('learning.courseTopics')}</h2>
       </div>
 
       <div className="flex-1 overflow-auto">

@@ -18,7 +18,7 @@ const DATE_OPTS: Intl.DateTimeFormatOptions = {
 };
 
 const CourseCard = ({ enrollment }: CourseCardProps) => {
-  const { locale } = useI18n();
+  const { locale, t } = useI18n();
   const {
     courseId,
     progress,
@@ -33,16 +33,16 @@ const CourseCard = ({ enrollment }: CourseCardProps) => {
 
   // CTA
   let ctaHref = `/learning-interface?courseId=${courseId}`;
-  let ctaLabel = "Davom etish";
+  let ctaLabel = t('student.continueBtn');
   let ctaClass = 'bg-secondary text-secondary-foreground hover:bg-secondary/90';
 
   if (isCompleted) {
     ctaHref = '/certificates';
-    ctaLabel = "Sertifikat";
+    ctaLabel = t('student.certificateLabel');
     ctaClass = 'bg-success text-success-foreground hover:bg-success/90';
   } else if (nextTopic) {
     ctaHref = `/learning-interface?courseId=${courseId}&topicId=${nextTopic.id}`;
-    ctaLabel = progress === 0 ? "Boshlash" : "Davom etish";
+    ctaLabel = progress === 0 ? t('student.start') : t('student.continueBtn');
   }
 
   return (
@@ -63,7 +63,7 @@ const CourseCard = ({ enrollment }: CourseCardProps) => {
         {isCompleted && (
           <div className="absolute top-2 right-2 bg-success px-3 py-1 rounded-full flex items-center space-x-1">
             <Icon name="CheckCircleIcon" size={16} className="text-success-foreground" variant="solid" />
-            <span className="text-xs font-medium text-success-foreground">Tugatildi</span>
+            <span className="text-xs font-medium text-success-foreground">{t('student.completedBadge')}</span>
           </div>
         )}
       </div>
@@ -78,7 +78,7 @@ const CourseCard = ({ enrollment }: CourseCardProps) => {
         {/* Progress section */}
         <div className="mb-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
-            <span>{completedTopicsCount} / {totalTopics} mavzu · {progress}%</span>
+            <span>{t('student.topicsProgress', { completed: completedTopicsCount, total: totalTopics, progress })}</span>
           </div>
           <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
             <div
@@ -89,8 +89,8 @@ const CourseCard = ({ enrollment }: CourseCardProps) => {
 
           {/* Next topic teaser (faqat in-progress holatlarda) */}
           {!isCompleted && nextTopic && (
-            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1" title={`Keyingi: ${nextTopic.title}`}>
-              Keyingi: <span className="text-foreground font-medium">{nextTopic.title}</span>
+            <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1" title={`${t('student.nextShort')} ${nextTopic.title}`}>
+              {t('student.nextShort')} <span className="text-foreground font-medium">{nextTopic.title}</span>
             </p>
           )}
         </div>
@@ -100,12 +100,12 @@ const CourseCard = ({ enrollment }: CourseCardProps) => {
           {isCompleted ? (
             <div className="flex items-center space-x-1 text-success">
               <Icon name="CheckCircleIcon" size={14} variant="solid" />
-              <span>Tugatildi: {formatDate(completedAt, locale, DATE_OPTS)}</span>
+              <span>{t('student.completedBadge')}: {formatDate(completedAt, locale, DATE_OPTS)}</span>
             </div>
           ) : (
             <div className="flex items-center space-x-1">
               <Icon name="ClockIcon" size={14} />
-              <span>Yozilgan: {formatDate(enrolledAt, locale, DATE_OPTS)}</span>
+              <span>{t('student.enrolledLabel')}: {formatDate(enrolledAt, locale, DATE_OPTS)}</span>
             </div>
           )}
         </div>

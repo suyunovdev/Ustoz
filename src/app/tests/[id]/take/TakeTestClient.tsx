@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface QuestionForStudent {
   id: string;
@@ -35,6 +36,7 @@ interface Props {
 }
 
 export default function TakeTestClient({ testId }: Props) {
+  const { t } = useI18n();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -66,7 +68,7 @@ export default function TakeTestClient({ testId }: Props) {
           }
         }
       } catch (e: any) {
-        if (!cancelled) setError(e?.message || 'Xato');
+        if (!cancelled) setError(e?.message || t('tests.error'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -100,14 +102,14 @@ export default function TakeTestClient({ testId }: Props) {
       });
       const json = await res.json();
       if (!res.ok) {
-        toast.error(json.error || `Xato: ${res.status}`);
+        toast.error(json.error || `${t('tests.error')}: ${res.status}`);
         setSubmitting(false);
         return;
       }
-      if (auto) toast.info("Vaqt tugadi — avtomatik topshirildi");
+      if (auto) toast.info(t('tests.timeUp'));
       router.push(`/tests/${testId}/result/${data.attempt.id}`);
     } catch (e: any) {
-      toast.error(e?.message || 'Xato');
+      toast.error(e?.message || t('tests.error'));
       setSubmitting(false);
     }
   };
@@ -121,7 +123,7 @@ export default function TakeTestClient({ testId }: Props) {
     [answers],
   );
 
-  if (loading) return <div className="p-8 text-center">Test yuklanmoqda…</div>;
+  if (loading) return <div className="p-8 text-center">{t('tests.testLoading')}</div>;
   if (error) {
     return (
       <div className="max-w-xl mx-auto p-8 text-center">
@@ -131,7 +133,7 @@ export default function TakeTestClient({ testId }: Props) {
           onClick={() => router.back()}
           className="text-primary hover:underline text-sm"
         >
-          ← Orqaga
+          ← {t('tests.back')}
         </button>
       </div>
     );
@@ -151,9 +153,9 @@ export default function TakeTestClient({ testId }: Props) {
               {data.test.title}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {answeredCount}/{data.questions.length} javob berildi
+              {t('tests.answersProgress', { answered: answeredCount, total: data.questions.length })}
               {' · '}
-              O'tish balli: {data.test.passingScore}%
+              {t('tests.passingScore')}: {data.test.passingScore}%
             </p>
           </div>
           {timeLeftSec !== null && (
@@ -195,10 +197,10 @@ export default function TakeTestClient({ testId }: Props) {
       <div className="bg-card border border-border rounded-md p-6 mb-4">
         <div className="flex items-start justify-between gap-2 mb-4">
           <p className="text-xs text-muted-foreground">
-            Savol {currentIdx + 1} / {data.questions.length}
+            {t('tests.questionProgress', { current: currentIdx + 1, total: data.questions.length })}
           </p>
           <span className="text-xs px-2 py-0.5 bg-warning/10 text-warning rounded-full">
-            {q.points} bal
+            {q.points} {t('tests.pointsLabel')}
           </span>
         </div>
         <h2 className="text-lg font-medium text-foreground mb-4">{q.questionText}</h2>
@@ -275,7 +277,7 @@ export default function TakeTestClient({ testId }: Props) {
                     : 'border-border hover:bg-muted'
                 }`}
               >
-                {v === 'true' ? '✓ Rost' : '✗ Yolg\'on'}
+                {v === 'true' ? `✓ ${t('tests.true')}` : `✗ ${t('tests.false')}`}
               </button>
             ))}
           </div>
@@ -286,7 +288,7 @@ export default function TakeTestClient({ testId }: Props) {
             type="text"
             value={(answers[q.id] as string) || ''}
             onChange={(e) => handleAnswer(q.id, e.target.value)}
-            placeholder="Javobingizni yozing…"
+            placeholder={t('tests.textAnswerPlaceholder')}
             className="w-full px-4 py-3 border border-border rounded-md text-base focus:outline-none focus:ring-2 focus:ring-primary"
           />
         )}
@@ -299,7 +301,7 @@ export default function TakeTestClient({ testId }: Props) {
           className="px-4 py-2 border border-border rounded-md hover:bg-muted text-sm disabled:opacity-30 flex items-center gap-2"
         >
           <Icon name="ArrowLeftIcon" size={14} />
-          Oldingisi
+          {t('tests.previous')}
         </button>
         {isLast ? (
           <button
@@ -310,7 +312,7 @@ export default function TakeTestClient({ testId }: Props) {
             {submitting && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            Yakunlash
+            {t('tests.finish')}
             <Icon name="CheckIcon" size={14} />
           </button>
         ) : (
@@ -318,7 +320,7 @@ export default function TakeTestClient({ testId }: Props) {
             onClick={() => setCurrentIdx((i) => Math.min(data.questions.length - 1, i + 1))}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 text-sm flex items-center gap-2"
           >
-            Keyingisi
+            {t('tests.next')}
             <Icon name="ArrowRightIcon" size={14} />
           </button>
         )}

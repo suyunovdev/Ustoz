@@ -1,3 +1,7 @@
+'use client';
+
+import { useI18n } from '@/contexts/I18nContext';
+
 interface TranscriptSegment {
   id: string;
   timestamp: string;
@@ -12,14 +16,15 @@ interface InteractiveTranscriptProps {
 }
 
 const InteractiveTranscript = ({ segments, currentTime, onSeek }: InteractiveTranscriptProps) => {
+  const { t } = useI18n();
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-heading font-semibold text-foreground">Interaktiv Transkript</h3>
+        <h3 className="font-heading font-semibold text-foreground">{t('learning.interactiveTranscript')}</h3>
         <div className="flex items-center space-x-2">
           <input
             type="text"
-            placeholder="Matnda qidirish..."
+            placeholder={t('learning.searchInText')}
             className="px-3 py-1.5 text-sm border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>

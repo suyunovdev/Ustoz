@@ -24,7 +24,7 @@ interface CourseCardProps {
 }
 
 const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: CourseCardProps) => {
-  const { locale } = useI18n();
+  const { t, locale } = useI18n();
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
@@ -41,11 +41,11 @@ const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: Cou
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'Tasdiqlangan';
+        return t('teacher.statusApproved');
       case 'pending':
-        return 'Kutilmoqda';
+        return t('teacher.earningsPaymentPending');
       case 'rejected':
-        return 'Rad etilgan';
+        return t('teacher.statusRejected');
       default:
         return status;
     }
@@ -75,7 +75,7 @@ const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: Cou
           <div className="flex items-center justify-between text-sm">
             <div className="flex items-center space-x-2 text-muted-foreground">
               <Icon name="UserGroupIcon" size={16} />
-              <span>{course.enrolledStudents} talaba</span>
+              <span>{course.enrolledStudents} {t('teacher.overviewStudentLabel')}</span>
             </div>
             <div className="flex items-center space-x-1">
               <Icon name="StarIcon" size={16} className="text-accent" variant="solid" />
@@ -87,7 +87,7 @@ const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: Cou
           <div className="flex items-center space-x-2 text-sm">
             <Icon name="CurrencyDollarIcon" size={16} className="text-success" />
             <span className="font-medium text-foreground">{formatCurrency(course.revenue, locale, 'USD')}</span>
-            <span className="text-muted-foreground">daromad</span>
+            <span className="text-muted-foreground">{t('teacher.revenueSuffix')}</span>
           </div>
         </div>
         
@@ -97,7 +97,7 @@ const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: Cou
             className="flex items-center justify-center space-x-2 px-3 py-2 bg-primary text-primary-foreground rounded-md transition-smooth hover:bg-primary/90"
           >
             <Icon name="PencilIcon" size={16} />
-            <span className="text-sm font-medium">Tahrirlash</span>
+            <span className="text-sm font-medium">{t('teacher.menuEdit')}</span>
           </button>
           
           <button
@@ -105,7 +105,7 @@ const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: Cou
             className="flex items-center justify-center space-x-2 px-3 py-2 bg-muted text-foreground rounded-md transition-smooth hover:bg-muted/80"
           >
             <Icon name="EyeIcon" size={16} />
-            <span className="text-sm font-medium">Ko'rish</span>
+            <span className="text-sm font-medium">{t('teacher.cardPreview')}</span>
           </button>
         </div>
         
@@ -115,7 +115,7 @@ const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: Cou
             className="flex items-center justify-center space-x-2 px-3 py-2 border border-border text-foreground rounded-md transition-smooth hover:bg-muted"
           >
             <Icon name="ChartBarIcon" size={16} />
-            <span className="text-sm font-medium">Tahlil</span>
+            <span className="text-sm font-medium">{t('teacher.analytics')}</span>
           </button>
           
           <button
@@ -123,7 +123,7 @@ const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: Cou
             className="flex items-center justify-center space-x-2 px-3 py-2 border border-border text-foreground rounded-md transition-smooth hover:bg-muted"
           >
             <Icon name="DocumentDuplicateIcon" size={16} />
-            <span className="text-sm font-medium">Nusxa</span>
+            <span className="text-sm font-medium">{t('teacher.cardDuplicate')}</span>
           </button>
         </div>
       </div>

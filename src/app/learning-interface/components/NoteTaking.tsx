@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { useI18n } from '@/contexts/I18nContext';
 
 interface Note {
   id: string;
@@ -18,6 +19,7 @@ interface NoteTakingProps {
 }
 
 const NoteTaking = ({ notes, currentTime, onAddNote, onSeek }: NoteTakingProps) => {
+  const { t } = useI18n();
   const [noteContent, setNoteContent] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -31,27 +33,27 @@ const NoteTaking = ({ notes, currentTime, onAddNote, onSeek }: NoteTakingProps) 
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h3 className="font-heading font-semibold text-foreground mb-4">Eslatmalar</h3>
+        <h3 className="font-heading font-semibold text-foreground mb-4">{t('learning.notes')}</h3>
         
         {/* Add Note Form */}
         <form onSubmit={handleSubmit} className="space-y-3">
           <textarea
             value={noteContent}
             onChange={(e) => setNoteContent(e.target.value)}
-            placeholder="Eslatma yozing... (joriy vaqt avtomatik saqlanadi)"
+            placeholder={t('learning.notePlaceholder')}
             className="w-full px-4 py-3 border border-border rounded-md bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
             rows={4}
           />
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              Vaqt belgisi: {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')}
+              {t('learning.timeMarker')}: {Math.floor(currentTime / 60)}:{(Math.floor(currentTime % 60)).toString().padStart(2, '0')}
             </span>
             <button
               type="submit"
               disabled={!noteContent.trim()}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Eslatma qo\'shish
+              {t('learning.addNote')}
             </button>
           </div>
         </form>
@@ -62,7 +64,7 @@ const NoteTaking = ({ notes, currentTime, onAddNote, onSeek }: NoteTakingProps) 
         {notes.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <Icon name="PencilSquareIcon" size={48} className="mx-auto mb-2 opacity-50" />
-            <p className="text-sm">Hali eslatmalar yo\'q</p>
+            <p className="text-sm">{t('learning.noNotesYet')}</p>
           </div>
         ) : (
           notes.map((note) => (
@@ -87,7 +89,7 @@ const NoteTaking = ({ notes, currentTime, onAddNote, onSeek }: NoteTakingProps) 
 
       {notes.length > 0 && (
         <button className="w-full px-4 py-2 border border-border rounded-md text-sm font-medium text-foreground hover:bg-muted transition-smooth">
-          Eslatmalarni eksport qilish
+          {t('learning.exportNotes')}
         </button>
       )}
     </div>
