@@ -85,7 +85,7 @@ const AssignmentManagementInteractive = () => {
       await Promise.all([loadCourses(), loadAssignments()]);
     } catch (err: unknown) {
       // Auth check failed — show error in UI
-      setError(err instanceof Error ? err.message : 'Autentifikatsiya xatoligi');
+      setError(err instanceof Error ? err.message : t('assignments.errAuth'));
     } finally {
       setLoading(false);
     }
@@ -110,7 +110,7 @@ const AssignmentManagementInteractive = () => {
       setAssignments(data.assignments || []);
     } catch (err: unknown) {
       // Assignment loading failed — show error in UI
-      setError(err instanceof Error ? err.message : 'Topshiriqlarni yuklashda xatolik');
+      setError(err instanceof Error ? err.message : t('assignments.errLoad'));
     }
   };
 
@@ -124,7 +124,7 @@ const AssignmentManagementInteractive = () => {
       setSubmissions(data.submissions || []);
     } catch (err: unknown) {
       // Submission loading failed — show error in UI
-      setError(err instanceof Error ? err.message : 'Topshiriqlarni yuklashda xatolik');
+      setError(err instanceof Error ? err.message : t('assignments.errLoad'));
     }
   };
 
@@ -168,7 +168,7 @@ const AssignmentManagementInteractive = () => {
       setActiveTab('list');
     } catch (err: unknown) {
       // Assignment creation failed — show error in UI
-      setError(err instanceof Error ? err.message : 'Topshiriq yaratishda xatolik');
+      setError(err instanceof Error ? err.message : t('assignments.errCreate'));
     } finally {
       setSubmitting(false);
     }
@@ -204,7 +204,7 @@ const AssignmentManagementInteractive = () => {
       setGradingData(null);
     } catch (err: unknown) {
       // Grading failed — show error in UI
-      setError(err instanceof Error ? err.message : 'Baholashda xatolik');
+      setError(err instanceof Error ? err.message : t('assignments.errGrade'));
     } finally {
       setSubmitting(false);
     }
@@ -255,10 +255,10 @@ const AssignmentManagementInteractive = () => {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
-              Topshiriqlar boshqaruvi
+              {t('assignments.managementTitle')}
             </h1>
             <p className="text-muted-foreground">
-              Topshiriqlar yarating, tarqating va talabalarning ishlarini baholang
+              {t('assignments.managementSubtitle')}
             </p>
           </div>
 
@@ -279,7 +279,7 @@ const AssignmentManagementInteractive = () => {
                 }`}
               >
                 <Icon name="ListBulletIcon" size={20} />
-                <span className="font-medium">Topshiriqlar</span>
+                <span className="font-medium">{t('assignments.tabList')}</span>
               </button>
               <button
                 onClick={() => setActiveTab('create')}
@@ -288,7 +288,7 @@ const AssignmentManagementInteractive = () => {
                 }`}
               >
                 <Icon name="PlusCircleIcon" size={20} />
-                <span className="font-medium">Yangi topshiriq</span>
+                <span className="font-medium">{t('assignments.tabCreate')}</span>
               </button>
               {selectedAssignment && (
                 <button
@@ -298,7 +298,7 @@ const AssignmentManagementInteractive = () => {
                   }`}
                 >
                   <Icon name="AcademicCapIcon" size={20} />
-                  <span className="font-medium">Baholash</span>
+                  <span className="font-medium">{t('assignments.grade')}</span>
                 </button>
               )}
             </div>
@@ -311,16 +311,16 @@ const AssignmentManagementInteractive = () => {
                 <div className="bg-card rounded-md shadow-warm p-12 text-center">
                   <Icon name="DocumentTextIcon" size={48} className="mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-heading font-semibold text-foreground mb-2">
-                    Topshiriqlar yo'q
+                    {t('assignments.emptyTitle')}
                   </h3>
                   <p className="text-muted-foreground mb-6">
-                    Hali topshiriq yaratilmagan. Yangi topshiriq yaratish uchun yuqoridagi tugmani bosing.
+                    {t('assignments.emptyCreateDesc')}
                   </p>
                   <button
                     onClick={() => setActiveTab('create')}
                     className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth"
                   >
-                    Birinchi topshiriqni yaratish
+                    {t('assignments.createFirst')}
                   </button>
                 </div>
               ) : (
@@ -342,41 +342,41 @@ const AssignmentManagementInteractive = () => {
                             ? 'bg-destructive/10 text-destructive' :'bg-success/10 text-success'
                         }`}
                       >
-                        {isOverdue(assignment.dueDate) ? 'Muddati o\'tgan' : 'Faol'}
+                        {isOverdue(assignment.dueDate) ? t('assignments.statusOverdue') : t('assignments.statusActive')}
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Muddat</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.dueDate')}</p>
                         <p className="text-sm font-medium text-foreground">
                           {formatDate(assignment.dueDate)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Maksimal ball</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.maxScore')}</p>
                         <p className="text-sm font-medium text-foreground">{assignment.maxScore}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Topshirildi</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.submitted')}</p>
                         <p className="text-sm font-medium text-foreground">{assignment.submissionCount}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Baholandi</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.graded')}</p>
                         <p className="text-sm font-medium text-foreground">{assignment.gradedCount}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-border">
                       <p className="text-xs text-muted-foreground">
-                        Fayl talablari: {assignment.fileRequirements}
+                        {t('assignments.fileRequirements')}: {assignment.fileRequirements}
                       </p>
                       <button
                         onClick={() => handleViewSubmissions(assignment)}
                         className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth"
                       >
                         <Icon name="EyeIcon" size={16} />
-                        <span className="text-sm font-medium">Topshiriqlarni ko'rish</span>
+                        <span className="text-sm font-medium">{t('assignments.viewSubmissions')}</span>
                       </button>
                     </div>
                   </div>
@@ -388,12 +388,12 @@ const AssignmentManagementInteractive = () => {
           {activeTab === 'create' && (
             <div className="bg-card rounded-md shadow-warm p-6">
               <h2 className="text-2xl font-heading font-bold text-foreground mb-6">
-                Yangi topshiriq yaratish
+                {t('assignments.createTitle')}
               </h2>
               <form onSubmit={handleCreateAssignment} className="space-y-6">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Kurs
+                    {t('assignments.course')}
                   </label>
                   <select
                     value={formData.courseId}
@@ -401,7 +401,7 @@ const AssignmentManagementInteractive = () => {
                     className="w-full px-4 py-3 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     required
                   >
-                    <option value="">Kursni tanlang</option>
+                    <option value="">{t('assignments.selectCourse')}</option>
                     {courses.map((course) => (
                       <option key={course.id} value={course.id}>
                         {course.title}
@@ -412,28 +412,28 @@ const AssignmentManagementInteractive = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Topshiriq nomi
+                    {t('assignments.titleLabel')}
                   </label>
                   <input
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className="w-full px-4 py-3 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Masalan: Birinchi modul bo'yicha loyiha"
+                    placeholder={t('assignments.titlePlaceholder')}
                     required
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Tavsif
+                    {t('assignments.descLabel')}
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     className="w-full px-4 py-3 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                     rows={4}
-                    placeholder="Topshiriq haqida batafsil ma'lumot..."
+                    placeholder={t('assignments.descPlaceholder')}
                     required
                   />
                 </div>
@@ -441,7 +441,7 @@ const AssignmentManagementInteractive = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Topshirish muddati
+                      {t('assignments.dueDateInput')}
                     </label>
                     <input
                       type="datetime-local"
@@ -454,7 +454,7 @@ const AssignmentManagementInteractive = () => {
 
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
-                      Maksimal ball
+                      {t('assignments.maxScore')}
                     </label>
                     <input
                       type="number"
@@ -470,7 +470,7 @@ const AssignmentManagementInteractive = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-2">
-                    Fayl talablari
+                    {t('assignments.fileRequirements')}
                   </label>
                   <input
                     type="text"
@@ -487,14 +487,14 @@ const AssignmentManagementInteractive = () => {
                     disabled={submitting}
                     className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth disabled:opacity-50"
                   >
-                    {submitting ? 'Yaratilmoqda...' : 'Topshiriq yaratish'}
+                    {submitting ? t('assignments.creating') : t('assignments.createBtn')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setActiveTab('list')}
                     className="px-6 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth"
                   >
-                    Bekor qilish
+                    {t('assignments.cancel')}
                   </button>
                 </div>
               </form>
@@ -510,7 +510,7 @@ const AssignmentManagementInteractive = () => {
                       {selectedAssignment.title}
                     </h2>
                     <p className="text-sm text-muted-foreground">
-                      {selectedAssignment.courseTitle} • {submissions.length} ta topshiriq
+                      {selectedAssignment.courseTitle} • {t('assignments.submissionsCount', { count: submissions.length })}
                     </p>
                   </div>
                   <button
@@ -520,7 +520,7 @@ const AssignmentManagementInteractive = () => {
                     }}
                     className="px-4 py-2 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth"
                   >
-                    Orqaga
+                    {t('assignments.back')}
                   </button>
                 </div>
               </div>
@@ -529,10 +529,10 @@ const AssignmentManagementInteractive = () => {
                 <div className="bg-card rounded-md shadow-warm p-12 text-center">
                   <Icon name="InboxIcon" size={48} className="mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-lg font-heading font-semibold text-foreground mb-2">
-                    Topshiriqlar yo'q
+                    {t('assignments.emptyTitle')}
                   </h3>
                   <p className="text-muted-foreground">
-                    Hali hech kim topshiriq topshirmagan.
+                    {t('assignments.noSubmissionsDesc')}
                   </p>
                 </div>
               ) : (
@@ -546,7 +546,7 @@ const AssignmentManagementInteractive = () => {
                           </h3>
                           <p className="text-sm text-muted-foreground mb-2">{submission.studentEmail}</p>
                           <p className="text-sm text-muted-foreground">
-                            Topshirildi: {formatDate(submission.submittedAt)}
+                            {t('assignments.submitted')}: {formatDate(submission.submittedAt)}
                           </p>
                         </div>
                         {submission.grade !== null ? (
@@ -555,20 +555,20 @@ const AssignmentManagementInteractive = () => {
                               {submission.grade}/{selectedAssignment.maxScore}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              Baholandi: {submission.gradedAt ? formatDate(submission.gradedAt) : ''}
+                              {t('assignments.graded')}: {submission.gradedAt ? formatDate(submission.gradedAt) : ''}
                             </p>
                           </div>
                         ) : (
                           <span className="px-3 py-1 bg-warning/10 text-warning rounded-full text-xs font-medium">
-                            Baholanmagan
+                            {t('assignments.notGraded')}
                           </span>
                         )}
                       </div>
 
                       <div className="mb-4">
-                        <p className="text-sm font-medium text-foreground mb-2">Topshiriq matni:</p>
+                        <p className="text-sm font-medium text-foreground mb-2">{t('assignments.submissionTextLabel')}:</p>
                         <p className="text-foreground bg-muted p-4 rounded-md">
-                          {submission.submissionText || 'Matn kiritilmagan'}
+                          {submission.submissionText || t('assignments.noText')}
                         </p>
                       </div>
 
@@ -581,14 +581,14 @@ const AssignmentManagementInteractive = () => {
                             className="flex items-center space-x-2 text-primary hover:underline"
                           >
                             <Icon name="PaperClipIcon" size={16} />
-                            <span className="text-sm">Yuklangan faylni ko'rish</span>
+                            <span className="text-sm">{t('assignments.viewUploadedFile')}</span>
                           </a>
                         </div>
                       )}
 
                       {submission.feedback && (
                         <div className="mb-4">
-                          <p className="text-sm font-medium text-foreground mb-2">Izoh:</p>
+                          <p className="text-sm font-medium text-foreground mb-2">{t('assignments.feedback')}:</p>
                           <p className="text-foreground bg-muted p-4 rounded-md">{submission.feedback}</p>
                         </div>
                       )}
@@ -598,7 +598,7 @@ const AssignmentManagementInteractive = () => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-foreground mb-2">
-                                Ball (maksimal: {selectedAssignment.maxScore})
+                                {t('assignments.scoreMaxLabel', { max: selectedAssignment.maxScore })}
                               </label>
                               <input
                                 type="number"
@@ -615,13 +615,13 @@ const AssignmentManagementInteractive = () => {
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-foreground mb-2">Izoh</label>
+                            <label className="block text-sm font-medium text-foreground mb-2">{t('assignments.feedback')}</label>
                             <textarea
                               value={gradingData.feedback}
                               onChange={(e) => setGradingData({ ...gradingData, feedback: e.target.value })}
                               className="w-full px-4 py-3 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                               rows={3}
-                              placeholder="Talabaga izoh yozing..."
+                              placeholder={t('assignments.feedbackPlaceholder')}
                               required
                             />
                           </div>
@@ -632,14 +632,14 @@ const AssignmentManagementInteractive = () => {
                               disabled={submitting}
                               className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth disabled:opacity-50"
                             >
-                              {submitting ? 'Saqlanmoqda...' : 'Baholash'}
+                              {submitting ? t('assignments.saving') : t('assignments.grade')}
                             </button>
                             <button
                               type="button"
                               onClick={() => setGradingData(null)}
                               className="px-6 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth"
                             >
-                              Bekor qilish
+                              {t('assignments.cancel')}
                             </button>
                           </div>
                         </form>
@@ -655,7 +655,7 @@ const AssignmentManagementInteractive = () => {
                             }
                             className="mt-4 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth"
                           >
-                            Baholash
+                            {t('assignments.grade')}
                           </button>
                         )
                       )}

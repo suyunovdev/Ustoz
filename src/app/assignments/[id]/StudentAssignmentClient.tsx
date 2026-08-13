@@ -13,11 +13,11 @@ import { useSubmitAssignmentMutation } from '@/hooks/mutations/useAssignmentMuta
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDateTime } from '@/lib/i18n/format';
 
-const STATUS_LABEL: Record<SubmissionStatusDTO, { label: string; color: string }> = {
-  submitted: { label: 'Topshirilgan', color: 'bg-primary/10 text-primary' },
-  graded: { label: 'Baholangan', color: 'bg-success/10 text-success' },
-  returned: { label: 'Qayta yuborilgan', color: 'bg-warning/10 text-warning' },
-  late: { label: 'Kechikkan', color: 'bg-destructive/10 text-destructive' },
+const STATUS_LABEL: Record<SubmissionStatusDTO, { labelKey: string; color: string }> = {
+  submitted: { labelKey: 'assignments.statusSubmitted', color: 'bg-primary/10 text-primary' },
+  graded: { labelKey: 'assignments.gradedStatus', color: 'bg-success/10 text-success' },
+  returned: { labelKey: 'assignments.statusReturned', color: 'bg-warning/10 text-warning' },
+  late: { labelKey: 'assignments.statusLate', color: 'bg-destructive/10 text-destructive' },
 };
 
 interface Props {
@@ -63,7 +63,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
   if (assignment.error || !assignment.data) {
     return (
       <div className="max-w-xl mx-auto p-8 text-center">
-        <p className="text-destructive">{(assignment.error as Error)?.message || 'Xato'}</p>
+        <p className="text-destructive">{(assignment.error as Error)?.message || t('assignments.errGeneric')}</p>
       </div>
     );
   }
@@ -80,9 +80,9 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
     const days = Math.floor(abs / 86_400_000);
     const hours = Math.floor((abs % 86_400_000) / 3_600_000);
     const mins = Math.floor((abs % 3_600_000) / 60_000);
-    if (days > 0) return `${days} kun ${hours} soat`;
-    if (hours > 0) return `${hours} soat ${mins} daq`;
-    return `${mins} daq`;
+    if (days > 0) return `${days} ${t('assignments.unitDay')} ${hours} ${t('assignments.unitHour')}`;
+    if (hours > 0) return `${hours} ${t('assignments.unitHour')} ${mins} ${t('assignments.unitMin')}`;
+    return `${mins} ${t('assignments.unitMin')}`;
   };
 
   const addAttachment = () => {
@@ -90,7 +90,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
     try {
       new URL(attachmentUrl);
     } catch {
-      toast.error("Yaroqsiz URL");
+      toast.error(t('assignments.toastInvalidUrl'));
       return;
     }
     setAttachments((arr) => [
@@ -103,7 +103,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
 
   const handleSubmit = () => {
     if (!text.trim() && !url.trim() && attachments.length === 0) {
-      toast.error("Kamida bittasi: matn, URL yoki fayl");
+      toast.error(t('assignments.toastAtLeastOne'));
       return;
     }
     submitMut.mutate(
@@ -114,7 +114,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
       },
       {
         onSuccess: () => {
-          toast.success(sub ? "Topshiriq yangilandi" : "Topshiriq yuborildi");
+          toast.success(sub ? t('assignments.toastUpdated') : t('assignments.toastSubmitted'));
         },
         onError: (err) => toast.error(err.message),
       },
@@ -147,7 +147,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
                 STATUS_LABEL[sub.status as SubmissionStatusDTO].color
               }`}
             >
-              {STATUS_LABEL[sub.status as SubmissionStatusDTO].label}
+              {t(STATUS_LABEL[sub.status as SubmissionStatusDTO].labelKey)}
             </span>
           )}
         </div>
@@ -159,7 +159,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
         {a.instructions && (
           <details open className="mb-3">
             <summary className="text-sm font-medium text-foreground cursor-pointer hover:text-primary">
-              📋 Yo'riqnoma
+              📋 {t('assignments.instructions')}
             </summary>
             <pre className="mt-2 p-3 bg-muted/30 rounded-md text-sm whitespace-pre-wrap font-mono">
               {a.instructions}
@@ -169,7 +169,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
 
         <div className="flex items-center gap-4 text-xs flex-wrap pt-3 border-t border-border">
           <div>
-            <p className="text-muted-foreground">Muddat</p>
+            <p className="text-muted-foreground">{t('assignments.dueDate')}</p>
             <p
               className={`font-medium ${
                 isOverdue ? 'text-destructive' : remainingMs < 86400_000 ? 'text-warning' : 'text-foreground'
@@ -179,7 +179,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">{isOverdue ? 'O\'tdi' : 'Qoldi'}</p>
+            <p className="text-muted-foreground">{isOverdue ? t('assignments.overdueLabel') : t('assignments.remainingLabel')}</p>
             <p
               className={`font-medium ${
                 isOverdue ? 'text-destructive' : 'text-foreground'
@@ -189,12 +189,12 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
             </p>
           </div>
           <div>
-            <p className="text-muted-foreground">Max bal</p>
+            <p className="text-muted-foreground">{t('assignments.maxScoreShort')}</p>
             <p className="font-medium text-foreground">{a.maxScore}</p>
           </div>
           {a.allowLateSubmission && (
             <div>
-              <p className="text-muted-foreground">Kech penalty</p>
+              <p className="text-muted-foreground">{t('assignments.latePenalty')}</p>
               <p className="font-medium text-warning">-{a.latePenaltyPercent}%</p>
             </div>
           )}
@@ -209,7 +209,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
         >
           {sub.status === 'graded' && sub.grade !== null && (
             <div className="mb-2">
-              <p className="text-xs text-muted-foreground">Sizning balingiz</p>
+              <p className="text-xs text-muted-foreground">{t('assignments.yourScore')}</p>
               <p className="text-3xl font-bold text-success">
                 {sub.grade} / {a.maxScore}
               </p>
@@ -217,7 +217,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
           )}
           {sub.feedback && (
             <div>
-              <p className="text-xs text-muted-foreground">O'qituvchi izohi</p>
+              <p className="text-xs text-muted-foreground">{t('assignments.teacherFeedback')}</p>
               <p className="text-sm text-foreground mt-1">{sub.feedback}</p>
             </div>
           )}
@@ -226,24 +226,24 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
 
       {!canSubmit && !sub && (
         <div className="p-4 bg-destructive/10 text-destructive rounded-md mb-4">
-          ⚠ Muddat o'tdi va kechikkan topshiriqlarga ruxsat berilmagan.
+          ⚠ {t('assignments.lateNotAllowed')}
         </div>
       )}
 
       {(canSubmit || sub) && sub?.status !== 'graded' && (
         <div className="bg-card border border-border rounded-md p-6">
           <h2 className="text-lg font-medium mb-3">
-            {sub ? "Topshiriqni yangilash" : 'Topshirish'}
+            {sub ? t('assignments.updateSubmission') : t('assignments.submit')}
           </h2>
 
           {showText && (
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Matn javob</label>
+              <label className="block text-sm font-medium mb-1">{t('assignments.textAnswer')}</label>
               <textarea
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 rows={6}
-                placeholder="Javobingizni shu yerga yozing…"
+                placeholder={t('assignments.textAnswerPlaceholder')}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
               />
             </div>
@@ -251,7 +251,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
 
           {showUrl && (
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">URL</label>
+              <label className="block text-sm font-medium mb-1">{t('assignments.urlLabel')}</label>
               <input
                 type="url"
                 value={url}
@@ -264,7 +264,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
 
           {showFiles && (
             <div className="mb-3">
-              <label className="block text-sm font-medium mb-1">Fayllar (URL bilan)</label>
+              <label className="block text-sm font-medium mb-1">{t('assignments.filesWithUrl')}</label>
               <div className="space-y-2">
                 {attachments.map((att, i) => (
                   <div
@@ -295,7 +295,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
                     type="text"
                     value={attachmentName}
                     onChange={(e) => setAttachmentName(e.target.value)}
-                    placeholder="Nomi (ixtiyoriy)"
+                    placeholder={t('assignments.namePlaceholder')}
                     className="w-40 px-3 py-1.5 border border-border rounded-md text-sm"
                   />
                   <button
@@ -303,12 +303,12 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
                     onClick={addAttachment}
                     className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs"
                   >
-                    Qo'shish
+                    {t('assignments.add')}
                   </button>
                 </div>
                 {a.fileRequirements && (
                   <p className="text-xs text-muted-foreground">
-                    📝 Talab: {a.fileRequirements}
+                    📝 {t('assignments.requirementLabel')}: {a.fileRequirements}
                   </p>
                 )}
               </div>
@@ -317,8 +317,8 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
 
           {isOverdue && a.allowLateSubmission && (
             <div className="mb-3 p-3 bg-warning/10 text-warning text-sm rounded-md">
-              ⚠ Muddat o'tdi — bu kechikkan topshiriq sifatida belgilanadi.
-              {a.latePenaltyPercent > 0 && ` Baldan -${a.latePenaltyPercent}% ayriladi.`}
+              ⚠ {t('assignments.lateWarning')}
+              {a.latePenaltyPercent > 0 && ` ${t('assignments.latePenaltyDeduct', { percent: a.latePenaltyPercent })}`}
             </div>
           )}
 
@@ -330,7 +330,7 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
             {submitMut.isPending && (
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
-            {sub ? "Yangilash" : 'Topshirish'}
+            {sub ? t('assignments.update') : t('assignments.submit')}
           </button>
         </div>
       )}

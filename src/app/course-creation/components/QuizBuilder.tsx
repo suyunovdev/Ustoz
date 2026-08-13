@@ -66,12 +66,12 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, courseId, topic
   const saveTest = useCallback(async () => {
     if (questions.length < 5 || questions.length > 15 || isSaving) return;
     if (!courseId) {
-      toast.error("Avval kursni saqlang, keyin test qo'shing");
+      toast.error(t('courseCreation.courseSaveFirst'));
       return;
     }
     // Takroriy saqlashda dublikat test yaratilmasin (route'da update yo'q)
     if (currentTestId) {
-      toast.error('Bu test allaqachon saqlangan');
+      toast.error(t('courseCreation.testAlreadySaved'));
       return;
     }
 
@@ -151,7 +151,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, courseId, topic
                 ? 'bg-primary text-primary-foreground hover:opacity-90'
                 : 'bg-muted text-muted-foreground cursor-not-allowed'
             }`}
-            aria-label="Add question"
+            aria-label={t('courseCreation.addQuestion')}
           >
             <Icon name="PlusIcon" size={20} />
             <span className="font-medium">{t('courseCreation.addQuestion')}</span>
@@ -249,7 +249,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, courseId, topic
                         deleteQuestion(question.id);
                       }}
                       className="p-2 rounded-md text-destructive hover:bg-destructive/10 transition-smooth"
-                      aria-label="Delete question"
+                      aria-label={t('courseCreation.deleteQuestion')}
                     >
                       <Icon name="TrashIcon" size={20} />
                     </button>
@@ -294,7 +294,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, courseId, topic
                               type="text"
                               value={option}
                               onChange={(e) => updateOption(question.id, optIndex, e.target.value)}
-                              placeholder={`Variant ${optIndex + 1}`}
+                              placeholder={`${t('courseCreation.optionPlaceholder')} ${optIndex + 1}`}
                               className="flex-1 px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                               required
                             />

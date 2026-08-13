@@ -158,14 +158,14 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
                       <Icon name="ArrowTopRightOnSquareIcon" size={14} />
                     </a>
                     <p className="caption text-muted-foreground mt-2">
-                      Qo'shilgan: {formatDate(link.addedDate, locale, {})}
+                      {t('content.addedDate')} {formatDate(link.addedDate, locale, {})}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={() => handleDeleteLink(link.id)}
                   className="p-2 rounded-md text-destructive hover:bg-destructive/10 transition-smooth"
-                  aria-label="Delete link"
+                  aria-label={t('content.deleteLink')}
                 >
                   <Icon name="TrashIcon" size={20} />
                 </button>
@@ -184,7 +184,7 @@ const ExternalLinkIntegration = ({ links, onLinkAdd, onLinkDelete, teacherId }: 
               <button
                 onClick={() => setShowAddModal(false)}
                 className="p-2 rounded-md hover:bg-muted transition-smooth"
-                aria-label="Close modal"
+                aria-label={t('common.close')}
               >
                 <Icon name="XMarkIcon" size={24} />
               </button>

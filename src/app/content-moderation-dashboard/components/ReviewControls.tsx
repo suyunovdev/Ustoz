@@ -41,7 +41,7 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
   return (
     <>
       <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
-        <h3 className="text-xl font-heading font-semibold text-foreground">Qaror qabul qilish</h3>
+        <h3 className="text-xl font-heading font-semibold text-foreground">{t('moderation.decisionTitle')}</h3>
 
         {item.status === 'pending' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -59,7 +59,7 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
               className="flex items-center justify-center space-x-2 px-6 py-4 bg-destructive text-destructive-foreground rounded-md hover:opacity-90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon name="XCircleIcon" size={24} />
-              <span className="font-medium">Rad etish</span>
+              <span className="font-medium">{t('moderation.reject')}</span>
             </button>
           </div>
         ) : (
@@ -75,22 +75,22 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
             <p className={`font-medium ${
               item.status === 'approved' ? 'text-success' : 'text-destructive'
             }`}>
-              Bu kontent allaqachon {item.status === 'approved' ? 'tasdiqlangan' : 'rad etilgan'}
+              {item.status === 'approved' ? t('moderation.alreadyApproved') : t('moderation.alreadyRejected')}
             </p>
           </div>
         )}
 
         {/* Quick Actions */}
         <div className="space-y-3">
-          <h4 className="font-medium text-foreground">Tezkor harakatlar</h4>
+          <h4 className="font-medium text-foreground">{t('moderation.quickActions')}</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button className="flex items-center space-x-2 px-4 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth">
               <Icon name="FlagIcon" size={20} />
-              <span className="text-sm font-medium">Shikoyat qilish</span>
+              <span className="text-sm font-medium">{t('moderation.report')}</span>
             </button>
             <button className="flex items-center space-x-2 px-4 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth">
               <Icon name="ChatBubbleLeftIcon" size={20} />
-              <span className="text-sm font-medium">O'qituvchiga xabar</span>
+              <span className="text-sm font-medium">{t('moderation.messageTeacher')}</span>
             </button>
           </div>
         </div>
@@ -100,12 +100,12 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
           <div className="flex items-start space-x-2">
             <Icon name="InformationCircleIcon" size={20} className="text-primary mt-0.5" />
             <div>
-              <p className="font-medium text-foreground">Moderatsiya qoidalari</p>
+              <p className="font-medium text-foreground">{t('moderation.guidelines')}</p>
               <ul className="caption text-muted-foreground mt-2 space-y-1 list-disc list-inside">
-                <li>Kontent sifati va aniqligini tekshiring</li>
-                <li>Mualliflik huquqlarini hurmat qiling</li>
-                <li>Nomaqbul yoki haqoratli kontent yo'qligini tasdiqlang</li>
-                <li>Watermark himoyasi to'g'ri qo'llanganligini tekshiring</li>
+                <li>{t('moderation.guideline1')}</li>
+                <li>{t('moderation.guideline2')}</li>
+                <li>{t('moderation.guideline3')}</li>
+                <li>{t('moderation.guideline4')}</li>
               </ul>
             </div>
           </div>
@@ -117,11 +117,11 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
         <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
           <div className="bg-card rounded-md shadow-warm-xl border border-border w-full max-w-lg">
             <div className="flex items-center justify-between p-6 border-b border-border">
-              <h3 className="text-xl font-heading font-semibold text-foreground">Rad etish sababi</h3>
+              <h3 className="text-xl font-heading font-semibold text-foreground">{t('moderation.rejectReasonTitle')}</h3>
               <button
                 onClick={() => setShowRejectModal(false)}
                 className="p-2 rounded-md hover:bg-muted transition-smooth"
-                aria-label="Close modal"
+                aria-label={t('common.close')}
               >
                 <Icon name="XMarkIcon" size={24} />
               </button>
@@ -129,12 +129,12 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
-                  Sabab (o'qituvchiga ko'rsatiladi) *
+                  {t('moderation.rejectReasonLabel')}
                 </label>
                 <textarea
                   value={rejectionNotes}
                   onChange={(e) => setRejectionNotes(e.target.value)}
-                  placeholder="Nima uchun bu kontent rad etilayotganini tushuntiring..."
+                  placeholder={t('moderation.rejectReasonPlaceholder')}
                   rows={5}
                   className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                   required
@@ -146,13 +146,13 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
                   disabled={!rejectionNotes.trim() || isProcessing}
                   className="flex-1 px-4 py-3 bg-destructive text-destructive-foreground rounded-md hover:opacity-90 transition-smooth font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isProcessing ? 'Rad etilmoqda...' : 'Rad etish'}
+                  {isProcessing ? t('moderation.rejecting') : t('moderation.reject')}
                 </button>
                 <button
                   onClick={() => setShowRejectModal(false)}
                   className="px-4 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth font-medium"
                 >
-                  Bekor qilish
+                  {t('common.cancel')}
                 </button>
               </div>
             </div>

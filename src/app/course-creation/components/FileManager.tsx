@@ -150,7 +150,7 @@ const FileManager = ({ files, onFilesChange }: FileManagerProps) => {
               <button
                 onClick={() => deleteFile(file.id)}
                 className="p-2 rounded-md text-destructive hover:bg-destructive/10 transition-smooth"
-                aria-label="Delete file"
+                aria-label={t('courseCreation.deleteFile')}
               >
                 <Icon name="TrashIcon" size={20} />
               </button>

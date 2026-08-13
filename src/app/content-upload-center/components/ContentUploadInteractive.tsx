@@ -128,7 +128,7 @@ const ContentUploadInteractive = () => {
         const data = await res.json();
         if (data.material) saved.push(data.material as UploadedFile);
       } catch (err) {
-        toast.error(`"${f.name}" ni saqlab bo'lmadi`);
+        toast.error(t('content.saveFileError', { name: f.name }));
       }
     }
     if (saved.length) setUploadedFiles((prev) => [...saved, ...prev]);
@@ -145,7 +145,7 @@ const ContentUploadInteractive = () => {
       if (!res.ok) throw new Error(`(${res.status})`);
     } catch (error) {
       setUploadedFiles(prev);
-      toast.error("Materialni o'chirib bo'lmadi");
+      toast.error(t('content.deleteMaterialError'));
     }
   };
 
@@ -170,7 +170,7 @@ const ContentUploadInteractive = () => {
       const data = await res.json();
       if (data.link) setExternalLinks((prev) => [data.link as ExternalLink, ...prev]);
     } catch (err) {
-      toast.error("Havolani qo'shib bo'lmadi");
+      toast.error(t('content.addLinkError'));
     }
   };
 
@@ -185,7 +185,7 @@ const ContentUploadInteractive = () => {
       if (!res.ok) throw new Error(`(${res.status})`);
     } catch (error) {
       setExternalLinks(prev);
-      toast.error("Havolani o'chirib bo'lmadi");
+      toast.error(t('content.deleteLinkError'));
     }
   };
 

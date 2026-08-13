@@ -14,9 +14,10 @@ interface RichTextEditorProps {
 const RichTextEditor = ({
   content,
   onContentChange,
-  placeholder = 'Start writing your content here...'
+  placeholder
 }: RichTextEditorProps) => {
   const { t } = useI18n();
+  const editorPlaceholder = placeholder ?? t('courseCreation.editorPlaceholder');
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
@@ -84,11 +85,11 @@ const RichTextEditor = ({
   };
 
   const toolbarButtons = [
-    { command: 'bold', icon: 'BoldIcon', label: 'Bold' },
-    { command: 'italic', icon: 'ItalicIcon', label: 'Italic' },
-    { command: 'underline', icon: 'UnderlineIcon', label: 'Underline' },
-    { command: 'insertUnorderedList', icon: 'ListBulletIcon', label: 'Bullet List' },
-    { command: 'insertOrderedList', icon: 'NumberedListIcon', label: 'Numbered List' },
+    { command: 'bold', icon: 'BoldIcon', label: t('courseCreation.bold') },
+    { command: 'italic', icon: 'ItalicIcon', label: t('courseCreation.italic') },
+    { command: 'underline', icon: 'UnderlineIcon', label: t('courseCreation.underline') },
+    { command: 'insertUnorderedList', icon: 'ListBulletIcon', label: t('courseCreation.bulletList') },
+    { command: 'insertOrderedList', icon: 'NumberedListIcon', label: t('courseCreation.numberedList') },
   ];
 
   return (
@@ -126,11 +127,11 @@ const RichTextEditor = ({
           <button
             onClick={() => setShowVideoModal(true)}
             className="flex items-center space-x-2 px-3 py-2 rounded-md text-foreground hover:bg-muted transition-smooth"
-            aria-label="Insert video"
+            aria-label={t('courseCreation.insertVideo')}
             type="button"
           >
             <Icon name="VideoCameraIcon" size={20} />
-            <span className="font-medium hidden sm:inline">Video</span>
+            <span className="font-medium hidden sm:inline">{t('courseCreation.video')}</span>
           </button>
         </div>
 
@@ -141,7 +142,7 @@ const RichTextEditor = ({
           onInput={(e) => onContentChange(e.currentTarget.innerHTML)}
           className="min-h-[400px] p-4 text-foreground focus:outline-none"
           dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
-          data-placeholder={placeholder}
+          data-placeholder={editorPlaceholder}
           style={{
             wordWrap: 'break-word',
             overflowWrap: 'break-word'
@@ -157,7 +158,7 @@ const RichTextEditor = ({
                 <button
                   onClick={() => setShowVideoModal(false)}
                   className="p-2 rounded-md hover:bg-muted transition-smooth"
-                  aria-label="Close modal"
+                  aria-label={t('courseCreation.closeModal')}
                   type="button"
                 >
                   <Icon name="XMarkIcon" size={24} />

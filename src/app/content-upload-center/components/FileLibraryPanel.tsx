@@ -112,7 +112,7 @@ const FileLibraryPanel = ({ files, onFileDelete }: FileLibraryPanelProps) => {
                     <button
                       onClick={() => onFileDelete(file.id)}
                       className="p-1 rounded-md text-destructive hover:bg-destructive/10 transition-smooth"
-                      aria-label="Delete file"
+                      aria-label={t('content.deleteFile')}
                     >
                       <Icon name="TrashIcon" size={16} />
                     </button>

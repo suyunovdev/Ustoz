@@ -406,14 +406,14 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
             required
           >
             <option value="">{t('courseCreation.selectCategory')}</option>
-            <option value="Programming">Programming</option>
-            <option value="Design">Design</option>
-            <option value="Business">Business</option>
-            <option value="Marketing">Marketing</option>
-            <option value="Science">Science</option>
-            <option value="Mathematics">Mathematics</option>
-            <option value="Languages">Languages</option>
-            <option value="Other">Other</option>
+            <option value="Programming">{t('categories.programming')}</option>
+            <option value="Design">{t('categories.design')}</option>
+            <option value="Business">{t('categories.business')}</option>
+            <option value="Marketing">{t('categories.marketing')}</option>
+            <option value="Science">{t('categories.science')}</option>
+            <option value="Mathematics">{t('categories.mathematics')}</option>
+            <option value="Languages">{t('categories.languages')}</option>
+            <option value="Other">{t('categories.other')}</option>
           </select>
         </div>
 

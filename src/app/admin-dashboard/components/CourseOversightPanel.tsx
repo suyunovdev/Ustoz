@@ -263,7 +263,7 @@ const CourseOversightPanel = () => {
                 className="w-4 h-4"
               />
               <Icon name="StarIcon" size={16} className="text-primary" />
-              Featured
+              {t('admin.featured')}
             </label>
 
             <div className="relative flex-1 lg:flex-none">
@@ -340,7 +340,7 @@ const CourseOversightPanel = () => {
                         {course.isFeatured && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
                             <Icon name="StarIcon" size={12} variant="solid" />
-                            Featured
+                            {t('admin.featured')}
                           </span>
                         )}
                         {isSuspended && (
@@ -353,8 +353,8 @@ const CourseOversightPanel = () => {
                         {course.teacher.fullName} · {course.categoryRel?.name ?? t('admin.noCategory')}
                       </p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
-                        <span>📚 {course._count.topics} mavzu</span>
-                        <span>👥 {course._count.enrollments} talaba</span>
+                        <span>📚 {course._count.topics} {t('admin.topicUnit')}</span>
+                        <span>👥 {course._count.enrollments} {t('admin.studentUnit')}</span>
                         <span>⭐ {Number(course.rating).toFixed(1)} ({course._count.reviews})</span>
                         <span>💰 {formatUzs(course.priceUzs)}</span>
                         <span>📅 {fmtDate(course.createdAt, locale)}</span>
@@ -375,7 +375,7 @@ const CourseOversightPanel = () => {
                       <button
                         onClick={() => setOpenMenuFor(menuOpen ? null : course.id)}
                         className="p-2 hover:bg-muted rounded-md transition-smooth"
-                        aria-label="Amallar"
+                        aria-label={t('admin.actionsMenu')}
                       >
                         <Icon name="EllipsisVerticalIcon" size={20} className="text-muted-foreground" />
                       </button>

@@ -117,7 +117,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
               type="text"
               value={editingQuestion[optionKey] as string}
               onChange={(e) => setEditingQuestion({ ...editingQuestion, [optionKey]: e.target.value })}
-              placeholder={`${optionLabel}-variant javobini kiriting...`}
+              placeholder={`${optionLabel}-${t('courseCreation.variantAnswerHint')}`}
               className="w-full px-4 py-3 bg-background border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -318,7 +318,7 @@ const SequentialTestBuilder = ({ materialId, questions, onQuestionsChange }: Seq
                 <button
                   onClick={() => deleteQuestion(question.id)}
                   className="p-2 rounded-md text-destructive hover:bg-destructive/10 transition-smooth"
-                  aria-label="O'chirish"
+                  aria-label={t('courseCreation.deleteQuestion')}
                 >
                   <Icon name="TrashIcon" size={20} />
                 </button>

@@ -71,7 +71,7 @@ const AssignmentSubmissionPortalInteractive = () => {
       await Promise.all([loadAssignments(user.id), loadSubmissions(user.id)]);
     } catch (err: unknown) {
       console.error('Auth check error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to authenticate');
+      setError(err instanceof Error ? err.message : t('assignments.errAuthFailed'));
     } finally {
       setLoading(false);
     }
@@ -99,7 +99,7 @@ const AssignmentSubmissionPortalInteractive = () => {
 
     // Validate file size (50MB)
     if (file.size > 50 * 1024 * 1024) {
-      setError('Fayl hajmi 50MB dan oshmasligi kerak');
+      setError(t('assignments.errFileSize'));
       return;
     }
 
@@ -142,14 +142,14 @@ const AssignmentSubmissionPortalInteractive = () => {
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || 'Topshirishda xatolik');
+        throw new Error(data?.error || t('assignments.errSubmit'));
       }
 
       // Muvaffaqiyatli — ro'yxatni yangilash
       await loadAssignments(userId);
       setUploadProgress(100);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Topshirishda xatolik yuz berdi');
+      setError(err instanceof Error ? err.message : t('assignments.errSubmitGeneric'));
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -217,10 +217,10 @@ const AssignmentSubmissionPortalInteractive = () => {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
-              Topshiriqlar portali
+              {t('assignments.portalTitle')}
             </h1>
             <p className="text-muted-foreground">
-              Topshiriqlarni ko'ring, bajarish va topshiring
+              {t('assignments.portalSubtitle')}
             </p>
           </div>
 
@@ -262,17 +262,17 @@ const AssignmentSubmissionPortalInteractive = () => {
                     <p className="text-foreground mb-4">{selectedAssignment.description}</p>
                     <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-md">
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Muddat</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.dueDate')}</p>
                         <p className="text-sm font-medium text-foreground">
                           {formatDate(selectedAssignment.dueDate)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Maksimal ball</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.maxScore')}</p>
                         <p className="text-sm font-medium text-foreground">{selectedAssignment.maxScore}</p>
                       </div>
                       <div className="col-span-2">
-                        <p className="text-xs text-muted-foreground mb-1">Fayl talablari</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.fileRequirements')}</p>
                         <p className="text-sm font-medium text-foreground">
                           {selectedAssignment.fileRequirements}
                         </p>
@@ -283,21 +283,21 @@ const AssignmentSubmissionPortalInteractive = () => {
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Topshiriq matni
+                        {t('assignments.submissionText')}
                       </label>
                       <textarea
                         value={submissionText}
                         onChange={(e) => setSubmissionText(e.target.value)}
                         className="w-full px-4 py-3 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                         rows={6}
-                        placeholder="Topshiriq haqida yozing, havolalar qo'shing..."
+                        placeholder={t('assignments.submissionTextPlaceholder')}
                         required
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        Fayl yuklash (ixtiyoriy)
+                        {t('assignments.fileUploadOptional')}
                       </label>
                       <div className="border-2 border-dashed border-border rounded-md p-6 text-center">
                         <input
@@ -310,10 +310,10 @@ const AssignmentSubmissionPortalInteractive = () => {
                         <label htmlFor="file-upload" className="cursor-pointer">
                           <Icon name="CloudArrowUpIcon" size={48} className="mx-auto text-muted-foreground mb-2" />
                           <p className="text-sm text-foreground mb-1">
-                            Faylni tanlash uchun bosing
+                            {t('assignments.clickToSelectFile')}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            PDF, DOCX, ZIP, rasm (max 50MB)
+                            {t('assignments.fileHint')}
                           </p>
                         </label>
                         {selectedFile && (
@@ -325,7 +325,7 @@ const AssignmentSubmissionPortalInteractive = () => {
                               onClick={() => setSelectedFile(null)}
                               className="text-destructive hover:underline text-sm"
                             >
-                              O'chirish
+                              {t('assignments.remove')}
                             </button>
                           </div>
                         )}
@@ -347,7 +347,7 @@ const AssignmentSubmissionPortalInteractive = () => {
                         disabled={uploading}
                         className="flex-1 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth disabled:opacity-50"
                       >
-                        {uploading ? 'Yuklanmoqda...' : 'Topshiriq topshirish'}
+                        {uploading ? t('assignments.uploading') : t('assignments.submitAssignment')}
                       </button>
                       <button
                         type="button"
@@ -358,7 +358,7 @@ const AssignmentSubmissionPortalInteractive = () => {
                         }}
                         className="px-6 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth"
                       >
-                        Bekor qilish
+                        {t('assignments.cancel')}
                       </button>
                     </div>
                   </form>
@@ -372,10 +372,10 @@ const AssignmentSubmissionPortalInteractive = () => {
             <div className="bg-card rounded-md shadow-warm p-12 text-center">
               <Icon name="DocumentTextIcon" size={48} className="mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-heading font-semibold text-foreground mb-2">
-                Topshiriqlar yo'q
+                {t('assignments.emptyTitle')}
               </h3>
               <p className="text-muted-foreground">
-                Hozircha sizga topshiriq berilmagan. Kurslarga yoziling va topshiriqlarni kuting.
+                {t('assignments.portalEmptyDesc')}
               </p>
             </div>
           ) : (
@@ -414,23 +414,23 @@ const AssignmentSubmissionPortalInteractive = () => {
                             <p className="text-2xl font-bold text-success">
                               {submission?.grade}/{assignment.maxScore}
                             </p>
-                            <p className="text-xs text-muted-foreground">Baholandi</p>
+                            <p className="text-xs text-muted-foreground">{t('assignments.graded')}</p>
                           </div>
                         ) : submission ? (
                           <span className="px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-medium">
-                            Topshirildi
+                            {t('assignments.submitted')}
                           </span>
                         ) : overdue ? (
                           <span className="px-3 py-1 bg-destructive/10 text-destructive rounded-full text-xs font-medium">
-                            Muddati o'tgan
+                            {t('assignments.statusOverdue')}
                           </span>
                         ) : urgent ? (
                           <span className="px-3 py-1 bg-warning/10 text-warning rounded-full text-xs font-medium">
-                            {daysRemaining} kun qoldi
+                            {t('assignments.daysRemaining', { count: daysRemaining })}
                           </span>
                         ) : (
                           <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium">
-                            {daysRemaining} kun qoldi
+                            {t('assignments.daysRemaining', { count: daysRemaining })}
                           </span>
                         )}
                       </div>
@@ -438,24 +438,24 @@ const AssignmentSubmissionPortalInteractive = () => {
 
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Muddat</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.dueDate')}</p>
                         <p className="text-sm font-medium text-foreground">
                           {formatDate(assignment.dueDate)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Maksimal ball</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.maxScore')}</p>
                         <p className="text-sm font-medium text-foreground">{assignment.maxScore}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground mb-1">Fayl talablari</p>
+                        <p className="text-xs text-muted-foreground mb-1">{t('assignments.fileRequirements')}</p>
                         <p className="text-sm font-medium text-foreground">{assignment.fileRequirements}</p>
                       </div>
                     </div>
 
                     {submission && (
                       <div className="mb-4 p-4 bg-muted rounded-md">
-                        <p className="text-sm font-medium text-foreground mb-2">Sizning topshiriqingiz:</p>
+                        <p className="text-sm font-medium text-foreground mb-2">{t('assignments.yourSubmission')}:</p>
                         <p className="text-sm text-foreground mb-2">{submission.submissionText}</p>
                         {submission.submissionUrl && (
                           <a
@@ -465,12 +465,12 @@ const AssignmentSubmissionPortalInteractive = () => {
                             className="flex items-center space-x-2 text-primary hover:underline text-sm"
                           >
                             <Icon name="PaperClipIcon" size={16} />
-                            <span>Yuklangan fayl</span>
+                            <span>{t('assignments.uploadedFile')}</span>
                           </a>
                         )}
                         {submission.feedback && (
                           <div className="mt-4 pt-4 border-t border-border">
-                            <p className="text-sm font-medium text-foreground mb-2">O'qituvchi izohi:</p>
+                            <p className="text-sm font-medium text-foreground mb-2">{t('assignments.teacherFeedback')}:</p>
                             <p className="text-sm text-foreground">{submission.feedback}</p>
                           </div>
                         )}
@@ -483,13 +483,13 @@ const AssignmentSubmissionPortalInteractive = () => {
                           onClick={() => setSelectedAssignment(assignment)}
                           className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth"
                         >
-                          {submission ? 'Qayta topshirish' : 'Topshiriq topshirish'}
+                          {submission ? t('assignments.resubmit') : t('assignments.submitAssignment')}
                         </button>
                       )}
                       {submission?.grade !== null && (
                         <div className="flex items-center space-x-2 text-success">
                           <Icon name="CheckCircleIcon" size={20} />
-                          <span className="text-sm font-medium">Baholangan</span>
+                          <span className="text-sm font-medium">{t('assignments.gradedStatus')}</span>
                         </div>
                       )}
                     </div>

@@ -251,7 +251,7 @@ const UserManagementPanel = () => {
                         onClick={() => setOpenMenuFor(menuOpen ? null : user.id)}
                         disabled={isSelf}
                         className="p-2 hover:bg-muted rounded-md transition-smooth disabled:opacity-30 disabled:cursor-not-allowed"
-                        aria-label="Amallar menyusi"
+                        aria-label={t('admin.actionsMenu')}
                       >
                         <Icon name="EllipsisVerticalIcon" size={20} className="text-muted-foreground" />
                       </button>

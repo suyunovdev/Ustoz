@@ -105,7 +105,7 @@ const AuditLogPanel = () => {
               onChange={(e) => setAction(e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-card"
             >
-              <option value="">Barchasi</option>
+              <option value="">{t('admin.filterAll')}</option>
               {meta?.actions.map((a) => (
                 <option key={a} value={a}>
                   {a}
@@ -121,7 +121,7 @@ const AuditLogPanel = () => {
               onChange={(e) => setTargetType(e.target.value)}
               className="w-full px-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-card"
             >
-              <option value="">Barchasi</option>
+              <option value="">{t('admin.filterAll')}</option>
               {meta?.targetTypes.map((t) => (
                 <option key={t} value={t}>
                   {t}
@@ -162,7 +162,7 @@ const AuditLogPanel = () => {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="admin@..., 192.168..."
+                placeholder={t('admin.searchIpPlaceholder')}
                 className="w-full pl-9 pr-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -296,7 +296,7 @@ function LogRow({
           )}
           {log.metadata !== null && (
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Metadata</p>
+              <p className="text-xs text-muted-foreground mb-1">{t('admin.metadata')}</p>
               <pre className="p-2 bg-muted/50 rounded text-xs font-mono overflow-x-auto whitespace-pre-wrap break-words">
                 {JSON.stringify(log.metadata, null, 2)}
               </pre>

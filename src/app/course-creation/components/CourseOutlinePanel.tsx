@@ -93,7 +93,7 @@ const CourseOutlinePanel = ({
         <button
           onClick={onAddTopic}
           className="flex items-center space-x-2 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
-          aria-label="Yangi mavzu qo'shish"
+          aria-label={t('courseCreation.addTopicAria')}
         >
           <Icon name="PlusIcon" size={20} />
           <span className="font-medium hidden sm:inline">{t('courseCreation.add')}</span>
@@ -106,7 +106,7 @@ const CourseOutlinePanel = ({
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Icon name="BookOpenIcon" size={48} className="text-muted-foreground mb-4" />
             <p className="text-muted-foreground text-sm">{t('courseCreation.noTopicsEmpty')}</p>
-            <p className="text-muted-foreground text-sm mt-1">"Qo'shish" tugmasini bosing.</p>
+            <p className="text-muted-foreground text-sm mt-1">{t('courseCreation.pressAddHint')}</p>
           </div>
         ) : (
           topics.map((topic, index) => {
@@ -149,7 +149,7 @@ const CourseOutlinePanel = ({
                     {topic.hasQuiz && (
                       <span className="flex items-center space-x-1 caption text-xs opacity-80">
                         <Icon name="AcademicCapIcon" size={14} />
-                        <span>Test</span>
+                        <span>{t('courseCreation.testBadge')}</span>
                       </span>
                     )}
                   </div>

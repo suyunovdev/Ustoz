@@ -134,10 +134,10 @@ function CampaignRow({ campaign }: { campaign: CampaignDTO }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-2">
-        <span>📊 {campaign.totalRecipients} jami</span>
-        <span className="text-success">✓ {campaign.sentCount} yuborildi</span>
+        <span>📊 {campaign.totalRecipients} {t('admin.totalRecipients')}</span>
+        <span className="text-success">✓ {campaign.sentCount} {t('admin.sent')}</span>
         {campaign.failedCount > 0 && (
-          <span className="text-destructive">✗ {campaign.failedCount} xato</span>
+          <span className="text-destructive">✗ {campaign.failedCount} {t('admin.failedCount')}</span>
         )}
         <span>📅 {formatDateTime(campaign.createdAt, locale)}</span>
       </div>
@@ -212,7 +212,7 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
         {
           onSuccess: (r) => {
             toast.success(
-              `Yuborildi: ${r.campaign.sentCount}/${r.campaign.totalRecipients}`,
+              `${t('admin.sentLabel')}: ${r.campaign.sentCount}/${r.campaign.totalRecipients}`,
             );
             onClose();
           },
@@ -266,7 +266,7 @@ function CreateCampaignModal({ onClose }: { onClose: () => void }) {
               value={bodyHtml}
               onChange={(e) => setBodyHtml(e.target.value)}
               rows={8}
-              placeholder={"<h2>Salom!</h2>\n<p>Yangi qish chegirmasi: 50% off!</p>"}
+              placeholder={t('admin.bodyPlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary font-mono text-sm resize-y"
             />
           </div>

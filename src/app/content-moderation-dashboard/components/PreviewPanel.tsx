@@ -100,9 +100,9 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
   return (
     <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-xl font-heading font-semibold text-foreground">Ko'rib chiqish</h3>
+        <h3 className="text-xl font-heading font-semibold text-foreground">{t('moderation.previewTitle')}</h3>
         <span className="caption px-3 py-1 bg-muted text-muted-foreground rounded-md uppercase">
-          {item.type === 'material' ? 'Material' : item.type === 'link' ? 'Havola' : 'Test'}
+          {item.type === 'material' ? t('moderation.typeMaterial') : item.type === 'link' ? t('moderation.typeLink') : t('moderation.typeTest')}
         </span>
       </div>
 
@@ -117,11 +117,11 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-muted/50 rounded-md">
-              <p className="caption text-muted-foreground mb-1">Fayl turi</p>
+              <p className="caption text-muted-foreground mb-1">{t('moderation.fileType')}</p>
               <p className="font-medium text-foreground uppercase">{materialDetails.content_type}</p>
             </div>
             <div className="p-4 bg-muted/50 rounded-md">
-              <p className="caption text-muted-foreground mb-1">Fayl hajmi</p>
+              <p className="caption text-muted-foreground mb-1">{t('moderation.fileSize')}</p>
               <p className="font-medium text-foreground">{formatFileSize(materialDetails.file_size)}</p>
             </div>
           </div>
@@ -129,8 +129,8 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
             <div className="flex items-center space-x-3 p-4 bg-success/10 rounded-md">
               <Icon name="ShieldCheckIcon" size={24} className="text-success" />
               <div>
-                <p className="font-medium text-success">Watermark himoyasi yoqilgan</p>
-                <p className="caption text-muted-foreground">Matn: {materialDetails.watermark_text}</p>
+                <p className="font-medium text-success">{t('content.watermarkEnabled')}</p>
+                <p className="caption text-muted-foreground">{t('moderation.watermarkTextLabel', { text: materialDetails.watermark_text || '' })}</p>
               </div>
             </div>
           )}
@@ -152,7 +152,7 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
                   className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
                 >
                   <Icon name="DocumentTextIcon" size={20} />
-                  <span className="font-medium">Hujjatni ochish</span>
+                  <span className="font-medium">{t('moderation.openDocument')}</span>
                 </a>
               )}
             </div>
@@ -170,7 +170,7 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
             )}
           </div>
           <div className="p-4 bg-muted/50 rounded-md">
-            <p className="caption text-muted-foreground mb-2">Havola</p>
+            <p className="caption text-muted-foreground mb-2">{t('moderation.linkLabel')}</p>
             <a
               href={linkDetails.url}
               target="_blank"
@@ -182,7 +182,7 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
             </a>
           </div>
           <div className="p-4 bg-muted/50 rounded-md">
-            <p className="caption text-muted-foreground mb-1">Havola turi</p>
+            <p className="caption text-muted-foreground mb-1">{t('moderation.linkTypeLabel')}</p>
             <p className="font-medium text-foreground uppercase">{linkDetails.link_type}</p>
           </div>
         </div>
@@ -193,7 +193,7 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
         <div className="space-y-4">
           <div className="flex items-center justify-between p-4 bg-muted/50 rounded-md">
             <div>
-              <p className="caption text-muted-foreground">Jami savollar</p>
+              <p className="caption text-muted-foreground">{t('moderation.totalQuestions')}</p>
               <p className="text-2xl font-heading font-bold text-foreground">{testQuestions.length}</p>
             </div>
             <Icon name="AcademicCapIcon" size={40} className="text-primary" />
@@ -201,7 +201,7 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
           {testQuestions.length === 0 ? (
             <div className="text-center py-8">
               <Icon name="DocumentMagnifyingGlassIcon" size={40} className="text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground text-sm">Savollar topilmadi</p>
+              <p className="text-muted-foreground text-sm">{t('moderation.noQuestions')}</p>
             </div>
           ) : (
             <div className="space-y-3 max-h-96 overflow-y-auto">
@@ -229,7 +229,7 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
                   </div>
                   {q.explanation && (
                     <div className="ml-6 p-3 bg-primary/5 rounded-md">
-                      <p className="caption text-muted-foreground mb-1">Tushuntirish:</p>
+                      <p className="caption text-muted-foreground mb-1">{t('moderation.explanation')}</p>
                       <p className="text-sm text-foreground">{q.explanation}</p>
                     </div>
                   )}
@@ -244,13 +244,13 @@ const PreviewPanel = ({ item }: PreviewPanelProps) => {
       {item.type === 'material' && !materialDetails && (
         <div className="text-center py-8">
           <Icon name="DocumentTextIcon" size={40} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm">Material tafsilotlari mavjud emas</p>
+          <p className="text-muted-foreground text-sm">{t('moderation.noMaterialDetails')}</p>
         </div>
       )}
       {item.type === 'link' && !linkDetails && (
         <div className="text-center py-8">
           <Icon name="LinkIcon" size={40} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-muted-foreground text-sm">Havola tafsilotlari mavjud emas</p>
+          <p className="text-muted-foreground text-sm">{t('moderation.noLinkDetails')}</p>
         </div>
       )}
     </div>

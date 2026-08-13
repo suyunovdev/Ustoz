@@ -34,10 +34,10 @@ const ContentList = ({ items, selectedItem, onSelectItem, isLoading }: ContentLi
 
   const getStatusBadge = (status: string) => {
     const config = {
-      pending: { label: 'Kutilmoqda', color: 'bg-warning/10 text-warning' },
-      approved: { label: 'Tasdiqlangan', color: 'bg-success/10 text-success' },
-      rejected: { label: 'Rad etilgan', color: 'bg-destructive/10 text-destructive' },
-      revision_requested: { label: 'Qayta ko\'rib chiqish', color: 'bg-secondary/10 text-secondary' }
+      pending: { label: t('moderation.pending'), color: 'bg-warning/10 text-warning' },
+      approved: { label: t('moderation.approved'), color: 'bg-success/10 text-success' },
+      rejected: { label: t('moderation.rejected'), color: 'bg-destructive/10 text-destructive' },
+      revision_requested: { label: t('moderation.revisionRequested'), color: 'bg-secondary/10 text-secondary' }
     };
     return config[status as keyof typeof config] || config.pending;
   };
@@ -59,12 +59,12 @@ const ContentList = ({ items, selectedItem, onSelectItem, isLoading }: ContentLi
   return (
     <div className="bg-card rounded-md shadow-warm p-4 space-y-2 max-h-[calc(100vh-400px)] overflow-y-auto">
       <h3 className="text-lg font-heading font-semibold text-foreground mb-4">
-        Kontent ro'yxati ({items.length})
+        {t('moderation.contentListTitle', { count: items.length })}
       </h3>
       {items.length === 0 ? (
         <div className="text-center py-12">
           <Icon name="InboxIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">Kontent topilmadi</p>
+          <p className="text-muted-foreground">{t('moderation.noContent')}</p>
         </div>
       ) : (
         items.map((item) => {

@@ -127,7 +127,7 @@ const ModerationDashboardInteractive = () => {
   ) => {
     const action = decision === 'approved' ? 'approve' : 'reject';
     if (action === 'reject' && !notes?.trim()) {
-      toast.error('Rad etish uchun sabab (izoh) majburiy');
+      toast.error(t('moderation.rejectReasonRequired'));
       return;
     }
     try {
@@ -139,9 +139,9 @@ const ModerationDashboardInteractive = () => {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `Xatolik (${res.status})`);
+        throw new Error(err?.error || t('moderation.genericError', { status: res.status }));
       }
-      toast.success(decision === 'approved' ? 'Tasdiqlandi' : 'Rad etildi');
+      toast.success(decision === 'approved' ? t('moderation.approvedToast') : t('moderation.rejectedToast'));
       await loadModerationData();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('moderation.reviewError'));
