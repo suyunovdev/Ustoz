@@ -845,7 +845,7 @@
     "addMembersFreeSlots": "Свободных мест",
     "addMembersLoading": "Загрузка…",
     "addMembersNoMatch": "Подходящих студентов нет",
-    "addMembersOnlySlots": "Только {count} свободных мест",
+    "addMembersOnlySlots": { "one": "Только {count} свободное место", "few": "Только {count} свободных места", "many": "Только {count} свободных мест", "other": "Только {count} свободных мест" },
     "addMembersNoneSelected": "Никто не выбран",
     "addMembersAdded": "участников добавлено",
     "addMembersSkipped": "пропущено (уже есть или группа полная)",

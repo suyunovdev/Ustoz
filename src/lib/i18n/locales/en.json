@@ -845,7 +845,7 @@
     "addMembersFreeSlots": "Free slots",
     "addMembersLoading": "Loading…",
     "addMembersNoMatch": "No matching students",
-    "addMembersOnlySlots": "Only {count} free slots",
+    "addMembersOnlySlots": { "one": "Only {count} free slot", "few": "Only {count} free slots", "many": "Only {count} free slots", "other": "Only {count} free slots" },
     "addMembersNoneSelected": "No one selected",
     "addMembersAdded": "members added",
     "addMembersSkipped": "skipped (already member or full)",

@@ -288,7 +288,7 @@ function AddMembersModal({
       if (next.has(id)) next.delete(id);
       else if (next.size < maxSlots) next.add(id);
       else {
-        toast.error(t('teacher.addMembersOnlySlots').replace('{count}', String(maxSlots)));
+        toast.error(t('teacher.addMembersOnlySlots', { count: maxSlots }));
       }
       return next;
     });

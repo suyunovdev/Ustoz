@@ -181,7 +181,7 @@ const PaymentProcessingInteractive = () => {
 
   const getStatusMessage = () => {
     if (paymentUrl && !hasRedirectedToGateway) {
-      return t('payment.redirectCountdown').replace('{count}', String(gatewayRedirectCountdown));
+      return t('payment.redirectCountdown', { count: gatewayRedirectCountdown });
     }
 
     switch (transaction?.status) {
@@ -319,7 +319,7 @@ const PaymentProcessingInteractive = () => {
               <div className="flex items-center space-x-2">
                 <Icon name="InformationCircleIcon" size={20} className="text-success" />
                 <p className="text-sm text-success">
-                  {t('payment.redirectToCourseSoon').replace('{count}', String(redirectCountdown))}
+                  {t('payment.redirectToCourseSoon', { count: redirectCountdown })}
                 </p>
               </div>
             </div>

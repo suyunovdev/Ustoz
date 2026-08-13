@@ -845,7 +845,7 @@
     "addMembersFreeSlots": "Bo'sh joy",
     "addMembersLoading": "Yuklanmoqda…",
     "addMembersNoMatch": "Mos talaba yo'q",
-    "addMembersOnlySlots": "Faqat {count} ta bo'sh joy",
+    "addMembersOnlySlots": { "one": "Faqat {count} ta bo'sh joy", "few": "Faqat {count} ta bo'sh joy", "many": "Faqat {count} ta bo'sh joy", "other": "Faqat {count} ta bo'sh joy" },
     "addMembersNoneSelected": "Hech kim tanlanmagan",
     "addMembersAdded": "a'zo qo'shildi",
     "addMembersSkipped": "ta o'tkazib yuborildi (allaqachon yoki to'lgan)",
