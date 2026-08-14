@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { getServerT } from '@/lib/i18n/server';
 import { redirect } from 'next/navigation';
 import CourseDetailInteractive from './CourseDetailInteractive';
+import LoadingFallback from '@/components/common/LoadingFallback';
 import { getSession } from '@/lib/auth';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -25,5 +27,9 @@ export default async function TeacherCourseDetailPage({
     redirect('/unauthorized');
   }
   const { id } = await params;
-  return <CourseDetailInteractive courseId={id} />;
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CourseDetailInteractive courseId={id} />
+    </Suspense>
+  );
 }

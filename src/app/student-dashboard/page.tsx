@@ -30,7 +30,9 @@ export default async function StudentDashboardPage() {
   if (!session) {
     redirect('/login?redirect=/student-dashboard');
   }
-  if (session.role !== 'student' && session.role !== 'admin') {
+  // Middleware STUDENT_ONLY faqat 'student'ga ruxsat beradi (admin ham
+  // /unauthorized'ga yo'naltiriladi) — sahifa guard'i shu bilan izchil.
+  if (session.role !== 'student') {
     redirect('/unauthorized');
   }
 

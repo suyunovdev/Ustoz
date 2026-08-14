@@ -10,8 +10,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// 60 sekund cache — har 60 sekundda yangilanadi
-export const revalidate = 60;
+// generateMetadata `cookies()` (getServerT) o'qigani uchun sahifa dynamic
+// bo'lishi shart — aks holda ISR cache tufayli meta doim default tilda (uz)
+// qolib, RU/EN foydalanuvchilarga lokalizatsiya qilinmasdi.
+export const dynamic = 'force-dynamic';
 
 export default function LandingPage() {
   return <LandingPageInteractive />;

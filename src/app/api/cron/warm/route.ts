@@ -10,9 +10,16 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // CRON_SECRET sozlangan bo'lsa — faqat to'g'ri Bearer token bilan.
+  // (Vercel Cron / UptimeRobot `Authorization: Bearer <secret>` yuboradi.)
+  const secret = process.env.CRON_SECRET;
+  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
+    return NextResponse.json({ status: 'unauthorized' }, { status: 401 });
+  }
+
   const start = Date.now();
 
   try {

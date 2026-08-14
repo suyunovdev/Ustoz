@@ -20,6 +20,16 @@ interface FormErrors {
   general?: string;
 }
 
+/**
+ * Ochiq redirect (open redirect) himoyasi.
+ * Faqat same-origin nisbiy yo'lga ruxsat: '/' bilan boshlanadi va keyingi
+ * belgi '/' yoki '\' EMAS (aks holda `//evil.com` / `/\evil.com` kabi
+ * protocol-relative URL'lar tashqi saytga olib chiqadi).
+ */
+function isSafeInternalPath(path: string | null | undefined): path is string {
+  return typeof path === 'string' && /^\/(?![/\\])/.test(path);
+}
+
 const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,7 +41,7 @@ const LoginForm = () => {
   useEffect(() => {
     if (authLoading || !user) return;
     const redirect = searchParams.get('redirect');
-    if (redirect) { router.replace(redirect); return; }
+    if (isSafeInternalPath(redirect)) { router.replace(redirect); return; }
     if (user.role === 'admin') router.replace('/admin-dashboard');
     else if (user.role === 'teacher') router.replace('/teacher-dashboard');
     else router.replace('/student-dashboard');
@@ -109,7 +119,7 @@ const LoginForm = () => {
       const role = result?.user?.role;
       const redirectTo = searchParams?.get('redirect');
 
-      if (redirectTo && redirectTo.startsWith('/')) {
+      if (isSafeInternalPath(redirectTo)) {
         router.push(redirectTo);
       } else if (role === 'teacher') {
         router.push('/teacher-dashboard');
