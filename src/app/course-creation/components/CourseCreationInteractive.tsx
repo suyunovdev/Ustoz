@@ -219,7 +219,8 @@ const CourseCreationInteractive = () => {
         priceUzs: String(parseInt(metadata.priceUZS) || 0),
         coverImage: metadata.coverImage || null,
         language: metadata.language || 'uz',
-        isPublished: status === 'submitted',
+        // Eslatma: `isPublished`ni o'qituvchi qo'ymaydi — kurs faqat admin
+        // tasdig'idan keyin jonli bo'ladi (moderatsiya oqimi).
       };
 
       let savedCourseId = courseDbId;
@@ -276,11 +277,27 @@ const CourseCreationInteractive = () => {
   };
 
   const handleSubmit = async () => {
+    // 1) Kursni saqlash (draft holatida)
     const id = await saveCourseToDatabase('submitted');
-    if (id) {
+    if (!id) return;
+    // 2) Admin tekshiruviga yuborish
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/teacher/courses/${id}/submit`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || t('courseCreation.saveError'));
+      }
       setPublishStatus('submitted');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
+    } catch (err: unknown) {
+      setSaveError(err instanceof Error ? err.message : t('courseCreation.saveError'));
+    } finally {
+      setIsSaving(false);
     }
   };
 

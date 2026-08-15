@@ -2076,7 +2076,10 @@
     "testBadge": "Тест",
     "courseSaveFirst": "Сначала сохраните курс, затем добавьте тест",
     "testAlreadySaved": "Этот тест уже сохранён",
-    "variantAnswerHint": "введите ответ варианта..."
+    "variantAnswerHint": "введите ответ варианта...",
+    "adminFeedbackTitle": "Комментарий администратора",
+    "resubmit": "Отправить снова",
+    "awaitingReview": "Ожидает проверки администратором"
   },
   "content": {
     "uploadCenterTitle": "Центр загрузки контента",
@@ -2206,7 +2209,25 @@
     "rejectReasonRequired": "Для отклонения обязательна причина (комментарий)",
     "genericError": "Ошибка ({status})",
     "approvedToast": "Одобрено",
-    "rejectedToast": "Отклонено"
+    "rejectedToast": "Отклонено",
+    "coursesTab": "Курсы",
+    "materialsTab": "Материалы",
+    "courseQueueEmpty": "Нет курсов на проверке",
+    "byTeacher": "Преподаватель",
+    "topicsCountLabel": "{count} тем",
+    "approveAction": "Одобрить",
+    "rejectAction": "Отклонить",
+    "requestRevisionAction": "На доработку",
+    "feedbackLabel": "Причина / комментарий",
+    "feedbackPlaceholder": "Укажите причину...",
+    "feedbackRequired": "Причина обязательна",
+    "free": "Бесплатно",
+    "courseApproved": "Курс одобрен",
+    "courseRejected": "Курс отклонён",
+    "courseRevisionRequested": "Запрошена доработка",
+    "confirmAction": "Подтвердить",
+    "cancel": "Отмена",
+    "courseModerationTitle": "Модерация курсов"
   },
   "learning": {
     "noLessonsYet": "Уроки еще не добавлены",

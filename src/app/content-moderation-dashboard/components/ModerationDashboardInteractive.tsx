@@ -9,6 +9,7 @@ import { toast } from '@/components/common/Toaster';
 import ContentList from './ContentList';
 import PreviewPanel from './PreviewPanel';
 import ReviewControls from './ReviewControls';
+import CourseModerationPanel from './CourseModerationPanel';
 
 interface ModerationStats {
   pending: number;
@@ -33,6 +34,7 @@ const ModerationDashboardInteractive = () => {
   const router = useRouter();
   const { t } = useI18n();
   const [isHydrated, setIsHydrated] = useState(false);
+  const [tab, setTab] = useState<'courses' | 'materials'>('courses');
   const [stats, setStats] = useState<ModerationStats>({
     pending: 0,
     approved: 0,
@@ -180,6 +182,28 @@ const ModerationDashboardInteractive = () => {
         </div>
       </div>
 
+      {/* Tab switch: Kurslar | Materiallar */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="inline-flex rounded-md border border-border bg-card p-1">
+          <button
+            onClick={() => setTab('courses')}
+            className={`px-4 py-2 rounded text-sm font-medium transition-smooth ${tab === 'courses' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            {t('moderation.coursesTab')}
+          </button>
+          <button
+            onClick={() => setTab('materials')}
+            className={`px-4 py-2 rounded text-sm font-medium transition-smooth ${tab === 'materials' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            {t('moderation.materialsTab')}
+          </button>
+        </div>
+      </div>
+
+      {tab === 'courses' && <CourseModerationPanel />}
+
+      {tab === 'materials' && (
+      <>
       {/* Statistics */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -308,6 +332,8 @@ const ModerationDashboardInteractive = () => {
           </div>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };

@@ -2076,7 +2076,10 @@
     "testBadge": "Test",
     "courseSaveFirst": "Save the course first, then add a test",
     "testAlreadySaved": "This test is already saved",
-    "variantAnswerHint": "enter the answer for this option..."
+    "variantAnswerHint": "enter the answer for this option...",
+    "adminFeedbackTitle": "Admin feedback",
+    "resubmit": "Resubmit",
+    "awaitingReview": "Awaiting admin review"
   },
   "content": {
     "uploadCenterTitle": "Content Upload Center",
@@ -2206,7 +2209,25 @@
     "rejectReasonRequired": "A reason (note) is required to reject",
     "genericError": "Error ({status})",
     "approvedToast": "Approved",
-    "rejectedToast": "Rejected"
+    "rejectedToast": "Rejected",
+    "coursesTab": "Courses",
+    "materialsTab": "Materials",
+    "courseQueueEmpty": "No courses awaiting review",
+    "byTeacher": "Teacher",
+    "topicsCountLabel": "{count} topics",
+    "approveAction": "Approve",
+    "rejectAction": "Reject",
+    "requestRevisionAction": "Request revision",
+    "feedbackLabel": "Reason / feedback",
+    "feedbackPlaceholder": "Provide a reason...",
+    "feedbackRequired": "Reason is required",
+    "free": "Free",
+    "courseApproved": "Course approved",
+    "courseRejected": "Course rejected",
+    "courseRevisionRequested": "Revision requested",
+    "confirmAction": "Confirm",
+    "cancel": "Cancel",
+    "courseModerationTitle": "Course moderation"
   },
   "learning": {
     "noLessonsYet": "No lessons added yet",

@@ -2076,7 +2076,10 @@
     "testBadge": "Test",
     "courseSaveFirst": "Avval kursni saqlang, keyin test qo'shing",
     "testAlreadySaved": "Bu test allaqachon saqlangan",
-    "variantAnswerHint": "variant javobini kiriting..."
+    "variantAnswerHint": "variant javobini kiriting...",
+    "adminFeedbackTitle": "Admin izohi",
+    "resubmit": "Qayta yuborish",
+    "awaitingReview": "Admin tekshiruvi kutilmoqda"
   },
   "content": {
     "uploadCenterTitle": "Kontent yuklash markazi",
@@ -2206,7 +2209,25 @@
     "rejectReasonRequired": "Rad etish uchun sabab (izoh) majburiy",
     "genericError": "Xatolik ({status})",
     "approvedToast": "Tasdiqlandi",
-    "rejectedToast": "Rad etildi"
+    "rejectedToast": "Rad etildi",
+    "coursesTab": "Kurslar",
+    "materialsTab": "Materiallar",
+    "courseQueueEmpty": "Tekshiruvda kurs yo'q",
+    "byTeacher": "O'qituvchi",
+    "topicsCountLabel": "{count} ta mavzu",
+    "approveAction": "Tasdiqlash",
+    "rejectAction": "Rad etish",
+    "requestRevisionAction": "Tuzatish so'rash",
+    "feedbackLabel": "Sabab / izoh",
+    "feedbackPlaceholder": "Sababni yozing...",
+    "feedbackRequired": "Sabab majburiy",
+    "free": "Bepul",
+    "courseApproved": "Kurs tasdiqlandi",
+    "courseRejected": "Kurs rad etildi",
+    "courseRevisionRequested": "Tuzatish so'raldi",
+    "confirmAction": "Tasdiqlash",
+    "cancel": "Bekor qilish",
+    "courseModerationTitle": "Kurslar moderatsiyasi"
   },
   "learning": {
     "noLessonsYet": "Darslar hali qo'shilmagan",

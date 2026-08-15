@@ -65,6 +65,11 @@ export async function PATCH(
       }
     }
 
+    // Moderatsiya: o'qituvchi `isPublished`ni O'ZI qo'ya olmaydi — kurs faqat
+    // admin tasdig'idan keyin jonli bo'ladi. Tasdiqlangan kursni tahrirlash uni
+    // qayta tekshiruvga qaytaradi (jonlilikdan vaqtincha olib turadi).
+    const needsReReview = existing.moderationStatus === 'approved';
+
     const updated = await prisma.course.update({
       where: { id },
       data: {
@@ -81,10 +86,10 @@ export async function PATCH(
         ...(b.coverImage !== undefined && { coverImage: b.coverImage }),
         ...(b.language && { language: b.language }),
         ...(b.difficultyLevel !== undefined && { difficultyLevel: b.difficultyLevel }),
-        ...(b.isPublished !== undefined && {
-          isPublished: b.isPublished,
-          publishedAt:
-            b.isPublished && !existing.isPublished ? new Date() : existing.publishedAt,
+        ...(needsReReview && {
+          moderationStatus: 'submitted',
+          isPublished: false,
+          adminFeedback: null,
         }),
       },
     });

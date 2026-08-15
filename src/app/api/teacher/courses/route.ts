@@ -27,6 +27,8 @@ export async function GET(req: NextRequest) {
       description: c.description,
       coverImage: c.coverImage,
       isPublished: c.isPublished,
+      moderationStatus: c.moderationStatus,
+      adminFeedback: c.adminFeedback,
       priceUzs: c.priceUzs.toString(),
       category: c.category,
       subjectCategory: c.subjectCategory,
