@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from '@/components/common/Toaster';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -239,7 +240,15 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
   };
 
   if (isLoading || !data) {
-    return <div className="flex-1 flex items-center justify-center">{t('common.loading')}</div>;
+    return (
+      <div className="flex-1 flex flex-col gap-4 p-4 overflow-hidden" aria-hidden="true">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <div key={i} className={`flex ${i % 2 === 0 ? 'justify-start' : 'justify-end'}`}>
+            <Skeleton className={`h-14 rounded-lg ${i % 2 === 0 ? 'w-1/2' : 'w-2/5'}`} />
+          </div>
+        ))}
+      </div>
+    );
   }
   if (error) {
     return (

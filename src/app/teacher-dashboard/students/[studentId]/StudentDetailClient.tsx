@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { SkeletonDetail } from '@/components/ui/Skeleton';
 import AppImage from '@/components/ui/AppImage';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
@@ -52,7 +53,7 @@ export default function StudentDetailClient({ studentId }: Props) {
     );
   };
 
-  if (isLoading) return <div className="p-8">{t('common.loading')}</div>;
+  if (isLoading) return <div className="p-8"><SkeletonDetail /></div>;
   if (error || !data)
     return <div className="p-8 text-destructive">{(error as Error)?.message || t('teacher.errorPrefix')}</div>;
 

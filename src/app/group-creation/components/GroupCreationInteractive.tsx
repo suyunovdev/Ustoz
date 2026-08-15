@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { Skeleton, SkeletonForm } from '@/components/ui/Skeleton';
 import GroupMetadataForm from './GroupMetadataForm';
 import StudentSelectionPanel from './StudentSelectionPanel';
 import GroupBalancingPanel from './GroupBalancingPanel';
@@ -132,10 +133,18 @@ const GroupCreationInteractive = () => {
 
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">{t('groups.loadingData')}</p>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-5xl mx-auto w-full px-4 py-8 space-y-8">
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-72" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <div className="flex gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-10 flex-1 rounded-md" />
+            ))}
+          </div>
+          <SkeletonForm fields={5} />
         </div>
       </div>
     );

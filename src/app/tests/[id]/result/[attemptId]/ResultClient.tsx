@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { Skeleton, SkeletonList } from '@/components/ui/Skeleton';
 
 interface ResultData {
   attempt: {
@@ -64,7 +65,14 @@ export default function ResultClient({ testId, attemptId }: Props) {
     })();
   }, [attemptId]);
 
-  if (loading) return <div className="p-8 text-center">{t('common.loading')}</div>;
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto p-6 space-y-6">
+        <Skeleton className="h-40 w-full rounded-md" />
+        <SkeletonList count={4} />
+      </div>
+    );
+  }
   if (error || !data) {
     return (
       <div className="max-w-xl mx-auto p-8 text-center">

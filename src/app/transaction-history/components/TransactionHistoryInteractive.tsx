@@ -7,6 +7,7 @@ import TransactionList from './TransactionList';
 import FilterPanel from './FilterPanel';
 import ExportControls from './ExportControls';
 import PaymentStats from './PaymentStats';
+import { Skeleton, SkeletonStatCard, SkeletonList } from '@/components/ui/Skeleton';
 
 interface Transaction {
   id: string;
@@ -121,8 +122,19 @@ export default function TransactionHistoryInteractive() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="min-h-screen bg-background py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-80" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <SkeletonStatCard key={i} />
+            ))}
+          </div>
+          <SkeletonList count={5} />
+        </div>
       </div>
     );
   }

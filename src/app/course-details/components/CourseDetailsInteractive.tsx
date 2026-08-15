@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import Icon from '@/components/ui/AppIcon';
+import { SkeletonDetail } from '@/components/ui/Skeleton';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate } from '@/lib/i18n/format';
 import CourseHeroSection from './CourseHeroSection';
@@ -232,8 +233,10 @@ const CourseDetailsInteractive = () => {
 
   if (!isHydrated || isLoading) {
     return (
-      <div className="min-h-screen bg-background py-6 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">{t('common.loading')}</div>
+      <div className="min-h-screen bg-background py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <SkeletonDetail />
+        </div>
       </div>
     );
   }

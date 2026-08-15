@@ -12,6 +12,7 @@ import {
 import { useSubmitAssignmentMutation } from '@/hooks/mutations/useAssignmentMutations';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDateTime } from '@/lib/i18n/format';
+import { Skeleton, SkeletonText, SkeletonForm } from '@/components/ui/Skeleton';
 
 const STATUS_LABEL: Record<SubmissionStatusDTO, { labelKey: string; color: string }> = {
   submitted: { labelKey: 'assignments.statusSubmitted', color: 'bg-primary/10 text-primary' },
@@ -58,7 +59,16 @@ export default function StudentAssignmentClient({ assignmentId }: Props) {
   }, [mySub.data?.submission?.id]);
 
   if (assignment.isLoading || mySub.isLoading) {
-    return <div className="p-8">{t('common.loading')}</div>;
+    return (
+      <div className="max-w-3xl mx-auto p-6 space-y-4">
+        <Skeleton className="h-4 w-24" />
+        <div className="bg-card border border-border rounded-md p-6 space-y-3">
+          <Skeleton className="h-6 w-2/3" />
+          <SkeletonText lines={3} />
+        </div>
+        <SkeletonForm fields={3} />
+      </div>
+    );
   }
   if (assignment.error || !assignment.data) {
     return (

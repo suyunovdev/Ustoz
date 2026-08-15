@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { SkeletonDetail } from '@/components/ui/Skeleton';
 import { toast } from '@/components/common/Toaster';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -62,7 +63,12 @@ export default function TicketDetailClient({ ticketId }: Props) {
     });
   };
 
-  if (isLoading || !ticket) return <div className="p-8">{t('common.loading')}</div>;
+  if (isLoading || !ticket)
+    return (
+      <div className="max-w-3xl mx-auto p-6">
+        <SkeletonDetail />
+      </div>
+    );
   if (error)
     return <div className="p-8 text-destructive">{(error as Error).message}</div>;
 

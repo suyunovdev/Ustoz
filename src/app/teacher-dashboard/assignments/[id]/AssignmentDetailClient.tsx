@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { toast } from '@/components/common/Toaster';
 import {
   useTeacherAssignment,
@@ -137,7 +138,11 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
       </div>
 
       {subs.isLoading ? (
-        <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+        <div className="space-y-2">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
       ) : submissions.length === 0 ? (
         <p className="text-center text-muted-foreground py-12 italic bg-muted/30 rounded-md">
           {t('teacher.submissionNoSubmissions')}

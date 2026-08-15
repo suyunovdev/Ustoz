@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { SkeletonDetail } from '@/components/ui/Skeleton';
 import AppImage from '@/components/ui/AppImage';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
@@ -38,7 +39,7 @@ export default function GroupDetailClient({ groupId }: Props) {
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [pendingRemove, setPendingRemove] = useState<GroupMemberDTO | null>(null);
 
-  if (group.isLoading || !group.data) return <div className="p-8">{t('common.loading')}</div>;
+  if (group.isLoading || !group.data) return <div className="p-8"><SkeletonDetail /></div>;
   if (group.error)
     return <div className="p-8 text-destructive">{(group.error as Error).message}</div>;
 

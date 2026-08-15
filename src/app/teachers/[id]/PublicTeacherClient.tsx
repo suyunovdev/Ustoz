@@ -4,6 +4,12 @@ import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
 import {
+  Skeleton,
+  SkeletonAvatar,
+  SkeletonText,
+  SkeletonCardGrid,
+} from '@/components/ui/Skeleton';
+import {
   usePublicTeacher,
   usePublicTeacherCourses,
 } from '@/hooks/queries/useProfile';
@@ -37,7 +43,26 @@ export default function PublicTeacherClient({ teacherId }: Props) {
   const teacher = usePublicTeacher(teacherId);
   const courses = usePublicTeacherCourses(teacherId);
 
-  if (teacher.isLoading || !teacher.data) return <div className="p-8">{t('common.loading')}</div>;
+  if (teacher.isLoading || !teacher.data)
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="bg-gradient-to-br from-primary/10 via-background to-warning/5 border-b border-border">
+          <div className="max-w-5xl mx-auto px-6 py-12" aria-hidden="true">
+            <div className="flex items-start gap-6 flex-wrap">
+              <SkeletonAvatar className="w-32 h-32" />
+              <div className="flex-1 min-w-[240px] space-y-4">
+                <Skeleton className="h-8 w-1/2" />
+                <Skeleton className="h-4 w-1/3" />
+                <SkeletonText lines={3} />
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="max-w-5xl mx-auto px-6 py-10">
+          <SkeletonCardGrid count={3} />
+        </div>
+      </div>
+    );
   if (teacher.error) {
     return (
       <div className="max-w-xl mx-auto p-8 text-center">

@@ -10,6 +10,7 @@ import TimerDisplay from './TimerDisplay';
 import QuestionReviewPanel from './QuestionReviewPanel';
 import ResultsScreen from './ResultsScreen';
 import { useI18n } from '@/contexts/I18nContext';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 interface QuizQuestion {
   id: string;
@@ -197,8 +198,23 @@ const QuizInterfaceInteractive = () => {
 
   if (!isHydrated || isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">{t('learning.testLoading')}</div>
+      <div className="min-h-screen bg-background pt-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+            <Skeleton className="h-12 w-24 rounded-md" />
+          </div>
+          <Skeleton className="h-10 w-full rounded-md" />
+          <div className="space-y-4">
+            <Skeleton className="h-6 w-3/4" />
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-14 w-full rounded-md" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

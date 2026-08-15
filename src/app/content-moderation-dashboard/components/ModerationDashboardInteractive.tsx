@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { SkeletonDashboard } from '@/components/ui/Skeleton';
 import { useI18n } from '@/contexts/I18nContext';
 import { toast } from '@/components/common/Toaster';
 import ContentList from './ContentList';
@@ -150,10 +151,9 @@ const ModerationDashboardInteractive = () => {
 
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">{t('moderation.loading')}</p>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <SkeletonDashboard />
         </div>
       </div>
     );

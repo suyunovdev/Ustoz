@@ -14,6 +14,7 @@ import { toast } from '@/components/common/Toaster';
 import type { CourseProgressResponse } from '@/types/dashboard.types';
 import { useCompleteTopicMutation } from '@/hooks/mutations/useCompleteTopicMutation';
 import { useI18n } from '@/contexts/I18nContext';
+import { Skeleton, SkeletonText, SkeletonList } from '@/components/ui/Skeleton';
 
 interface Topic {
   id: string;
@@ -212,8 +213,18 @@ const LearningInterfaceInteractive = () => {
 
   if (!isHydrated || isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">{t('common.loading')}</div>
+      <div className="min-h-screen bg-background pt-20">
+        <div className="flex flex-col lg:flex-row gap-4 px-4 py-6 h-[calc(100vh-7rem)]">
+          <div className="flex-1 space-y-4 min-w-0">
+            <Skeleton className="aspect-video w-full rounded-lg" />
+            <Skeleton className="h-6 w-2/3" />
+            <SkeletonText lines={3} />
+          </div>
+          <div className="hidden lg:block w-80 space-y-3">
+            <Skeleton className="h-5 w-32" />
+            <SkeletonList count={5} />
+          </div>
+        </div>
       </div>
     );
   }

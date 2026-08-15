@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { Skeleton, SkeletonForm } from '@/components/ui/Skeleton';
 import FileLibraryPanel from './FileLibraryPanel';
 import UploadArea from './UploadArea';
 import WatermarkSettings from './WatermarkSettings';
@@ -104,10 +105,14 @@ const ContentUploadInteractive = () => {
 
   if (!isHydrated || isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-muted-foreground">{t('content.loading')}</p>
+      <div className="min-h-screen bg-background">
+        <div className="max-w-5xl mx-auto w-full px-4 py-8 space-y-8">
+          <div className="space-y-3">
+            <Skeleton className="h-8 w-72" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+          <Skeleton className="h-40 w-full rounded-lg" />
+          <SkeletonForm fields={4} />
         </div>
       </div>
     );

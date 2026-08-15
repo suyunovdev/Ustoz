@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { Skeleton } from '@/components/ui/Skeleton';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import {
@@ -126,7 +127,11 @@ export default function TestBuilderClient({ testId }: Props) {
             {t('teacher.studentResults')}
           </h3>
           {attempts.isLoading ? (
-            <p className="text-sm text-muted-foreground">{t('common.loading')}</p>
+            <div className="space-y-2">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
+            </div>
           ) : (attempts.data?.attempts.length ?? 0) === 0 ? (
             <p className="text-sm text-muted-foreground italic">
               {t('teacher.noAttempts')}

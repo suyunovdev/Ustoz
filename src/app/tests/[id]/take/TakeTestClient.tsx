@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
 import { useI18n } from '@/contexts/I18nContext';
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton';
 
 interface QuestionForStudent {
   id: string;
@@ -123,7 +124,30 @@ export default function TakeTestClient({ testId }: Props) {
     [answers],
   );
 
-  if (loading) return <div className="p-8 text-center">{t('tests.testLoading')}</div>;
+  if (loading) {
+    return (
+      <div className="max-w-3xl mx-auto p-6 space-y-4">
+        <div className="bg-card border border-border rounded-md p-4 space-y-3">
+          <Skeleton className="h-5 w-1/2" />
+          <Skeleton className="h-3 w-2/3" />
+          <div className="flex gap-1 flex-wrap">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Skeleton key={i} className="w-7 h-7 rounded-md" />
+            ))}
+          </div>
+        </div>
+        <div className="bg-card border border-border rounded-md p-6 space-y-4">
+          <Skeleton className="h-5 w-3/4" />
+          <SkeletonText lines={2} />
+          <div className="space-y-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 w-full rounded-md" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
   if (error) {
     return (
       <div className="max-w-xl mx-auto p-8 text-center">

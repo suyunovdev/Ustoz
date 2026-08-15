@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import { SkeletonDashboard } from '@/components/ui/Skeleton';
 import { useCourseAnalytics } from '@/hooks/queries/useTeacherAnalytics';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatCurrency } from '@/lib/i18n/format';
@@ -19,7 +20,7 @@ export default function CourseAnalyticsClient({ courseId }: Props) {
   const { t, locale } = useI18n();
   const { data, isLoading, error } = useCourseAnalytics(courseId);
 
-  if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
+  if (isLoading || !data) return <div className="p-8"><SkeletonDashboard /></div>;
   if (error)
     return <div className="p-8 text-destructive">{(error as Error).message}</div>;
 
