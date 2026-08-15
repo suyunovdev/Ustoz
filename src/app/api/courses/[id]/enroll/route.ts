@@ -37,30 +37,44 @@ export async function POST(
   // Refund'dan keyin qayta enrollment qilingan holatda counter ikki marta oshmaydi.
   try {
     const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.enrollment.findUnique({
-        where: { studentId_courseId: { studentId: session.sub, courseId } },
-        select: { id: true, isActive: true },
-      });
+      // Race-safe: atomik updateMany/createMany ishlatamiz. Ikki bir vaqtli
+      // so'rov ham counter'ni faqat BIR marta oshiradi (o'zgargan qatorlar
+      // soniga qarab), chunki updateMany/createMany atomik.
 
-      // Allaqachon faol enrollment bor — hech narsa qilmaymiz
-      if (existing?.isActive) {
-        return { enrollment: existing, alreadyEnrolled: true as const };
+      // 1) Noaktiv (refund'dan keyin) enrollment'ni reaktivatsiya
+      const reactivated = await tx.enrollment.updateMany({
+        where: { studentId: session.sub, courseId, isActive: false },
+        data: { isActive: true },
+      });
+      if (reactivated.count > 0) {
+        await tx.course.update({
+          where: { id: courseId },
+          data: { enrollmentCount: { increment: reactivated.count } },
+        });
+        const enrollment = await tx.enrollment.findUnique({
+          where: { studentId_courseId: { studentId: session.sub, courseId } },
+        });
+        return { enrollment, alreadyEnrolled: false as const };
       }
 
-      // Yangi yoki noaktiv (refund'dan keyin) — upsert
-      const enrollment = await tx.enrollment.upsert({
+      // 2) Yangi enrollment — skipDuplicates concurrent create'ni xavfsiz qiladi
+      const created = await tx.enrollment.createMany({
+        data: [{ studentId: session.sub, courseId, isActive: true }],
+        skipDuplicates: true,
+      });
+      const enrollment = await tx.enrollment.findUnique({
         where: { studentId_courseId: { studentId: session.sub, courseId } },
-        create: { studentId: session.sub, courseId, isActive: true },
-        update: { isActive: true },
       });
+      if (created.count > 0) {
+        await tx.course.update({
+          where: { id: courseId },
+          data: { enrollmentCount: { increment: created.count } },
+        });
+        return { enrollment, alreadyEnrolled: false as const };
+      }
 
-      // Faqat yangi yoki reaktivatsiya holatida counter oshadi
-      await tx.course.update({
-        where: { id: courseId },
-        data: { enrollmentCount: { increment: 1 } },
-      });
-
-      return { enrollment, alreadyEnrolled: false as const };
+      // 3) Hech narsa o'zgarmadi → allaqachon faol edi (concurrent yoki oldindan)
+      return { enrollment, alreadyEnrolled: true as const };
     });
 
     if (result.alreadyEnrolled) {

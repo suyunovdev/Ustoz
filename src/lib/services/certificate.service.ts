@@ -83,6 +83,16 @@ export async function manualIssueByTeacher(
   if (!course) throw new ValidationError("Kurs topilmadi");
   if (course.teacherId !== teacherId) throw new CertificateAccessDeniedError();
 
+  // forceIssue bo'lса ham talaba kursga YOZILGAN bo'lishi shart — yozilmagan
+  // talabaga sertifikat berib bo'lmaydi.
+  const enrollment = await prisma.enrollment.findFirst({
+    where: { studentId: input.studentId, courseId: input.courseId },
+    select: { id: true },
+  });
+  if (!enrollment) {
+    throw new ValidationError('Talaba bu kursga yozilmagan');
+  }
+
   if (input.finalGrade !== undefined) {
     if (input.finalGrade < 0 || input.finalGrade > 100) {
       throw new ValidationError("Bal 0-100 oralig'ida");

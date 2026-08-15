@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
+import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
 
 // Constant-time string taqqoslash — timing side-channel'ni oldini oladi
 function safeEqual(a: string, b: string): boolean {
@@ -229,13 +230,15 @@ export async function POST(request: NextRequest) {
         try {
           // Tranzaksiyani completed qilish + enrollment yaratish — atomik
           await prisma.$transaction(async (tx) => {
-            await tx.paymentTransaction.update({
-              where: { id: transaction.id },
+            // Atomik status transition — concurrent/replay'da faqat bir marta
+            const flip = await tx.paymentTransaction.updateMany({
+              where: { id: transaction.id, status: { not: 'completed' } },
               data: {
                 status: 'completed',
                 completedAt: new Date(performTime),
               },
             });
+            if (flip.count === 0) return; // allaqachon completed — idempotent
 
             const existing = await tx.enrollment.findUnique({
               where: {
@@ -276,6 +279,13 @@ export async function POST(request: NextRequest) {
         } catch (updateError) {
           console.error('Payme PerformTransaction update error:', updateError);
           return createPaymeError(-31008, 'Failed to perform transaction', body.id);
+        }
+
+        // Referral komissiya (best-effort)
+        try {
+          await handlePaymentCompleted(transaction.id);
+        } catch (e) {
+          console.error('Payme referral hook error:', e);
         }
 
         return NextResponse.json({

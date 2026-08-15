@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
+import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
 
 interface ClickCompleteRequest {
   click_trans_id: number;
@@ -169,8 +170,10 @@ export async function POST(request: NextRequest) {
     // Mark as completed va enrollment yaratish — atomik
     try {
       await prisma.$transaction(async (tx) => {
-        await tx.paymentTransaction.update({
-          where: { id: transaction.id },
+        // Atomik status transition — concurrent/replay webhook'da FAQAT bir marta
+        // "completed" bo'ladi; ikkinchisi count=0 olib, enrollment/counter'ga tegmaydi.
+        const flip = await tx.paymentTransaction.updateMany({
+          where: { id: transaction.id, status: { not: 'completed' } },
           data: {
             status: 'completed',
             completedAt: new Date(),
@@ -178,6 +181,7 @@ export async function POST(request: NextRequest) {
             gatewayPaymentId: body.click_paydoc_id.toString(),
           },
         });
+        if (flip.count === 0) return; // allaqachon completed — idempotent
 
         // Mavjud enrollment'ni topish — counter inkrementi qarori uchun
         const existing = await tx.enrollment.findUnique({
@@ -229,6 +233,13 @@ export async function POST(request: NextRequest) {
         } as ClickCompleteResponse,
         { status: 200 }
       );
+    }
+
+    // Referral komissiya (best-effort — muvaffaqiyatsizlik to'lovni buzmaydi)
+    try {
+      await handlePaymentCompleted(transaction.id);
+    } catch (e) {
+      console.error('Click referral hook error:', e);
     }
 
     // Success

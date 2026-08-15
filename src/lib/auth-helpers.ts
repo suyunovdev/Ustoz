@@ -96,6 +96,8 @@ function mapErrorCodeToStatus(code: string): number {
     case 'FORBIDDEN':
     case 'SELF_ACTION_NOT_ALLOWED':
     case 'LAST_ADMIN_PROTECTED':
+    case 'NOT_ENROLLED':
+    case 'TEST_NOT_PUBLISHED':
       return 403;
     case 'USER_NOT_FOUND':
     case 'ENROLLMENT_NOT_FOUND':

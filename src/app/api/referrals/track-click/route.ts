@@ -12,6 +12,7 @@ import {
   InvalidReferralCodeError,
 } from '@/lib/services/referral.service';
 import { ValidationError } from '@/lib/errors';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,6 +24,16 @@ export async function POST(req: NextRequest) {
     }
     const code = typeof (body as any)?.code === 'string' ? (body as any).code : '';
     if (!code) throw new ValidationError("code majburiy");
+
+    // Klik metrikasini shishirishning oldini olish — IP+kod bo'yicha soatiga 5 marta
+    const ip = getClientIp(req);
+    const rl = await checkRateLimit(`refclick:${ip}:${code}`, 5, 60 * 60 * 1000);
+    if (!rl.allowed) {
+      // Jimgina muvaffaqiyat qaytaramiz (attacker'ga limitni bildirmaymiz),
+      // lekin klikni SANAMAYMIZ.
+      return jsonResponse({ success: true });
+    }
+
     await trackClick(code);
     return jsonResponse({ success: true });
   } catch (err) {

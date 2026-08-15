@@ -60,6 +60,31 @@ export async function calculateCourseProgress(
 }
 
 /**
+ * Kursning BARCHA enrollment'lari uchun cached progress'ni qayta hisoblaydi.
+ * Mavzu qo'shilганда/o'chirilganda chaqiriladi — aks holda mavjud talabalarning
+ * `enrollment.progress`/`completedAt` eskirib qoladi (masalan, mavzu qo'shilsa
+ * 100% bo'lgan talaba hamon 100% ko'rinardi). Sertifikat AVTO-berilmaydi.
+ */
+export async function recomputeEnrollmentsForCourse(courseId: string): Promise<void> {
+  const total = await topicRepo.countByCourse(courseId);
+  const enrollments = await prisma.enrollment.findMany({
+    where: { courseId },
+    select: { id: true, studentId: true, progress: true, completedAt: true },
+  });
+  for (const e of enrollments) {
+    const completed = await topicCompletionRepo.countByStudentAndCourse(e.studentId, courseId);
+    const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+    const completedAt = progress === 100 ? (e.completedAt ?? new Date()) : null;
+    if (progress !== e.progress || completedAt !== e.completedAt) {
+      await prisma.enrollment.update({
+        where: { id: e.id },
+        data: { progress, completedAt },
+      });
+    }
+  }
+}
+
+/**
  * Topic'ni tugatilgan deb belgilaydi va Enrollment.progress'ni yangilaydi.
  *
  * Atomic operation (bitta transaction):
@@ -106,15 +131,18 @@ export async function markTopicComplete(
     // 6. Kurs tugatildi deb belgilash kerakmi?
     const isCourseCompleted = progress === 100 && enrollment.completedAt === null;
 
-    // 7. Enrollment'ni yangilash — progress + lastAccessedAt
-    if (progress !== enrollment.progress || isCourseCompleted || !wasAlreadyCompleted) {
+    // 7. Enrollment'ni yangilash — progress + lastAccessedAt.
+    //    completedAt: 100% da o'rnatiladi; progress past tushsa TOZALANADI
+    //    (sticky bo'lib qolmasin — aks holda sertifikat huquqi noto'g'ri saqlanadi).
+    const completedAt = progress === 100 ? (enrollment.completedAt ?? new Date()) : null;
+    if (
+      progress !== enrollment.progress ||
+      !wasAlreadyCompleted ||
+      completedAt !== enrollment.completedAt
+    ) {
       await enrollmentRepo.updateProgress(
         enrollment.id,
-        {
-          progress,
-          lastAccessedAt: new Date(),
-          ...(isCourseCompleted ? { completedAt: new Date() } : {}),
-        },
+        { progress, lastAccessedAt: new Date(), completedAt },
         tx,
       );
     }

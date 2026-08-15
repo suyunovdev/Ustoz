@@ -93,7 +93,7 @@ export async function GET(req: NextRequest) {
       priceUsd: c.priceUsd.toString(),
       rating: c.rating,
       reviewCount: c.reviewCount,
-      enrollmentCount: c._count.enrollments,
+      enrollmentCount: c.enrollmentCount,
       teacherName: c.teacher.fullName,
       teacherAvatar: c.teacher.avatarUrl,
       createdAt: c.createdAt,

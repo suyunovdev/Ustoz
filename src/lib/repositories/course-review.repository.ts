@@ -281,7 +281,7 @@ export async function deleteReview(reviewId: string): Promise<void> {
   });
 }
 
-async function recalcCourseRating(tx: any, courseId: string): Promise<void> {
+export async function recalcCourseRating(tx: any, courseId: string): Promise<void> {
   const agg = await tx.courseReview.aggregate({
     where: { courseId, hiddenAt: null },
     _avg: { rating: true },
@@ -399,8 +399,10 @@ export async function isEnrolled(
   courseId: string,
   studentId: string,
 ): Promise<boolean> {
+  // Faqat FAOL enrollment — refund qilingan (isActive=false) talaba review
+  // yoza/tahrirlay olmasligi kerak.
   const e = await prisma.enrollment.findFirst({
-    where: { courseId, studentId },
+    where: { courseId, studentId, isActive: true },
     select: { id: true },
   });
   return e !== null;

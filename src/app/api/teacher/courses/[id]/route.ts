@@ -14,6 +14,7 @@ import {
   CourseHasEnrollmentsError,
 } from '@/lib/services/teacher-course.service';
 import { CourseNotFoundError, ValidationError } from '@/lib/errors';
+import { recomputeEnrollmentsForCourse } from '@/lib/services/progress.service';
 
 export async function GET(
   req: NextRequest,
@@ -94,21 +95,50 @@ export async function PATCH(
       },
     });
 
-    // Topics yangilash
+    // Topics yangilash — POZITSIYA bo'yicha reconcile.
+    // Ilgari deleteMany+createMany ishlatilardi → mavjud topic'lar yangi UUID
+    // oladi va `topic_completions` (onDelete: Cascade) O'CHIB KETADI, ya'ni bitta
+    // tahrir barcha talabalar progressini yo'q qilardi. Endi mavjud qatorlar
+    // JOYIDA yangilanadi (id saqlanadi → completions saqlanadi), ortiqchasi
+    // qo'shiladi, kamayganи o'chiriladi.
     if (Array.isArray(b.topics)) {
-      await prisma.courseTopic.deleteMany({ where: { courseId: id } });
-      if (b.topics.length > 0) {
-        await prisma.courseTopic.createMany({
-          data: b.topics.map((t: any, i: number) => ({
-            courseId: id,
-            title: t.title,
+      const incoming = b.topics as Array<Record<string, any>>;
+      const existingTopics = await prisma.courseTopic.findMany({
+        where: { courseId: id },
+        orderBy: { orderIndex: 'asc' },
+        select: { id: true },
+      });
+      const overlap = Math.min(existingTopics.length, incoming.length);
+      for (let i = 0; i < overlap; i++) {
+        await prisma.courseTopic.update({
+          where: { id: existingTopics[i].id },
+          data: {
+            title: incoming[i].title,
             orderIndex: i + 1,
-            duration: t.duration || '0 min',
-            content: t.content || '',
-            hasQuiz: !!t.hasQuiz,
-          })),
+            duration: incoming[i].duration || '0 min',
+            content: incoming[i].content || '',
+            hasQuiz: !!incoming[i].hasQuiz,
+          },
         });
       }
+      for (let i = overlap; i < incoming.length; i++) {
+        await prisma.courseTopic.create({
+          data: {
+            courseId: id,
+            title: incoming[i].title,
+            orderIndex: i + 1,
+            duration: incoming[i].duration || '0 min',
+            content: incoming[i].content || '',
+            hasQuiz: !!incoming[i].hasQuiz,
+          },
+        });
+      }
+      if (existingTopics.length > incoming.length) {
+        const toDelete = existingTopics.slice(incoming.length).map((t) => t.id);
+        await prisma.courseTopic.deleteMany({ where: { id: { in: toDelete } } });
+      }
+      // Mavzular soni o'zgargan bo'lishi mumkin → talabalar progressini qayta hisoblash
+      await recomputeEnrollmentsForCourse(id);
     }
 
     return jsonResponse({

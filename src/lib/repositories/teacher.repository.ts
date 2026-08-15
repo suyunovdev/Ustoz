@@ -133,9 +133,18 @@ export async function updateArchiveStatus(
   // Faqat o'z kursi
   const exists = await client.course.findFirst({
     where: { id: courseId, teacherId },
-    select: { id: true },
+    select: { id: true, moderationStatus: true },
   });
   if (!exists) return null;
+  // Moderatsiya himoyasi: kursni FAQAT admin tasdiqlagan bo'lsa jonli qilish
+  // mumkin (draft/rejected kursni bu yo'l bilan self-publish qilib bo'lmaydi).
+  if (isPublished && exists.moderationStatus !== 'approved') {
+    return client.course.update({
+      where: { id: courseId },
+      data: { isPublished: false },
+      include: teacherCourseInclude,
+    });
+  }
   return client.course.update({
     where: { id: courseId },
     data: { isPublished, ...(isPublished ? { publishedAt: new Date() } : {}) },

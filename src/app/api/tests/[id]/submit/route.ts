@@ -70,23 +70,11 @@ export async function POST(
 
   const totalQuestions = test.questions.length;
   const percentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
-  const passed = percentage >= (test.passingScore || 80);
+  // 0-savolli test o'tib bo'lmaydi (passingScore 0 bo'lsa ham)
+  const passed = totalQuestions > 0 && percentage >= (test.passingScore || 80);
 
   const cid = test.courseId || '';
   const passingThreshold = test.passingScore || 80;
-
-  // Avval shu test bo'yicha allaqachon passed urinish bormi tekshirish
-  // (bypass'ni oldini olish — bir testni 10 marta passlab progress'ni 100%'ga ko'tarib bo'lmasin)
-  const alreadyPassed = passed
-    ? await prisma.quizCompletion.findFirst({
-        where: {
-          studentId: session.sub,
-          quizId: testId,
-          percentage: { gte: passingThreshold },
-        },
-        select: { id: true },
-      })
-    : null;
 
   // Quiz completion'ni saqlash (har urinish saqlanadi).
   // courseId majburiy uuid — kursga bog'liq bo'lmagan (standalone) test bo'lsa saqlamaymiz.
@@ -103,24 +91,10 @@ export async function POST(
     });
   }
 
-  // Progress oshirilsin — faqat BIRINCHI passed urinishda
-  if (passed && !alreadyPassed && cid) {
-    const enrollment = await prisma.enrollment.findFirst({
-      where: { studentId: session.sub, courseId: cid },
-    });
-    if (enrollment) {
-      const newProgress = Math.min((enrollment.progress || 0) + 10, 100);
-      if (newProgress > enrollment.progress) {
-        await prisma.enrollment.update({
-          where: { id: enrollment.id },
-          data: {
-            progress: newProgress,
-            completedAt: newProgress === 100 ? new Date() : enrollment.completedAt,
-          },
-        });
-      }
-    }
-  }
+  // MUHIM: test natijasi FAQAT hisobot uchun (quiz_completions'ga yoziladi).
+  // Ilgari har o'tgan test enrollment.progress'ni +10 qilardi — bu mavzularni
+  // tugatmasdan 100% ga yetish va "mehnatsiz sertifikat" olish yo'lini ochardi.
+  // Progress endi FAQAT mavzu tugatish (markTopicComplete) orqali o'zgaradi.
 
   return jsonResponse({
     score: correctCount,

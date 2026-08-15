@@ -99,17 +99,10 @@ export async function issueCertificate(
   });
 
   if (existing) {
-    if (existing.status === 'revoked') {
-      await prisma.certificate.update({
-        where: { id: existing.id },
-        data: {
-          status: 'active',
-          revokedAt: null,
-          revokeReason: null,
-          revokedById: null,
-        },
-      });
-    }
+    // MUHIM: bekor qilingan (revoked) sertifikat qayta issue'da JIMGINA
+    // tiklanmaydi. Revoke — ataylab qilingan admin/teacher amali; uni
+    // auto-issue yoki re-issue erasib yubormasligi kerak. Tiklash faqat
+    // alohida "reinstate" amali orqali bo'lishi mumkin.
     return {
       id: existing.id,
       certificateNumber: existing.certificateNumber,
@@ -324,8 +317,10 @@ export async function isEligibleForCertificate(
     select: { progress: true, completedAt: true },
   });
   if (!e) return { eligible: false, progress: 0, completed: false };
+  // Eligibility faqat progress >= 100 ga tayanadi. completedAt endi progress
+  // bilan sinxron (100% da o'rnatiladi, past tushsa tozalanadi), sticky emas.
   return {
-    eligible: e.progress >= 100 || e.completedAt !== null,
+    eligible: e.progress >= 100,
     progress: e.progress,
     completed: e.completedAt !== null,
   };

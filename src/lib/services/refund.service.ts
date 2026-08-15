@@ -15,6 +15,7 @@
 import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { paymentRepo, type AdminTransactionRow, type ListTransactionsFilters } from '@/lib/repositories';
+import { cancelEarningByTransaction } from '@/lib/repositories/referral.repository';
 import { ValidationError } from '@/lib/errors';
 import { log as auditLog } from './audit-log.service';
 
@@ -87,7 +88,7 @@ export async function processRefund(
     throw new NotRefundableError(target.status);
   }
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     // 1) Tranzaksiya status'i yangilanadi
     const updated = await paymentRepo.markRefunded(
       txId,
@@ -129,4 +130,14 @@ export async function processRefund(
 
     return updated;
   });
+
+  // Referral komissiyani bekor qilish — refund qilingan sotuv bo'yicha
+  // referrerga to'lov qolmasin (best-effort, transaction'dan tashqarida).
+  try {
+    await cancelEarningByTransaction(txId);
+  } catch (e) {
+    console.error('[refund] cancelEarningByTransaction failed:', e);
+  }
+
+  return result;
 }

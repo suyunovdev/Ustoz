@@ -14,6 +14,7 @@ vi.mock('@/lib/repositories', () => ({
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     course: { findUnique: vi.fn() },
+    enrollment: { findFirst: vi.fn() },
   },
 }));
 
@@ -36,6 +37,8 @@ const TEACHER = 'teacher-1';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // Default: talaba kursga yozilgan (manualIssueByTeacher endi enrollment talab qiladi)
+  vi.mocked(prisma.enrollment.findFirst).mockResolvedValue({ id: 'enr-1' } as any);
 });
 
 describe('maybeAutoIssue', () => {
@@ -134,6 +137,19 @@ describe('manualIssueByTeacher', () => {
         studentId: STUDENT,
         courseId: COURSE,
         finalGrade: 150,
+      }),
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it('talaba yozilmagan bo\'lsa forceIssue bilan ham bermaydi — ValidationError', async () => {
+    vi.mocked(prisma.course.findUnique).mockResolvedValue({ teacherId: TEACHER } as any);
+    vi.mocked(prisma.enrollment.findFirst).mockResolvedValue(null); // yozilmagan
+
+    await expect(
+      manualIssueByTeacher(TEACHER, {
+        studentId: STUDENT,
+        courseId: COURSE,
+        forceIssue: true,
       }),
     ).rejects.toThrow(ValidationError);
   });

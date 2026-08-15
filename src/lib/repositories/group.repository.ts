@@ -183,6 +183,9 @@ export async function addMember(
   studentId: string,
 ): Promise<MemberRow> {
   return prisma.$transaction(async (tx) => {
+    // Guruh qatorini qulflab olamiz — concurrent qo'shishlar navbatga tushadi,
+    // sig'im (maxMembers) oshib ketmaydi.
+    await tx.$queryRaw`SELECT id FROM groups WHERE id = ${groupId}::uuid FOR UPDATE`;
     const g = await tx.group.findUnique({
       where: { id: groupId },
       select: { maxMembers: true, memberCount: true },
@@ -241,6 +244,7 @@ export async function addMembersBulk(
   studentIds: string[],
 ): Promise<{ added: number; skipped: number }> {
   return prisma.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM groups WHERE id = ${groupId}::uuid FOR UPDATE`;
     const g = await tx.group.findUnique({
       where: { id: groupId },
       select: { maxMembers: true, memberCount: true },
@@ -261,19 +265,20 @@ export async function addMembersBulk(
       return { added: 0, skipped: studentIds.length };
     }
 
-    await tx.groupMember.createMany({
+    const created = await tx.groupMember.createMany({
       data: newOnes.map((studentId) => ({ groupId, studentId })),
       skipDuplicates: true,
     });
 
+    // memberCount'ni HAQIQATDA qo'shilgan qatorlar soniga oshiramiz (drift yo'q)
     await tx.group.update({
       where: { id: groupId },
-      data: { memberCount: { increment: newOnes.length } },
+      data: { memberCount: { increment: created.count } },
     });
 
     return {
-      added: newOnes.length,
-      skipped: studentIds.length - newOnes.length,
+      added: created.count,
+      skipped: studentIds.length - created.count,
     };
   });
 }

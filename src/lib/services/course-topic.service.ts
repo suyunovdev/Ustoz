@@ -10,6 +10,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { recomputeEnrollmentsForCourse } from './progress.service';
 import {
   courseTopicRepo,
   type CourseTopicRow,
@@ -59,7 +60,7 @@ export async function createTopic(
   if (!validated.title) throw new ValidationError("Mavzu nomi kerak");
 
   // Course total_duration ni ham yangilash mumkin (kelajakda)
-  return courseTopicRepo.create({
+  const created = await courseTopicRepo.create({
     courseId: validated.courseId,
     title: validated.title,
     description: validated.description ?? null,
@@ -71,6 +72,9 @@ export async function createTopic(
     isLocked: validated.isLocked ?? false,
     moduleTitle: validated.moduleTitle ?? null,
   });
+  // Mavzu qo'shildi → mavjud talabalar progressini qayta hisoblash
+  await recomputeEnrollmentsForCourse(validated.courseId);
+  return created;
 }
 
 export async function updateTopic(
@@ -98,7 +102,7 @@ export async function deleteTopic(
   const isOwner = await courseTopicRepo.isCourseOwner(topic.courseId, teacherId);
   if (!isOwner) throw new CourseNotFoundError(topic.courseId);
 
-  return prisma.$transaction(async (tx) => {
+  const res = await prisma.$transaction(async (tx) => {
     const deleted = await courseTopicRepo.deleteById(topicId, tx);
     // Qolgan topic'larni qayta normalizatsiya qilish
     const remaining = await tx.courseTopic.findMany({
@@ -113,6 +117,9 @@ export async function deleteTopic(
     );
     return { success: true as const, courseId: deleted.courseId };
   });
+  // Mavzu o'chirildi → mavjud talabalar progressini qayta hisoblash
+  await recomputeEnrollmentsForCourse(res.courseId);
+  return res;
 }
 
 export async function moveTopic(

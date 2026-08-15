@@ -15,7 +15,7 @@ export async function GET(
   const session = await getSessionFromRequest(req);
 
   const course = await prisma.course.findFirst({
-    where: { id, isPublished: true },
+    where: { id },
     include: {
       teacher: { select: { id: true, fullName: true, avatarUrl: true, bio: true } },
       topics: { orderBy: { orderIndex: 'asc' } },
@@ -41,12 +41,22 @@ export async function GET(
     isEnrolled = !!enrollment;
   }
 
+  // Tasdiqlanmagan / nashr qilinmagan kursni FAQAT egasi, admin yoki
+  // allaqachon yozilgan (pul to'lagan) talaba ko'ra oladi. Aks holda 404.
+  // Bu moderatsiya tufayli tahrirlanayotgan kursni pul to'lagan talabalar
+  // yo'qotmasligini ta'minlaydi.
+  const isOwner = !!session && course.teacherId === session.sub;
+  const isAdmin = session?.role === 'admin';
+  if (!course.isPublished && !isEnrolled && !isOwner && !isAdmin) {
+    return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
+  }
+
   return jsonResponse({
     course: {
       ...course,
       priceUzs: course.priceUzs.toString(),
       priceUsd: course.priceUsd.toString(),
-      enrollmentCount: course._count.enrollments,
+      enrollmentCount: course.enrollmentCount,
       isEnrolled,
     },
   });

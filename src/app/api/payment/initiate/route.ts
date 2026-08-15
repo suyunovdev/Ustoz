@@ -78,8 +78,12 @@ export async function POST(req: NextRequest) {
       // Click summani so'mda kutadi (Payme esa tiyinda: priceUzs * 100). priceUzs allaqachon so'mda.
       paymentUrl = `https://my.click.uz/services/pay?service_id=${clickServiceId}&merchant_id=${clickMerchantId}&amount=${priceUzs}&transaction_param=${merchantTransId}&return_url=${returnUrl}`;
     } else if (paymentMethod === 'payme' && paymeKey) {
-      // Payme checkout URL (amount in tiyins)
-      const params = Buffer.from(JSON.stringify({ m: paymeKey, ac: { order_id: transaction.id }, a: priceUzs * 100, l: 'uz' })).toString('base64');
+      // Payme checkout URL (amount in tiyins).
+      // MUHIM: order_id = merchantTransId — Payme webhook (payme/route.ts)
+      // tranzaksiyani AYNAN `merchantTransId` bo'yicha qidiradi. Ilgari bu yerda
+      // transaction.id (UUID) yuborilardi → webhook topolmasdi va HAR Payme
+      // to'lovi "Order not found" bilan fail bo'lardi.
+      const params = Buffer.from(JSON.stringify({ m: paymeKey, ac: { order_id: merchantTransId }, a: priceUzs * 100, l: 'uz' })).toString('base64');
       paymentUrl = `https://checkout.paycom.uz/${params}`;
     } else {
       // Gateway sozlanmagan — mock URL (test/dev uchun)

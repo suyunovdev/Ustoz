@@ -17,6 +17,7 @@ import {
   type AdminReviewRow,
   type AdminReviewsFilters,
 } from '@/lib/repositories';
+import { recalcCourseRating } from '@/lib/repositories/course-review.repository';
 import { ValidationError } from '@/lib/errors';
 import { log as auditLog } from './audit-log.service';
 
@@ -73,6 +74,8 @@ export async function hideReview(
       { hiddenAt: new Date(), reason, hiddenById: adminId },
       tx,
     );
+    // Yashirilgan review kurs reytingi/soniga kirmasligi kerak — qayta hisoblaymiz
+    await recalcCourseRating(tx, target.courseId);
     await auditLog(
       {
         adminId,
@@ -108,6 +111,8 @@ export async function unhideReview(
       { hiddenAt: null, reason: null, hiddenById: null },
       tx,
     );
+    // Qayta ko'rinadigan review reytingga qaytadi — qayta hisoblaymiz
+    await recalcCourseRating(tx, target.courseId);
     await auditLog(
       {
         adminId,

@@ -56,6 +56,25 @@ export class TestNotPublishedError extends ServiceError {
   }
 }
 
+export class TestNotEnrolledError extends ServiceError {
+  constructor() {
+    super('Bu test kursiga yozilmagansiz', 'NOT_ENROLLED');
+  }
+}
+
+/** Test kursiga yozilganlikni tekshirish (courseId bo'lsa). */
+async function assertEnrolledInTestCourse(
+  courseId: string | null | undefined,
+  studentId: string,
+): Promise<void> {
+  if (!courseId) return; // standalone test — kursga bog'liq emas
+  const enrolled = await prisma.enrollment.findFirst({
+    where: { courseId, studentId },
+    select: { id: true },
+  });
+  if (!enrolled) throw new TestNotEnrolledError();
+}
+
 export class AttemptLimitExceededError extends ServiceError {
   constructor(limit: number) {
     super(`Urinishlar tugadi (max ${limit})`, 'ATTEMPT_LIMIT_EXCEEDED');
@@ -359,6 +378,9 @@ export async function startTestAttempt(
   const test = await testRepo.findTestWithQuestions(testId);
   if (!test) throw new TestNotFoundError(testId);
   if (test.status !== 'published') throw new TestNotPublishedError();
+  // Faqat kursga yozilgan talaba testni boshlashi mumkin (javob kalitini
+  // o'g'irlash / yozilmasdan test yechishning oldini oladi).
+  await assertEnrolledInTestCourse(test.courseId, studentId);
 
   if (test.allowedAttempts > 0) {
     const used = await testRepo.countAttempts(testId, studentId);
@@ -473,6 +495,7 @@ export async function submitTestAttempt(
 
   const test = await testRepo.findTestWithQuestions(attempt.testId);
   if (!test) throw new TestNotFoundError(attempt.testId);
+  await assertEnrolledInTestCourse(test.courseId, studentId);
 
   // Vaqt cheklov tekshiruvi
   if (test.timeLimitSec) {
@@ -515,7 +538,8 @@ export async function submitTestAttempt(
   }
 
   const percentage = totalMax > 0 ? (totalScore / totalMax) * 100 : 0;
-  const passed = percentage >= test.passingScore;
+  // 0-ballli / 0-savolli testni o'tib bo'lmaydi
+  const passed = totalMax > 0 && percentage >= test.passingScore;
 
   const updated = await testRepo.submitAttempt({
     attemptId,
