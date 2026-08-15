@@ -14,6 +14,7 @@ export type AdminTabId =
   | 'courses'
   | 'reviews'
   | 'payments'
+  | 'withdrawals'
   | 'campaigns'
   | 'moderation'
   | 'tickets'
@@ -34,6 +35,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'courses', labelKey: 'admin.navCourses', icon: 'BookOpenIcon' },
   { id: 'reviews', labelKey: 'admin.navReviews', icon: 'ChatBubbleLeftRightIcon' },
   { id: 'payments', labelKey: 'admin.navPayments', icon: 'CreditCardIcon' },
+  { id: 'withdrawals', labelKey: 'admin.navWithdrawals', icon: 'BanknotesIcon' },
   { id: 'campaigns', labelKey: 'admin.navCampaigns', icon: 'EnvelopeIcon' },
   { id: 'moderation', labelKey: 'admin.navModeration', icon: 'ShieldCheckIcon' },
   { id: 'tickets', labelKey: 'admin.navTickets', icon: 'LifebuoyIcon' },

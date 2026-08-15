@@ -54,6 +54,16 @@ export async function maybeAutoIssue(
 ): Promise<{ id: string; certificateNumber: string; created: boolean } | null> {
   const eligibility = await certificateRepo.isEligibleForCertificate(studentId, courseId);
   if (!eligibility.eligible) return null;
+  // Rad etilgan (rejected) yoki to'xtatilgan (suspended) kursга sertifikat
+  // AVTO-berilmaydi. Vaqtinchalik qayta tekshiruvdagi (submitted/under_review)
+  // kurs uchun beriladi — enrolled talaba o'rganishni davom ettirgani uchun.
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { moderationStatus: true, suspendedAt: true },
+  });
+  if (!course || course.moderationStatus === 'rejected' || course.suspendedAt !== null) {
+    return null;
+  }
   return certificateRepo.issueCertificate({
     studentId,
     courseId,

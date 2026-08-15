@@ -221,6 +221,14 @@ export async function updateTest(
       if (!full || full.questions.length === 0) {
         throw new ValidationError("E'lon qilish uchun kamida 1 ta savol kerak");
       }
+      // Timer majburiy — e'lon qilinadigan test vaqt limitiga ega bo'lishi shart
+      // (patch bilan yoki mavjud qiymat). Vaqtsiz "ochib qo'yib keyin topshirish"
+      // (resume-to-cheat) yo'lini yopadi.
+      const effectiveTimeLimit =
+        input.timeLimitSec !== undefined ? input.timeLimitSec : full.timeLimitSec;
+      if (!effectiveTimeLimit || effectiveTimeLimit < 30) {
+        throw new ValidationError("E'lon qilish uchun vaqt limiti belgilang (kamida 30 sekund)");
+      }
     }
     patch.status = input.status;
   }

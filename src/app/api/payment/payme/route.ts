@@ -146,6 +146,13 @@ export async function POST(request: NextRequest) {
           return createPaymeError(-31050, 'Order not found', body.id);
         }
 
+        // Summani qayta tekshirish (defense-in-depth) — CheckPerform'dan tashqari
+        // bu yerda ham amount tranzaksiya narxiga mos kelishini talab qilamiz.
+        if (typeof body.params.amount === 'number' &&
+            body.params.amount !== Number(transaction.amountUzs) * 100) {
+          return createPaymeError(-31001, 'Invalid amount', body.id);
+        }
+
         // Existing payme tx with different ID -> conflict
         if (
           transaction.paymeTransactionId &&

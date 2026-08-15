@@ -39,6 +39,12 @@ beforeEach(() => {
   vi.clearAllMocks();
   // Default: talaba kursga yozilgan (manualIssueByTeacher endi enrollment talab qiladi)
   vi.mocked(prisma.enrollment.findFirst).mockResolvedValue({ id: 'enr-1' } as any);
+  // Default: kurs tasdiqlangan va to'xtatilmagan (maybeAutoIssue endi buni tekshiradi)
+  vi.mocked(prisma.course.findUnique).mockResolvedValue({
+    teacherId: TEACHER,
+    moderationStatus: 'approved',
+    suspendedAt: null,
+  } as any);
 });
 
 describe('maybeAutoIssue', () => {
