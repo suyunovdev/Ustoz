@@ -16,6 +16,7 @@ import CourseOversightPanel from './CourseOversightPanel';
 import ReviewsPanel from './ReviewsPanel';
 import PaymentsPanel from './PaymentsPanel';
 import WithdrawalsPanel from './WithdrawalsPanel';
+import SubscriptionsPanel from './SubscriptionsPanel';
 import CampaignsPanel from './CampaignsPanel';
 import ModerationQueuePanel from './ModerationQueuePanel';
 import SupportTicketsPanel from './SupportTicketsPanel';
@@ -31,6 +32,7 @@ const VALID_TABS: ReadonlyArray<AdminTabId> = [
   'reviews',
   'payments',
   'withdrawals',
+  'subscriptions',
   'campaigns',
   'moderation',
   'tickets',
@@ -59,6 +61,10 @@ const TAB_TITLE_KEYS: Record<AdminTabId, { title: string; subtitle: string }> = 
   withdrawals: {
     title: 'admin.withdrawalsTitle',
     subtitle: 'admin.navWithdrawals',
+  },
+  subscriptions: {
+    title: 'admin.subscriptionsTitle',
+    subtitle: 'admin.navSubscriptions',
   },
   reviews: {
     title: 'admin.tabReviewsTitle',
@@ -171,6 +177,7 @@ const AdminDashboardInteractive = () => {
           {activeTab === 'reviews' && <ReviewsPanel />}
           {activeTab === 'payments' && <PaymentsPanel />}
           {activeTab === 'withdrawals' && <WithdrawalsPanel />}
+          {activeTab === 'subscriptions' && <SubscriptionsPanel />}
           {activeTab === 'campaigns' && <CampaignsPanel />}
           {activeTab === 'moderation' && <ModerationQueuePanel expanded />}
           {activeTab === 'tickets' && <SupportTicketsPanel />}

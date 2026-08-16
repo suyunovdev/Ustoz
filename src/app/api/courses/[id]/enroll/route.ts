@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
+import { hasAllCoursesAccess } from '@/lib/services/subscription.service';
 
 // POST /api/courses/[id]/enroll — Kursga yozilish (bepul kurslar uchun)
 // Faqat student roli — teacher/admin bepul kursga yozila olmaydi
@@ -25,12 +26,17 @@ export async function POST(
   const course = await prisma.course.findFirst({ where: { id: courseId, isPublished: true } });
   if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
 
-  // Pulliq kurslar uchun to'lov talab qilinadi
+  // Pullik kurslar uchun to'lov talab qilinadi — LEKIN faol all-access obunachi
+  // istalgan kursga bepul yozila oladi (obuna kurs narxini qoplaydi).
   if (Number(course.priceUzs) > 0) {
-    return jsonResponse(
-      { error: 'Bu kurs pullik. Avval to\'lov qiling.' },
-      { status: 400 }
-    );
+    const subscribed = await hasAllCoursesAccess(session.sub);
+    if (!subscribed) {
+      return jsonResponse(
+        { error: 'Bu kurs pullik. Avval to\'lov qiling yoki obuna bo\'ling.', code: 'PAYMENT_REQUIRED' },
+        { status: 400 }
+      );
+    }
+    // obunachi → bepul davom etadi
   }
 
   // Enrollment yaratish + counter inkrementi — atomik.

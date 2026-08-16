@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
+import { activateSubscriptionFromPayment } from '@/lib/services/subscription.service';
 
 // Constant-time string taqqoslash — timing side-channel'ni oldini oladi
 function safeEqual(a: string, b: string): boolean {
@@ -213,6 +214,8 @@ export async function POST(request: NextRequest) {
             completedAt: true,
             studentId: true,
             courseId: true,
+            kind: true,
+            planId: true,
           },
         });
 
@@ -247,38 +250,23 @@ export async function POST(request: NextRequest) {
             });
             if (flip.count === 0) return; // allaqachon completed — idempotent
 
+            // Obuna to'lovi — enrollment YO'Q (tx'dan tashqarida faollashadi)
+            if (transaction.kind === 'subscription' || !transaction.courseId) return;
+            const courseId = transaction.courseId;
+
             const existing = await tx.enrollment.findUnique({
-              where: {
-                studentId_courseId: {
-                  studentId: transaction.studentId,
-                  courseId: transaction.courseId,
-                },
-              },
+              where: { studentId_courseId: { studentId: transaction.studentId, courseId } },
               select: { isActive: true },
             });
-
             const shouldIncrement = !existing || !existing.isActive;
-
             await tx.enrollment.upsert({
-              where: {
-                studentId_courseId: {
-                  studentId: transaction.studentId,
-                  courseId: transaction.courseId,
-                },
-              },
-              create: {
-                studentId: transaction.studentId,
-                courseId: transaction.courseId,
-                isActive: true,
-              },
-              update: {
-                isActive: true,
-              },
+              where: { studentId_courseId: { studentId: transaction.studentId, courseId } },
+              create: { studentId: transaction.studentId, courseId, isActive: true },
+              update: { isActive: true },
             });
-
             if (shouldIncrement) {
               await tx.course.update({
-                where: { id: transaction.courseId },
+                where: { id: courseId },
                 data: { enrollmentCount: { increment: 1 } },
               });
             }
@@ -286,6 +274,15 @@ export async function POST(request: NextRequest) {
         } catch (updateError) {
           console.error('Payme PerformTransaction update error:', updateError);
           return createPaymeError(-31008, 'Failed to perform transaction', body.id);
+        }
+
+        // Obuna to'lovi bo'lsa — obunani faollashtirish (best-effort)
+        if (transaction.kind === 'subscription' && transaction.planId) {
+          try {
+            await activateSubscriptionFromPayment(transaction.studentId, transaction.planId, transaction.id);
+          } catch (e) {
+            console.error('Payme subscription activation error:', e);
+          }
         }
 
         // Referral komissiya (best-effort)

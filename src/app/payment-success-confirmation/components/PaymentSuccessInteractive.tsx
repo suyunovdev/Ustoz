@@ -63,6 +63,18 @@ const PaymentSuccessInteractive = () => {
     try {
       setLoading(true);
 
+      // DEV mock oqimi: gateway sozlanmagan bo'lsa (mock=1), bu yerda to'lovni
+      // haqiqatan yakunlaymiz (enrollment/obuna yaratiladi). Production'da mock
+      // endpoint 403 qaytaradi, shuning uchun soxta "success" bo'lmaydi.
+      if (searchParams.get('mock') === '1' && transactionId) {
+        await fetch('/api/payment/mock-complete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ transactionId }),
+        }).catch(() => {});
+      }
+
       // Fetch real transaction data from /api/payment/status/[id]
       const txRes = await fetch(`/api/payment/status/${transactionId}`, {
         credentials: 'include',
@@ -177,7 +189,13 @@ const PaymentSuccessInteractive = () => {
       minute: '2-digit'
     });
 
-    const formattedAmount = (transaction.amount_uzs / 100).toLocaleString('uz-UZ');
+    // amount_uzs so'mda saqlanadi (tiyinda EMAS) — /100 XATO edi, tuzatildi.
+    // QQS (12%) ajratamiz: summa QQS ichida deb hisoblanadi.
+    const total = transaction.amount_uzs;
+    const net = Math.round(total / 1.12);
+    const vat = total - net;
+    const fmtUzs = (n: number) => n.toLocaleString('uz-UZ');
+    const formattedAmount = fmtUzs(total);
 
     return `
 <!DOCTYPE html>
@@ -231,10 +249,18 @@ const PaymentSuccessInteractive = () => {
       <span class="label">${t('payment.receiptStatus')}:</span>
       <span style="color: green;">${t('payment.receiptStatusSuccess')}</span>
     </div>
+    <div class="info-row">
+      <span class="label">${t('payment.netAmount')}:</span>
+      <span>${fmtUzs(net)} so'm</span>
+    </div>
+    <div class="info-row">
+      <span class="label">${t('payment.vatLabel')}:</span>
+      <span>${fmtUzs(vat)} so'm</span>
+    </div>
   </div>
 
   <div class="total">
-    ${t('payment.receiptTotal')}: ${formattedAmount} so'm
+    ${t('payment.totalAmount')}: ${formattedAmount} so'm
   </div>
 
   <div class="footer">

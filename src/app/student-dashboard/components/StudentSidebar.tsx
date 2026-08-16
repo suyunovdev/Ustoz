@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.dashboard', icon: 'HomeIcon', href: '/student-dashboard' },
   { labelKey: 'courses.marketplace', icon: 'ShoppingBagIcon', href: '/course-marketplace' },
   { labelKey: 'dashboard.certificates', icon: 'TrophyIcon', href: '/certificates' },
+  { labelKey: 'subscription.title', icon: 'SparklesIcon', href: '/subscription' },
   { labelKey: 'nav.messages', icon: 'ChatBubbleOvalLeftIcon', href: '/messages' },
   { labelKey: 'nav.notifications', icon: 'BellIcon', href: '/notifications' },
 ];

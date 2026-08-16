@@ -96,18 +96,20 @@ export async function processRefund(
       tx,
     );
 
-    // 2) Enrollment'ni deaktivatsiya qilish (kurs ro'yxatidan olib tashlanadi)
-    const deactivated = await tx.enrollment.updateMany({
-      where: { studentId: target.studentId, courseId: target.courseId, isActive: true },
-      data: { isActive: false },
-    });
-
-    // 2a) Course enrollment counter dekrementi (faqat haqiqatda deaktivatsiya bo'lganda)
-    if (deactivated.count > 0) {
-      await tx.course.update({
-        where: { id: target.courseId },
-        data: { enrollmentCount: { decrement: deactivated.count } },
+    // 2) Enrollment'ni deaktivatsiya qilish — FAQAT kurs to'lovi bo'lsa
+    // (obuna to'lovida courseId yo'q; obuna refund'i alohida ko'rib chiqiladi).
+    if (target.courseId) {
+      const courseId = target.courseId;
+      const deactivated = await tx.enrollment.updateMany({
+        where: { studentId: target.studentId, courseId, isActive: true },
+        data: { isActive: false },
       });
+      if (deactivated.count > 0) {
+        await tx.course.update({
+          where: { id: courseId },
+          data: { enrollmentCount: { decrement: deactivated.count } },
+        });
+      }
     }
 
     // 3) Audit log

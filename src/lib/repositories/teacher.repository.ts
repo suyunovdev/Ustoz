@@ -70,7 +70,7 @@ export async function findCoursesWithRevenue(
   });
   const revenueByCourse = new Map<string, bigint>();
   for (const r of revenueRows) {
-    revenueByCourse.set(r.courseId, r._sum.amountUzs ?? BigInt(0));
+    if (r.courseId) revenueByCourse.set(r.courseId, r._sum.amountUzs ?? BigInt(0));
   }
 
   return courses.map((c) => ({

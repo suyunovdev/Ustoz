@@ -30,10 +30,10 @@ export async function GET(req: NextRequest) {
         merchant_trans_id: t.merchantTransId ?? '',
         created_at: t.createdAt.toISOString(),
         completed_at: t.completedAt ? t.completedAt.toISOString() : null,
-        courses: {
-          title: t.course.title,
-          teacher_id: t.course.teacherId,
-        },
+        kind: t.kind,
+        courses: t.course
+          ? { title: t.course.title, teacher_id: t.course.teacherId }
+          : null,
       })),
     });
   } catch (err) {

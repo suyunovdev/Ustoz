@@ -1,7 +1,10 @@
 /**
  * POST /api/payment/initiate
  * To'lovni boshlash — Click yoki Payme orqali.
- * Hozirda gateway sozlanmagan bo'lsa mock URL qaytaradi.
+ * Body: { paymentMethod: 'click'|'payme', courseId? , planId? }
+ *   - courseId → kurs sotib olish
+ *   - planId   → obuna (subscription)
+ * Gateway sozlanmagan bo'lsa: dev'da mock URL; PRODUCTION'da 503 (soxta success YO'Q).
  */
 import type { NextRequest } from 'next/server';
 import { requireAuth, errorResponse } from '@/lib/auth-helpers';
@@ -23,70 +26,90 @@ export async function POST(req: NextRequest) {
       throw new ValidationError('JSON formatida xato');
     }
 
-    const { courseId, paymentMethod, amount } = body;
-
-    if (typeof courseId !== 'string') throw new ValidationError('courseId majburiy');
+    const { courseId, planId, paymentMethod } = body;
     if (paymentMethod !== 'click' && paymentMethod !== 'payme') {
       throw new ValidationError('paymentMethod: click yoki payme bo\'lishi kerak');
     }
 
-    // Kursni tekshirish
-    const course = await prisma.course.findFirst({
-      where: { id: courseId, isPublished: true },
-      select: { id: true, title: true, priceUzs: true },
-    });
-    if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
+    // ── To'lov turini aniqlash (kurs yoki obuna) ──
+    let kind: 'course' | 'subscription';
+    let priceUzs: number;
+    let refId: string; // merchantTransId qismi uchun
+    let txnExtra: Record<string, unknown>;
 
-    const priceUzs = Number(course.priceUzs);
-    if (priceUzs <= 0) {
-      return jsonResponse({ error: 'Bu kurs bepul — /api/courses/[id]/enroll ishlatiladi' }, { status: 400 });
+    if (typeof planId === 'string') {
+      const plan = await prisma.subscriptionPlan.findFirst({
+        where: { id: planId, isActive: true },
+        select: { id: true, priceUzs: true },
+      });
+      if (!plan) return jsonResponse({ error: 'Plan topilmadi' }, { status: 404 });
+      kind = 'subscription';
+      priceUzs = Number(plan.priceUzs);
+      refId = 'SUB';
+      txnExtra = { kind: 'subscription', planId: plan.id, courseId: null };
+    } else if (typeof courseId === 'string') {
+      const course = await prisma.course.findFirst({
+        where: { id: courseId, isPublished: true },
+        select: { id: true, priceUzs: true },
+      });
+      if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
+      priceUzs = Number(course.priceUzs);
+      if (priceUzs <= 0) {
+        return jsonResponse({ error: 'Bu kurs bepul — /api/courses/[id]/enroll ishlatiladi' }, { status: 400 });
+      }
+      const existing = await prisma.enrollment.findUnique({
+        where: { studentId_courseId: { studentId: session.sub, courseId } },
+        select: { isActive: true },
+      });
+      if (existing?.isActive) {
+        return jsonResponse({ error: 'Siz allaqachon bu kursga yozilgansiz' }, { status: 409 });
+      }
+      kind = 'course';
+      refId = courseId.slice(0, 8);
+      txnExtra = { kind: 'course', courseId };
+    } else {
+      throw new ValidationError('courseId yoki planId majburiy');
     }
 
-    // Allaqachon aktif enrollment bormi?
-    const existing = await prisma.enrollment.findUnique({
-      where: { studentId_courseId: { studentId: session.sub, courseId } },
-      select: { isActive: true },
-    });
-    if (existing?.isActive) {
-      return jsonResponse({ error: 'Siz allaqachon bu kursga yozilgansiz' }, { status: 409 });
+    // ── Gateway sozlanganmi? ──
+    const clickMerchantId = process.env.CLICK_MERCHANT_ID;
+    const clickServiceId = process.env.CLICK_SERVICE_ID;
+    const paymeKey = process.env.PAYME_MERCHANT_ID;
+    const gatewayConfigured =
+      (paymentMethod === 'click' && !!clickMerchantId && !!clickServiceId) ||
+      (paymentMethod === 'payme' && !!paymeKey);
+
+    // PRODUCTION'da gateway yo'q bo'lsa — soxta success YARATMAYMIZ
+    if (!gatewayConfigured && process.env.NODE_ENV === 'production') {
+      return jsonResponse(
+        { error: "To'lov tizimi hozircha sozlanmagan. Iltimos keyinroq urinib ko'ring.", code: 'GATEWAY_NOT_CONFIGURED' },
+        { status: 503 },
+      );
     }
 
-    // Merchantga unique ID
-    const merchantTransId = `${session.sub.slice(0, 8)}-${courseId.slice(0, 8)}-${Date.now()}`;
-
-    // Transaction yaratish
+    const merchantTransId = `${session.sub.slice(0, 8)}-${refId}-${Date.now()}`;
     const transaction = await prisma.paymentTransaction.create({
       data: {
         studentId: session.sub,
-        courseId,
         amountUzs: BigInt(priceUzs),
         currency: 'UZS',
         paymentMethod: paymentMethod as PaymentMethod,
         status: 'pending',
         merchantTransId,
+        ...txnExtra,
       },
     });
 
-    // Payment URL yaratish
+    // ── Payment URL ──
     let paymentUrl = '';
-    const clickMerchantId = process.env.CLICK_MERCHANT_ID;
-    const clickServiceId = process.env.CLICK_SERVICE_ID;
-    const paymeKey = process.env.PAYME_MERCHANT_ID;
-
-    if (paymentMethod === 'click' && clickMerchantId && clickServiceId) {
+    if (paymentMethod === 'click' && gatewayConfigured) {
       const returnUrl = encodeURIComponent(`${SITE_URL}/payment-success-confirmation?transaction_id=${transaction.id}`);
-      // Click summani so'mda kutadi (Payme esa tiyinda: priceUzs * 100). priceUzs allaqachon so'mda.
       paymentUrl = `https://my.click.uz/services/pay?service_id=${clickServiceId}&merchant_id=${clickMerchantId}&amount=${priceUzs}&transaction_param=${merchantTransId}&return_url=${returnUrl}`;
-    } else if (paymentMethod === 'payme' && paymeKey) {
-      // Payme checkout URL (amount in tiyins).
-      // MUHIM: order_id = merchantTransId — Payme webhook (payme/route.ts)
-      // tranzaksiyani AYNAN `merchantTransId` bo'yicha qidiradi. Ilgari bu yerda
-      // transaction.id (UUID) yuborilardi → webhook topolmasdi va HAR Payme
-      // to'lovi "Order not found" bilan fail bo'lardi.
+    } else if (paymentMethod === 'payme' && gatewayConfigured) {
       const params = Buffer.from(JSON.stringify({ m: paymeKey, ac: { order_id: merchantTransId }, a: priceUzs * 100, l: 'uz' })).toString('base64');
       paymentUrl = `https://checkout.paycom.uz/${params}`;
     } else {
-      // Gateway sozlanmagan — mock URL (test/dev uchun)
+      // Faqat dev — mock oqimi (success sahifasi mock-complete'ni chaqiradi)
       paymentUrl = `${SITE_URL}/payment-success-confirmation?transaction_id=${transaction.id}&mock=1`;
     }
 
@@ -95,6 +118,7 @@ export async function POST(req: NextRequest) {
       paymentUrl,
       amount: priceUzs,
       currency: 'UZS',
+      kind,
     });
   } catch (err) {
     return errorResponse(err);

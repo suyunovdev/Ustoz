@@ -113,7 +113,7 @@ export interface CreateEarningInput {
   referrerId: string;
   referredUserId: string;
   sourceTransactionId: string;
-  courseId: string;
+  courseId: string | null;
   amountUzs: bigint;
   commissionPct: number;
 }
