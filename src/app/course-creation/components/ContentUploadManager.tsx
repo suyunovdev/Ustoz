@@ -301,7 +301,7 @@ const ContentUploadManager = ({ materialId, onFilesChange, files }: ContentUploa
 
       {/* External Link Modal */}
       {showLinkModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
           <div className="bg-card rounded-md shadow-warm-xl border border-border p-6 max-w-md w-full">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-heading font-semibold text-foreground">{t('courseCreation.addLink')}</h3>

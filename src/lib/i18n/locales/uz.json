@@ -18,7 +18,8 @@
     "no": "Yo'q",
     "all": "Hammasi",
     "none": "Hech biri",
-    "noData": "Ma'lumot yo'q"
+    "noData": "Ma'lumot yo'q",
+    "skipToContent": "Asosiy kontentga oʻtish"
   },
   "auth": {
     "login": "Kirish",

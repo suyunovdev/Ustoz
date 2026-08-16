@@ -66,19 +66,24 @@ export function Toaster() {
     };
   }, []);
 
-  if (items.length === 0) return null;
-
+  // Live region DOIM render qilinadi (bo'sh bo'lsa ham) — aks holda screen reader
+  // yangi toast'ni sezmaydi. Xato → assertive, qolgani → polite.
   return (
-    <div className="fixed bottom-4 right-4 z-300 flex flex-col-reverse gap-2 max-w-sm w-[calc(100vw-2rem)] sm:w-auto">
+    <div
+      className="fixed bottom-4 right-4 z-[300] flex flex-col-reverse gap-2 max-w-sm w-[calc(100vw-2rem)] sm:w-auto pointer-events-none"
+      aria-live="polite"
+      aria-atomic="false"
+    >
       {items.map((t) => {
         const v = VARIANT_STYLES[t.variant];
         return (
           <div
             key={t.id}
-            className={`flex items-start gap-3 px-4 py-3 rounded-md shadow-warm-lg ${v.bg} animate-in slide-in-from-bottom-4`}
-            role="status"
+            className={`pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-md shadow-warm-lg ${v.bg} animate-in slide-in-from-bottom-4`}
+            role={t.variant === 'error' ? 'alert' : 'status'}
+            aria-live={t.variant === 'error' ? 'assertive' : 'polite'}
           >
-            <Icon name={v.icon} size={20} className="flex-shrink-0 mt-0.5" />
+            <Icon name={v.icon} size={20} className="flex-shrink-0 mt-0.5" aria-hidden="true" />
             <p className="text-sm font-medium leading-snug">{t.message}</p>
           </div>
         );

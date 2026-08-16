@@ -18,7 +18,8 @@
     "no": "No",
     "all": "All",
     "none": "None",
-    "noData": "No data"
+    "noData": "No data",
+    "skipToContent": "Skip to content"
   },
   "auth": {
     "login": "Sign in",

@@ -115,7 +115,7 @@ const LanguageSelector = ({
 
       {/* Mobile Modal */}
       {isOpen && (
-        <div className="md:hidden fixed inset-0 bg-background z-300 flex flex-col">
+        <div className="md:hidden fixed inset-0 bg-background z-[300] flex flex-col">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h3 className="text-lg font-heading font-semibold">{t('common.selectLanguage')}</h3>
             <button

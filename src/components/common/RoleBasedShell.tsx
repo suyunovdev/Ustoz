@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useAuth } from '@/contexts/AuthContext';
+import { useI18n } from '@/contexts/I18nContext';
 import TeacherSidebar from '@/app/teacher-dashboard/components/TeacherSidebar';
 import AdminSidebar from '@/app/admin-dashboard/components/AdminSidebar';
 import StudentSidebar from '@/app/student-dashboard/components/StudentSidebar';
@@ -24,12 +25,20 @@ export default function RoleBasedShell({
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { user } = useAuth();
+  const { t } = useI18n();
   const router = useRouter();
   const role = user?.role ?? initialRole;
   const close = () => setMobileNavOpen(false);
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Skip-to-content — klaviatura foydalanuvchilari uchun */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[200] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-md"
+      >
+        {t('common.skipToContent')}
+      </a>
       {role === 'admin' ? (
         <AdminSidebar
           activeTab="overview"
@@ -56,7 +65,7 @@ export default function RoleBasedShell({
         <div className="w-9" />
       </div>
 
-      <div className="md:ml-60 min-h-screen">{children}</div>
+      <main id="main-content" className="md:ml-60 min-h-screen">{children}</main>
     </div>
   );
 }

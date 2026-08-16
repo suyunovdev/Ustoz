@@ -114,7 +114,7 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
 
       {/* Reject Modal */}
       {showRejectModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
           <div className="bg-card rounded-md shadow-warm-xl border border-border w-full max-w-lg">
             <div className="flex items-center justify-between p-6 border-b border-border">
               <h3 className="text-xl font-heading font-semibold text-foreground">{t('moderation.rejectReasonTitle')}</h3>

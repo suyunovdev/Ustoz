@@ -18,9 +18,9 @@ export default function UnauthorizedPage() {
           </div>
         </div>
 
-        <h1 className="text-4xl font-bold text-onBackground mb-2">403</h1>
-        <h2 className="text-2xl font-medium text-onBackground mb-2">{t('ui.unauthorizedTitle')}</h2>
-        <p className="text-onBackground/70 mb-8">
+        <h1 className="text-4xl font-bold text-foreground mb-2">403</h1>
+        <h2 className="text-2xl font-medium text-foreground mb-2">{t('ui.unauthorizedTitle')}</h2>
+        <p className="text-foreground/70 mb-8">
           {t('ui.unauthorizedDesc')}
         </p>
 

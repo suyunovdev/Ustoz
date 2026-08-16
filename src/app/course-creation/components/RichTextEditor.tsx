@@ -151,7 +151,7 @@ const RichTextEditor = ({
 
         {/* Video Modal */}
         {showVideoModal && (
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
             <div className="bg-card rounded-md shadow-warm-xl border border-border w-full max-w-md">
               <div className="flex items-center justify-between p-4 border-b border-border">
                 <h3 className="text-lg font-heading font-semibold">{t('courseCreation.insertVideo')}</h3>

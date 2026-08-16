@@ -251,7 +251,7 @@ const LearningInterfaceInteractive = () => {
     <div className="min-h-screen bg-background pt-16">
       {/* Certificate modal */}
       {showCertificateModal && (
-        <div className="fixed inset-0 z-300 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
           <div className="bg-card rounded-lg shadow-warm-2xl max-w-md w-full p-6 text-center animate-in zoom-in-95">
             <div className="w-20 h-20 bg-gradient-to-br from-accent to-warning rounded-full flex items-center justify-center mx-auto mb-4">
               <Icon name="TrophyIcon" size={40} variant="solid" className="text-primary-foreground" />

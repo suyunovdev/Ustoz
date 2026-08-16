@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useId } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -30,15 +30,36 @@ export default function ConfirmModal({
   const { t } = useI18n();
   const resolvedConfirmLabel = confirmLabel ?? t('ui.confirm');
   const resolvedCancelLabel = cancelLabel ?? t('ui.cancel');
+  const panelRef = useRef<HTMLDivElement>(null);
+  const prevFocus = useRef<HTMLElement | null>(null);
+  const msgId = useId();
 
-  // Esc bilan yopish
+  // Esc bilan yopish + focus-trap + focus-restore
   useEffect(() => {
     if (!open) return;
+    prevFocus.current = document.activeElement as HTMLElement;
+    const el = panelRef.current;
+    const focusables = () =>
+      Array.from(
+        el?.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input, [tabindex]:not([tabindex="-1"])') ?? [],
+      ).filter((n) => n.offsetParent !== null);
+    focusables()[0]?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !isLoading) onCancel();
+      if (e.key === 'Escape' && !isLoading) { onCancel(); return; }
+      if (e.key === 'Tab' && el) {
+        const items = focusables();
+        if (!items.length) return;
+        const first = items[0], last = items[items.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      prevFocus.current?.focus?.();
+    };
   }, [open, isLoading, onCancel]);
 
   if (!open) return null;
@@ -54,9 +75,11 @@ export default function ConfirmModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
+      aria-describedby={msgId}
       onClick={() => !isLoading && onCancel()}
     >
       <div
+        ref={panelRef}
         className="bg-card rounded-md shadow-warm-lg max-w-md w-full p-6"
         onClick={(e) => e.stopPropagation()}
       >
@@ -73,7 +96,7 @@ export default function ConfirmModal({
             >
               {title}
             </h3>
-            <p className="text-sm text-muted-foreground">{message}</p>
+            <p id={msgId} className="text-sm text-muted-foreground">{message}</p>
           </div>
         </div>
 

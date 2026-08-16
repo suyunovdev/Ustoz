@@ -460,7 +460,7 @@ const GroupCreationInteractive = () => {
       <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Guide Modal */}
         {showGuideModal && (
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
             <div className="bg-card rounded-md shadow-warm-xl border border-border p-8 max-w-2xl max-h-[90vh] overflow-y-auto">
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center space-x-3">
@@ -501,7 +501,7 @@ const GroupCreationInteractive = () => {
 
         {/* Success Modal */}
         {showSuccessModal && (
-          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-300 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
             <div className="bg-card rounded-md shadow-warm-xl border border-border p-8 max-w-md text-center">
               <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Icon name="CheckCircleIcon" size={40} className="text-green-500" />
