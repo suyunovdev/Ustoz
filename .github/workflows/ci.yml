@@ -17,11 +17,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
-        # package-lock.json gitignore'da → npm ci EMAS. .npmrc'da omit=optional bo'lgani uchun
-        # rollup/swc native (Linux) binary'lari uchun --include=optional kerak.
-        run: npm install --legacy-peer-deps --include=optional
+        # package-lock.json commit qilingan → deterministik va yengilroq npm ci.
+        # .npmrc'da omit=optional; native (Linux) binary'lar uchun --include=optional kerak.
+        run: npm ci --include=optional
 
       - name: Generate Prisma client
         run: npx prisma generate
@@ -42,11 +43,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
-        # package-lock.json gitignore'da → npm ci EMAS. .npmrc'da omit=optional bo'lgani uchun
-        # rollup/swc native (Linux) binary'lari uchun --include=optional kerak.
-        run: npm install --legacy-peer-deps --include=optional
+        # package-lock.json commit qilingan → deterministik va yengilroq npm ci.
+        # .npmrc'da omit=optional; native (Linux) binary'lar uchun --include=optional kerak.
+        run: npm ci --include=optional
 
       - name: Generate Prisma client
         run: npx prisma generate
@@ -60,6 +62,7 @@ jobs:
     needs: [lint-and-typecheck, test]
 
     env:
+      NODE_OPTIONS: "--max-old-space-size=4096"
       DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
       JWT_SECRET: "ci-test-secret-at-least-32-chars-long"
       NEXT_PUBLIC_APP_URL: "http://localhost:4028"
@@ -70,11 +73,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
 
       - name: Install dependencies
-        # package-lock.json gitignore'da → npm ci EMAS. .npmrc'da omit=optional bo'lgani uchun
-        # rollup/swc native (Linux) binary'lari uchun --include=optional kerak.
-        run: npm install --legacy-peer-deps --include=optional
+        # package-lock.json commit qilingan → deterministik va yengilroq npm ci.
+        # .npmrc'da omit=optional; native (Linux) binary'lar uchun --include=optional kerak.
+        run: npm ci --include=optional
 
       - name: Build
         run: npm run build

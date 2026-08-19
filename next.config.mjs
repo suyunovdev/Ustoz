@@ -9,6 +9,12 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   distDir: process.env.DIST_DIR || '.next',
 
+  // Standalone output — `.next/standalone` ichida server.js + minimal node_modules
+  // (nft tracing). CI'da build qilib, VPS'ga faqat shu artifact ko'chiriladi →
+  // VPS'da og'ir `npm install`/`build` yo'q → OOM (exit 137) imkonsiz.
+  // `next start` ham ishlayveradi, shuning uchun mavjud deploy'ni buzmaydi.
+  output: 'standalone',
+
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -1,0 +1,90 @@
+# 3-QATLAM — CI'da build, VPS'ga faqat standalone artifact (OOM imkonsiz).
+#
+# Bu workflow QO'LDA ishga tushiriladi (workflow_dispatch) — mavjud auto-deploy
+# (ci.yml) buzilmasin. VPS tomonini sozlaganingizdan keyin (pm2 standalone
+# entrypoint = `node server.js`, quyidagi TODO qiymatlar) buni sinovdan o'tkazing,
+# ishonch hosil qilgach ci.yml deploy job'ini shunga o'tkazishingiz mumkin.
+#
+# Talab: next.config.mjs'da `output: 'standalone'` (qo'shildi).
+
+name: Deploy Standalone (manual)
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    name: Build + Ship + Reload
+    runs-on: ubuntu-latest
+    env:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+      DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
+      JWT_SECRET: "ci-build-secret-at-least-32-chars-long"
+      NEXT_PUBLIC_APP_URL: "http://localhost:4028"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --include=optional
+
+      - name: Build (standalone)
+        run: npm run build
+
+      - name: Standalone bundle yig'ish
+        run: |
+          set -e
+          rm -rf deploy-bundle && mkdir -p deploy-bundle/.next
+          cp -r .next/standalone/. deploy-bundle/
+          cp -r .next/static deploy-bundle/.next/static
+          [ -d public ] && cp -r public deploy-bundle/public
+          cp -r prisma deploy-bundle/prisma
+          tar czf deploy-bundle.tar.gz -C deploy-bundle .
+          ls -lh deploy-bundle.tar.gz
+
+      - name: SCP artifact -> VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: deploy-bundle.tar.gz
+          target: /home/deploy/incoming        # TODO: VPS yo'lini tasdiqlang
+
+      - name: Extract + atomic swap + pm2 reload
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 5m
+          # ⚠️ DIQQAT: bu pm2 run-modelni O'ZGARTIRADI —
+          #   hozir: pm2 `ustoz` = `next start -p 4028` (to'liq node_modules + .next kerak)
+          #   standalone: `node server.js` (o'zining minimal node_modules'i bilan)
+          # Shuning uchun bu workflow'ni faqat sinovdan o'tkazib, ishonch hosil qilgach
+          # asosiy deploy sifatida qo'llang. /var/www uchun deploy user'da passwordless sudo bor.
+          script: |
+            set -euo pipefail
+            APP_BASE=/var/www/ustoz-standalone      # blue-green /var/www/ustoz'ga tegmaslik uchun alohida
+            PM2_APP=ustoz                            # mavjud pm2 app nomi
+            ENV_SRC=/home/deploy/.env                # TODO: runtime .env manzilini tasdiqlang
+            REL="$APP_BASE/releases/$(date +%Y%m%d%H%M%S)"
+            sudo mkdir -p "$REL"
+            sudo tar xzf /home/deploy/incoming/deploy-bundle.tar.gz -C "$REL"
+            sudo ln -sfn "$ENV_SRC" "$REL/.env"      # runtime .env (repo'da emas)
+            # Migration drift bor — migrate deploy ishlatilmaydi (tables qo'lda psql bilan).
+            sudo ln -sfn "$REL" "$APP_BASE/current"  # atomik almashish
+            cd "$APP_BASE/current"
+            # standalone entrypoint = server.js. Ecosystem fayl (bir marta yoziladi).
+            printf "module.exports={apps:[{name:'%s',script:'server.js',cwd:'%s/current',env:{PORT:4028}}]}\n" \
+              "$PM2_APP" "$APP_BASE" | sudo tee "$APP_BASE/ecosystem.config.js" >/dev/null
+            pm2 startOrReload "$APP_BASE/ecosystem.config.js" --update-env
+            pm2 save
+            sudo bash -c "ls -1dt '$APP_BASE'/releases/* | tail -n +6 | xargs -r rm -rf"
