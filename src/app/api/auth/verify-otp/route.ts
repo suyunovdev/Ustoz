@@ -48,6 +48,13 @@ export async function POST(req: NextRequest) {
 
     // Signup holati — yangi user yaratish
     if (otpRecord.type === 'signup' && fullName && password) {
+      // Privilegiya oshirishning oldini olish: rol faqat whitelist'dan
+      // (aks holda body'dagi {"role":"admin"} orqali admin akkaunt yaratilardi)
+      const validRoles = ['student', 'teacher'];
+      if (!validRoles.includes(role)) {
+        return NextResponse.json({ error: 'Noto\'g\'ri rol' }, { status: 400 });
+      }
+
       const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
       if (existing) {
         return NextResponse.json({ error: 'Bu email allaqachon ro\'yxatdan o\'tgan' }, { status: 409 });
