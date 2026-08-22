@@ -9,6 +9,7 @@ import SearchBar from './SearchBar';
 import SortControls from './SortControls';
 import CourseGrid from './CourseGrid';
 import LoadingSkeleton from './LoadingSkeleton';
+import ErrorState from '@/components/common/ErrorState';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface Course {
@@ -60,6 +61,7 @@ const MarketplaceInteractive = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [wishlistedCourses, setWishlistedCourses] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<Category[]>([
     { id: 'all', name: t('courses.allCourses'), count: 0 },
@@ -86,6 +88,7 @@ const MarketplaceInteractive = () => {
 
   const fetchCourses = async () => {
     setIsLoading(true);
+    setLoadError(false);
     try {
       const res = await fetch('/api/courses?limit=50&sortBy=enrollments', {
         credentials: 'include',
@@ -125,6 +128,7 @@ const MarketplaceInteractive = () => {
       setCategories(catList);
     } catch (err) {
       console.error('Kurslarni yuklashda xato:', err);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -266,6 +270,9 @@ const MarketplaceInteractive = () => {
               )}
             </div>
 
+            {loadError ? (
+              <ErrorState onRetry={fetchCourses} />
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {isLoading ? (
                 <LoadingSkeleton />
@@ -283,6 +290,7 @@ const MarketplaceInteractive = () => {
                 />
               )}
             </div>
+            )}
           </div>
         </div>
       </div>

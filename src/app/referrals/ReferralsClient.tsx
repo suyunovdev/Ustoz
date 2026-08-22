@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import ErrorState from '@/components/common/ErrorState';
 import { toast } from '@/components/common/Toaster';
 import {
   useMyReferral,
@@ -25,13 +26,13 @@ const STATUS_COLOR: Record<EarningStatusDTO, string> = {
 
 export default function ReferralsClient() {
   const { t, locale } = useI18n();
-  const { data, isLoading, error } = useMyReferral();
+  const { data, isLoading, error, refetch } = useMyReferral();
   const [statusFilter, setStatusFilter] = useState<EarningStatusDTO | undefined>();
   const earnings = useMyEarnings(statusFilter);
 
-  if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
   if (error)
-    return <div className="p-8 text-destructive">{(error as Error).message}</div>;
+    return <ErrorState message={(error as Error).message} onRetry={() => refetch()} />;
+  if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
 
   const ref = data.referral;
   const refLink =

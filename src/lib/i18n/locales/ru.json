@@ -3004,5 +3004,10 @@
     "startFree": "Начать бесплатно",
     "manage": "Управление подпиской",
     "expiresOn": "Дата окончания"
-  }
+  },
+  "admin.statusOffline": "Не в сети",
+  "admin.statusDegraded": "Частично работает",
+  "admin.subInactive": "Неактивен",
+  "admin.chartNoData": "Пока недостаточно данных для отображения",
+  "admin.systemStatusDegradedDesc": "Система работает частично"
 }

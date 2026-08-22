@@ -3004,5 +3004,10 @@
     "startFree": "Bepul boshlash",
     "manage": "Obunani boshqarish",
     "expiresOn": "Tugash sanasi"
-  }
+  },
+  "admin.statusOffline": "Oflayn",
+  "admin.statusDegraded": "Qisman ishlamoqda",
+  "admin.subInactive": "Faol emas",
+  "admin.chartNoData": "Ko'rsatish uchun ma'lumot hali yetarli emas",
+  "admin.systemStatusDegradedDesc": "Tizim qisman ishlamoqda"
 }

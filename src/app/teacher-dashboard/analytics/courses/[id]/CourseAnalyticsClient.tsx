@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import { SkeletonDashboard } from '@/components/ui/Skeleton';
+import ErrorState from '@/components/common/ErrorState';
 import { useCourseAnalytics } from '@/hooks/queries/useTeacherAnalytics';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatCurrency } from '@/lib/i18n/format';
@@ -18,11 +19,15 @@ interface Props {
 
 export default function CourseAnalyticsClient({ courseId }: Props) {
   const { t, locale } = useI18n();
-  const { data, isLoading, error } = useCourseAnalytics(courseId);
+  const { data, isLoading, error, refetch } = useCourseAnalytics(courseId);
 
-  if (isLoading || !data) return <div className="p-8"><SkeletonDashboard /></div>;
   if (error)
-    return <div className="p-8 text-destructive">{(error as Error).message}</div>;
+    return (
+      <div className="p-8">
+        <ErrorState message={(error as Error).message} onRetry={() => refetch()} />
+      </div>
+    );
+  if (isLoading || !data) return <div className="p-8"><SkeletonDashboard /></div>;
 
   const { course, topicFunnel, topStudents, strugglingStudents, testStats, assignmentStats } =
     data;

@@ -6,6 +6,8 @@ import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatCurrency, formatDate } from '@/lib/i18n/format';
 import { SkeletonCardGrid } from '@/components/ui/Skeleton';
+import ErrorState from '@/components/common/ErrorState';
+import { toast } from '@/components/common/Toaster';
 
 interface Plan {
   id: string;
@@ -38,8 +40,11 @@ const SubscriptionInteractive = () => {
   const [current, setCurrent] = useState<MySubscription | null>(null);
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
   const [processing, setProcessing] = useState<PaymentMethod | null>(null);
+  const [loadError, setLoadError] = useState(false);
 
   const load = useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(false);
     try {
       const [plansRes, myRes] = await Promise.all([
         fetch('/api/subscriptions/plans', { credentials: 'include' }),
@@ -51,19 +56,23 @@ const SubscriptionInteractive = () => {
         return;
       }
 
-      if (plansRes.ok) {
-        const data = await plansRes.json();
-        const list: Plan[] = (data.plans || []).slice().sort(
-          (a: Plan, b: Plan) => a.sortOrder - b.sortOrder,
-        );
-        setPlans(list);
+      if (!plansRes.ok) {
+        throw new Error(`HTTP ${plansRes.status}`);
       }
+
+      const data = await plansRes.json();
+      const list: Plan[] = (data.plans || []).slice().sort(
+        (a: Plan, b: Plan) => a.sortOrder - b.sortOrder,
+      );
+      setPlans(list);
+
       if (myRes.ok) {
-        const data = await myRes.json();
-        setCurrent(data.subscription ?? null);
+        const myData = await myRes.json();
+        setCurrent(myData.subscription ?? null);
       }
     } catch (err) {
       console.error('Obuna maʼlumotlarini yuklashda xato:', err);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -93,9 +102,11 @@ const SubscriptionInteractive = () => {
         return;
       }
       console.error('Toʻlovni boshlashda xato:', data);
+      toast.error(t('subscription.paymentInitFailed'));
       setProcessing(null);
     } catch (err) {
       console.error('Toʻlovni boshlashda xato:', err);
+      toast.error(t('subscription.paymentInitFailed'));
       setProcessing(null);
     }
   };
@@ -129,6 +140,8 @@ const SubscriptionInteractive = () => {
             <div className="h-28 bg-card border border-border rounded-2xl animate-pulse" />
             <SkeletonCardGrid count={3} />
           </div>
+        ) : loadError ? (
+          <ErrorState onRetry={load} />
         ) : (
           <>
             {/* Current subscription / no active */}

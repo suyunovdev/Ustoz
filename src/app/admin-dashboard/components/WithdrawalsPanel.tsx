@@ -8,6 +8,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { SkeletonList } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
+import ConfirmModal from '@/components/common/ConfirmModal';
+import ErrorState from '@/components/common/ErrorState';
+import EmptyState from '@/components/common/EmptyState';
 import { useI18n } from '@/contexts/I18nContext';
 import { toast } from '@/components/common/Toaster';
 import { formatCurrency, formatDate } from '@/lib/i18n/format';
@@ -33,24 +38,30 @@ export default function WithdrawalsPanel() {
   const { t, locale } = useI18n();
   const [rows, setRows] = useState<WithdrawalRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [tab, setTab] = useState<'pending' | 'processing'>('pending');
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [modal, setModal] = useState<string | null>(null);
+  // Tasdiqni talab qiladigan (pul harakati) amallar — ConfirmModal orqali
+  const [confirm, setConfirm] = useState<{ id: string; action: 'approve' | 'complete' } | null>(null);
+  // Rad etish — sabab modal ichida
+  const [rejectId, setRejectId] = useState<string | null>(null);
   const [reason, setReason] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const res = await fetch(`/api/admin/withdrawals?status=${tab}`, { credentials: 'include' });
       if (!res.ok) throw new Error();
       const data = await res.json();
       setRows(data.withdrawals || []);
     } catch {
-      toast.error(t('admin.wdError'));
+      // Xato = "bo'sh navbat" EMAS — bu pul to'lovlari, aniq xato holati ko'rsatiladi
+      setError(true);
     } finally {
       setLoading(false);
     }
-  }, [t, tab]);
+  }, [tab]);
 
   useEffect(() => {
     load();
@@ -74,7 +85,8 @@ export default function WithdrawalsPanel() {
           : action === 'complete' ? t('admin.wdCompleted')
             : t('admin.wdRejected'),
       );
-      setModal(null);
+      setConfirm(null);
+      setRejectId(null);
       setReason('');
       setRows((prev) => prev.filter((w) => w.id !== id));
     } catch (e) {
@@ -92,6 +104,7 @@ export default function WithdrawalsPanel() {
           {(['pending', 'processing'] as const).map((s) => (
             <button
               key={s}
+              type="button"
               onClick={() => setTab(s)}
               className={`px-4 py-2 rounded text-sm font-medium transition-smooth ${tab === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
@@ -103,10 +116,13 @@ export default function WithdrawalsPanel() {
 
       {loading ? (
         <SkeletonList count={4} />
+      ) : error ? (
+        <div className="bg-card rounded-md shadow-warm">
+          <ErrorState message={t('admin.wdError')} onRetry={load} />
+        </div>
       ) : rows.length === 0 ? (
-        <div className="bg-card rounded-md shadow-warm p-12 text-center">
-          <Icon name="CheckBadgeIcon" size={64} className="text-success mx-auto mb-4" />
-          <p className="text-muted-foreground">{t('admin.wdNoRequests')}</p>
+        <div className="bg-card rounded-md shadow-warm">
+          <EmptyState icon="CheckBadgeIcon" title={t('admin.wdNoRequests')} />
         </div>
       ) : (
         <div className="space-y-4">
@@ -135,68 +151,86 @@ export default function WithdrawalsPanel() {
 
               <div className="flex items-center gap-2 shrink-0">
                 {w.status === 'pending' && (
-                  <button
-                    onClick={() => decide(w.id, 'approve')}
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    iconLeft="CheckIcon"
                     disabled={busyId === w.id}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-secondary/10 text-secondary rounded-md text-sm font-medium hover:bg-secondary/20 transition-smooth disabled:opacity-50"
+                    onClick={() => setConfirm({ id: w.id, action: 'approve' })}
                   >
-                    <Icon name="CheckIcon" size={16} />
                     {t('admin.wdApprove')}
-                  </button>
+                  </Button>
                 )}
-                <button
-                  onClick={() => decide(w.id, 'complete')}
+                <Button
+                  variant="primary"
+                  size="sm"
+                  iconLeft="BanknotesIcon"
                   disabled={busyId === w.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-success text-success-foreground rounded-md text-sm font-medium hover:bg-success/90 transition-smooth disabled:opacity-50"
+                  onClick={() => setConfirm({ id: w.id, action: 'complete' })}
                 >
-                  <Icon name="BanknotesIcon" size={16} />
                   {t('admin.wdComplete')}
-                </button>
-                <button
-                  onClick={() => { setReason(''); setModal(w.id); }}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  iconLeft="XMarkIcon"
                   disabled={busyId === w.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-destructive/10 text-destructive rounded-md text-sm font-medium hover:bg-destructive/20 transition-smooth disabled:opacity-50"
+                  onClick={() => { setReason(''); setRejectId(w.id); }}
                 >
-                  <Icon name="XMarkIcon" size={16} />
                   {t('admin.wdReject')}
-                </button>
+                </Button>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-card rounded-lg shadow-warm-lg w-full max-w-md p-6">
-            <h3 className="text-lg font-heading font-semibold text-foreground mb-1">{t('admin.wdReject')}</h3>
-            <label className="block text-sm font-medium text-foreground mt-4 mb-1">{t('admin.wdReason')}</label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={3}
-              placeholder={t('admin.wdReasonPlaceholder')}
-              className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              autoFocus
-            />
-            <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setModal(null)} className="px-4 py-2 text-foreground rounded-md hover:bg-muted transition-smooth text-sm font-medium">
-                {t('admin.wdCancel')}
-              </button>
-              <button
-                onClick={() => {
-                  if (!reason.trim()) { toast.error(t('admin.wdReason')); return; }
-                  decide(modal, 'reject', reason.trim());
-                }}
-                disabled={busyId === modal}
-                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition-smooth text-sm font-medium disabled:opacity-50"
-              >
-                {t('admin.wdConfirm')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Approve / Complete — pul harakati, tasdiq talab qilinadi */}
+      <ConfirmModal
+        open={confirm !== null}
+        title={confirm?.action === 'approve' ? t('admin.wdApprove') : t('admin.wdComplete')}
+        message={confirm?.action === 'approve' ? t('admin.wdApprove') : t('admin.wdComplete')}
+        confirmLabel={confirm?.action === 'approve' ? t('admin.wdApprove') : t('admin.wdComplete')}
+        variant="danger"
+        isLoading={confirm !== null && busyId === confirm.id}
+        onConfirm={() => confirm && decide(confirm.id, confirm.action)}
+        onCancel={() => busyId === null && setConfirm(null)}
+      />
+
+      {/* Rad etish — sabab modal ichida */}
+      <Modal
+        open={rejectId !== null}
+        onClose={() => { if (busyId === null) { setRejectId(null); setReason(''); } }}
+        title={t('admin.wdReject')}
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => { setRejectId(null); setReason(''); }} disabled={busyId !== null}>
+              {t('admin.wdCancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              loading={rejectId !== null && busyId === rejectId}
+              onClick={() => {
+                if (!reason.trim()) { toast.error(t('admin.wdReason')); return; }
+                if (rejectId) decide(rejectId, 'reject', reason.trim());
+              }}
+            >
+              {t('admin.wdConfirm')}
+            </Button>
+          </>
+        }
+      >
+        <label className="block text-sm font-medium text-foreground mb-1">{t('admin.wdReason')}</label>
+        <textarea
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={3}
+          placeholder={t('admin.wdReasonPlaceholder')}
+          className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          autoFocus
+        />
+      </Modal>
     </div>
   );
 }

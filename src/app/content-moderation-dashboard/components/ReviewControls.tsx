@@ -2,6 +2,9 @@
 
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { Button } from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
+import ConfirmModal from '@/components/common/ConfirmModal';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface ContentItem {
@@ -18,6 +21,7 @@ interface ReviewControlsProps {
 
 const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
   const { t } = useI18n();
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionNotes, setRejectionNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -26,6 +30,7 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
     if (isProcessing) return;
     setIsProcessing(true);
     await onReview(item.id, item.type, 'approved');
+    setShowApproveConfirm(false);
     setIsProcessing(false);
   };
 
@@ -45,22 +50,24 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
 
         {item.status === 'pending' ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button
-              onClick={handleApprove}
+            <Button
+              variant="primary"
+              size="lg"
+              iconLeft="CheckCircleIcon"
               disabled={isProcessing}
-              className="flex items-center justify-center space-x-2 px-6 py-4 bg-success text-success-foreground rounded-md hover:opacity-90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setShowApproveConfirm(true)}
             >
-              <Icon name="CheckCircleIcon" size={24} />
-              <span className="font-medium">{t('common.confirm')}</span>
-            </button>
-            <button
+              {t('common.confirm')}
+            </Button>
+            <Button
+              variant="destructive"
+              size="lg"
+              iconLeft="XCircleIcon"
+              disabled={isProcessing}
               onClick={() => setShowRejectModal(true)}
-              disabled={isProcessing}
-              className="flex items-center justify-center space-x-2 px-6 py-4 bg-destructive text-destructive-foreground rounded-md hover:opacity-90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Icon name="XCircleIcon" size={24} />
-              <span className="font-medium">{t('moderation.reject')}</span>
-            </button>
+              {t('moderation.reject')}
+            </Button>
           </div>
         ) : (
           <div className={`flex items-center space-x-3 p-4 rounded-md ${
@@ -80,21 +87,6 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
           </div>
         )}
 
-        {/* Quick Actions */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-foreground">{t('moderation.quickActions')}</h4>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <button className="flex items-center space-x-2 px-4 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth">
-              <Icon name="FlagIcon" size={20} />
-              <span className="text-sm font-medium">{t('moderation.report')}</span>
-            </button>
-            <button className="flex items-center space-x-2 px-4 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth">
-              <Icon name="ChatBubbleLeftIcon" size={20} />
-              <span className="text-sm font-medium">{t('moderation.messageTeacher')}</span>
-            </button>
-          </div>
-        </div>
-
         {/* Guidelines */}
         <div className="p-4 bg-muted/50 rounded-md space-y-2">
           <div className="flex items-start space-x-2">
@@ -112,53 +104,54 @@ const ReviewControls = ({ item, onReview }: ReviewControlsProps) => {
         </div>
       </div>
 
-      {/* Reject Modal */}
-      {showRejectModal && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[300] flex items-center justify-center p-4">
-          <div className="bg-card rounded-md shadow-warm-xl border border-border w-full max-w-lg">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <h3 className="text-xl font-heading font-semibold text-foreground">{t('moderation.rejectReasonTitle')}</h3>
-              <button
-                onClick={() => setShowRejectModal(false)}
-                className="p-2 rounded-md hover:bg-muted transition-smooth"
-                aria-label={t('common.close')}
-              >
-                <Icon name="XMarkIcon" size={24} />
-              </button>
-            </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  {t('moderation.rejectReasonLabel')}
-                </label>
-                <textarea
-                  value={rejectionNotes}
-                  onChange={(e) => setRejectionNotes(e.target.value)}
-                  placeholder={t('moderation.rejectReasonPlaceholder')}
-                  rows={5}
-                  className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                  required
-                />
-              </div>
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={handleReject}
-                  disabled={!rejectionNotes.trim() || isProcessing}
-                  className="flex-1 px-4 py-3 bg-destructive text-destructive-foreground rounded-md hover:opacity-90 transition-smooth font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? t('moderation.rejecting') : t('moderation.reject')}
-                </button>
-                <button
-                  onClick={() => setShowRejectModal(false)}
-                  className="px-4 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth font-medium"
-                >
-                  {t('common.cancel')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Approve — kontentni nashr etadi, tasdiq talab qilinadi */}
+      <ConfirmModal
+        open={showApproveConfirm}
+        title={t('moderation.decisionTitle')}
+        message={t('moderation.alreadyApproved')}
+        confirmLabel={t('common.confirm')}
+        variant="danger"
+        isLoading={isProcessing}
+        onConfirm={handleApprove}
+        onCancel={() => !isProcessing && setShowApproveConfirm(false)}
+      />
+
+      {/* Reject — sabab modal ichida */}
+      <Modal
+        open={showRejectModal}
+        onClose={() => { if (!isProcessing) setShowRejectModal(false); }}
+        title={t('moderation.rejectReasonTitle')}
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => setShowRejectModal(false)} disabled={isProcessing}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              loading={isProcessing}
+              disabled={!rejectionNotes.trim()}
+              onClick={handleReject}
+            >
+              {t('moderation.reject')}
+            </Button>
+          </>
+        }
+      >
+        <label className="block text-sm font-medium text-foreground mb-2">
+          {t('moderation.rejectReasonLabel')}
+        </label>
+        <textarea
+          value={rejectionNotes}
+          onChange={(e) => setRejectionNotes(e.target.value)}
+          placeholder={t('moderation.rejectReasonPlaceholder')}
+          rows={5}
+          className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          required
+          autoFocus
+        />
+      </Modal>
     </>
   );
 };

@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import { Button } from '@/components/ui/Button';
+import ConfirmModal from '@/components/common/ConfirmModal';
+import ErrorState from '@/components/common/ErrorState';
 import { Skeleton, SkeletonForm } from '@/components/ui/Skeleton';
 import GroupMetadataForm from './GroupMetadataForm';
 import StudentSelectionPanel from './StudentSelectionPanel';
@@ -51,7 +54,10 @@ const GroupCreationInteractive = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [savedGroups, setSavedGroups] = useState<SavedGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
+  const [groupsError, setGroupsError] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<SavedGroup | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SavedGroup | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const [metadata, setMetadata] = useState<GroupMetadata>({
     name: '',
@@ -99,6 +105,7 @@ const GroupCreationInteractive = () => {
 
   const loadGroups = async () => {
     setLoadingGroups(true);
+    setGroupsError(false);
     try {
       const res = await fetch('/api/teacher/groups', { credentials: 'include' });
       if (res.ok) {
@@ -117,6 +124,7 @@ const GroupCreationInteractive = () => {
         setLoadingGroups(false);
         return;
       }
+      throw new Error(`Xatolik (${res.status})`);
     } catch (err) {
       console.warn('Could not load groups from API:', err);
     }
@@ -124,9 +132,14 @@ const GroupCreationInteractive = () => {
     // Fallback: localStorage
     try {
       const stored = localStorage.getItem('ustoz_groups');
-      if (stored) setSavedGroups(JSON.parse(stored));
+      if (stored) {
+        setSavedGroups(JSON.parse(stored));
+      } else {
+        setGroupsError(true);
+      }
     } catch {
-      // localStorage parse xatosi — ignore
+      // localStorage parse xatosi — xato holatini ko'rsatamiz
+      setGroupsError(true);
     }
     setLoadingGroups(false);
   };
@@ -258,6 +271,17 @@ const GroupCreationInteractive = () => {
     }
   };
 
+  // O'chirishni ConfirmModal orqali tasdiqlaymiz
+  const confirmDeleteGroup = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+    await handleDeleteGroup(deleteTarget.id);
+    // Agar batafsil ko'rinishdagi guruh o'chirilsa — ro'yxatga qaytamiz
+    setSelectedGroup((cur) => (cur && cur.id === deleteTarget.id ? null : cur));
+    setIsDeleting(false);
+    setDeleteTarget(null);
+  };
+
   const formatDate = (dateStr: string) => {
     try {
       return i18nFormatDate(dateStr, locale, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -330,10 +354,8 @@ const GroupCreationInteractive = () => {
 
               <div className="flex gap-3 pt-4 border-t border-border">
                 <button
-                  onClick={() => {
-                    handleDeleteGroup(selectedGroup.id);
-                    setSelectedGroup(null);
-                  }}
+                  type="button"
+                  onClick={() => setDeleteTarget(selectedGroup)}
                   className="flex items-center space-x-2 px-4 py-2 bg-destructive/10 text-destructive rounded-md hover:bg-destructive/20 transition-smooth text-sm font-medium"
                 >
                   <Icon name="TrashIcon" size={16} />

@@ -3,7 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
-import { Skeleton } from '@/components/ui/Skeleton';
+import { Skeleton, SkeletonDetail } from '@/components/ui/Skeleton';
+import ErrorState from '@/components/common/ErrorState';
+import Modal from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
 import { toast } from '@/components/common/Toaster';
 import {
   useTeacherAssignment,
@@ -32,7 +35,7 @@ interface Props {
 
 export default function AssignmentDetailClient({ assignmentId }: Props) {
   const { t, locale } = useI18n();
-  const { data, isLoading } = useTeacherAssignment(assignmentId);
+  const { data, isLoading, error, refetch } = useTeacherAssignment(assignmentId);
   const updateMut = useUpdateAssignmentMutation(assignmentId);
   const [statusFilter, setStatusFilter] = useState<SubmissionStatusDTO | 'all'>('all');
   const subs = useAssignmentSubmissions(
@@ -41,7 +44,13 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
   );
   const [grading, setGrading] = useState<SubmissionDTO | null>(null);
 
-  if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
+  if (error)
+    return (
+      <div className="p-8">
+        <ErrorState message={(error as Error).message} onRetry={() => refetch()} />
+      </div>
+    );
+  if (isLoading || !data) return <div className="p-8"><SkeletonDetail /></div>;
 
   const a = data.assignment;
   const isPublished = a.status === 'published';
@@ -105,6 +114,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
           </div>
         </div>
         <button
+          type="button"
           onClick={handlePublishToggle}
           disabled={updateMut.isPending}
           className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50 ${
@@ -124,6 +134,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
           {(['all', 'submitted', 'graded', 'returned', 'late'] as const).map((s) => (
             <button
               key={s}
+              type="button"
               onClick={() => setStatusFilter(s)}
               className={`px-2.5 py-1 rounded-full text-xs ${
                 statusFilter === s
@@ -143,6 +154,8 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
             <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
+      ) : subs.error ? (
+        <ErrorState message={(subs.error as Error).message} onRetry={() => subs.refetch()} />
       ) : submissions.length === 0 ? (
         <p className="text-center text-muted-foreground py-12 italic bg-muted/30 rounded-md">
           {t('teacher.submissionNoSubmissions')}
@@ -187,6 +200,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
                     </span>
                   )}
                   <button
+                    type="button"
                     onClick={() => setGrading(s)}
                     className="px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-xs font-medium hover:opacity-90"
                   >
@@ -305,95 +319,85 @@ function GradeModal({
   const isLoading = gradeMut.isPending || returnMut.isPending;
 
   return (
-    <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-      onClick={() => !isLoading && onClose()}
-    >
-      <div
-        className="bg-card rounded-md shadow-warm-lg max-w-md w-full p-6"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-heading font-semibold">{t('teacher.gradeModalTitle')}</h3>
-          <button onClick={onClose} className="p-1 hover:bg-muted rounded">
-            <Icon name="XMarkIcon" size={20} />
-          </button>
-        </div>
-        <p className="text-sm text-muted-foreground mb-4">
-          {submission.studentName}
-          {submission.isLate && (
-            <span className="ml-2 text-xs text-destructive">⚠ {t('teacher.gradeModalLateWarning')}</span>
-          )}
-        </p>
-
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              {t('teacher.gradeModalScoreLabel')} (0–{maxScore}) *
-            </label>
-            <input
-              type="number"
-              min={0}
-              max={maxScore}
-              value={grade}
-              onChange={(e) => setGrade(Number(e.target.value))}
-              className="w-full px-3 py-2 border border-border rounded-md text-sm"
-            />
-          </div>
-          {submission.isLate && allowLate && (
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={applyPenalty}
-                onChange={(e) => setApplyPenalty(e.target.checked)}
-              />
-              {t('teacher.gradeModalApplyPenalty')}
-            </label>
-          )}
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              {t('teacher.gradeModalFeedbackLabel')}
-            </label>
-            <textarea
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              rows={4}
-              placeholder={t('teacher.gradeModalFeedbackPlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-2 mt-6 pt-4 border-t border-border">
-          <button
+    <Modal
+      open
+      onClose={() => !isLoading && onClose()}
+      title={t('teacher.gradeModalTitle')}
+      footer={
+        <div className="flex w-full items-center justify-between gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            type="button"
             onClick={handleReturn}
             disabled={isLoading}
-            className="px-3 py-2 bg-warning text-warning-foreground rounded-md text-sm flex items-center gap-2 disabled:opacity-50"
+            loading={returnMut.isPending}
+            iconLeft="ArrowUturnLeftIcon"
           >
-            <Icon name="ArrowUturnLeftIcon" size={14} />
             {t('teacher.gradeModalReturn')}
-          </button>
+          </Button>
           <div className="flex items-center gap-2">
-            <button
-              onClick={onClose}
-              disabled={isLoading}
-              className="px-3 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
-            >
+            <Button variant="ghost" size="sm" type="button" onClick={onClose} disabled={isLoading}>
               {t('teacher.gradeModalCancel')}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              type="button"
               onClick={handleGrade}
               disabled={isLoading}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm flex items-center gap-2 disabled:opacity-50"
+              loading={gradeMut.isPending}
             >
-              {gradeMut.isPending && (
-                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              )}
               {t('teacher.gradeModalSave')}
-            </button>
+            </Button>
           </div>
         </div>
+      }
+    >
+      <p className="text-sm text-muted-foreground mb-4">
+        {submission.studentName}
+        {submission.isLate && (
+          <span className="ml-2 text-xs text-destructive">⚠ {t('teacher.gradeModalLateWarning')}</span>
+        )}
+      </p>
+
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            {t('teacher.gradeModalScoreLabel')} (0–{maxScore}) *
+          </label>
+          <input
+            type="number"
+            min={0}
+            max={maxScore}
+            value={grade}
+            onChange={(e) => setGrade(Number(e.target.value))}
+            className="w-full px-3 py-2 border border-border rounded-md text-sm"
+          />
+        </div>
+        {submission.isLate && allowLate && (
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={applyPenalty}
+              onChange={(e) => setApplyPenalty(e.target.checked)}
+            />
+            {t('teacher.gradeModalApplyPenalty')}
+          </label>
+        )}
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            {t('teacher.gradeModalFeedbackLabel')}
+          </label>
+          <textarea
+            value={feedback}
+            onChange={(e) => setFeedback(e.target.value)}
+            rows={4}
+            placeholder={t('teacher.gradeModalFeedbackPlaceholder')}
+            className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
+          />
+        </div>
       </div>
-    </div>
+    </Modal>
   );
 }

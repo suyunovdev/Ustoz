@@ -8,6 +8,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { SkeletonList } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
+import ConfirmModal from '@/components/common/ConfirmModal';
+import ErrorState from '@/components/common/ErrorState';
+import EmptyState from '@/components/common/EmptyState';
 import { useI18n } from '@/contexts/I18nContext';
 import { toast } from '@/components/common/Toaster';
 import { formatCurrency } from '@/lib/i18n/format';
@@ -30,12 +35,17 @@ export default function CourseModerationPanel() {
   const { t, locale } = useI18n();
   const [rows, setRows] = useState<CourseRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [modal, setModal] = useState<{ id: string; action: Action } | null>(null);
+  // Tasdiq (approve) — nashr etadi, ConfirmModal orqali
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  // Reject / revision — feedback modal ichida
+  const [modal, setModal] = useState<{ id: string; action: 'reject' | 'request_revision' } | null>(null);
   const [feedback, setFeedback] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const res = await fetch('/api/admin/course-moderation?status=submitted', {
         credentials: 'include',
@@ -44,11 +54,12 @@ export default function CourseModerationPanel() {
       const data = await res.json();
       setRows(data.courses || []);
     } catch {
-      toast.error(t('moderation.genericError'));
+      // Xato = "navbat bo'sh" EMAS — nashr moderatsiyasi, aniq xato holati
+      setError(true);
     } finally {
       setLoading(false);
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     load();
@@ -74,6 +85,7 @@ export default function CourseModerationPanel() {
             ? t('moderation.courseRejected')
             : t('moderation.courseRevisionRequested'),
       );
+      setConfirmId(null);
       setModal(null);
       setFeedback('');
       setRows((prev) => prev.filter((c) => c.id !== id));
@@ -81,15 +93,6 @@ export default function CourseModerationPanel() {
       toast.error(e instanceof Error && e.message ? e.message : t('moderation.genericError'));
     } finally {
       setBusyId(null);
-    }
-  };
-
-  const onAction = (id: string, action: Action) => {
-    if (action === 'approve') {
-      decide(id, 'approve');
-    } else {
-      setFeedback('');
-      setModal({ id, action });
     }
   };
 
@@ -103,10 +106,13 @@ export default function CourseModerationPanel() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      {rows.length === 0 ? (
-        <div className="bg-card rounded-md shadow-warm p-12 text-center">
-          <Icon name="CheckBadgeIcon" size={64} className="text-success mx-auto mb-4" />
-          <p className="text-muted-foreground">{t('moderation.courseQueueEmpty')}</p>
+      {error ? (
+        <div className="bg-card rounded-md shadow-warm">
+          <ErrorState onRetry={load} />
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="bg-card rounded-md shadow-warm">
+          <EmptyState icon="CheckBadgeIcon" title={t('moderation.courseQueueEmpty')} />
         </div>
       ) : (
         <div className="space-y-4">
@@ -145,80 +151,87 @@ export default function CourseModerationPanel() {
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => onAction(c.id, 'approve')}
+                <Button
+                  variant="primary"
+                  size="sm"
+                  iconLeft="CheckIcon"
                   disabled={busyId === c.id}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-success text-success-foreground rounded-md text-sm font-medium hover:bg-success/90 transition-smooth disabled:opacity-50"
+                  onClick={() => setConfirmId(c.id)}
                 >
-                  <Icon name="CheckIcon" size={16} />
                   {t('moderation.approveAction')}
-                </button>
-                <button
-                  onClick={() => onAction(c.id, 'request_revision')}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  iconLeft="PencilSquareIcon"
                   disabled={busyId === c.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-muted text-foreground rounded-md text-sm font-medium hover:bg-muted/80 transition-smooth disabled:opacity-50"
+                  onClick={() => { setFeedback(''); setModal({ id: c.id, action: 'request_revision' }); }}
                 >
-                  <Icon name="PencilSquareIcon" size={16} />
                   <span className="hidden sm:inline">{t('moderation.requestRevisionAction')}</span>
-                </button>
-                <button
-                  onClick={() => onAction(c.id, 'reject')}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  iconLeft="XMarkIcon"
                   disabled={busyId === c.id}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 bg-destructive/10 text-destructive rounded-md text-sm font-medium hover:bg-destructive/20 transition-smooth disabled:opacity-50"
+                  onClick={() => { setFeedback(''); setModal({ id: c.id, action: 'reject' }); }}
                 >
-                  <Icon name="XMarkIcon" size={16} />
                   <span className="hidden sm:inline">{t('moderation.rejectAction')}</span>
-                </button>
+                </Button>
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* Feedback modal (reject / revision) */}
-      {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-card rounded-lg shadow-warm-lg w-full max-w-md p-6">
-            <h3 className="text-lg font-heading font-semibold text-foreground mb-1">
-              {modal.action === 'reject'
-                ? t('moderation.rejectAction')
-                : t('moderation.requestRevisionAction')}
-            </h3>
-            <label className="block text-sm font-medium text-foreground mt-4 mb-1">
-              {t('moderation.feedbackLabel')}
-            </label>
-            <textarea
-              value={feedback}
-              onChange={(e) => setFeedback(e.target.value)}
-              rows={4}
-              placeholder={t('moderation.feedbackPlaceholder')}
-              className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              autoFocus
-            />
-            <div className="flex justify-end gap-2 mt-5">
-              <button
-                onClick={() => setModal(null)}
-                className="px-4 py-2 text-foreground rounded-md hover:bg-muted transition-smooth text-sm font-medium"
-              >
-                {t('moderation.cancel')}
-              </button>
-              <button
-                onClick={() => {
-                  if (!feedback.trim()) {
-                    toast.error(t('moderation.feedbackRequired'));
-                    return;
-                  }
-                  decide(modal.id, modal.action, feedback.trim());
-                }}
-                disabled={busyId === modal.id}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth text-sm font-medium disabled:opacity-50"
-              >
-                {t('moderation.confirmAction')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Approve — kursni nashr etadi, tasdiq talab qilinadi */}
+      <ConfirmModal
+        open={confirmId !== null}
+        title={t('moderation.approveAction')}
+        message={t('moderation.approveAction')}
+        confirmLabel={t('moderation.approveAction')}
+        variant="danger"
+        isLoading={confirmId !== null && busyId === confirmId}
+        onConfirm={() => confirmId && decide(confirmId, 'approve')}
+        onCancel={() => busyId === null && setConfirmId(null)}
+      />
+
+      {/* Reject / revision — sabab modal ichida */}
+      <Modal
+        open={modal !== null}
+        onClose={() => { if (busyId === null) { setModal(null); setFeedback(''); } }}
+        title={modal?.action === 'reject' ? t('moderation.rejectAction') : t('moderation.requestRevisionAction')}
+        footer={
+          <>
+            <Button variant="ghost" size="sm" onClick={() => { setModal(null); setFeedback(''); }} disabled={busyId !== null}>
+              {t('moderation.cancel')}
+            </Button>
+            <Button
+              variant={modal?.action === 'reject' ? 'destructive' : 'primary'}
+              size="sm"
+              loading={modal !== null && busyId === modal.id}
+              onClick={() => {
+                if (!feedback.trim()) { toast.error(t('moderation.feedbackRequired')); return; }
+                if (modal) decide(modal.id, modal.action, feedback.trim());
+              }}
+            >
+              {t('moderation.confirmAction')}
+            </Button>
+          </>
+        }
+      >
+        <label className="block text-sm font-medium text-foreground mb-1">
+          {t('moderation.feedbackLabel')}
+        </label>
+        <textarea
+          value={feedback}
+          onChange={(e) => setFeedback(e.target.value)}
+          rows={4}
+          placeholder={t('moderation.feedbackPlaceholder')}
+          className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          autoFocus
+        />
+      </Modal>
     </div>
   );
 }

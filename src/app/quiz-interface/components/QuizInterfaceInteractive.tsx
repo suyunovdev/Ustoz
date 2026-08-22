@@ -11,6 +11,8 @@ import QuestionReviewPanel from './QuestionReviewPanel';
 import ResultsScreen from './ResultsScreen';
 import { useI18n } from '@/contexts/I18nContext';
 import { Skeleton } from '@/components/ui/Skeleton';
+import ErrorState from '@/components/common/ErrorState';
+import { toast } from '@/components/common/Toaster';
 
 interface QuizQuestion {
   id: string;
@@ -56,6 +58,8 @@ const QuizInterfaceInteractive = () => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [score, setScore] = useState(0);
+  const [loadError, setLoadError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -83,6 +87,7 @@ const QuizInterfaceInteractive = () => {
 
   const loadQuiz = async (id: string) => {
     setIsLoading(true);
+    setLoadError(false);
     try {
       // Auth check via JWT
       const meRes = await fetch('/api/auth/me', { credentials: 'include' });
@@ -131,6 +136,7 @@ const QuizInterfaceInteractive = () => {
       setTimeRemaining(3600);
     } catch (err) {
       console.error('Test yuklanmadi:', err);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -149,8 +155,9 @@ const QuizInterfaceInteractive = () => {
   };
 
   const handleSubmit = useCallback(async () => {
-    if (!quizConfig || !userId || !testId) return;
+    if (!quizConfig || !userId || !testId || isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
       // Server tomonida tekshirish va saqlash
       const indexToLetter = ['A', 'B', 'C', 'D'];
@@ -184,17 +191,19 @@ const QuizInterfaceInteractive = () => {
             };
           })
         );
+        setQuizState('results');
       } else {
-        // Lokal hisoblab natijani ko'rsatish (offline)
-        const correct = questions.filter((q, i) => answers[i]?.answer === q.correctAnswer).length;
-        setScore(Math.round((correct / questions.length) * 100));
+        // Server correct answer'larni yubormaydi — lokal hisob noto'g'ri bo'ladi.
+        // Shuning uchun soxta natija ko'rsatmaymiz; xatoni bildirib, qayta urinishga imkon beramiz.
+        toast.error(t('quiz.submitFailed'));
       }
     } catch (err) {
       console.error('Natija saqlanmadi:', err);
+      toast.error(t('quiz.submitFailed'));
     } finally {
-      setQuizState('results');
+      setIsSubmitting(false);
     }
-  }, [quizConfig, userId, testId, courseId, questions, answers]);
+  }, [quizConfig, userId, testId, courseId, questions, answers, t, isSubmitting]);
 
   if (!isHydrated || isLoading) {
     return (
@@ -214,6 +223,16 @@ const QuizInterfaceInteractive = () => {
               <Skeleton key={i} className="h-14 w-full rounded-md" />
             ))}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-background pt-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorState onRetry={() => testId && loadQuiz(testId)} />
         </div>
       </div>
     );

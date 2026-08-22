@@ -3004,5 +3004,10 @@
     "startFree": "Start free",
     "manage": "Manage subscription",
     "expiresOn": "Expiry date"
-  }
+  },
+  "admin.statusOffline": "Offline",
+  "admin.statusDegraded": "Degraded",
+  "admin.subInactive": "Inactive",
+  "admin.chartNoData": "Not enough data to display yet",
+  "admin.systemStatusDegradedDesc": "System partially operational"
 }

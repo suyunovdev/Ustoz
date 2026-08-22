@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import ErrorState from '@/components/common/ErrorState';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate } from '@/lib/i18n/format';
 
@@ -21,6 +22,7 @@ const CertificatesPageClient = () => {
   const { t, locale } = useI18n();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
 
   useEffect(() => {
@@ -28,17 +30,20 @@ const CertificatesPageClient = () => {
   }, []);
 
   const loadCertificates = async () => {
+    setIsLoading(true);
+    setLoadError(false);
     try {
       const res = await fetch('/api/certificates/my', { credentials: 'include' });
       if (res.status === 401) {
         router.push('/login?redirect=/certificates');
         return;
       }
-      if (!res.ok) return;
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setCertificates(data.certificates || []);
     } catch (err) {
       console.error('Sertifikatlarni yuklashda xato:', err);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -87,6 +92,8 @@ const CertificatesPageClient = () => {
               </div>
             ))}
           </div>
+        ) : loadError ? (
+          <ErrorState onRetry={loadCertificates} />
         ) : certificates.length === 0 ? (
           /* Empty state */
           <div className="bg-card rounded-lg border border-border p-16 text-center max-w-2xl mx-auto">

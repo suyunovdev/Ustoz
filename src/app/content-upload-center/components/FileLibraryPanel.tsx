@@ -1,6 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import ConfirmModal from '@/components/common/ConfirmModal';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface UploadedFile {
@@ -22,6 +24,7 @@ interface FileLibraryPanelProps {
 
 const FileLibraryPanel = ({ files, onFileDelete }: FileLibraryPanelProps) => {
   const { t } = useI18n();
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
@@ -110,7 +113,8 @@ const FileLibraryPanel = ({ files, onFileDelete }: FileLibraryPanelProps) => {
                       </div>
                     </div>
                     <button
-                      onClick={() => onFileDelete(file.id)}
+                      type="button"
+                      onClick={() => setPendingDeleteId(file.id)}
                       className="p-1 rounded-md text-destructive hover:bg-destructive/10 transition-smooth"
                       aria-label={t('content.deleteFile')}
                     >
@@ -127,6 +131,20 @@ const FileLibraryPanel = ({ files, onFileDelete }: FileLibraryPanelProps) => {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={pendingDeleteId !== null}
+        variant="danger"
+        title={t('content.deleteFile')}
+        message={t('content.deleteFileConfirmMessage')}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={() => {
+          if (pendingDeleteId) onFileDelete(pendingDeleteId);
+          setPendingDeleteId(null);
+        }}
+        onCancel={() => setPendingDeleteId(null)}
+      />
     </div>
   );
 };

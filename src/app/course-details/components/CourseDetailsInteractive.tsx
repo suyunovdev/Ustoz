@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 
 import Icon from '@/components/ui/AppIcon';
 import { SkeletonDetail } from '@/components/ui/Skeleton';
+import ErrorState from '@/components/common/ErrorState';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate } from '@/lib/i18n/format';
 import CourseHeroSection from './CourseHeroSection';
@@ -82,6 +83,7 @@ const CourseDetailsInteractive = () => {
   const [course, setCourse] = useState<CourseDetails | null>(null);
   const [curriculum, setCurriculum] = useState<CurriculumSection[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -95,6 +97,7 @@ const CourseDetailsInteractive = () => {
 
   const loadCourse = async (id: string) => {
     setIsLoading(true);
+    setLoadError(false);
     try {
       const res = await fetch(`/api/courses/${id}`, { credentials: 'include' });
       if (!res.ok) {
@@ -176,6 +179,7 @@ const CourseDetailsInteractive = () => {
       setIsEnrolled(!!c.isEnrolled);
     } catch (err) {
       console.error('Kurs yuklanmadi:', err);
+      setLoadError(true);
     } finally {
       setIsLoading(false);
     }
@@ -241,7 +245,15 @@ const CourseDetailsInteractive = () => {
     );
   }
 
-  if (!course) return null;
+  if (loadError || !course) {
+    return (
+      <div className="min-h-screen bg-background py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <ErrorState onRetry={() => courseId && loadCourse(courseId)} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background py-6">

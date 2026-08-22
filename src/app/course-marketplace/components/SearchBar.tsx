@@ -37,6 +37,7 @@ const SearchBar = ({ onSearch, placeholder }: SearchBarProps) => {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={resolvedPlaceholder}
+          aria-label={resolvedPlaceholder}
           className="w-full pl-12 pr-12 py-3 bg-card border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary transition-smooth"
         />
         {query && (
