@@ -69,6 +69,7 @@ const RegistrationForm = () => {
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [isDragging, setIsDragging] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
 
@@ -234,9 +235,10 @@ const RegistrationForm = () => {
     }
   };
 
-  const handleGoogleSignUp = async () => {
-    // Google OAuth hozircha yoqilmagan
-    setErrors({ submit: t('auth.googleRegisterUnavailable') });
+  const handleGoogleSignUp = () => {
+    // Google OAuth — server tomonda boshlanadi (kirish/ro'yxatdan o'tish bir xil oqim).
+    setGoogleLoading(true);
+    window.location.href = '/api/auth/google';
   };
 
   // Verify OTP code and then sign the user in
@@ -888,9 +890,9 @@ const RegistrationForm = () => {
 
         <button
           type="button"
-          disabled
-          className="w-full py-4 bg-card border-2 border-border text-foreground rounded-md font-medium opacity-50 cursor-not-allowed flex items-center justify-center space-x-3"
-          title={t('auth.comingSoon')}
+          onClick={handleGoogleSignUp}
+          disabled={googleLoading}
+          className="w-full py-4 bg-card border-2 border-border text-foreground rounded-md font-medium hover:bg-muted transition-smooth disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center space-x-3"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M19.6 10.227c0-.709-.064-1.39-.182-2.045H10v3.868h5.382a4.6 4.6 0 01-1.996 3.018v2.51h3.232c1.891-1.742 2.982-4.305 2.982-7.35z" fill="#4285F4"/>
@@ -898,8 +900,7 @@ const RegistrationForm = () => {
             <path d="M4.405 11.9c-.2-.6-.314-1.24-.314-1.9 0-.66.114-1.3.314-1.9V5.51H1.064A9.996 9.996 0 000 10c0 1.614.386 3.14 1.064 4.49l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#FBBC05"/>
             <path d="M10 3.977c1.468 0 2.786.505 3.823 1.496l2.868-2.868C14.959.99 12.695 0 10 0 6.09 0 2.71 2.24 1.064 5.51l3.34 2.59C5.19 5.736 7.395 3.977 10 3.977z" fill="#EA4335"/>
           </svg>
-          <span>{t('auth.googleRegister')}</span>
-          <span className="text-xs px-1.5 py-0.5 bg-muted rounded font-medium">{t('auth.comingSoon')}</span>
+          <span>{googleLoading ? t('common.loading') : t('auth.googleRegister')}</span>
         </button>
 
         {/* Login Link */}
