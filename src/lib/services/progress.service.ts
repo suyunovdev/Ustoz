@@ -71,17 +71,35 @@ export async function recomputeEnrollmentsForCourse(courseId: string): Promise<v
     where: { courseId },
     select: { id: true, studentId: true, progress: true, completedAt: true },
   });
+  if (enrollments.length === 0) return;
+
+  // Har talabaning tugatgan mavzular sonini BITTA groupBy so'rovida olamiz
+  // (ilgari har enrollment uchun alohida count → N+1, mashhur kursda timeout xavfi).
+  const grouped = await prisma.topicCompletion.groupBy({
+    by: ['studentId'],
+    where: { courseId },
+    _count: { _all: true },
+  });
+  const completedByStudent = new Map<string, number>(
+    grouped.map((g) => [g.studentId, g._count._all]),
+  );
+
+  // O'zgargan enrollment'larni yig'ib, bitta transaction'da yangilaymiz.
+  const updates: Prisma.PrismaPromise<unknown>[] = [];
   for (const e of enrollments) {
-    const completed = await topicCompletionRepo.countByStudentAndCourse(e.studentId, courseId);
+    const completed = completedByStudent.get(e.studentId) ?? 0;
     const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
     const completedAt = progress === 100 ? (e.completedAt ?? new Date()) : null;
-    if (progress !== e.progress || completedAt !== e.completedAt) {
-      await prisma.enrollment.update({
-        where: { id: e.id },
-        data: { progress, completedAt },
-      });
+    // Date'larni qiymat bo'yicha solishtiramiz (ilgari reference bo'yicha edi →
+    // har safar keraksiz update qilardi).
+    const sameCompletedAt = (completedAt?.getTime() ?? null) === (e.completedAt?.getTime() ?? null);
+    if (progress !== e.progress || !sameCompletedAt) {
+      updates.push(
+        prisma.enrollment.update({ where: { id: e.id }, data: { progress, completedAt } }),
+      );
     }
   }
+  if (updates.length > 0) await prisma.$transaction(updates);
 }
 
 /**

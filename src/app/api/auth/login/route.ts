@@ -2,43 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { signToken, createSessionCookie } from '@/lib/auth';
+import { checkRateLimit } from '@/lib/rateLimit';
 
-// Brute force himoyasi (in-memory, production'da Redis ishlatiladi)
-const loginAttempts = new Map<string, { count: number; blockedUntil: number }>();
-const MAX_ATTEMPTS = 5;
-const BLOCK_DURATION = 15 * 60 * 1000; // 15 daqiqa
+// Brute force: har (ip+email) uchun 5 muvaffaqiyatsiz urinish / 15 daqiqa.
+// Upstash Redis (mavjud bo'lsa) yoki in-memory fallback — serverless/cluster'da barqaror.
+const LOGIN_MAX = 5;
+const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
 // Timing attack oldini olish uchun dummy hash
 const DUMMY_HASH = '$2a$12$LJ3m4ys3bGDZBOJfxvzuVuQGqDz5x3Xz3y5RGj5XJ5qZ3qZ3qZ3q';
-
-function checkLoginRateLimit(key: string): { allowed: boolean; retryAfter?: number } {
-  const now = Date.now();
-  const entry = loginAttempts.get(key);
-
-  if (entry && entry.blockedUntil > now) {
-    return { allowed: false, retryAfter: Math.ceil((entry.blockedUntil - now) / 1000) };
-  }
-
-  if (entry && entry.blockedUntil <= now) {
-    loginAttempts.delete(key);
-  }
-
-  return { allowed: true };
-}
-
-function recordFailedAttempt(key: string): void {
-  const entry = loginAttempts.get(key) || { count: 0, blockedUntil: 0 };
-  entry.count++;
-  if (entry.count >= MAX_ATTEMPTS) {
-    entry.blockedUntil = Date.now() + BLOCK_DURATION;
-    entry.count = 0;
-  }
-  loginAttempts.set(key, entry);
-}
-
-function clearAttempts(key: string): void {
-  loginAttempts.delete(key);
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,15 +33,6 @@ export async function POST(req: NextRequest) {
     const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
     const rateLimitKey = `login:${ip}:${normalizedEmail}`;
 
-    // Brute force tekshiruvi
-    const { allowed, retryAfter } = checkLoginRateLimit(rateLimitKey);
-    if (!allowed) {
-      return NextResponse.json(
-        { error: `Juda ko'p urinish. ${retryAfter} sekunddan keyin qayta urinib ko'ring.` },
-        { status: 429, headers: { 'Retry-After': String(retryAfter) } },
-      );
-    }
-
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
       include: { profile: true },
@@ -80,7 +43,17 @@ export async function POST(req: NextRequest) {
     const isValid = await bcrypt.compare(String(password), hashToCompare);
 
     if (!user || !isValid) {
-      recordFailedAttempt(rateLimitKey);
+      // FAQAT muvaffaqiyatsiz urinishlar hisoblanadi (muvaffaqiyatli login limitga
+      // tegmaydi). Redis (mavjud bo'lsa) yoki in-memory fallback — serverless/cluster
+      // bo'ylab barqaror. Limitdan oshsa 429.
+      const rl = await checkRateLimit(rateLimitKey, LOGIN_MAX, LOGIN_WINDOW_MS);
+      if (!rl.allowed) {
+        const retryAfter = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000));
+        return NextResponse.json(
+          { error: `Juda ko'p urinish. ${retryAfter} sekunddan keyin qayta urinib ko'ring.` },
+          { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+        );
+      }
       return NextResponse.json(
         { error: 'Email yoki parol noto\'g\'ri' },
         { status: 401 },
@@ -95,9 +68,6 @@ export async function POST(req: NextRequest) {
         { status: 403 },
       );
     }
-
-    // Muvaffaqiyatli login — urinishlar tozalanadi
-    clearAttempts(rateLimitKey);
 
     const token = await signToken({
       sub: user.id,

@@ -77,6 +77,13 @@ export async function POST(req: NextRequest) {
     return jsonResponse({ error: "Narx noto'g'ri (butun musbat son bo'lishi kerak)" }, { status: 400 });
   }
 
+  // `category` (string) dan Category FK'ni topamiz — courseCount va FK-filtr ishlashi uchun.
+  // Mos kategoriya bo'lmasa categoryId null qoladi (legacy string maydon baribir saqlanadi).
+  const categoryRow = await prisma.category.findFirst({
+    where: { isActive: true, OR: [{ slug: category }, { name: category }] },
+    select: { id: true },
+  });
+
   let course;
   try {
     course = await prisma.course.create({
@@ -85,6 +92,7 @@ export async function POST(req: NextRequest) {
       title,
       description,
       category,
+      categoryId: categoryRow?.id ?? null,
       targetAudience,
       subjectCategory,
       gradeLevel: gradeLevel ? Number(gradeLevel) : null,
@@ -92,7 +100,7 @@ export async function POST(req: NextRequest) {
       coverImage,
       language,
       difficultyLevel,
-      topics: topics?.length
+      topics: Array.isArray(topics) && topics.length
         ? {
             createMany: {
               data: topics.map((t: { title: string; duration?: string; content?: string }, i: number) => ({

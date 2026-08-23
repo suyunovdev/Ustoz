@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { signToken, createSessionCookie } from '@/lib/auth';
 import { attributeOnSignup } from '@/lib/services/referral.service';
+import { isEmail, normalizeEmail } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,6 +15,12 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+    if (!isEmail(email)) {
+      return NextResponse.json({ error: 'Email formati noto\'g\'ri' }, { status: 400 });
+    }
+    // Email'ni izchil normallashtiramiz (login va verify-otp bilan mos) —
+    // aks holda "User@x.com" bilan ro'yxatdan o'tgan foydalanuvchi kira olmasdi.
+    const normalizedEmail = normalizeEmail(String(email));
 
     if (password.length < 8) {
       return NextResponse.json(
@@ -34,7 +41,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Email band ekanligini tekshirish
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       return NextResponse.json(
         { error: 'Bu email allaqachon ro\'yxatdan o\'tgan' },
@@ -47,12 +54,12 @@ export async function POST(req: NextRequest) {
     // User va UserProfile birga yaratish
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         passwordHash,
         role: role as 'student' | 'teacher',
         profile: {
           create: {
-            email,
+            email: normalizedEmail,
             fullName,
             role: role as 'student' | 'teacher',
           },

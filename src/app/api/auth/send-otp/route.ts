@@ -1,26 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkRateLimit } from '@/lib/rateLimit';
 
 // Kriptografik xavfsiz OTP
 function generateOtp(): string {
   const array = new Uint32Array(1);
   crypto.getRandomValues(array);
   return String(array[0] % 1000000).padStart(6, '0');
-}
-
-// Rate limiting (in-memory, production da Redis ishlatiladi)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(key: string, max = 5, windowMs = 15 * 60 * 1000): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(key);
-  if (!entry || entry.resetAt < now) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-  if (entry.count >= max) return false;
-  entry.count++;
-  return true;
 }
 
 export async function POST(req: NextRequest) {
@@ -40,7 +26,9 @@ export async function POST(req: NextRequest) {
     const normalizedEmail = String(email).toLowerCase().trim();
     const key = `otp:${ip}:${normalizedEmail}`;
 
-    if (!checkRateLimit(key)) {
+    // Upstash Redis (mavjud bo'lsa) yoki in-memory fallback — serverless'da barqaror.
+    const rl = await checkRateLimit(key, 5, 15 * 60 * 1000);
+    if (!rl.allowed) {
       return NextResponse.json(
         { error: 'Juda ko\'p so\'rov. 15 daqiqadan keyin urinib ko\'ring.' },
         { status: 429, headers: { 'Retry-After': '900' } }

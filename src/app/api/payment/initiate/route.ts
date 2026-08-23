@@ -11,6 +11,7 @@ import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
+import { isUuid } from '@/lib/validation';
 import type { PaymentMethod } from '@/generated/prisma/client';
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? 'http://localhost:4028';
@@ -29,6 +30,17 @@ export async function POST(req: NextRequest) {
     const { courseId, planId, paymentMethod } = body;
     if (paymentMethod !== 'click' && paymentMethod !== 'payme') {
       throw new ValidationError('paymentMethod: click yoki payme bo\'lishi kerak');
+    }
+    // courseId/planId — mavjud bo'lsa, to'g'ri UUID formatida bo'lishi shart
+    // (noto'g'ri format → 400, "topilmadi" 404 emas).
+    if (courseId !== undefined && !isUuid(courseId)) {
+      throw new ValidationError('courseId noto\'g\'ri formatda');
+    }
+    if (planId !== undefined && !isUuid(planId)) {
+      throw new ValidationError('planId noto\'g\'ri formatda');
+    }
+    if (courseId === undefined && planId === undefined) {
+      throw new ValidationError('courseId yoki planId majburiy');
     }
 
     // ── To'lov turini aniqlash (kurs yoki obuna) ──
