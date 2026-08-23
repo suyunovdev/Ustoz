@@ -1128,6 +1128,19 @@ model ReviewHelpfulVote {
 
 // ==================== OTP CODES ====================
 
+// O'quv interfeysi muhokamasi — mavzu bo'yicha talaba/o'qituvchi izohlari.
+// Relations Prisma darajasida emas (izolyatsiya uchun); FK migratsiya SQL'da.
+model TopicComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  topicId   String   @map("topic_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([topicId])
+  @@map("topic_comments")
+}
+
 model OtpCode {
   id        String   @id @default(uuid()) @db.Uuid
   email     String   @unique

@@ -69,12 +69,33 @@ const GroupCreationInteractive = () => {
 
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
   const [availableStudents, setAvailableStudents] = useState<Student[]>([]);
+  const [teacherCourses, setTeacherCourses] = useState<{ id: string; title: string }[]>([]);
+  const [coursesLoading, setCoursesLoading] = useState(true);
 
   useEffect(() => {
     setIsHydrated(true);
     loadGroups();
     loadStudents();
+    loadCourses();
   }, []);
+
+  // O'qituvchining real kurslari (guruh bog'lash uchun)
+  const loadCourses = async () => {
+    setCoursesLoading(true);
+    try {
+      const res = await fetch('/api/teacher/courses', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setTeacherCourses(
+          (data.courses || []).map((c: any) => ({ id: c.id, title: c.title || '—' })),
+        );
+      }
+    } catch {
+      setTeacherCourses([]);
+    } finally {
+      setCoursesLoading(false);
+    }
+  };
 
   // O'qituvchi kurslariga yozilgan real talabalarni yuklaymiz
   const loadStudents = async () => {
@@ -601,7 +622,7 @@ const GroupCreationInteractive = () => {
         {/* Main Content */}
         <div className="bg-card rounded-md shadow-warm p-6">
           {activeStep === 'metadata' && (
-            <GroupMetadataForm metadata={metadata} onMetadataChange={setMetadata} />
+            <GroupMetadataForm metadata={metadata} onMetadataChange={setMetadata} courses={teacherCourses} coursesLoading={coursesLoading} />
           )}
           {activeStep === 'selection' && (
             <StudentSelectionPanel
@@ -619,7 +640,7 @@ const GroupCreationInteractive = () => {
             />
           )}
           {activeStep === 'review' && (
-            <GroupReviewPanel metadata={metadata} selectedStudents={selectedStudents} />
+            <GroupReviewPanel metadata={metadata} selectedStudents={selectedStudents} courses={teacherCourses} />
           )}
 
           {/* Navigation Buttons */}

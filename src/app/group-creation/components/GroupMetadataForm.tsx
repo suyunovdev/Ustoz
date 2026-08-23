@@ -12,22 +12,21 @@ interface GroupMetadata {
   balancingStrategy: 'performance' | 'random' | 'manual';
 }
 
+interface TeacherCourseOption {
+  id: string;
+  title: string;
+}
+
 interface GroupMetadataFormProps {
   metadata: GroupMetadata;
   onMetadataChange: (metadata: GroupMetadata) => void;
+  courses: TeacherCourseOption[];
+  coursesLoading?: boolean;
 }
 
-const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProps) => {
+const GroupMetadataForm = ({ metadata, onMetadataChange, courses, coursesLoading }: GroupMetadataFormProps) => {
   const { t } = useI18n();
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const mockCourses = [
-    { id: '1', name: 'Matematika - 9-sinf' },
-    { id: '2', name: 'Fizika - 10-sinf' },
-    { id: '3', name: 'Kimyo - 11-sinf' },
-    { id: '4', name: 'Ingliz tili - Boshlang\'ich' },
-    { id: '5', name: 'Dasturlash - Python' }
-  ];
 
   const handleChange = (field: keyof GroupMetadata, value: any) => {
     onMetadataChange({ ...metadata, [field]: value });
@@ -63,12 +62,15 @@ const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProp
           <select
             value={metadata.courseId}
             onChange={(e) => handleChange('courseId', e.target.value)}
-            className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground appearance-none cursor-pointer"
+            disabled={coursesLoading}
+            className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground appearance-none cursor-pointer disabled:opacity-60"
           >
-            <option value="">{t('groups.selectCourse')}</option>
-            {mockCourses.map((course) => (
+            <option value="">
+              {coursesLoading ? t('common.loading') : t('groups.selectCourse')}
+            </option>
+            {courses.map((course) => (
               <option key={course.id} value={course.id}>
-                {course.name}
+                {course.title}
               </option>
             ))}
           </select>
@@ -81,6 +83,11 @@ const GroupMetadataForm = ({ metadata, onMetadataChange }: GroupMetadataFormProp
         <p className="text-xs text-muted-foreground mt-1">
           Guruh bitta kursga bog'lanadi. O'quvchilar faqat shu kurs materiallariga kirish huquqiga ega bo'ladi.
         </p>
+        {!coursesLoading && courses.length === 0 && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+            Sizda hali kurs yo'q. Avval kurs yarating, so'ng unga guruh bog'lang.
+          </p>
+        )}
         {errors.courseId && <p className="text-red-500 text-sm mt-1">{errors.courseId}</p>}
       </div>
 

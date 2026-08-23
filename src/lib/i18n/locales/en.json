@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Loading...",
+    "send": "Send",
     "error": "An error occurred",
     "save": "Save",
     "cancel": "Cancel",
@@ -2342,7 +2343,11 @@
     "exportNotes": "Export notes",
     "resources": "Resources",
     "resourcesDescription": "Additional materials and files for this topic",
-    "downloadAllResources": "Download all resources"
+    "downloadAllResources": "Download all resources",
+    "noResources": "No materials for this topic yet",
+    "noComments": "No comments yet. Be the first to share.",
+    "instructorBadge": "Instructor",
+    "noFile": "No file attached"
   },
   "groups": {
     "loadingData": "Loading group data...",

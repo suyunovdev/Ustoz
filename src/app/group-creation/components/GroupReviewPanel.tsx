@@ -26,19 +26,12 @@ interface GroupMetadata {
 interface GroupReviewPanelProps {
   metadata: GroupMetadata;
   selectedStudents: Student[];
+  courses: { id: string; title: string }[];
 }
 
-const GroupReviewPanel = ({ metadata, selectedStudents }: GroupReviewPanelProps) => {
+const GroupReviewPanel = ({ metadata, selectedStudents, courses }: GroupReviewPanelProps) => {
   const { t } = useI18n();
-  const mockCourses = [
-    { id: '1', name: 'Matematika - 9-sinf' },
-    { id: '2', name: 'Fizika - 10-sinf' },
-    { id: '3', name: 'Kimyo - 11-sinf' },
-    { id: '4', name: 'Ingliz tili - Boshlang\'ich' },
-    { id: '5', name: 'Dasturlash - Python' }
-  ];
-
-  const selectedCourse = mockCourses.find((c) => c.id === metadata.courseId);
+  const selectedCourse = courses.find((c) => c.id === metadata.courseId);
 
   const getStrategyLabel = (strategy: string) => {
     switch (strategy) {
@@ -95,7 +88,7 @@ const GroupReviewPanel = ({ metadata, selectedStudents }: GroupReviewPanelProps)
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center space-x-2 bg-background/50 rounded-md px-3 py-1.5">
                 <Icon name="BookOpenIcon" size={16} className="text-primary" />
-                <span className="text-sm font-medium text-foreground">{selectedCourse?.name || 'Kurs tanlanmagan'}</span>
+                <span className="text-sm font-medium text-foreground">{selectedCourse?.title || 'Kurs tanlanmagan'}</span>
               </div>
               <div className="flex items-center space-x-2 bg-background/50 rounded-md px-3 py-1.5">
                 <Icon name="UserGroupIcon" size={16} className="text-primary" />

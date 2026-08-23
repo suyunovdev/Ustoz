@@ -1,6 +1,7 @@
 {
   "common": {
     "loading": "Yuklanmoqda...",
+    "send": "Yuborish",
     "error": "Xatolik yuz berdi",
     "save": "Saqlash",
     "cancel": "Bekor qilish",
@@ -2342,7 +2343,11 @@
     "exportNotes": "Eslatmalarni eksport qilish",
     "resources": "Resurslar",
     "resourcesDescription": "Ushbu mavzu uchun qo'shimcha materiallar va fayllar",
-    "downloadAllResources": "Barcha resurslarni yuklab olish"
+    "downloadAllResources": "Barcha resurslarni yuklab olish",
+    "noResources": "Bu mavzu uchun hali material yuklanmagan",
+    "noComments": "Hali izoh yo'q. Birinchi bo'lib fikr bildiring.",
+    "instructorBadge": "O'qituvchi",
+    "noFile": "Fayl biriktirilmagan"
   },
   "groups": {
     "loadingData": "Guruh ma'lumotlari yuklanmoqda...",
