@@ -87,6 +87,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Bloklangan (suspended) yoki o'chirilgan akkaunt kira olmaydi —
+    // aks holda suspend qilingan foydalanuvchi yangi 7 kunlik token olardi.
+    if (user.profile && (user.profile.isActive === false || user.profile.deletedAt !== null)) {
+      return NextResponse.json(
+        { error: 'Akkaunt bloklangan. Administrator bilan bog\'laning.' },
+        { status: 403 },
+      );
+    }
+
     // Muvaffaqiyatli login — urinishlar tozalanadi
     clearAttempts(rateLimitKey);
 
@@ -94,6 +103,7 @@ export async function POST(req: NextRequest) {
       sub: user.id,
       email: user.email,
       role: user.role,
+      tokenVersion: user.tokenVersion,
     });
 
     const response = NextResponse.json({

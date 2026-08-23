@@ -69,6 +69,8 @@ export async function suspendUser(
     }
 
     const updated = await userRepo.updateActiveStatus(userId, false, tx);
+    // Suspend → eski JWT sessiyalarni darhol bekor qilish (7 kunlik token muddatini kutmasdan).
+    await tx.user.update({ where: { id: userId }, data: { tokenVersion: { increment: 1 } } });
     await auditLog(
       {
         adminId,

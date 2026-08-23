@@ -36,7 +36,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Brute-force himoyasi: cheklangan urinishdan keyin kod bekor qilinadi.
+    const MAX_OTP_ATTEMPTS = 5;
+    if (otpRecord.attempts >= MAX_OTP_ATTEMPTS) {
+      // Kodni bekor qilamiz — foydalanuvchi yangi kod so'rashi shart.
+      await prisma.otpCode.delete({ where: { email: normalizedEmail } }).catch(() => {});
+      return NextResponse.json(
+        { error: 'Juda ko\'p noto\'g\'ri urinish. Yangi kod so\'rang.' },
+        { status: 429 }
+      );
+    }
+
     if (otpRecord.otp !== String(otp)) {
+      await prisma.otpCode.update({
+        where: { email: normalizedEmail },
+        data: { attempts: { increment: 1 } },
+      });
       return NextResponse.json({ error: 'Noto\'g\'ri kod' }, { status: 400 });
     }
 
@@ -87,7 +102,7 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      const token = await signToken({ sub: user.id, email: user.email, role: user.role });
+      const token = await signToken({ sub: user.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion });
       const response = NextResponse.json({
         success: true,
         user: {

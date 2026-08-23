@@ -9,14 +9,40 @@ import type { NextRequest } from 'next/server';
 import { getSessionFromRequest, type JWTPayload } from './auth';
 import { ForbiddenError, UnauthorizedError, isServiceError } from './errors';
 import { jsonResponse } from './json';
+import { prisma } from './prisma';
 
 /**
  * Authenticated foydalanuvchi sessiyasini qaytaradi.
  * Sessiya yo'q bo'lsa UnauthorizedError tashlaydi.
+ *
+ * JWT dekod qilingandan so'ng DB holati ham tekshiriladi (indekslangan PK lookup):
+ *   - foydalanuvchi mavjud emas         → 401 (o'chirilgan akkaunt)
+ *   - profil suspended (isActive=false) yoki deletedAt → 403
+ *   - token.tokenVersion != DB.tokenVersion → 401 (parol o'zgargan / suspend → eski token bekor)
+ * Shu tariqa suspend/parol o'zgarishi eski JWT'larni DARHOL kuchsizlantiradi
+ * (7 kunlik token muddatini kutmasdan).
  */
 export async function requireAuth(req: NextRequest): Promise<JWTPayload> {
   const session = await getSessionFromRequest(req);
   if (!session) throw new UnauthorizedError();
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.sub },
+    select: {
+      tokenVersion: true,
+      profile: { select: { isActive: true, deletedAt: true } },
+    },
+  });
+
+  if (!user) throw new UnauthorizedError();
+  if (user.profile && (user.profile.isActive === false || user.profile.deletedAt !== null)) {
+    throw new ForbiddenError('Akkaunt bloklangan');
+  }
+  // Eski (tokenVersion'siz) tokenlar ?? 0 — mavjud foydalanuvchilar default 0, mos keladi.
+  if ((session.tokenVersion ?? 0) !== user.tokenVersion) {
+    throw new UnauthorizedError();
+  }
+
   return session;
 }
 

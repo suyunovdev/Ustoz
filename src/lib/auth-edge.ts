@@ -23,6 +23,7 @@ export interface JWTPayload {
   sub: string;
   email: string;
   role: string;
+  tokenVersion?: number; // edge faqat dekod qiladi; haqiqiy tekshiruv requireAuth (node) da
   iat?: number;
   exp?: number;
 }

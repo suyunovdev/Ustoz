@@ -11,6 +11,7 @@
 
 import bcrypt from 'bcryptjs';
 import { userProfileRepo } from '@/lib/repositories';
+import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 
 export class ProfileNotFoundError extends Error {
@@ -161,6 +162,11 @@ export async function changePassword(
 
   const newHash = await bcrypt.hash(newPassword, 12);
   await userProfileRepo.setPasswordHash(userId, newHash);
+  // Parol o'zgardi → barcha eski JWT sessiyalarni bekor qilish (tokenVersion inkrement).
+  await prisma.user.update({
+    where: { id: userId },
+    data: { tokenVersion: { increment: 1 } },
+  });
 }
 
 // ==================== NOTIFICATION PREFS ====================

@@ -31,6 +31,7 @@ export interface JWTPayload {
   sub: string;    // user id
   email: string;
   role: string;
+  tokenVersion: number; // sessiya invalidatsiyasi uchun (DB'dagi User.tokenVersion bilan solishtiriladi)
   iat?: number;
   exp?: number;
 }
