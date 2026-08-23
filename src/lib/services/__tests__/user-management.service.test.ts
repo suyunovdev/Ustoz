@@ -23,7 +23,10 @@ vi.mock('@/lib/repositories', () => ({
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    $transaction: vi.fn(async (cb: (tx: unknown) => unknown) => cb({})),
+    // tx.user.update — suspendUser tokenVersion inkrementi uchun
+    $transaction: vi.fn(async (cb: (tx: unknown) => unknown) =>
+      cb({ user: { update: vi.fn() } }),
+    ),
   },
 }));
 
