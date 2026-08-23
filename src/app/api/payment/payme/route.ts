@@ -71,7 +71,9 @@ export async function POST(request: NextRequest) {
     const credentials = Buffer.from(base64Credentials, 'base64').toString('utf-8');
     const [username, password] = credentials.split(':');
 
-    const expectedAuth = `Payme:${paymeKey}`;
+    // Payme Merchant API Basic-Auth login qismi "Paycom" (kabinetdagi login),
+    // "Payme" emas — aks holda har bir webhook -32504 oladi.
+    const expectedAuth = `Paycom:${paymeKey}`;
     const providedAuth = `${username}:${password}`;
 
     if (!safeEqual(providedAuth, expectedAuth)) {

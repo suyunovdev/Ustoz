@@ -56,9 +56,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify signature — HMAC-SHA256 (MD5 emas, xavfsizroq)
+    // Verify signature — Click Shop-API MD5 talab qiladi (secret string ichida).
+    // Prepare formulasi: md5(click_trans_id + service_id + SECRET + merchant_trans_id
+    //                        + amount + action + sign_time)
     const signString = crypto
-      .createHmac('sha256', secretKey)
+      .createHash('md5')
       .update(
         `${body.click_trans_id}${body.service_id}${secretKey}${body.merchant_trans_id}${body.amount}${body.action}${body.sign_time}`
       )
