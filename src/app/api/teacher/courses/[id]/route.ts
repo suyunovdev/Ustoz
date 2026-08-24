@@ -8,6 +8,7 @@ import type { NextRequest } from 'next/server';
 import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
+import { TargetAudience, SubjectCategory } from '@/generated/prisma/enums';
 import {
   getCourse,
   deleteCourse,
@@ -64,6 +65,16 @@ export async function PATCH(
       } catch {
         throw new ValidationError("Narx noto'g'ri (butun musbat son bo'lishi kerak)");
       }
+    }
+
+    // Enum maydonlar (mavjud bo'lsa) — oldindan tekshiramiz (aniq 400 xabar).
+    if (b.targetAudience !== undefined &&
+        !(Object.values(TargetAudience) as string[]).includes(b.targetAudience)) {
+      throw new ValidationError(`targetAudience noto'g'ri qiymat: ${String(b.targetAudience)}`);
+    }
+    if (b.subjectCategory !== undefined &&
+        !(Object.values(SubjectCategory) as string[]).includes(b.subjectCategory)) {
+      throw new ValidationError(`subjectCategory noto'g'ri qiymat: ${String(b.subjectCategory)}`);
     }
 
     // Moderatsiya: o'qituvchi `isPublished`ni O'ZI qo'ya olmaydi — kurs faqat

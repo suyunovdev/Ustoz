@@ -2,6 +2,11 @@ import { NextRequest } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
+import { TargetAudience, SubjectCategory } from '@/generated/prisma/enums';
+
+// Enum qiymatlari Prisma schema'dan avtomatik (drift yo'q).
+const VALID_AUDIENCES = Object.values(TargetAudience) as string[];
+const VALID_SUBJECTS = Object.values(SubjectCategory) as string[];
 
 // GET /api/teacher/courses — Teacher kurslar ro'yxati
 export async function GET(req: NextRequest) {
@@ -66,6 +71,21 @@ export async function POST(req: NextRequest) {
 
   if (!title || !category || !targetAudience || !subjectCategory || !language) {
     return jsonResponse({ error: 'Majburiy maydonlar to\'ldirilmagan' }, { status: 400 });
+  }
+
+  // Enum maydonlarni oldindan tekshiramiz — aks holda Prisma umumiy
+  // "ma'lumotlar noto'g'ri" xatosini beradi (qaysi maydon ekani noaniq).
+  if (!VALID_AUDIENCES.includes(targetAudience)) {
+    return jsonResponse(
+      { error: `targetAudience noto'g'ri qiymat: ${String(targetAudience)}` },
+      { status: 400 },
+    );
+  }
+  if (!VALID_SUBJECTS.includes(subjectCategory)) {
+    return jsonResponse(
+      { error: `subjectCategory noto'g'ri qiymat: ${String(subjectCategory)}` },
+      { status: 400 },
+    );
   }
 
   // Narx faqat butun, manfiy bo'lmagan son bo'lishi kerak
