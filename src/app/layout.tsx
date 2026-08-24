@@ -1,6 +1,23 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
+import { Manrope, JetBrains_Mono } from 'next/font/google';
 import '../styles/index.css';
+
+// Yagona shrift tizimi (self-hosted, layout-shift yo'q, tashqi Google Fonts @import
+// o'rniga). Manrope — barcha matn/sarlavha/izoh; JetBrains Mono — kod/raqam.
+// cyrillic subset: ru tili uchun.
+const manrope = Manrope({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 import { AuthProvider } from '@/contexts/AuthContext';
 import { I18nProvider } from '@/contexts/I18nContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
@@ -79,7 +96,7 @@ export default async function RootLayout({
   `;
 
   return (
-    <html lang={serverLocale} suppressHydrationWarning>
+    <html lang={serverLocale} className={`${manrope.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="manifest" href="/manifest.json" />

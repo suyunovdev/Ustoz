@@ -64,10 +64,16 @@ module.exports = {
         xl: 'var(--radius-xl)',
       },
       fontFamily: {
-        heading: ['Crimson Text', 'Georgia', 'serif'],
-        body: ['Source Sans 3', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
-        caption: ['IBM Plex Sans', 'sans-serif'],
-        data: ['JetBrains Mono', 'monospace'],
+        // Yagona shrift tizimi — hamma matn Manrope (var(--font-sans)),
+        // kod/raqam JetBrains Mono (var(--font-mono)). next/font orqali yuklanadi.
+        // Barcha eski utilitalar (heading/body/caption) ham bir xil sans'ga ishora qiladi,
+        // shuning uchun 318 ta font-heading'ni tahrirlash shart emas.
+        sans: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
+        heading: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        body: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        caption: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        data: ['var(--font-mono)', 'ui-monospace', 'monospace'],
       },
       spacing: {
         '18': '4.5rem',
