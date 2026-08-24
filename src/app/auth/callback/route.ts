@@ -16,11 +16,14 @@ import {
   isGoogleOAuthConfigured,
   exchangeCodeForToken,
   fetchGoogleUserInfo,
+  appUrl,
+  OAUTH_STATE_COOKIE,
 } from '@/lib/oauth/google';
-import { OAUTH_STATE_COOKIE } from '@/app/api/auth/google/route';
 
-function loginError(req: NextRequest, code: string): NextResponse {
-  const res = NextResponse.redirect(new URL(`/login?error=${code}`, req.url));
+// MUHIM: redirect'lar req.url'dan EMAS, appUrl()'dan (NEXT_PUBLIC_APP_URL) quriladi —
+// nginx orqasida req.url ichki localhost:4028 bo'lib, foydalanuvchini localhost'ga tashlardi.
+function loginError(code: string): NextResponse {
+  const res = NextResponse.redirect(appUrl(`/login?error=${code}`));
   // state cookie'ni tozalaymiz
   res.cookies.set(OAUTH_STATE_COOKIE, '', { path: '/', maxAge: 0 });
   return res;
@@ -28,7 +31,7 @@ function loginError(req: NextRequest, code: string): NextResponse {
 
 export async function GET(req: NextRequest) {
   if (!isGoogleOAuthConfigured()) {
-    return NextResponse.redirect(new URL('/login?error=oauth_not_configured', req.url));
+    return NextResponse.redirect(appUrl('/login?error=oauth_not_configured'));
   }
 
   const { searchParams } = new URL(req.url);
@@ -36,19 +39,19 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get('state');
   const oauthError = searchParams.get('error'); // foydalanuvchi rad etsa (access_denied)
 
-  if (oauthError) return loginError(req, 'oauth_cancelled');
-  if (!code || !state) return loginError(req, 'oauth_failed');
+  if (oauthError) return loginError('oauth_cancelled');
+  if (!code || !state) return loginError('oauth_failed');
 
   // CSRF: state cookie bilan moslik
   const savedState = req.cookies.get(OAUTH_STATE_COOKIE)?.value;
-  if (!savedState || savedState !== state) return loginError(req, 'oauth_state');
+  if (!savedState || savedState !== state) return loginError('oauth_state');
 
   try {
     const accessToken = await exchangeCodeForToken(code);
     const info = await fetchGoogleUserInfo(accessToken);
 
     if (!info.email || !info.emailVerified) {
-      return loginError(req, 'oauth_email_unverified');
+      return loginError('oauth_email_unverified');
     }
 
     const email = normalizeEmail(info.email);
@@ -97,12 +100,12 @@ export async function GET(req: NextRequest) {
       tokenVersion: user.tokenVersion,
     });
 
-    const res = NextResponse.redirect(new URL('/', req.url));
+    const res = NextResponse.redirect(appUrl('/'));
     res.headers.append('Set-Cookie', createSessionCookie(token));
     res.cookies.set(OAUTH_STATE_COOKIE, '', { path: '/', maxAge: 0 }); // state tozalash
     return res;
   } catch (err) {
     console.error('[auth/callback google]', err);
-    return loginError(req, 'oauth_failed');
+    return loginError('oauth_failed');
   }
 }

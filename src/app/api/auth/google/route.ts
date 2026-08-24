@@ -3,14 +3,12 @@
  * CSRF himoyasi: tasodifiy `state` cookie'ga yoziladi va Google'ga uzatiladi;
  * callback'da moslik tekshiriladi.
  */
-import { NextRequest, NextResponse } from 'next/server';
-import { isGoogleOAuthConfigured, buildGoogleAuthUrl } from '@/lib/oauth/google';
+import { NextResponse } from 'next/server';
+import { isGoogleOAuthConfigured, buildGoogleAuthUrl, appUrl, OAUTH_STATE_COOKIE } from '@/lib/oauth/google';
 
-export const OAUTH_STATE_COOKIE = 'g_oauth_state';
-
-export async function GET(req: NextRequest) {
+export async function GET() {
   if (!isGoogleOAuthConfigured()) {
-    return NextResponse.redirect(new URL('/login?error=oauth_not_configured', req.url));
+    return NextResponse.redirect(appUrl('/login?error=oauth_not_configured'));
   }
 
   const state = crypto.randomUUID();

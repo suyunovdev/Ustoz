@@ -7,6 +7,9 @@
  *   (ixtiyoriy) GOOGLE_REDIRECT_URI — aks holda NEXT_PUBLIC_APP_URL + /auth/callback
  */
 
+// CSRF state cookie nomi (route fayllaridan eksport qilib bo'lmaydi — shu yerda)
+export const OAUTH_STATE_COOKIE = 'g_oauth_state';
+
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_USERINFO_URL = 'https://www.googleapis.com/oauth2/v3/userinfo';
@@ -15,10 +18,23 @@ export function isGoogleOAuthConfigured(): boolean {
   return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 
+/**
+ * Ilovaning PUBLIC bazaviy URL'i (nginx orqasida req.url ichki localhost:4028
+ * bo'lib qoladi — shuning uchun redirect'lar buni EMAS, NEXT_PUBLIC_APP_URL'ni
+ * ishlatishi shart, aks holda foydalanuvchi localhost'ga tashlanadi).
+ */
+export function getAppBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4028').replace(/\/$/, '');
+}
+
+/** Public absolute URL: getAppBaseUrl() + path. */
+export function appUrl(path: string): string {
+  return `${getAppBaseUrl()}${path}`;
+}
+
 export function getRedirectUri(): string {
   if (process.env.GOOGLE_REDIRECT_URI) return process.env.GOOGLE_REDIRECT_URI;
-  const base = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:4028').replace(/\/$/, '');
-  return `${base}/auth/callback`;
+  return `${getAppBaseUrl()}/auth/callback`;
 }
 
 /** Google roziligi (consent) sahifasiga yo'naltirish URL'i. */
