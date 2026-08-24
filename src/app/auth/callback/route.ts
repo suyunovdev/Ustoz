@@ -10,7 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { signToken, createSessionCookie } from '@/lib/auth';
+import { signToken, COOKIE_NAME } from '@/lib/auth';
 import { normalizeEmail } from '@/lib/validation';
 import {
   isGoogleOAuthConfigured,
@@ -100,8 +100,19 @@ export async function GET(req: NextRequest) {
       tokenVersion: user.tokenVersion,
     });
 
+    // MUHIM: sessiya VA state cookie'larni BITTA API (res.cookies) orqali qo'yamiz.
+    // headers.append('Set-Cookie',...) + res.cookies.set() ni aralashtirsak,
+    // Next serializatsiyada qo'lda qo'shilgan sessiya cookie'sini o'chirib yuboradi
+    // → foydalanuvchi login bo'lmaydi (landing'ga qaytadi).
+    const useSecure = (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
     const res = NextResponse.redirect(appUrl('/'));
-    res.headers.append('Set-Cookie', createSessionCookie(token));
+    res.cookies.set(COOKIE_NAME, token, {
+      httpOnly: true,
+      sameSite: 'lax',
+      secure: useSecure,
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60, // 7 kun (createSessionCookie bilan bir xil)
+    });
     res.cookies.set(OAUTH_STATE_COOKIE, '', { path: '/', maxAge: 0 }); // state tozalash
     return res;
   } catch (err) {
