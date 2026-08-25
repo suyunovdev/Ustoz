@@ -8,7 +8,7 @@ interface ContinueLearningCardProps {
   enrollment: DashboardEnrollment;
 }
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449';
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449?w=500&q=70&auto=format&fit=crop';
 
 const ContinueLearningCard = ({ enrollment }: ContinueLearningCardProps) => {
   const { t } = useI18n();

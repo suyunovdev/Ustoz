@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
@@ -23,7 +24,12 @@ import CourseModerationPanel from '@/app/content-moderation-dashboard/components
 import SupportTicketsPanel from './SupportTicketsPanel';
 import AuditLogPanel from './AuditLogPanel';
 import SystemHealthPanel from './SystemHealthPanel';
-import AnalyticsCharts from './AnalyticsCharts';
+// Recharts og'ir (~150KB) — faqat kerak bo'lganда yuklanadi (boshlang'ich
+// admin bundle'ni kamaytiradi). ssr:false — chart faqat client'da.
+const AnalyticsCharts = dynamic(() => import('./AnalyticsCharts'), {
+  ssr: false,
+  loading: () => <div className="h-64 bg-muted/30 rounded-md animate-pulse" />,
+});
 
 const VALID_TABS: ReadonlyArray<AdminTabId> = [
   'overview',

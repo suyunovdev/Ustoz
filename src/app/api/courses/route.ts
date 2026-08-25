@@ -83,7 +83,10 @@ export async function GET(req: NextRequest) {
       id: c.id,
       title: c.title,
       description: c.description,
-      coverImage: c.coverImage,
+      // Base64 (data:) muqovani RO'YXAT javobiga QO'SHMAYMIZ — bitta rasm 100KB+
+      // bo'lib payload'ni shishirardi. Card default placeholder ko'rsatadi;
+      // to'liq muqova faqat kurs tafsiloti (/api/courses/[id]) da qaytadi.
+      coverImage: c.coverImage?.startsWith('data:') ? null : c.coverImage,
       category: c.category,
       subjectCategory: c.subjectCategory,
       targetAudience: c.targetAudience,

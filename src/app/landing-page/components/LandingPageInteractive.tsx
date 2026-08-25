@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import Icon from '@/components/ui/AppIcon';
+import { optimizeImageUrl } from '@/lib/imageUrl';
 import AppImage from '@/components/ui/AppImage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
@@ -165,7 +166,7 @@ const LandingPageInteractive = () => {
               id: c.id,
               title: c.title,
               instructor: c.teacherName || 'Ustoz',
-              coverImage: c.coverImage || '/assets/images/no_image.png',
+              coverImage: optimizeImageUrl(String(c.coverImage || ''), 500) || '/assets/images/no_image.png',
               rating: Number(c.rating) || 0,
               enrollmentCount: Number(c.enrollmentCount) || 0,
               price: parseInt(String(c.priceUzs), 10) || 0,

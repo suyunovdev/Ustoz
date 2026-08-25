@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import Icon from '@/components/ui/AppIcon';
+import { optimizeImageUrl } from '@/lib/imageUrl';
 import { SkeletonDetail } from '@/components/ui/Skeleton';
 import ErrorState from '@/components/common/ErrorState';
 import { useI18n } from '@/contexts/I18nContext';
@@ -118,7 +119,7 @@ const CourseDetailsInteractive = () => {
         id: c.id,
         title: c.title,
         subtitle: c.description?.split('.')[0] || c.title,
-        coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
+        coverImage: optimizeImageUrl(c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449', 800),
         coverImageAlt: `${c.title} ${t('courseDetails.courseImageAlt')}`,
         instructor: {
           name: teacher.fullName || t('courseDetails.defaultInstructor'),

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { optimizeImageUrl } from '@/lib/imageUrl';
 import Icon from '@/components/ui/AppIcon';
 import CategoryChips from './CategoryChips';
 import FilterPanel from './FilterPanel';
@@ -102,7 +103,7 @@ const MarketplaceInteractive = () => {
         instructor: c.teacherName || t('auth.teacher'),
         instructorImage: c.teacherAvatar || 'https://img.rocket.new/generatedImages/rocket_gen_img_19acf6093-1763297372321.png',
         instructorImageAlt: t('marketplace.instructorImageAlt', { name: c.teacherName || t('auth.teacher') }),
-        coverImage: c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449',
+        coverImage: optimizeImageUrl(c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449', 500),
         coverImageAlt: t('marketplace.courseCoverAlt', { title: c.title }),
         rating: Number(c.rating) || 0,
         reviewCount: c.reviewCount || 0,

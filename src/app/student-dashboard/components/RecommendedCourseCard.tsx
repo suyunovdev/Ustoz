@@ -9,7 +9,7 @@ interface RecommendedCourseCardProps {
   course: RecommendedCourse;
 }
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449';
+const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449?w=500&q=70&auto=format&fit=crop';
 
 const REASON_BADGES: Record<
   RecommendReason,
