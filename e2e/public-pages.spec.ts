@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Public sahifalar', () => {
   test('landing page ochiladi', async ({ page }) => {
-    await page.goto('/landing-page');
+    // Landing endi ROOT (/) da (ilgari /landing-page edi → endi / ga redirect)
+    await page.goto('/');
     await expect(page).toHaveTitle(/Ustoz/);
     await expect(page.locator('h1')).toBeVisible();
   });

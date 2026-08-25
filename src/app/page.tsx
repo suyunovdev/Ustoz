@@ -6,8 +6,10 @@ import LandingPageInteractive from './landing-page/components/LandingPageInterac
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getServerT();
+  // Root (/) — layout bilan BIR XIL segment, shuning uchun title template
+  // (%s | Ustoz) qo'llanmaydi. Brendni o'zimiz qo'shamiz (SEO + izchillik).
   return {
-    title: t('meta.landingTitle'),
+    title: `${t('meta.landingTitle')} | Ustoz`,
     description: t('meta.landingDesc'),
   };
 }
