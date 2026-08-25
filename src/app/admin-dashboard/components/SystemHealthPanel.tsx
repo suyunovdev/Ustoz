@@ -25,6 +25,17 @@ interface Alert {
   time: string;
 }
 
+// Uptime soniyani o'qilishi oson formatga (kun/soat/daq)
+function formatUptime(seconds: number): string {
+  if (!seconds || seconds < 60) return '< 1 daq';
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (d > 0) return h > 0 ? `${d} kun ${h} soat` : `${d} kun`;
+  if (h > 0) return m > 0 ? `${h} soat ${m} daq` : `${h} soat`;
+  return `${m} daq`;
+}
+
 const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPanelProps) => {
   const { t } = useI18n();
   const [healthMetrics, setHealthMetrics] = useState<HealthMetrics>({
@@ -48,14 +59,16 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
       const configOk = data.config?.status === 'ok';
       const latency = data.latency_ms || 0;
 
-      const uptimeHours = Math.round((data.uptime || 0) / 3600);
+      // Uptime soniyada saqlanadi, ko'rsatishда formatlanadi (deploy'dan keyin
+      // <1 soat bo'lsa "0 soat" o'rniga daqiqa ko'rsatiladi).
+      const uptimeSeconds = Math.round(data.uptime || 0);
 
       setHealthMetrics({
         serverStatus: data.status === 'ok' ? 'online' : 'degraded',
         databasePerformance: dbOk ? Math.max(80, 100 - latency / 10) : 0,
         apiResponseTime: latency,
         storageUsage: data.database?.storage_usage_percent ?? 0,
-        activeConnections: uptimeHours,
+        activeConnections: uptimeSeconds,
         errorRate: data.status === 'ok' ? 0 : 1,
       });
 
@@ -182,15 +195,15 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
             <Icon name="ServerStackIcon" size={18} className="text-secondary" />
             <p className="text-sm text-muted-foreground">{t('admin.storage')}</p>
           </div>
-          <p className="text-2xl font-heading font-bold text-foreground">{healthMetrics.storageUsage}%</p>
+          <p className="text-2xl font-heading font-bold text-foreground">{healthMetrics.storageUsage > 0 ? `${healthMetrics.storageUsage}%` : '—'}</p>
         </div>
 
         <div className="p-4 border border-border rounded-md">
           <div className="flex items-center space-x-2 mb-2">
             <Icon name="UsersIcon" size={18} className="text-success" />
-            <p className="text-sm text-muted-foreground">{t('admin.uptimeHours')}</p>
+            <p className="text-sm text-muted-foreground">Uptime</p>
           </div>
-          <p className="text-2xl font-heading font-bold text-foreground">{healthMetrics.activeConnections} {t('admin.uptimeHours')}</p>
+          <p className="text-2xl font-heading font-bold text-foreground">{formatUptime(healthMetrics.activeConnections)}</p>
         </div>
       </div>
 

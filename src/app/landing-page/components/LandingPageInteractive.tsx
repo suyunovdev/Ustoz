@@ -28,11 +28,14 @@ interface Teacher {
 }
 
 // ─── Scroll Animation Hook ───
-function useScrollReveal() {
+// immediate=true — ekran tepasidagi (above-the-fold) kontent uchun: darhol
+// ko'rinadi, scroll-reveal kutmaydi (aks holda hero ~1.5s bo'sh turardi).
+function useScrollReveal(immediate = false) {
   const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(immediate);
 
   useEffect(() => {
+    if (immediate) return; // allaqachon ko'rinadi
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -41,7 +44,7 @@ function useScrollReveal() {
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, []);
+  }, [immediate]);
 
   return { ref, isVisible };
 }
@@ -128,7 +131,7 @@ const LandingPageInteractive = () => {
   ], [t]);
 
   // Scroll reveal refs
-  const heroReveal = useScrollReveal();
+  const heroReveal = useScrollReveal(true); // hero — above-the-fold, darhol ko'rinadi
   const howItWorksReveal = useScrollReveal();
   const categoriesReveal = useScrollReveal();
   const coursesReveal = useScrollReveal();

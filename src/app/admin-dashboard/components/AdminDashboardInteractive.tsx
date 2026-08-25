@@ -19,6 +19,7 @@ import WithdrawalsPanel from './WithdrawalsPanel';
 import SubscriptionsPanel from './SubscriptionsPanel';
 import CampaignsPanel from './CampaignsPanel';
 import ModerationQueuePanel from './ModerationQueuePanel';
+import CourseModerationPanel from '@/app/content-moderation-dashboard/components/CourseModerationPanel';
 import SupportTicketsPanel from './SupportTicketsPanel';
 import AuditLogPanel from './AuditLogPanel';
 import SystemHealthPanel from './SystemHealthPanel';
@@ -179,7 +180,14 @@ const AdminDashboardInteractive = () => {
           {activeTab === 'withdrawals' && <WithdrawalsPanel />}
           {activeTab === 'subscriptions' && <SubscriptionsPanel />}
           {activeTab === 'campaigns' && <CampaignsPanel />}
-          {activeTab === 'moderation' && <ModerationQueuePanel expanded />}
+          {activeTab === 'moderation' && (
+            <div className="space-y-8">
+              {/* Kurs moderatsiyasi (tasdiq/rad) + material moderatsiya navbati — endi
+                  sidebar ichida (ilgari faqat orphan /content-moderation-dashboard'da edi) */}
+              <CourseModerationPanel />
+              <ModerationQueuePanel expanded />
+            </div>
+          )}
           {activeTab === 'tickets' && <SupportTicketsPanel />}
           {activeTab === 'audit_log' && <AuditLogPanel />}
           {activeTab === 'analytics' && <AnalyticsCharts expanded />}

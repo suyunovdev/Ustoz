@@ -116,14 +116,30 @@ const MarketplaceInteractive = () => {
 
       setCourses(mapped);
 
-      // Build categories from data
-      const catMap: Record<string, number> = {};
+      // Build categories from data.
+      // course.category — izchil bo'lmagan erkin matn (programming/Programming/
+      // language/"Dasturlash va IT"). i18n kaliti bo'lsa — tarjima; aks holda
+      // XOM kalit ("categories.language") EMAS, humanize qilingan nom ko'rsatiladi.
+      // Katta/kichik harf variantlari birlashtiriladi (case-insensitive).
+      const humanize = (raw: string): string => {
+        const key = 'categories.' + raw;
+        const translated = t(key);
+        if (translated && translated !== key && !translated.startsWith('categories.')) {
+          return translated;
+        }
+        const cleaned = raw.replace(/[_-]+/g, ' ').trim();
+        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+      };
+      const catMap: Record<string, { count: number; label: string }> = {};
       mapped.forEach((c) => {
-        catMap[c.category] = (catMap[c.category] || 0) + 1;
+        const raw = c.category || 'other';
+        const id = raw.toLowerCase();
+        if (!catMap[id]) catMap[id] = { count: 0, label: humanize(raw) };
+        catMap[id].count += 1;
       });
       const catList: Category[] = [
         { id: 'all', name: t('courses.allCourses'), count: mapped.length },
-        ...Object.entries(catMap).map(([id, count]) => ({ id, name: t('categories.' + id), count })),
+        ...Object.entries(catMap).map(([id, { count, label }]) => ({ id, name: label, count })),
       ];
       setCategories(catList);
     } catch (err) {
@@ -145,7 +161,8 @@ const MarketplaceInteractive = () => {
     let filtered = [...courses];
 
     if (activeCategory !== 'all') {
-      filtered = filtered.filter((c) => c.category === activeCategory);
+      // chip id lowercase — case-insensitive taqqoslash (programming == Programming)
+      filtered = filtered.filter((c) => (c.category || '').toLowerCase() === activeCategory);
     }
 
     if (searchQuery) {

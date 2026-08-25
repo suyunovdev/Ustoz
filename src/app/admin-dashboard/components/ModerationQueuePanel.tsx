@@ -51,6 +51,17 @@ type PendingAction =
   | { item: ModerationQueueItemDTO; type: 'reject' }
   | { item: ModerationQueueItemDTO; type: 'request_revision' };
 
+// Daqiqani o'qilishi oson formatga (kun/soat/daq) — "35578m" o'rniga "24 kun 17 soat"
+function formatMinutes(mins: number): string {
+  if (!mins || mins <= 0) return '—';
+  const d = Math.floor(mins / 1440);
+  const h = Math.floor((mins % 1440) / 60);
+  const m = Math.round(mins % 60);
+  if (d > 0) return h > 0 ? `${d} kun ${h} soat` : `${d} kun`;
+  if (h > 0) return m > 0 ? `${h} soat ${m} daq` : `${h} soat`;
+  return `${m} daq`;
+}
+
 function formatDateTime(iso: string | null, locale: Locale): string {
   if (!iso) return '—';
   return fmtDateTime(iso, locale, {
@@ -194,7 +205,7 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
             <div className="p-3 bg-muted rounded-md">
               <p className="text-xs text-muted-foreground">{t('admin.averageMod')}</p>
               <p className="text-xl font-heading font-bold text-foreground">
-                {stats.avgReviewMinutes > 0 ? `${stats.avgReviewMinutes}m` : '—'}
+                {formatMinutes(stats.avgReviewMinutes)}
               </p>
             </div>
           </div>

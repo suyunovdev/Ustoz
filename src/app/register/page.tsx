@@ -17,16 +17,7 @@ export default async function RegisterPage() {
     <div className="min-h-screen bg-background">
       <main className="pt-16 pb-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
-          {/* Header Section */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-heading font-bold text-foreground mb-3">
-              {t('auth.register')}
-            </h1>
-            <p className="text-lg text-muted-foreground">
-              {t('auth.registerWelcome')}
-            </p>
-          </div>
-
+          {/* Sarlavha RegistrationForm ichida (dublikat h1 olib tashlandi — a11y) */}
           {/* Registration Form */}
           <RegistrationForm />
 
