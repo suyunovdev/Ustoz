@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
-import AppImage from '@/components/ui/AppImage';
 import { toast } from '@/components/common/Toaster';
 import { useMyProfile, type ProfileDTO } from '@/hooks/queries/useProfile';
 import {
@@ -17,6 +16,154 @@ import { useI18n } from '@/contexts/I18nContext';
 import { formatDate, formatDateTime } from '@/lib/i18n/format';
 
 type TabId = 'profile' | 'password' | 'notifications' | 'account';
+
+// ── Rol yorlig'i ──
+function roleLabel(role: string, t: (k: string) => string): string {
+  if (role === 'teacher') return t('auth.teacher');
+  if (role === 'admin') return 'Administrator';
+  return t('auth.student');
+}
+function roleBadgeClass(role: string): string {
+  if (role === 'teacher') return 'bg-secondary/15 text-secondary';
+  if (role === 'admin') return 'bg-destructive/15 text-destructive';
+  return 'bg-primary/15 text-primary';
+}
+function dashboardHref(role: string): string {
+  if (role === 'teacher') return '/teacher-dashboard';
+  if (role === 'admin') return '/admin-dashboard';
+  return '/student-dashboard';
+}
+
+// Rasmni brauzerда 256px kvadratga kesib/kichraytiradi (JPEG data URL, ~20-40KB).
+// Server-yuki YO'Q, R2 kerak emas, barcha rol uchun ishlaydi.
+function resizeToDataUrl(file: File, size = 256, quality = 0.85): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read'));
+    reader.onload = () => {
+      const img = new window.Image();
+      img.onerror = () => reject(new Error('img'));
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return reject(new Error('ctx'));
+        const min = Math.min(img.width, img.height);
+        const sx = (img.width - min) / 2;
+        const sy = (img.height - min) / 2;
+        ctx.drawImage(img, sx, sy, min, min, 0, 0, size, size);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── Avatar (yuklash tugmasi bilan) ──
+function AvatarUpload({ profile }: { profile: ProfileDTO }) {
+  const { t } = useI18n();
+  const mut = useUpdateProfileMutation();
+  const [preview, setPreview] = useState(profile.avatarUrl ?? '');
+  const [busy, setBusy] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const initial = (profile.fullName || profile.email || '?').charAt(0).toUpperCase();
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error(t('profile.avatarImageOnly'));
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error(t('profile.avatarTooLarge'));
+      return;
+    }
+    setBusy(true);
+    try {
+      const dataUrl = await resizeToDataUrl(file, 256, 0.85);
+      mut.mutate(
+        { avatarUrl: dataUrl },
+        {
+          onSuccess: () => {
+            setPreview(dataUrl);
+            toast.success(t('profile.avatarUpdated'));
+          },
+          onError: (err) => toast.error(err.message),
+          onSettled: () => setBusy(false),
+        },
+      );
+    } catch {
+      toast.error(t('profile.avatarError'));
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="relative w-24 h-24 shrink-0">
+      <div className="w-24 h-24 rounded-full border-4 border-card bg-primary/10 overflow-hidden shadow-warm-lg flex items-center justify-center">
+        {preview ? (
+          <img src={preview} alt={profile.fullName} className="w-full h-full object-cover" />
+        ) : (
+          <span className="text-3xl font-heading font-bold text-primary">{initial}</span>
+        )}
+      </div>
+      <button
+        type="button"
+        onClick={() => inputRef.current?.click()}
+        disabled={busy}
+        aria-label={t('profile.changePhoto')}
+        title={t('profile.changePhoto')}
+        className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center shadow-warm-md hover:bg-primary/90 transition-smooth disabled:opacity-60 border-2 border-card"
+      >
+        {busy ? (
+          <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+        ) : (
+          <Icon name="CameraIcon" size={15} />
+        )}
+      </button>
+      <input ref={inputRef} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+    </div>
+  );
+}
+
+// ── Profil header (identifikatsiya) ──
+function ProfileHeader({ profile }: { profile: ProfileDTO }) {
+  const { t, locale } = useI18n();
+  return (
+    <div className="bg-card border border-border rounded-xl overflow-hidden mb-6 shadow-warm">
+      <div className="h-24 bg-gradient-to-r from-primary to-secondary" />
+      <div className="px-6 pb-5 -mt-12 flex flex-col sm:flex-row sm:items-end gap-4">
+        <AvatarUpload profile={profile} />
+        <div className="flex-1 sm:pb-2 min-w-0">
+          <h1 className="text-2xl font-heading font-bold text-foreground truncate">{profile.fullName}</h1>
+          <div className="flex flex-wrap items-center gap-2 mt-1">
+            <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${roleBadgeClass(profile.role)}`}>
+              {roleLabel(profile.role, t)}
+            </span>
+            <span className="text-sm text-muted-foreground truncate">{profile.email}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            {t('profile.joinedAt')}: {formatDate(profile.createdAt, locale)}
+          </p>
+        </div>
+        {profile.role === 'teacher' && (
+          <Link
+            href={`/teachers/${profile.id}`}
+            target="_blank"
+            className="shrink-0 self-start sm:self-end px-3 py-2 border border-border rounded-md text-sm text-primary hover:bg-muted transition-smooth inline-flex items-center gap-1.5"
+          >
+            <Icon name="EyeIcon" size={14} />
+            {t('profile.publicProfile')}
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ProfileClient() {
   const { data, isLoading, error } = useMyProfile();
@@ -38,17 +185,15 @@ export default function ProfileClient() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-6">
-        <Link
-          href={profile.role === 'teacher' ? '/teacher-dashboard' : '/student-dashboard'}
-          className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
-        >
-          <Icon name="ArrowLeftIcon" size={14} />
-          Dashboard
-        </Link>
-        <h1 className="text-2xl font-heading font-semibold">{t('profile.profileSettings')}</h1>
-        <p className="text-sm text-muted-foreground">{profile.email}</p>
-      </div>
+      <Link
+        href={dashboardHref(profile.role)}
+        className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-4"
+      >
+        <Icon name="ArrowLeftIcon" size={14} />
+        {t('profile.profileSettings')}
+      </Link>
+
+      <ProfileHeader profile={profile} />
 
       <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6">
         <nav className="space-y-1">
@@ -83,7 +228,6 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
   const { t } = useI18n();
   const mut = useUpdateProfileMutation();
   const [fullName, setFullName] = useState(profile.fullName);
-  const [avatarUrl, setAvatarUrl] = useState(profile.avatarUrl ?? '');
   const [headline, setHeadline] = useState(profile.headline ?? '');
   const [bio, setBio] = useState(profile.bio ?? '');
   const [expertiseStr, setExpertiseStr] = useState(profile.expertise.join(', '));
@@ -98,7 +242,6 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
     mut.mutate(
       {
         fullName,
-        avatarUrl: avatarUrl || null,
         headline,
         bio,
         expertise,
@@ -127,24 +270,6 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
           required
           className="w-full px-3 py-2 border border-border rounded-md text-sm"
         />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium mb-1">{t('profile.avatarUrl')}</label>
-        <input
-          type="url"
-          value={avatarUrl}
-          onChange={(e) => setAvatarUrl(e.target.value)}
-          placeholder="https://example.com/photo.jpg"
-          className="w-full px-3 py-2 border border-border rounded-md text-sm"
-        />
-        {avatarUrl && (
-          <AppImage
-            src={avatarUrl}
-            alt="preview"
-            className="mt-2 w-16 h-16 rounded-full object-cover"
-          />
-        )}
       </div>
 
       {profile.role === 'teacher' && (
