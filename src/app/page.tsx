@@ -1,36 +1,29 @@
-'use client';
+import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
+import { getSession } from '@/lib/auth';
+import { getServerT } from '@/lib/i18n/server';
+import LandingPageInteractive from './landing-page/components/LandingPageInteractive';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import LoadingFallback from '@/components/common/LoadingFallback';
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerT();
+  return {
+    title: t('meta.landingTitle'),
+    description: t('meta.landingDesc'),
+  };
+}
 
-export default function RootPage() {
-  const router = useRouter();
-  const { user, loading } = useAuth();
+// getSession/getServerT `cookies()` o'qigani uchun dynamic.
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    if (loading) return;
-    if (user) {
-      const role = user?.role;
-      if (role === 'teacher') {
-        router?.replace('/teacher-dashboard');
-      } else if (role === 'admin') {
-        router?.replace('/admin-dashboard');
-      } else {
-        router?.replace('/student-dashboard');
-      }
-    } else {
-      router?.replace('/landing-page');
-    }
-  }, [user, loading, router]);
-
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <LoadingFallback className="text-muted-foreground text-sm" />
-      </div>
-    </div>
-  );
+// Landing page endi ROOT (/) da — alohida /landing-page URL emas (SEO + UX).
+// Mehmon → landing kontenti to'g'ridan-to'g'ri; authenticated → rol dashboard
+// (server-side redirect, spinner/flash yo'q).
+export default async function RootPage() {
+  const session = await getSession();
+  if (session) {
+    if (session.role === 'teacher') redirect('/teacher-dashboard');
+    if (session.role === 'admin') redirect('/admin-dashboard');
+    redirect('/student-dashboard');
+  }
+  return <LandingPageInteractive />;
 }

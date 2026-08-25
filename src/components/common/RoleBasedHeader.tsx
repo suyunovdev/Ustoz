@@ -25,7 +25,7 @@ const RoleBasedHeader = (props: RoleBasedHeaderProps) => {
   );
 };
 
-const PUBLIC_PAGES = ['/landing-page', '/login', '/register', '/forgot-password', '/about-page', '/course-marketplace', '/course-details', '/help', '/unauthorized'];
+const PUBLIC_PAGES = ['/', '/landing-page', '/login', '/register', '/forgot-password', '/about-page', '/course-marketplace', '/course-details', '/help', '/unauthorized'];
 
 const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   const livePathname = usePathname();
@@ -87,14 +87,14 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
           <Link
             href={
               PUBLIC_PAGES.some(p => activePath === p || activePath.startsWith(p + '/'))
-                ? '/landing-page'
+                ? '/'
                 : userRole === 'admin'
                 ? '/admin-dashboard'
                 : userRole === 'teacher'
                 ? '/teacher-dashboard'
                 : userRole === 'student'
                 ? '/student-dashboard'
-                : '/landing-page'
+                : '/'
             }
             className="flex items-center space-x-2 transition-smooth hover:opacity-80"
           >

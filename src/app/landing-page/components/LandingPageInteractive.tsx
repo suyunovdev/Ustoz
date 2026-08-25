@@ -212,7 +212,7 @@ const LandingPageInteractive = () => {
 
   return (
     <div className="min-h-screen bg-background scroll-smooth">
-      <RoleBasedHeader userRole={null} currentPath="/landing-page" />
+      <RoleBasedHeader userRole={null} currentPath="/" />
 
       <main className="pt-16">
         {/* ═══ HERO ═══ */}
@@ -835,7 +835,7 @@ const LandingPageInteractive = () => {
               <div>
                 <h4 className="font-heading font-bold mb-4">{t('landing.footerPlatform')}</h4>
                 <ul className="space-y-2 text-sm">
-                  <li><Link href="/landing-page" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerHome')}</Link></li>
+                  <li><Link href="/" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerHome')}</Link></li>
                   <li><a href="#courses" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerCourses')}</a></li>
                   <li><a href="#about" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerAbout')}</a></li>
                   <li><Link href="/login" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerLogin')}</Link></li>

@@ -71,6 +71,14 @@ const nextConfig = {
     ],
   },
 
+  // Landing page endi ROOT (/) da — eski /landing-page URL'ini kanonik / ga
+  // 308 (permanent) redirect (SEO + bookmark/tashqi havolalar uchun).
+  async redirects() {
+    return [
+      { source: '/landing-page', destination: '/', permanent: true },
+    ];
+  },
+
   async headers() {
     const isDev = process.env.NODE_ENV === 'development';
     const securityHeaders = [

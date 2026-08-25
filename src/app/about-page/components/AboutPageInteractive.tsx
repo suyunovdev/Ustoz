@@ -336,7 +336,7 @@ const AboutPageInteractive = () => {
               <div>
                 <h4 className="font-heading font-bold mb-4">{t('about.footerPlatform')}</h4>
                 <ul className="space-y-2 text-sm">
-                  <li><Link href="/landing-page" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerHome')}</Link></li>
+                  <li><Link href="/" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerHome')}</Link></li>
                   <li><Link href="/course-marketplace" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerCourses')}</Link></li>
                   <li><Link href="/about-page" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerAbout')}</Link></li>
                   <li><Link href="/login" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerLogin')}</Link></li>
