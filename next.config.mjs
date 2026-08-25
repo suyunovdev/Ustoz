@@ -97,10 +97,10 @@ const nextConfig = {
         value: [
           "default-src 'self'",
           "script-src 'self' 'unsafe-inline'",
-          "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-          "font-src 'self' data: https://fonts.gstatic.com",
+          "style-src 'self' 'unsafe-inline'",
+          "font-src 'self' data:",
           "img-src 'self' data: blob: https:",
-          "connect-src 'self' https://api.resend.com https://my.click.uz https://checkout.paycom.uz https://fonts.googleapis.com https://fonts.gstatic.com https://*.r2.cloudflarestorage.com",
+          "connect-src 'self' https://api.resend.com https://my.click.uz https://checkout.paycom.uz https://*.r2.cloudflarestorage.com",
           "media-src 'self' https://*.cloudflarestream.com blob:",
           "frame-src 'self' https://customer-*.cloudflarestream.com https://www.youtube.com https://player.vimeo.com",
           "object-src 'none'",

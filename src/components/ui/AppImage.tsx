@@ -73,6 +73,8 @@ function AppImage({
                         src={imageSrc}
                         alt={alt}
                         className={`${commonClassName} absolute inset-0 w-full h-full object-cover`}
+                        loading={priority ? 'eager' : 'lazy'}
+                        decoding="async"
                         onError={handleError}
                         onLoad={handleLoad}
                         onClick={onClick}
@@ -88,6 +90,8 @@ function AppImage({
                 src={imageSrc}
                 alt={alt}
                 className={commonClassName}
+                loading={priority ? 'eager' : 'lazy'}
+                decoding="async"
                 onError={handleError}
                 onLoad={handleLoad}
                 onClick={onClick}
