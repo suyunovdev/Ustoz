@@ -58,8 +58,8 @@ const PlatformMetrics = () => {
     {
       title: t('admin.totalRevenue'),
       value: formatUzs(data.totalRevenueUzs, locale),
-      sub: `≈ ${formatCurrency(data.totalRevenueUsd, locale, 'USD')}`,
-      icon: 'CurrencyDollarIcon',
+      sub: '',
+      icon: 'BanknotesIcon',
       trend: data.revenueGrowth,
       color: 'text-secondary',
     },

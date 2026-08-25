@@ -27,11 +27,8 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing }: CourseSidebarProps)
         <div className="space-y-2">
           <div className="flex items-baseline space-x-2">
             <span className="text-3xl font-heading font-bold text-primary">
-              {formatCurrency(course.pricing.usd, locale, 'USD')}
+              {course.pricing.uzs > 0 ? formatCurrency(course.pricing.uzs, locale, 'UZS') : t('courses.free')}
             </span>
-          </div>
-          <div className="text-lg text-muted-foreground">
-            {formatCurrency(course.pricing.uzs, locale, 'UZS')}
           </div>
         </div>
 

@@ -435,41 +435,23 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
         </div>
       </div>
 
-      {/* Pricing */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.priceUSD')}</label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-            <input
-              type="number"
-              value={metadata.priceUSD}
-              onChange={(e) => handleChange('priceUSD', e.target.value)}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              className="w-full pl-8 pr-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              required
-            />
-          </div>
+      {/* Pricing — faqat so'mda (platforma to'liq so'mda) */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.priceUZS')}</label>
+        <div className="relative">
+          <input
+            type="number"
+            value={metadata.priceUZS}
+            onChange={(e) => handleChange('priceUZS', e.target.value)}
+            placeholder="0"
+            min="0"
+            step="1000"
+            className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            required
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground caption">so'm</span>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.priceUZS')}</label>
-          <div className="relative">
-            <input
-              type="number"
-              value={metadata.priceUZS}
-              onChange={(e) => handleChange('priceUZS', e.target.value)}
-              placeholder="0"
-              min="0"
-              step="1000"
-              className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              required
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground caption">so'm</span>
-          </div>
-        </div>
+        <p className="text-xs text-muted-foreground mt-1">Bepul kurs uchun 0 kiriting.</p>
       </div>
     </div>
   );

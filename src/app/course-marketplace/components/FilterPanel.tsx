@@ -165,8 +165,8 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
 
   const handleResetFilters = () => {
     const resetFilters: FilterOptions = {
-      priceRange: [0, 1000],
-      currency: 'USD',
+      priceRange: [0, 5000000],
+      currency: 'UZS',
       languages: [],
       difficulty: [],
       minRating: 0,
@@ -215,25 +215,9 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
               {t('misc.priceRange')}
             </label>
             <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setLocalFilters({ ...localFilters, currency: 'USD' })}
-                  className={`px-3 py-1 rounded-md text-sm transition-smooth ${
-                    localFilters.currency === 'USD' ?'bg-primary text-primary-foreground' :'bg-muted text-muted-foreground hover:bg-border'
-                  }`}
-                >
-                  USD
-                </button>
-                <button
-                  onClick={() => setLocalFilters({ ...localFilters, currency: 'UZS' })}
-                  className={`px-3 py-1 rounded-md text-sm transition-smooth ${
-                    localFilters.currency === 'UZS' ?'bg-primary text-primary-foreground' :'bg-muted text-muted-foreground hover:bg-border'
-                  }`}
-                >
-                  UZS
-                </button>
-              </div>
+              {/* Valyuta toggle olib tashlandi — platforma to'liq so'mda */}
               <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">so'm</p>
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-muted-foreground w-12">{t('marketplace.min')}:</span>
                   <input

@@ -115,12 +115,10 @@ const PublishingControls = ({
           {/* Detailed Info Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-border">
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">{t('courseCreation.priceUSDLabel')}</p>
-              <p className="text-lg font-semibold text-foreground">${metadata.priceUSD || '0.00'}</p>
-            </div>
-            <div className="space-y-1">
               <p className="text-xs text-muted-foreground">{t('courseCreation.priceUZSLabel')}</p>
-              <p className="text-lg font-semibold text-foreground">{metadata.priceUZS || '0'} so'm</p>
+              <p className="text-lg font-semibold text-foreground">
+                {Number(metadata.priceUZS) > 0 ? `${Number(metadata.priceUZS).toLocaleString('uz')} so'm` : 'Bepul'}
+              </p>
             </div>
             {metadata.targetAudience && (
               <div className="space-y-1">

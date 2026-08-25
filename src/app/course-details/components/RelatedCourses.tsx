@@ -71,7 +71,7 @@ const RelatedCourses = ({ currentCourseId }: RelatedCoursesProps) => {
                   <span className="text-sm font-data">{course.rating}</span>
                   <span className="text-xs text-muted-foreground">({formatNumber(course.students, locale)})</span>
                 </div>
-                <span className="text-lg font-heading font-bold text-primary">{formatCurrency(course.price, locale, 'USD')}</span>
+                <span className="text-lg font-heading font-bold text-primary">{course.price > 0 ? formatCurrency(course.price, locale, 'UZS') : t('courses.free')}</span>
               </div>
             </div>
           </Link>

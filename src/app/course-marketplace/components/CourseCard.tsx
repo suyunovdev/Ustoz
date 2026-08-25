@@ -144,7 +144,7 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
         <div className="flex items-center justify-between pt-3 border-t border-border">
           <div className="space-y-0.5">
             <div className="text-2xl font-heading font-bold text-primary">
-              {course.price === 0 ? t('courses.free') : `${course.price.toLocaleString()} ${course.currency}`}
+              {course.price === 0 ? t('courses.free') : `${course.price.toLocaleString('uz')} so'm`}
             </div>
           </div>
           <Link

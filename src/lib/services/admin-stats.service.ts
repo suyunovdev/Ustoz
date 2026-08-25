@@ -18,7 +18,6 @@ export interface AdminDashboardStats {
   usersByRole: { student: number; teacher: number; admin: number };
   activeCourses: number;
   totalRevenueUzs: string;
-  totalRevenueUsd: number;
   userGrowth: number;     // % vs prev 30 days
   courseGrowth: number;
   revenueGrowth: number;
@@ -26,8 +25,6 @@ export interface AdminDashboardStats {
   newCoursesLast30d: number;
   pendingPayments: number;
 }
-
-const UZS_PER_USD = Number(process.env.NEXT_PUBLIC_UZS_PER_USD) || 12_700;
 
 function growthPercent(now: number | bigint, prev: number | bigint): number {
   const n = Number(now);
@@ -122,7 +119,6 @@ export async function getDashboardStats(): Promise<AdminDashboardStats> {
   const p = paymentAgg[0];
 
   const totalRevenueUzs = p.total_revenue;
-  const totalRevenueUsd = Number(totalRevenueUzs) / UZS_PER_USD;
 
   return {
     totalUsers: Number(u.total),
@@ -133,7 +129,6 @@ export async function getDashboardStats(): Promise<AdminDashboardStats> {
     },
     activeCourses: Number(c.active_total),
     totalRevenueUzs: totalRevenueUzs.toString(),
-    totalRevenueUsd: Math.round(totalRevenueUsd * 100) / 100,
     userGrowth: growthPercent(u.new30, u.prev30),
     courseGrowth: growthPercent(c.new30, c.prev30),
     revenueGrowth: growthPercent(p.revenue_30d, p.revenue_prev30d),

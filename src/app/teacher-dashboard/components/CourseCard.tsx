@@ -86,7 +86,7 @@ const CourseCard = ({ course, onEdit, onPreview, onAnalytics, onDuplicate }: Cou
           
           <div className="flex items-center space-x-2 text-sm">
             <Icon name="CurrencyDollarIcon" size={16} className="text-success" />
-            <span className="font-medium text-foreground">{formatCurrency(course.revenue, locale, 'USD')}</span>
+            <span className="font-medium text-foreground">{formatCurrency(course.revenue, locale, 'UZS')}</span>
             <span className="text-muted-foreground">{t('teacher.revenueSuffix')}</span>
           </div>
         </div>
