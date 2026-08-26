@@ -3,12 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
+import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import { optimizeImageUrl } from '@/lib/imageUrl';
 import { SkeletonDetail } from '@/components/ui/Skeleton';
 import ErrorState from '@/components/common/ErrorState';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate } from '@/lib/i18n/format';
+import { getDifficultyLabel, getLanguageLabel, getSubjectLabel } from '@/lib/data/subject-labels';
+import { sumDurations } from '@/lib/duration';
+import type { CourseCardData, RatingDistribution } from './types';
 import CourseHeroSection from './CourseHeroSection';
 import CourseCurriculum from './CourseCurriculum';
 import CourseReviews from './CourseReviews';
@@ -36,13 +40,13 @@ interface CourseDetails {
   reviewCount: number;
   enrollmentCount: number;
   description: string;
-  learningObjectives: string[];
-  prerequisites: string[];
   hasCertificate: boolean;
   language: string;
   lastUpdated: string;
   totalDuration: string;
   level: string;
+  subject: string;
+  lessonCount: number;
 }
 
 interface CurriculumSection {
@@ -65,6 +69,7 @@ interface Review {
   userImageAlt: string;
   rating: number;
   date: string;
+  rawDate: string;
   comment: string;
   helpful: number;
 }
@@ -84,6 +89,9 @@ const CourseDetailsInteractive = () => {
   const [course, setCourse] = useState<CourseDetails | null>(null);
   const [curriculum, setCurriculum] = useState<CurriculumSection[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [ratingDistribution, setRatingDistribution] = useState<RatingDistribution[]>([]);
+  const [relatedCourses, setRelatedCourses] = useState<CourseCardData[]>([]);
+  const [instructorCourses, setInstructorCourses] = useState<CourseCardData[]>([]);
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -115,19 +123,24 @@ const CourseDetailsInteractive = () => {
       const reviewsData = c.reviews || [];
       const topics = c.topics || [];
 
+      // Davomiylik — mavzular yig'indisidan (course.totalDuration ko'pincha 0)
+      const durationFromTopics = sumDurations(
+        topics.map((tp: Record<string, string>) => tp.duration),
+      );
+
       const mapped: CourseDetails = {
         id: c.id,
         title: c.title,
-        subtitle: c.description?.split('.')[0] || c.title,
+        subtitle: c.description?.split('.')[0]?.trim() || '',
         coverImage: optimizeImageUrl(c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449', 800),
         coverImageAlt: `${c.title} ${t('courseDetails.courseImageAlt')}`,
         instructor: {
           name: teacher.fullName || t('courseDetails.defaultInstructor'),
-          image: teacher.avatarUrl || 'https://img.rocket.new/generatedImages/rocket_gen_img_1f9f88657-1763292682460.png',
+          image: teacher.avatarUrl || '',
           imageAlt: `${teacher.fullName || t('courseDetails.defaultInstructor')} ${t('courseDetails.instructorImageAlt')}`,
           rating: Number(c.rating) || 0,
           studentsCount: c.enrollmentCount || 0,
-          coursesCount: 0,
+          coursesCount: c.instructorCourseCount || 0,
           bio: teacher.bio || `${teacher.fullName || t('courseDetails.defaultInstructor')} ${t('courseDetails.defaultBioSuffix')}`,
         },
         pricing: {
@@ -138,13 +151,14 @@ const CourseDetailsInteractive = () => {
         reviewCount: c.reviewCount || 0,
         enrollmentCount: c.enrollmentCount || 0,
         description: c.description || '',
-        learningObjectives: [],
-        prerequisites: [],
         hasCertificate: true,
-        language: c.language || 'uz',
-        lastUpdated: c.createdAt ? formatDate(c.createdAt, locale) : '',
-        totalDuration: `${c.totalDuration || 0} ${t('courseDetails.hours')}`,
-        level: c.difficultyLevel || t('courseDetails.beginner'),
+        language: getLanguageLabel(c.language),
+        // Xom ISO — formatlashni komponentlar bajaradi (ikki marta formatlamaslik uchun)
+        lastUpdated: c.createdAt || '',
+        totalDuration: durationFromTopics,
+        level: getDifficultyLabel(c.difficultyLevel),
+        subject: getSubjectLabel(c.subjectCategory),
+        lessonCount: topics.length,
       };
       setCourse(mapped);
 
@@ -152,13 +166,13 @@ const CourseDetailsInteractive = () => {
         const section: CurriculumSection = {
           id: 'section-1',
           title: t('courseDetails.courseTopics'),
-          topics: topics.map((t: Record<string, string | boolean>, i: number) => ({
-            id: t.id,
-            title: t.title,
-            duration: t.duration || '—',
-            hasQuiz: t.hasQuiz || false,
-            hasPreview: i === 0,
-            isLocked: i > 0 && !c.isEnrolled,
+          topics: topics.map((tp: Record<string, string | boolean>) => ({
+            id: tp.id as string,
+            title: tp.title as string,
+            duration: (tp.duration as string) || '—',
+            hasQuiz: Boolean(tp.hasQuiz),
+            hasPreview: Boolean(tp.isFreePreview),
+            isLocked: !c.isEnrolled && !tp.isFreePreview,
           })),
         };
         setCurriculum([section]);
@@ -172,11 +186,15 @@ const CourseDetailsInteractive = () => {
           userImageAlt: r.student?.fullName || '',
           rating: r.rating,
           date: formatDate(r.createdAt, locale),
+          rawDate: r.createdAt,
           comment: r.comment || '',
           helpful: r.helpfulCount || 0,
         }))
       );
 
+      setRatingDistribution(c.ratingDistribution || []);
+      setRelatedCourses(c.relatedCourses || []);
+      setInstructorCourses(c.instructorCourses || []);
       setIsEnrolled(!!c.isEnrolled);
     } catch (err) {
       console.error('Kurs yuklanmadi:', err);
@@ -259,10 +277,26 @@ const CourseDetailsInteractive = () => {
   return (
     <div className="min-h-screen bg-background py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
+          <Link href="/course-marketplace" className="hover:text-primary transition-smooth">
+            {t('courseDetails.breadcrumbCourses')}
+          </Link>
+          <Icon name="ChevronRightIcon" size={14} />
+          {course.subject && (
+            <>
+              <span className="hover:text-primary transition-smooth">{course.subject}</span>
+              <Icon name="ChevronRightIcon" size={14} />
+            </>
+          )}
+          <span className="text-foreground font-medium truncate max-w-[50%]">{course.title}</span>
+        </nav>
+
         <CourseHeroSection
           course={course}
           onPurchase={handlePurchase}
           isPurchasing={isPurchasing}
+          isEnrolled={isEnrolled}
         />
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -290,10 +324,41 @@ const CourseDetailsInteractive = () => {
 
             {activeTab === 'overview' && (
               <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
+                {/* Kurs xususiyatlari — haqiqiy ma'lumotdan */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {[
+                    { icon: 'BookOpenIcon', label: t('courseDetails.lessons'), value: String(course.lessonCount) },
+                    { icon: 'ClockIcon', label: t('courseDetails.duration'), value: course.totalDuration },
+                    { icon: 'ChartBarIcon', label: t('courseDetails.level'), value: course.level },
+                    { icon: 'LanguageIcon', label: t('courseDetails.language'), value: course.language },
+                  ].map((item) => (
+                    <div key={item.label} className="flex flex-col items-center text-center gap-1 p-3 rounded-md bg-muted/60">
+                      <Icon name={item.icon} size={22} className="text-primary" />
+                      <span className="text-xs text-muted-foreground">{item.label}</span>
+                      <span className="text-sm font-semibold text-foreground">{item.value}</span>
+                    </div>
+                  ))}
+                </div>
+
                 <div>
                   <h2 className="text-2xl font-heading font-bold text-foreground mb-4">{t('courses.aboutCourse')}</h2>
-                  <p className="text-foreground leading-relaxed">{course.description}</p>
+                  <p className="text-foreground leading-relaxed whitespace-pre-line">{course.description || t('courseDetails.noDescription')}</p>
                 </div>
+
+                {curriculum.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-heading font-semibold text-foreground mb-3">{t('courseDetails.whatYouLearn')}</h3>
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {curriculum[0].topics.slice(0, 8).map((topic) => (
+                        <li key={topic.id} className="flex items-start gap-2 text-sm text-foreground">
+                          <Icon name="CheckCircleIcon" size={18} variant="solid" className="text-success flex-shrink-0 mt-0.5" />
+                          <span>{topic.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 {course.hasCertificate && (
                   <div className="bg-accent/10 border border-accent rounded-md p-4 flex items-start space-x-3">
                     <Icon name="AcademicCapIcon" size={24} className="text-accent flex-shrink-0" />
@@ -327,11 +392,12 @@ const CourseDetailsInteractive = () => {
                 reviews={reviews}
                 averageRating={course.rating}
                 totalReviews={course.reviewCount}
+                distribution={ratingDistribution}
               />
             )}
 
             {activeTab === 'instructor' && (
-              <InstructorBio instructor={course.instructor} />
+              <InstructorBio instructor={course.instructor} otherCourses={instructorCourses} />
             )}
           </div>
 
@@ -340,11 +406,12 @@ const CourseDetailsInteractive = () => {
               course={course}
               onPurchase={handlePurchase}
               isPurchasing={isPurchasing}
+              isEnrolled={isEnrolled}
             />
           </div>
         </div>
 
-        <RelatedCourses currentCourseId={course.id} />
+        <RelatedCourses courses={relatedCourses} />
       </div>
     </div>
   );

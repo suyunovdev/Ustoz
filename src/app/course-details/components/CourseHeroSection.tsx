@@ -1,4 +1,5 @@
 import AppImage from '@/components/ui/AppImage';
+import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate, formatNumber } from '@/lib/i18n/format';
@@ -22,13 +23,20 @@ interface CourseHeroSectionProps {
     level: string;
     totalDuration: string;
     lastUpdated: string;
+    subject: string;
   };
   onPurchase: () => void;
   isPurchasing: boolean;
+  isEnrolled: boolean;
 }
 
-const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSectionProps) => {
+const CourseHeroSection = ({ course, onPurchase, isPurchasing, isEnrolled }: CourseHeroSectionProps) => {
   const { t, locale } = useI18n();
+  const ctaLabel = isPurchasing
+    ? t('courseDetails.loading')
+    : isEnrolled
+      ? t('courseDetails.continueLearning')
+      : t('courseDetails.buyCourse');
   return (
     <div className="bg-card rounded-md shadow-warm-lg overflow-hidden">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -44,27 +52,30 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
         {/* Course Info */}
         <div className="p-6 space-y-4">
           <div>
-            <div className="flex items-center space-x-2 mb-2">
+            <div className="flex items-center flex-wrap gap-2 mb-2">
+              {course.subject && (
+                <span className="px-3 py-1 bg-secondary/10 text-secondary text-sm font-medium rounded-full">
+                  {course.subject}
+                </span>
+              )}
               <span className="px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full">
                 {course.level}
               </span>
-              <span className="text-sm text-muted-foreground">{course.totalDuration}</span>
+              {course.totalDuration !== '—' && (
+                <span className="text-sm text-muted-foreground">{course.totalDuration}</span>
+              )}
             </div>
-            <h1 className="text-3xl font-heading font-bold text-foreground mb-2">
+            <h1 className="text-3xl font-heading font-bold text-foreground mb-2 text-balance">
               {course.title}
             </h1>
-            <p className="text-lg text-muted-foreground">{course.subtitle}</p>
+            {course.subtitle && (
+              <p className="text-lg text-muted-foreground">{course.subtitle}</p>
+            )}
           </div>
 
           {/* Instructor */}
           <div className="flex items-center space-x-3 py-3 border-y border-border">
-            <div className="w-12 h-12 rounded-full overflow-hidden">
-              <AppImage
-                src={course.instructor.image}
-                alt={course.instructor.imageAlt}
-                className="w-full h-full object-cover"
-              />
-            </div>
+            <Avatar src={course.instructor.image} name={course.instructor.name} size={48} />
             <div>
               <p className="text-sm text-muted-foreground">{t('courseDetails.instructor')}</p>
               <p className="font-semibold text-foreground">{course.instructor.name}</p>
@@ -102,7 +113,7 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing }: CourseHeroSecti
             disabled={isPurchasing}
             className="md:hidden w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isPurchasing ? t('courseDetails.loading') : t('courseDetails.buyCourse')}
+            {ctaLabel}
           </button>
 
           <p className="text-xs text-muted-foreground">

@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import AppImage from '@/components/ui/AppImage';
+import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
-import { formatDate, formatNumber } from '@/lib/i18n/format';
+import { formatNumber } from '@/lib/i18n/format';
+import type { RatingDistribution } from './types';
 
 interface Review {
   id: string;
@@ -13,6 +14,7 @@ interface Review {
   userImageAlt: string;
   rating: number;
   date: string;
+  rawDate: string;
   comment: string;
   helpful: number;
 }
@@ -21,26 +23,30 @@ interface CourseReviewsProps {
   reviews: Review[];
   averageRating: number;
   totalReviews: number;
+  distribution: RatingDistribution[];
 }
 
-const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsProps) => {
+const CourseReviews = ({ reviews, averageRating, totalReviews, distribution }: CourseReviewsProps) => {
   const { t, locale } = useI18n();
   const [sortBy, setSortBy] = useState<'recent' | 'helpful'>('recent');
 
-  const ratingDistribution = [
-    { stars: 5, count: 1850, percentage: 79 },
-    { stars: 4, count: 320, percentage: 14 },
-    { stars: 3, count: 120, percentage: 5 },
-    { stars: 2, count: 30, percentage: 1 },
-    { stars: 1, count: 20, percentage: 1 },
-  ];
-
   const sortedReviews = [...reviews].sort((a, b) => {
     if (sortBy === 'recent') {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
+      return new Date(b.rawDate).getTime() - new Date(a.rawDate).getTime();
     }
     return b.helpful - a.helpful;
   });
+
+  // Sharh umuman yo'q — bo'sh holat
+  if (totalReviews === 0) {
+    return (
+      <div className="bg-card rounded-md shadow-warm p-10 text-center space-y-3">
+        <Icon name="ChatBubbleLeftRightIcon" size={44} className="text-muted-foreground mx-auto" />
+        <h2 className="text-xl font-heading font-semibold text-foreground">{t('courseDetails.reviewsTitle')}</h2>
+        <p className="text-sm text-muted-foreground">{t('courseDetails.noReviews')}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
@@ -50,7 +56,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 border-b border-border">
         {/* Average Rating */}
         <div className="flex flex-col items-center justify-center space-y-2">
-          <div className="text-5xl font-heading font-bold text-foreground">{averageRating}</div>
+          <div className="text-5xl font-heading font-bold text-foreground">{averageRating.toFixed(1)}</div>
           <div className="flex items-center space-x-1">
             {[1, 2, 3, 4, 5].map((star) => (
               <Icon
@@ -67,7 +73,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
 
         {/* Rating Distribution */}
         <div className="space-y-2">
-          {ratingDistribution.map((dist) => (
+          {distribution.map((dist) => (
             <div key={dist.stars} className="flex items-center space-x-3">
               <div className="flex items-center space-x-1 w-16">
                 <span className="text-sm font-medium text-foreground">{dist.stars}</span>
@@ -115,13 +121,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
             {/* User Info */}
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full overflow-hidden">
-                  <AppImage
-                    src={review.userImage}
-                    alt={review.userImageAlt}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <Avatar src={review.userImage} name={review.userName} size={40} />
                 <div>
                   <p className="font-semibold text-foreground">{review.userName}</p>
                   <div className="flex items-center space-x-2">
@@ -137,7 +137,7 @@ const CourseReviews = ({ reviews, averageRating, totalReviews }: CourseReviewsPr
                       ))}
                     </div>
                     <span className="text-xs text-muted-foreground">
-                      {formatDate(review.date, locale)}
+                      {review.date}
                     </span>
                   </div>
                 </div>

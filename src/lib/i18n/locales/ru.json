@@ -2556,7 +2556,20 @@
     "defaultBioSuffix": "— опытный преподаватель.",
     "anonymousUser": "Пользователь",
     "courseImageAlt": "курс",
-    "instructorImageAlt": "фото"
+    "instructorImageAlt": "фото",
+    "breadcrumbCourses": "Курсы",
+    "continueLearning": "Продолжить обучение",
+    "enrollFree": "Записаться бесплатно",
+    "linkCopied": "Ссылка скопирована",
+    "copyFailed": "Не удалось скопировать",
+    "copyLink": "Копировать",
+    "shareTelegram": "Поделиться в Telegram",
+    "lessons": "Уроки",
+    "level": "Уровень",
+    "whatYouLearn": "Чему вы научитесь",
+    "noDescription": "Для этого курса нет описания.",
+    "noReviews": "Пока нет отзывов. Будьте первым, кто оставит отзыв!",
+    "freePreview": "Бесплатно"
   },
   "categories": {
     "mathematics": "Математика",

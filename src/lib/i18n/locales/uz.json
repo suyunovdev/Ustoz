@@ -2556,7 +2556,20 @@
     "defaultBioSuffix": "— tajribali o'qituvchi.",
     "anonymousUser": "Foydalanuvchi",
     "courseImageAlt": "kursi",
-    "instructorImageAlt": "rasmi"
+    "instructorImageAlt": "rasmi",
+    "breadcrumbCourses": "Kurslar",
+    "continueLearning": "O'rganishni davom ettirish",
+    "enrollFree": "Bepul yozilish",
+    "linkCopied": "Havola nusxalandi",
+    "copyFailed": "Nusxalab bo'lmadi",
+    "copyLink": "Nusxalash",
+    "shareTelegram": "Telegram orqali ulashish",
+    "lessons": "Darslar",
+    "level": "Daraja",
+    "whatYouLearn": "Nimalarni o'rganasiz",
+    "noDescription": "Bu kurs uchun tavsif kiritilmagan.",
+    "noReviews": "Hozircha sharhlar yo'q. Birinchi bo'lib fikr bildiring!",
+    "freePreview": "Bepul"
   },
   "categories": {
     "mathematics": "Matematika",

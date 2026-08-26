@@ -63,6 +63,82 @@ export async function GET(
       : { ...tp, content: '', videoUrl: null },
   );
 
+  // Qo'shimcha ma'lumotlar (kurs tafsiloti sahifasi uchun) — parallel:
+  //  1) reyting taqsimoti (haqiqiy, groupBy) — soxta emas
+  //  2) o'xshash kurslar (bir yo'nalish, o'zidan tashqari)
+  //  3) muallifning boshqa kurslari + jami kursi soni
+  const cardSelect = {
+    id: true,
+    title: true,
+    coverImage: true,
+    priceUzs: true,
+    rating: true,
+    reviewCount: true,
+    enrollmentCount: true,
+    difficultyLevel: true,
+    teacher: { select: { fullName: true } },
+  } as const;
+
+  const [ratingGroups, relatedRaw, instructorRaw, instructorCourseCount] = await Promise.all([
+    prisma.courseReview.groupBy({
+      by: ['rating'],
+      where: { courseId: id, hiddenAt: null },
+      _count: { rating: true },
+    }),
+    prisma.course.findMany({
+      where: {
+        isPublished: true,
+        id: { not: id },
+        subjectCategory: course.subjectCategory,
+      },
+      select: cardSelect,
+      orderBy: [{ enrollmentCount: 'desc' }, { rating: 'desc' }],
+      take: 3,
+    }),
+    prisma.course.findMany({
+      where: { isPublished: true, id: { not: id }, teacherId: course.teacherId },
+      select: cardSelect,
+      orderBy: { enrollmentCount: 'desc' },
+      take: 3,
+    }),
+    prisma.course.count({ where: { isPublished: true, teacherId: course.teacherId } }),
+  ]);
+
+  // Reyting taqsimotini 5→1 to'liq to'ldirish (bo'sh darajalar 0)
+  const distMap = new Map(ratingGroups.map((g) => [g.rating, g._count.rating]));
+  const totalRatings = course.reviewCount || ratingGroups.reduce((a, g) => a + g._count.rating, 0);
+  const ratingDistribution = [5, 4, 3, 2, 1].map((stars) => {
+    const count = distMap.get(stars) || 0;
+    return {
+      stars,
+      count,
+      percentage: totalRatings > 0 ? Math.round((count / totalRatings) * 100) : 0,
+    };
+  });
+
+  const toCard = (c: {
+    id: string;
+    title: string;
+    coverImage: string | null;
+    priceUzs: bigint;
+    rating: unknown;
+    reviewCount: number;
+    enrollmentCount: number;
+    difficultyLevel: string | null;
+    teacher: { fullName: string | null };
+  }) => ({
+    id: c.id,
+    title: c.title,
+    // data: muqovalarni ro'yxatga qo'shmaymiz (payload shishmasligi uchun)
+    coverImage: c.coverImage?.startsWith('data:') ? null : c.coverImage,
+    priceUzs: c.priceUzs.toString(),
+    rating: Number(c.rating) || 0,
+    reviewCount: c.reviewCount,
+    enrollmentCount: c.enrollmentCount,
+    difficultyLevel: c.difficultyLevel,
+    teacherName: c.teacher.fullName || '',
+  });
+
   return jsonResponse({
     course: {
       ...course,
@@ -71,6 +147,10 @@ export async function GET(
       priceUsd: course.priceUsd.toString(),
       enrollmentCount: course.enrollmentCount,
       isEnrolled,
+      ratingDistribution,
+      relatedCourses: relatedRaw.map(toCard),
+      instructorCourses: instructorRaw.map(toCard),
+      instructorCourseCount,
     },
   });
 }

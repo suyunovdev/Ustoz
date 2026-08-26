@@ -2556,7 +2556,20 @@
     "defaultBioSuffix": "— an experienced instructor.",
     "anonymousUser": "User",
     "courseImageAlt": "course",
-    "instructorImageAlt": "photo"
+    "instructorImageAlt": "photo",
+    "breadcrumbCourses": "Courses",
+    "continueLearning": "Continue learning",
+    "enrollFree": "Enroll for free",
+    "linkCopied": "Link copied",
+    "copyFailed": "Copy failed",
+    "copyLink": "Copy",
+    "shareTelegram": "Share on Telegram",
+    "lessons": "Lessons",
+    "level": "Level",
+    "whatYouLearn": "What you'll learn",
+    "noDescription": "No description provided for this course.",
+    "noReviews": "No reviews yet. Be the first to share your thoughts!",
+    "freePreview": "Free"
   },
   "categories": {
     "mathematics": "Mathematics",

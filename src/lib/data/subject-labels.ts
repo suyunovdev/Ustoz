@@ -150,3 +150,31 @@ export function getAudienceLabel(value: string | null | undefined): string {
   if (!value) return '';
   return AUDIENCE_LABELS[value] ?? value;
 }
+
+// Qiyinlik darajasi — DB xom qiymati (Beginner/beginner/...) → o'zbekcha yorliq
+const DIFFICULTY_LABELS: Record<string, string> = {
+  beginner: "Boshlang'ich",
+  intermediate: "O'rta",
+  advanced: "Ilg'or",
+  all_levels: 'Barcha darajalar',
+};
+
+export function getDifficultyLabel(value: string | null | undefined): string {
+  if (!value) return "Boshlang'ich";
+  return DIFFICULTY_LABELS[value.toLowerCase()] ?? value;
+}
+
+// Kurs tili — kod (uz/en/ru) yoki to'liq nom → o'zbekcha yorliq
+const LANGUAGE_LABELS: Record<string, string> = {
+  uz: "O'zbek",
+  uzbek: "O'zbek",
+  en: 'Ingliz',
+  english: 'Ingliz',
+  ru: 'Rus',
+  russian: 'Rus',
+};
+
+export function getLanguageLabel(value: string | null | undefined): string {
+  if (!value) return "O'zbek";
+  return LANGUAGE_LABELS[value.toLowerCase()] ?? value;
+}
