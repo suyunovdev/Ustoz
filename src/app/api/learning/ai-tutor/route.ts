@@ -128,18 +128,14 @@ export async function POST(req: NextRequest) {
     }
 
     // Suhbat tarixi (cheklangan)
-    const history = Array.isArray(b.history)
-      ? (b.history as unknown[])
-          .filter(
-            (m): m is { role: 'user' | 'assistant'; content: string } =>
-              !!m &&
-              typeof m === 'object' &&
-              ((m as any).role === 'user' || (m as any).role === 'assistant') &&
-              typeof (m as any).content === 'string',
-          )
-          .slice(-MAX_HISTORY)
-          .map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }))
-      : [];
+    const history = (Array.isArray(b.history) ? b.history : [])
+      .map((m) => (m && typeof m === 'object' ? (m as Record<string, unknown>) : {}))
+      .filter(
+        (m): m is { role: 'user' | 'assistant'; content: string } =>
+          (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string',
+      )
+      .slice(-MAX_HISTORY)
+      .map((m) => ({ role: m.role, content: m.content.slice(0, 2000) }));
 
     // 5) Prompt qurish
     const context = [
