@@ -24,6 +24,7 @@ const CertificatesPageClient = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
     loadCertificates();
@@ -41,6 +42,7 @@ const CertificatesPageClient = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setCertificates(data.certificates || []);
+      setSubscribed(Boolean(data.subscribed));
     } catch (err) {
       console.error('Sertifikatlarni yuklashda xato:', err);
       setLoadError(true);
@@ -49,15 +51,13 @@ const CertificatesPageClient = () => {
     }
   };
 
-  const handleDownload = (certId: string) => {
-    window.open(`/api/certificates/${certId}`, '_blank');
-  };
-
-  const handleVerify = (cert: Certificate) => {
-    if (cert.verificationUrl) {
-      window.open(cert.verificationUrl, '_blank');
-    } else {
+  // Rasmiy sertifikatni ochish — obunachi bo'lsa ko'rinish sahifasiga, aks holda
+  // obuna sahifasiga yo'naltiradi.
+  const handleOpen = (cert: Certificate) => {
+    if (subscribed) {
       window.open(`/certificate/${cert.id}`, '_blank');
+    } else {
+      router.push('/student-subscription');
     }
   };
 
@@ -80,6 +80,26 @@ const CertificatesPageClient = () => {
             </div>
           </div>
         </div>
+
+        {/* Obuna yo'q — rasmiy sertifikatni ochish uchun upsell banner */}
+        {!isLoading && !subscribed && certificates.length > 0 && (
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
+            <div className="flex items-start gap-3 flex-1 min-w-0">
+              <Icon name="LockClosedIcon" size={22} className="text-primary flex-shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="font-medium text-foreground">{t('certGate.bannerTitle')}</p>
+                <p className="text-sm text-muted-foreground">{t('certGate.bannerDesc')}</p>
+              </div>
+            </div>
+            <button
+              onClick={() => router.push('/student-subscription')}
+              className="flex-shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+            >
+              <Icon name="SparklesIcon" size={16} />
+              {t('certGate.unlock')}
+            </button>
+          </div>
+        )}
 
         {/* Loading state */}
         {isLoading ? (
@@ -131,7 +151,14 @@ const CertificatesPageClient = () => {
                 className="bg-card rounded-lg border border-border overflow-hidden shadow-warm hover:shadow-warm-lg transition-shadow group"
               >
                 {/* Certificate header / cover */}
-                <div className="relative h-40 bg-gradient-to-br from-primary via-primary/80 to-secondary p-6 flex flex-col justify-between">
+                <div className={`relative h-40 bg-gradient-to-br from-primary via-primary/80 to-secondary p-6 flex flex-col justify-between ${!subscribed ? 'opacity-90' : ''}`}>
+                  {!subscribed && (
+                    <div className="absolute inset-0 bg-background/30 backdrop-blur-[2px] flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-full bg-background/80 flex items-center justify-center">
+                        <Icon name="LockClosedIcon" size={22} className="text-primary" />
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <Icon name="AcademicCapIcon" size={32} className="text-primary-foreground" />
                     <span className="text-xs font-mono text-primary-foreground/80 bg-primary-foreground/10 px-2 py-1 rounded">
@@ -157,26 +184,30 @@ const CertificatesPageClient = () => {
                   <h3 className="font-heading font-semibold text-foreground line-clamp-2 min-h-[3rem]">
                     {cert.courseTitle}
                   </h3>
-                  <p className="text-sm text-muted-foreground flex items-center space-x-1">
-                    <Icon name="UserIcon" size={14} />
-                    <span>{cert.teacherName}</span>
-                  </p>
+                  {/* Tugatildi belgisi — hammaga ko'rinadi (obuna bo'lmasa ham) */}
+                  <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
+                    <Icon name="CheckCircleIcon" size={14} variant="solid" />
+                    {t('learning.completedShort')}
+                  </span>
 
-                  <div className="flex items-center space-x-2 pt-2">
-                    <button
-                      onClick={() => handleDownload(cert.id)}
-                      className="flex-1 inline-flex items-center justify-center space-x-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
-                    >
-                      <Icon name="ArrowDownTrayIcon" size={16} />
-                      <span>{t('student.download')}</span>
-                    </button>
-                    <button
-                      onClick={() => handleVerify(cert)}
-                      className="inline-flex items-center justify-center px-3 py-2 bg-muted text-foreground rounded-md hover:bg-muted/70 transition-colors"
-                      title={t('common.confirm')}
-                    >
-                      <Icon name="ShieldCheckIcon" size={16} />
-                    </button>
+                  <div className="pt-2">
+                    {subscribed ? (
+                      <button
+                        onClick={() => handleOpen(cert)}
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-colors"
+                      >
+                        <Icon name="EyeIcon" size={16} />
+                        {t('certGate.openOfficial')}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOpen(cert)}
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-primary/10 text-primary rounded-md text-sm font-medium hover:bg-primary hover:text-primary-foreground transition-colors"
+                      >
+                        <Icon name="LockClosedIcon" size={16} />
+                        {t('certGate.unlockWithSub')}
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

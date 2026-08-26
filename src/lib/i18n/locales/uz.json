@@ -3064,5 +3064,14 @@
     "perkExplain": "Murakkab mavzularni sodda tilda tushuntiradi",
     "perkPractice": "Mavzu bo‘yicha mashq savollari tuzadi",
     "perkHint": "Uy vazifasiga tayyor javob emas, yo‘naltiruvchi maslahat beradi"
+  },
+  "certGate": {
+    "bannerTitle": "Rasmiy sertifikatlaringiz tayyor",
+    "bannerDesc": "Obuna bilan rasmiy, tekshiriladigan sertifikatni oching, yuklab oling va ulashing.",
+    "unlock": "Obuna bo'lish",
+    "unlockWithSub": "Obuna bilan oching",
+    "openOfficial": "Sertifikatni ochish",
+    "lockedTitle": "Sertifikat obuna bilan ochiladi",
+    "lockedDesc": "Siz bu kursni tugatdingiz! Rasmiy, tekshiriladigan sertifikatni ko'rish, yuklab olish va ulashish uchun obuna bo'ling."
   }
 }

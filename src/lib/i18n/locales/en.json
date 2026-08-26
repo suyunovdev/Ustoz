@@ -3064,5 +3064,14 @@
     "perkExplain": "Explains complex topics in simple terms",
     "perkPractice": "Generates practice questions for the topic",
     "perkHint": "Gives guiding hints, not ready homework answers"
+  },
+  "certGate": {
+    "bannerTitle": "Your official certificates are ready",
+    "bannerDesc": "With a subscription, open, download and share your official, verifiable certificate.",
+    "unlock": "Subscribe",
+    "unlockWithSub": "Unlock with subscription",
+    "openOfficial": "Open certificate",
+    "lockedTitle": "Certificate unlocks with a subscription",
+    "lockedDesc": "You completed this course! Subscribe to view, download and share your official, verifiable certificate."
   }
 }

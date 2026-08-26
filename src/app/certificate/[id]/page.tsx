@@ -27,15 +27,17 @@ export default function CertificatePage() {
   const { t, locale } = useI18n();
   const id = params?.id as string;
   const [certificate, setCertificate] = useState<Certificate | null>(null);
+  const [locked, setLocked] = useState<{ courseTitle?: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!id) return;
-    fetch(`/api/certificates/${id}`)
+    fetch(`/api/certificates/${id}`, { credentials: 'include' })
       .then((r) => r.json())
       .then((d) => {
         if (d.certificate) setCertificate(d.certificate);
+        else if (d.locked) setLocked(d.preview || {});
       })
       .catch(console.error)
       .finally(() => setLoading(false));
@@ -60,6 +62,26 @@ export default function CertificatePage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin w-10 h-10 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (locked) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-5">
+          <Icon name="LockClosedIcon" size={30} className="text-primary-foreground" />
+        </div>
+        <h2 className="text-2xl font-heading font-bold text-foreground mb-2">{t('certGate.lockedTitle')}</h2>
+        {locked.courseTitle && <p className="text-primary font-medium mb-1">{locked.courseTitle}</p>}
+        <p className="text-muted-foreground max-w-md mb-6">{t('certGate.lockedDesc')}</p>
+        <button
+          onClick={() => router.push('/student-subscription')}
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors"
+        >
+          <Icon name="SparklesIcon" size={18} />
+          {t('certGate.unlock')}
+        </button>
       </div>
     );
   }
