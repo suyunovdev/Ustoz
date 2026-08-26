@@ -9,7 +9,6 @@ interface CourseMetadata {
   title: string;
   description: string;
   category: string;
-  priceUSD: string;
   priceUZS: string;
   coverImage: string;
   language: string;
