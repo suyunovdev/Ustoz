@@ -2,14 +2,13 @@ import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
-import { formatCurrency } from '@/lib/i18n/format';
+import { formatCurrency, formatNumber } from '@/lib/i18n/format';
+import { getDifficultyLabel } from '@/lib/data/subject-labels';
 import type { RecommendedCourse, RecommendReason } from '@/types/recommendation.types';
 
 interface RecommendedCourseCardProps {
   course: RecommendedCourse;
 }
-
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449?w=500&q=70&auto=format&fit=crop';
 
 const REASON_BADGES: Record<
   RecommendReason,
@@ -41,10 +40,12 @@ const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
   const { locale, t } = useI18n();
   const badge = REASON_BADGES[course.recommendReason];
   const badgeLabel = t(badge.labelKey);
-  const duration =
-    course.totalDuration > 0
-      ? t('student.durationHours', { count: course.totalDuration })
-      : course.difficultyLevel || '—';
+  // Davomiylik bo'lsa soat, aks holda qiyinlik darajasi (mos ikonka bilan)
+  const hasDuration = course.totalDuration > 0;
+  const metaIcon = hasDuration ? 'ClockIcon' : 'ChartBarIcon';
+  const metaLabel = hasDuration
+    ? t('student.durationHours', { count: course.totalDuration })
+    : getDifficultyLabel(course.difficultyLevel);
 
   return (
     <div className="bg-card rounded-md shadow-warm hover:shadow-warm-md transition-smooth overflow-hidden group">
@@ -52,7 +53,7 @@ const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
       <div className="relative h-40 overflow-hidden bg-gradient-to-br from-primary/80 to-secondary">
         {course.coverImage ? (
           <AppImage
-            src={course.coverImage || DEFAULT_COVER}
+            src={course.coverImage}
             alt={`${course.title} kursi`}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
@@ -87,11 +88,11 @@ const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
           </div>
           <div className="flex items-center space-x-1">
             <Icon name="UserGroupIcon" size={16} />
-            <span className="font-data">{course.enrollmentCount}</span>
+            <span className="font-data">{formatNumber(course.enrollmentCount, locale)}</span>
           </div>
           <div className="flex items-center space-x-1">
-            <Icon name="ClockIcon" size={16} />
-            <span>{duration}</span>
+            <Icon name={metaIcon} size={16} />
+            <span>{metaLabel}</span>
           </div>
         </div>
 

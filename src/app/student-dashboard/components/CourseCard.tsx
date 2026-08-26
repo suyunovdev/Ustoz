@@ -9,8 +9,6 @@ interface CourseCardProps {
   enrollment: DashboardEnrollment;
 }
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449?w=500&q=70&auto=format&fit=crop';
-
 const DATE_OPTS: Intl.DateTimeFormatOptions = {
   year: 'numeric',
   month: 'long',
@@ -51,7 +49,7 @@ const CourseCard = ({ enrollment }: CourseCardProps) => {
       <div className="relative h-40 overflow-hidden bg-gradient-to-br from-primary/80 to-secondary">
         {course.coverImage ? (
           <AppImage
-            src={course.coverImage || DEFAULT_COVER}
+            src={course.coverImage}
             alt={`${course.title} kursi`}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />

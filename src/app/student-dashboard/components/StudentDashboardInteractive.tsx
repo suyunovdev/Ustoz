@@ -27,8 +27,6 @@ import { useActivityCalendar } from '@/hooks/queries/useActivityCalendar';
 type DashboardTab = 'continue' | 'my-courses' | 'recommended';
 const VALID_TABS: DashboardTab[] = ['continue', 'my-courses', 'recommended'];
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449?w=500&q=70&auto=format&fit=crop';
-
 /**
  * Hero card uchun eng "tegishli" enrollment'ni topish:
  *  1. In-progress (0 < progress < 100) — lastAccessedAt DESC, fallback enrolledAt DESC

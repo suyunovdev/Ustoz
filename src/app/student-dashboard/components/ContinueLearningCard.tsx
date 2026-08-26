@@ -8,8 +8,6 @@ interface ContinueLearningCardProps {
   enrollment: DashboardEnrollment;
 }
 
-const DEFAULT_COVER = 'https://images.unsplash.com/photo-1516101922849-2bf0be616449?w=500&q=70&auto=format&fit=crop';
-
 const ContinueLearningCard = ({ enrollment }: ContinueLearningCardProps) => {
   const { t } = useI18n();
   const {
@@ -23,7 +21,6 @@ const ContinueLearningCard = ({ enrollment }: ContinueLearningCardProps) => {
   } = enrollment;
 
   const isNotStarted = progress === 0;
-  const cover = course.coverImage || DEFAULT_COVER;
 
   // CTA mantig'i
   let ctaHref: string;
@@ -52,7 +49,7 @@ const ContinueLearningCard = ({ enrollment }: ContinueLearningCardProps) => {
       <div className="relative h-40 overflow-hidden bg-gradient-to-br from-primary/80 to-secondary">
         {course.coverImage ? (
           <AppImage
-            src={cover}
+            src={course.coverImage}
             alt={`${course.title} kursi`}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
