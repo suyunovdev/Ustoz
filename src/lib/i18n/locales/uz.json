@@ -1914,7 +1914,9 @@
     "subCreated": "Reja yaratildi",
     "subUpdated": "Reja yangilandi",
     "subError": "Xatolik",
-    "subDurationDays": "Muddat (kun)"
+    "subDurationDays": "Muddat (kun)",
+    "navLiveSessions": "Jonli darslar",
+    "liveSessionsSubtitle": "Jonli darslar va vebinarlarni boshqarish"
   },
   "courseCreation": {
     "loadingTools": "Kurs yaratish vositlari yuklanmoqda...",
@@ -3075,5 +3077,22 @@
     "openOfficial": "Sertifikatni ochish",
     "lockedTitle": "Sertifikat obuna bilan ochiladi",
     "lockedDesc": "Siz bu kursni tugatdingiz! Rasmiy, tekshiriladigan sertifikatni ko'rish, yuklab olish va ulashish uchun obuna bo'ling."
+  },
+  "live": {
+    "title": "Jonli darslar",
+    "subtitle": "Obuna bilan jonli darslar va vebinarlarga qo'shiling",
+    "liveNow": "Jonli",
+    "min": "daqiqa",
+    "ended": "Yakunlangan",
+    "join": "Qo'shilish",
+    "joinNow": "Hoziroq qo'shilish",
+    "joinWithSub": "Obuna bilan qo'shilish",
+    "upsellTitle": "Jonli darslar obuna bilan",
+    "upsellDesc": "Obuna bo'lib jonli darslar va vebinarlarga qo'shiling.",
+    "subscribe": "Obuna bo'lish",
+    "emptyTitle": "Hozircha jonli dars yo'q",
+    "emptyDesc": "Tez orada yangi jonli darslar rejalashtiriladi.",
+    "upcoming": "Kelgusi",
+    "past": "O'tgan"
   }
 }

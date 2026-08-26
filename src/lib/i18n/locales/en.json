@@ -1914,7 +1914,9 @@
     "subCreated": "Plan created",
     "subUpdated": "Plan updated",
     "subError": "Error",
-    "subDurationDays": "Duration (days)"
+    "subDurationDays": "Duration (days)",
+    "navLiveSessions": "Live sessions",
+    "liveSessionsSubtitle": "Manage live sessions and webinars"
   },
   "courseCreation": {
     "loadingTools": "Loading course creation tools...",
@@ -3075,5 +3077,22 @@
     "openOfficial": "Open certificate",
     "lockedTitle": "Certificate unlocks with a subscription",
     "lockedDesc": "You completed this course! Subscribe to view, download and share your official, verifiable certificate."
+  },
+  "live": {
+    "title": "Live sessions",
+    "subtitle": "Join live sessions and webinars with a subscription",
+    "liveNow": "Live",
+    "min": "min",
+    "ended": "Ended",
+    "join": "Join",
+    "joinNow": "Join now",
+    "joinWithSub": "Join with subscription",
+    "upsellTitle": "Live sessions with subscription",
+    "upsellDesc": "Subscribe to join live sessions and webinars.",
+    "subscribe": "Subscribe",
+    "emptyTitle": "No live sessions yet",
+    "emptyDesc": "New live sessions will be scheduled soon.",
+    "upcoming": "Upcoming",
+    "past": "Past"
   }
 }

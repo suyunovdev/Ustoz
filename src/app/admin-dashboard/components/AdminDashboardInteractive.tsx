@@ -18,6 +18,7 @@ import ReviewsPanel from './ReviewsPanel';
 import PaymentsPanel from './PaymentsPanel';
 import WithdrawalsPanel from './WithdrawalsPanel';
 import SubscriptionsPanel from './SubscriptionsPanel';
+import LiveSessionsAdminPanel from './LiveSessionsAdminPanel';
 import CampaignsPanel from './CampaignsPanel';
 import ModerationQueuePanel from './ModerationQueuePanel';
 import CourseModerationPanel from '@/app/content-moderation-dashboard/components/CourseModerationPanel';
@@ -40,6 +41,7 @@ const VALID_TABS: ReadonlyArray<AdminTabId> = [
   'payments',
   'withdrawals',
   'subscriptions',
+  'live_sessions',
   'campaigns',
   'moderation',
   'tickets',
@@ -72,6 +74,10 @@ const TAB_TITLE_KEYS: Record<AdminTabId, { title: string; subtitle: string }> = 
   subscriptions: {
     title: 'admin.subscriptionsTitle',
     subtitle: 'admin.navSubscriptions',
+  },
+  live_sessions: {
+    title: 'admin.navLiveSessions',
+    subtitle: 'admin.liveSessionsSubtitle',
   },
   reviews: {
     title: 'admin.tabReviewsTitle',
@@ -185,6 +191,7 @@ const AdminDashboardInteractive = () => {
           {activeTab === 'payments' && <PaymentsPanel />}
           {activeTab === 'withdrawals' && <WithdrawalsPanel />}
           {activeTab === 'subscriptions' && <SubscriptionsPanel />}
+          {activeTab === 'live_sessions' && <LiveSessionsAdminPanel />}
           {activeTab === 'campaigns' && <CampaignsPanel />}
           {activeTab === 'moderation' && (
             <div className="space-y-8">

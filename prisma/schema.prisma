@@ -290,6 +290,7 @@ model UserProfile {
   referredUsers        UserProfile[]          @relation("ReferralChain")
   referralEarnings     ReferralEarning[]      @relation("ReferralEarner")
   referralAttributions ReferralEarning[]      @relation("ReferredPayer")
+  createdLiveSessions  LiveSession[]          @relation("CreatedLiveSessions")
 
   @@map("user_profiles")
 }
@@ -535,6 +536,30 @@ model PaymentTransaction {
 // ==================== OBUNA (SUBSCRIPTION) ====================
 // Plan-based obuna: bir nechta plan, davr-bo'yicha qo'lda to'lov (avto-charge yo'q).
 // Faol all-access obuna → foydalanuvchi istalgan kursga bepul yozila oladi.
+// Jonli darslar / vebinarlar — obuna qiymati (#5). Tashqi meeting havolasi
+// (Zoom/Meet/YouTube Live) saqlanadi; havolaga kirish obunachi uchun ochiladi.
+model LiveSession {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  subject     String?
+  hostName    String   @map("host_name")
+  coverImage  String?  @map("cover_image")
+  startsAt    DateTime @map("starts_at")
+  durationMin Int      @default(60) @map("duration_min")
+  meetingUrl  String   @map("meeting_url")
+  isPublished Boolean  @default(true) @map("is_published")
+  createdById String?  @map("created_by_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  createdBy UserProfile? @relation("CreatedLiveSessions", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([startsAt])
+  @@index([isPublished])
+  @@map("live_sessions")
+}
+
 model SubscriptionPlan {
   id               String   @id @default(uuid()) @db.Uuid
   name             String
