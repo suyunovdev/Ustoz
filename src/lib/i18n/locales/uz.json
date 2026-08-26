@@ -3094,5 +3094,26 @@
     "emptyDesc": "Tez orada yangi jonli darslar rejalashtiriladi.",
     "upcoming": "Kelgusi",
     "past": "O'tgan"
+  },
+  "exam": {
+    "title": "Imtihon banki",
+    "subtitle": "AI mock imtihonlar bilan DTM/abituriyentga tayyorlaning",
+    "upsellDesc": "Obuna bilan istalgan fan bo'yicha cheksiz AI mock imtihonlar tuzing.",
+    "subscribe": "Obuna bo'lish",
+    "subject": "Fan",
+    "difficulty": "Daraja",
+    "count": "Savollar soni",
+    "startBtn": "Imtihonni boshlash",
+    "generating": "Savollar tuzilmoqda…",
+    "generatingHint": "Bu bir necha soniya olishi mumkin.",
+    "answered": "{n}/{total} javob berildi",
+    "finish": "Yakunlash",
+    "scoreLine": "{correct}/{total} to‘g‘ri",
+    "weakTopics": "Takrorlash kerak bo‘lgan mavzular",
+    "newExam": "Yangi imtihon",
+    "explanation": "Izoh",
+    "limitReached": "Bugungi imtihon limiti tugadi. Ertaga davom eting.",
+    "notConfigured": "AI hozircha mavjud emas.",
+    "genFailed": "Savollar tuzib bo‘lmadi. Qayta urinib ko‘ring."
   }
 }

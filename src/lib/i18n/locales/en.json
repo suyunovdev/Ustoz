@@ -3094,5 +3094,26 @@
     "emptyDesc": "New live sessions will be scheduled soon.",
     "upcoming": "Upcoming",
     "past": "Past"
+  },
+  "exam": {
+    "title": "Exam bank",
+    "subtitle": "Prepare for exams with AI mock tests",
+    "upsellDesc": "With a subscription, generate unlimited AI mock exams on any subject.",
+    "subscribe": "Subscribe",
+    "subject": "Subject",
+    "difficulty": "Level",
+    "count": "Questions",
+    "startBtn": "Start exam",
+    "generating": "Generating questions…",
+    "generatingHint": "This may take a few seconds.",
+    "answered": "{n}/{total} answered",
+    "finish": "Finish",
+    "scoreLine": "{correct}/{total} correct",
+    "weakTopics": "Topics to review",
+    "newExam": "New exam",
+    "explanation": "Explanation",
+    "limitReached": "Daily exam limit reached. Continue tomorrow.",
+    "notConfigured": "AI is unavailable right now.",
+    "genFailed": "Could not generate questions. Try again."
   }
 }

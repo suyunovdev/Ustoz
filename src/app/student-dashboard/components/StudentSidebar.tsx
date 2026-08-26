@@ -18,6 +18,7 @@ const NAV_ITEMS: NavItem[] = [
   { labelKey: 'courses.marketplace', icon: 'ShoppingBagIcon', href: '/course-marketplace' },
   { labelKey: 'dashboard.certificates', icon: 'TrophyIcon', href: '/student-certificates' },
   { labelKey: 'live.title', icon: 'VideoCameraIcon', href: '/live-sessions' },
+  { labelKey: 'exam.title', icon: 'ClipboardDocumentCheckIcon', href: '/practice-exam' },
   { labelKey: 'subscription.title', icon: 'SparklesIcon', href: '/student-subscription' },
   { labelKey: 'nav.messages', icon: 'ChatBubbleOvalLeftIcon', href: '/messages' },
   { labelKey: 'nav.notifications', icon: 'BellIcon', href: '/notifications' },

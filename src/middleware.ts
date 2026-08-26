@@ -60,6 +60,7 @@ const AUTHENTICATED_ROUTES = [
   '/transaction-history',
   '/student-subscription',
   '/live-sessions',
+  '/practice-exam',
   '/payment-method-selection',
   '/payment-processing',
   '/payment-success-confirmation',
