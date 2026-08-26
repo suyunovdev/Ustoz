@@ -7,6 +7,7 @@
  */
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
+import { getSubscriberCourseDiscountSetting } from './platform-settings.service';
 
 export function serializePlan(p: {
   id: string; name: string; description: string | null; priceUzs: bigint;
@@ -78,17 +79,10 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
   return sub !== null;
 }
 
-// Obunachi kurs chegirmasi (foizda). Env: SUBSCRIBER_COURSE_DISCOUNT_PCT (0–100).
-export const SUBSCRIBER_COURSE_DISCOUNT_PCT = (() => {
-  const raw = Number(process.env.SUBSCRIBER_COURSE_DISCOUNT_PCT);
-  if (!Number.isFinite(raw)) return 0;
-  return Math.max(0, Math.min(100, Math.round(raw)));
-})();
-
 /**
  * Foydalanuvchining pullik kurslarga obuna chegirmasi (0–100).
  *   - all-access reja → 100 (bepul; enroll orqali)
- *   - boshqa faol obuna → SUBSCRIBER_COURSE_DISCOUNT_PCT
+ *   - boshqa faol obuna → admin panelda sozlangan chegirma foizi
  *   - obuna yo'q → 0
  * Bir nechta obuna bo'lsa — eng foydalisi (kattasi) tanlanadi.
  */
@@ -99,7 +93,7 @@ export async function getSubscriberDiscountPct(userId: string): Promise<number> 
   });
   if (subs.length === 0) return 0;
   if (subs.some((s) => s.plan.allCoursesAccess)) return 100;
-  return SUBSCRIBER_COURSE_DISCOUNT_PCT;
+  return getSubscriberCourseDiscountSetting();
 }
 
 /** Narxga chegirma qo'llab, butun so'mgacha yaxlitlaydi (100 ming'gача emas). */

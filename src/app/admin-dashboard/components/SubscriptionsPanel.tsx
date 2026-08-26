@@ -80,6 +80,49 @@ export default function SubscriptionsPanel() {
   const [subs, setSubs] = useState<ActiveSub[]>([]);
   const [subsLoading, setSubsLoading] = useState(true);
 
+  // Obunachi kurs chegirmasi (admin boshqaradi)
+  const [discountInput, setDiscountInput] = useState('');
+  const [discountSaved, setDiscountSaved] = useState<number | null>(null);
+  const [savingDiscount, setSavingDiscount] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/admin/subscription-discount', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d.discountPct === 'number') {
+          setDiscountSaved(d.discountPct);
+          setDiscountInput(String(d.discountPct));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  const saveDiscount = async () => {
+    const val = Number(discountInput);
+    if (!Number.isFinite(val) || val < 0 || val > 100) {
+      toast.error('0–100 orasida foiz kiriting');
+      return;
+    }
+    setSavingDiscount(true);
+    try {
+      const res = await fetch('/api/admin/subscription-discount', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ discountPct: val }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setDiscountSaved(d.discountPct);
+        toast.success('Chegirma saqlandi');
+      } else {
+        toast.error(d.error || 'Xatolik');
+      }
+    } finally {
+      setSavingDiscount(false);
+    }
+  };
+
   const loadPlans = useCallback(async () => {
     setPlansLoading(true);
     try {
@@ -197,6 +240,51 @@ export default function SubscriptionsPanel() {
 
   return (
     <div>
+      {/* Obunachi kurs chegirmasi — admin boshqaruvi */}
+      <div className="mb-5 bg-card border border-border rounded-lg p-5 shadow-warm">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg flex-shrink-0">
+            <Icon name="ReceiptPercentIcon" size={20} className="text-primary" />
+          </div>
+          <div className="min-w-0">
+            <h3 className="font-heading font-semibold text-foreground">Obunachi kurs chegirmasi</h3>
+            <p className="text-sm text-muted-foreground">
+              Faol obunachilar (all-access bo'lmagan rejalar) pullik kurslarni shu foizda arzon oladi.
+              O'qituvchi chegirmali summadan ulush oladi.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-end gap-3 flex-wrap">
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1">Chegirma (%)</label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={discountInput}
+                onChange={(e) => setDiscountInput(e.target.value)}
+                className="w-28 px-3 py-2 bg-background border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+          </div>
+          <button
+            onClick={saveDiscount}
+            disabled={savingDiscount}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
+          >
+            {savingDiscount ? 'Saqlanmoqda…' : 'Saqlash'}
+          </button>
+          {discountSaved !== null && (
+            <span className="text-sm text-muted-foreground">
+              Joriy: <span className="font-medium text-foreground">{discountSaved}%</span>
+              {discountSaved === 0 && ' (chegirma yo\'q)'}
+            </span>
+          )}
+        </div>
+      </div>
+
       <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div className="inline-flex rounded-md border border-border bg-card p-1">
           {(['plans', 'active'] as const).map((s) => (
