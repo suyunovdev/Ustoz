@@ -76,6 +76,8 @@ const nextConfig = {
   async redirects() {
     return [
       { source: '/landing-page', destination: '/', permanent: true },
+      // Eski sertifikatlar route'i → yangi nom (xatcho'p/eski havolalar 404 bo'lmasligi uchun)
+      { source: '/certificates', destination: '/student-certificates', permanent: true },
     ];
   },
 

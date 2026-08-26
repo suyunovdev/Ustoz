@@ -52,7 +52,7 @@ const TEACHER_OR_ADMIN_ROUTES = [
 
 // Login qilingan har qanday rol (student, teacher, admin)
 const AUTHENTICATED_ROUTES = [
-  '/certificates',
+  '/student-certificates',
   '/profile',
   '/messages',
   '/notifications',

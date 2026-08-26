@@ -35,7 +35,7 @@ const CertificatesPageClient = () => {
     try {
       const res = await fetch('/api/certificates/my', { credentials: 'include' });
       if (res.status === 401) {
-        router.push('/login?redirect=/certificates');
+        router.push('/login?redirect=/student-certificates');
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);

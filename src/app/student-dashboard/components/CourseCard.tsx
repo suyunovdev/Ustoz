@@ -35,7 +35,7 @@ const CourseCard = ({ enrollment }: CourseCardProps) => {
   let ctaClass = 'bg-secondary text-secondary-foreground hover:bg-secondary/90';
 
   if (isCompleted) {
-    ctaHref = '/certificates';
+    ctaHref = '/student-certificates';
     ctaLabel = t('student.certificateLabel');
     ctaClass = 'bg-success text-success-foreground hover:bg-success/90';
   } else if (nextTopic) {

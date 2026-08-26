@@ -267,7 +267,7 @@ const LearningInterfaceInteractive = () => {
             </p>
             <div className="flex flex-col sm:flex-row gap-2">
               <button
-                onClick={() => router.push('/certificates')}
+                onClick={() => router.push('/student-certificates')}
                 className="flex-1 px-4 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors font-medium flex items-center justify-center gap-2"
               >
                 <Icon name="AcademicCapIcon" size={18} />

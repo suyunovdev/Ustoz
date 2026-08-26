@@ -445,7 +445,7 @@ const StudentDashboardInteractive = () => {
                     ))}
                   </div>
                   <button
-                    onClick={() => router.push('/certificates')}
+                    onClick={() => router.push('/student-certificates')}
                     className="w-full mt-4 text-sm text-primary hover:underline font-medium"
                   >
                     {t('student.viewAll')} ({certificates.length}) →

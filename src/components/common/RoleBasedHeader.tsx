@@ -63,7 +63,7 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   const studentNavItems = [
     { label: t('nav.dashboard'), path: '/student-dashboard', icon: 'HomeIcon' },
     { label: t('courses.marketplace'), path: '/course-marketplace', icon: 'ShoppingBagIcon' },
-    { label: t('dashboard.certificates'), path: '/certificates', icon: 'TrophyIcon' },
+    { label: t('dashboard.certificates'), path: '/student-certificates', icon: 'TrophyIcon' },
   ];
 
   const getNavItems = () => {
