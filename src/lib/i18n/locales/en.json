@@ -3044,5 +3044,25 @@
   "admin.statusDegraded": "Degraded",
   "admin.subInactive": "Inactive",
   "admin.chartNoData": "Not enough data to display yet",
-  "admin.systemStatusDegradedDesc": "System partially operational"
+  "admin.systemStatusDegradedDesc": "System partially operational",
+  "aiTutor": {
+    "title": "AI tutor",
+    "explain": "Explain",
+    "practice": "Practice",
+    "hint": "Hint",
+    "placeholder": "Ask a question about the lesson…",
+    "send": "Send",
+    "remaining": "{n} left today",
+    "limitReached": "Daily limit reached. Continue tomorrow.",
+    "notConfigured": "AI is unavailable right now. Try later.",
+    "errorGeneric": "Something went wrong. Please try again.",
+    "upsellTitle": "AI learning tutor",
+    "upsellDesc": "With a subscription, get a personal AI tutor in every lesson — explanations, practice and hints.",
+    "upsellCta": "Subscribe",
+    "disclaimer": "AI can make mistakes — verify important things.",
+    "emptyHint": "Type a question to start, or pick one of the buttons below.",
+    "perkExplain": "Explains complex topics in simple terms",
+    "perkPractice": "Generates practice questions for the topic",
+    "perkHint": "Gives guiding hints, not ready homework answers"
+  }
 }

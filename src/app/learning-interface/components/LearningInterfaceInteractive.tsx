@@ -7,6 +7,7 @@ import CourseNavigation from './CourseNavigation';
 import NoteTaking from './NoteTaking';
 import DiscussionPanel from './DiscussionPanel';
 import ResourceDownloads from './ResourceDownloads';
+import AiTutorPanel from './AiTutorPanel';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
 import { sanitizeHtml } from '@/lib/sanitize-html';
@@ -49,7 +50,7 @@ const LearningInterfaceInteractive = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sections, setSections] = useState<Section[]>([]);
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
-  const [activePanel, setActivePanel] = useState<'notes' | 'discussion' | 'resources'>('notes');
+  const [activePanel, setActivePanel] = useState<'ai' | 'notes' | 'discussion' | 'resources'>('ai');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -441,19 +442,25 @@ const LearningInterfaceInteractive = () => {
               )}
             </div>
 
-            {/* Tablar: Eslatmalar / Muhokama / Materiallar */}
+            {/* Tablar: AI yordamchi / Eslatmalar / Muhokama / Materiallar */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
-              <div className="flex border-b border-border">
-                {(['notes', 'discussion', 'resources'] as const).map((panel) => (
+              <div className="flex border-b border-border overflow-x-auto scrollbar-hide">
+                {(['ai', 'notes', 'discussion', 'resources'] as const).map((panel) => (
                   <button
                     key={panel}
                     onClick={() => setActivePanel(panel)}
-                    className={`px-4 sm:px-5 py-3 text-sm font-medium border-b-2 -mb-px transition-smooth ${
+                    className={`flex items-center gap-1.5 px-4 sm:px-5 py-3 text-sm font-medium border-b-2 -mb-px transition-smooth whitespace-nowrap ${
                       activePanel === panel
                         ? 'border-primary text-primary'
                         : 'border-transparent text-muted-foreground hover:text-foreground'
                     }`}
                   >
+                    {panel === 'ai' && (
+                      <>
+                        <Icon name="SparklesIcon" size={16} variant={activePanel === 'ai' ? 'solid' : 'outline'} />
+                        {t('aiTutor.title')}
+                      </>
+                    )}
                     {panel === 'notes' && t('learning.notes')}
                     {panel === 'discussion' && t('learning.discussion')}
                     {panel === 'resources' && t('learning.materials')}
@@ -461,6 +468,13 @@ const LearningInterfaceInteractive = () => {
                 ))}
               </div>
               <div className="p-4 sm:p-5">
+                {activePanel === 'ai' && (
+                  <AiTutorPanel
+                    topicTitle={currentTopic?.title || ''}
+                    topicContent={currentTopic?.content || ''}
+                    courseTitle={courseTitle}
+                  />
+                )}
                 {activePanel === 'notes' && (
                   <NoteTaking notes={notes} onAddNote={handleAddNote} currentTime={currentTime} onSeek={setCurrentTime} />
                 )}

@@ -62,6 +62,23 @@ export async function hasAllCoursesAccess(userId: string): Promise<boolean> {
 }
 
 /**
+ * Foydalanuvchida umuman faol obuna bormi (reja turidan qat'i nazar).
+ * Obunaga xos premium funksiyalarni (AI yordamchi, sertifikat va h.k.)
+ * gating qilish uchun.
+ */
+export async function hasActiveSubscription(userId: string): Promise<boolean> {
+  const sub = await prisma.subscription.findFirst({
+    where: {
+      userId,
+      status: 'active',
+      expiresAt: { gt: new Date() },
+    },
+    select: { id: true },
+  });
+  return sub !== null;
+}
+
+/**
  * To'lov muvaffaqiyatli bo'lgach obunani faollashtiradi/uzaytiradi.
  * Webhook (click/complete, payme) yoki dev mock-complete'dan chaqiriladi.
  * Idempotent: shu tranzaksiya bo'yicha allaqachon obuna bo'lsa qayta yaratmaydi.

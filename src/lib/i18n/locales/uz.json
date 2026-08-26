@@ -3044,5 +3044,25 @@
   "admin.statusDegraded": "Qisman ishlamoqda",
   "admin.subInactive": "Faol emas",
   "admin.chartNoData": "Ko'rsatish uchun ma'lumot hali yetarli emas",
-  "admin.systemStatusDegradedDesc": "Tizim qisman ishlamoqda"
+  "admin.systemStatusDegradedDesc": "Tizim qisman ishlamoqda",
+  "aiTutor": {
+    "title": "AI yordamchi",
+    "explain": "Tushuntir",
+    "practice": "Mashq ber",
+    "hint": "Maslahat",
+    "placeholder": "Dars bo‘yicha savolingizni yozing…",
+    "send": "Yuborish",
+    "remaining": "Bugun {n} ta qoldi",
+    "limitReached": "Bugungi limit tugadi. Ertaga davom eting.",
+    "notConfigured": "AI hozircha mavjud emas. Keyinroq urinib ko‘ring.",
+    "errorGeneric": "Xatolik yuz berdi. Qayta urinib ko‘ring.",
+    "upsellTitle": "AI o‘quv yordamchisi",
+    "upsellDesc": "Obuna bilan har darsda shaxsiy AI yordamchi — tushuntirish, mashqlar va maslahatlar.",
+    "upsellCta": "Obuna bo‘lish",
+    "disclaimer": "AI xato qilishi mumkin — muhim narsalarni tekshiring.",
+    "emptyHint": "Boshlash uchun savol yozing yoki quyidagi tugmalardan birini tanlang.",
+    "perkExplain": "Murakkab mavzularni sodda tilda tushuntiradi",
+    "perkPractice": "Mavzu bo‘yicha mashq savollari tuzadi",
+    "perkHint": "Uy vazifasiga tayyor javob emas, yo‘naltiruvchi maslahat beradi"
+  }
 }
