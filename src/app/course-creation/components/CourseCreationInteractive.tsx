@@ -10,6 +10,28 @@ import Icon from '@/components/ui/AppIcon';
 import { Skeleton, SkeletonForm } from '@/components/ui/Skeleton';
 import ContentUploadManager from './ContentUploadManager';
 import { useI18n } from '@/contexts/I18nContext';
+import { parseVideoSource } from '@/lib/video';
+
+// Kiritilgan video havolasi qanday aniqlanganini ko'rsatuvchi belgi
+function VideoSourceBadge({ url }: { url: string }) {
+  const src = parseVideoSource(url);
+  const label: Record<string, string> = {
+    youtube: 'YouTube video aniqlandi',
+    vimeo: 'Vimeo video aniqlandi',
+    cloudflare: 'Cloudflare Stream aniqlandi',
+    file: 'To‘g‘ridan-to‘g‘ri video fayl aniqlandi',
+    unknown: 'Havola tanilmadi — YouTube, Vimeo yoki MP4 havolasini kiriting',
+    none: '',
+  };
+  if (src.kind === 'none') return null;
+  const ok = src.kind !== 'unknown';
+  return (
+    <p className={`flex items-center gap-1.5 text-xs ${ok ? 'text-success' : 'text-warning'}`}>
+      <Icon name={ok ? 'CheckCircleIcon' : 'ExclamationTriangleIcon'} size={14} />
+      {label[src.kind]}
+    </p>
+  );
+}
 
 interface Topic {
   id: string;
@@ -19,6 +41,7 @@ interface Topic {
   hasQuiz: boolean;
   isExpanded: boolean;
   content: string;
+  videoUrl: string;
   questions: QuizQuestion[];
   files: FileAttachment[];
   dbId?: string; // Supabase UUID
@@ -128,6 +151,7 @@ const CourseCreationInteractive = () => {
       hasQuiz: false,
       isExpanded: false,
       content: '',
+      videoUrl: '',
       questions: [],
       files: []
     };
@@ -159,6 +183,13 @@ const CourseCreationInteractive = () => {
     if (!selectedTopicId) return;
     setTopics(prev => prev.map(t =>
       t.id === selectedTopicId ? { ...t, content } : t
+    ));
+  };
+
+  const handleVideoUrlChange = (videoUrl: string) => {
+    if (!selectedTopicId) return;
+    setTopics(prev => prev.map(t =>
+      t.id === selectedTopicId ? { ...t, videoUrl } : t
     ));
   };
 
@@ -204,6 +235,7 @@ const CourseCreationInteractive = () => {
         title: t.title,
         duration: t.duration,
         content: t.content,
+        videoUrl: t.videoUrl?.trim() || null,
         hasQuiz: t.hasQuiz,
       }));
 
@@ -669,6 +701,28 @@ const CourseCreationInteractive = () => {
                         {t('courseCreation.writeTopicText')}
                       </p>
                     </div>
+
+                    {/* Dars videosi — asosiy video pleyer uchun */}
+                    <div className="bg-card rounded-md shadow-warm p-4 space-y-2">
+                      <label htmlFor="topic-video-url" className="flex items-center gap-2 text-sm font-medium text-foreground">
+                        <Icon name="VideoCameraIcon" size={18} className="text-primary" />
+                        Dars videosi (ixtiyoriy)
+                      </label>
+                      <input
+                        id="topic-video-url"
+                        type="url"
+                        inputMode="url"
+                        value={selectedTopic.videoUrl}
+                        onChange={(e) => handleVideoUrlChange(e.target.value)}
+                        placeholder="YouTube, Vimeo yoki MP4 havolasi — masalan https://youtu.be/abc123"
+                        className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                      />
+                      <VideoSourceBadge url={selectedTopic.videoUrl} />
+                      <p className="text-xs text-muted-foreground">
+                        Talaba darsni ochganda shu video asosiy pleyerda o‘ynatiladi. Bo‘sh qoldirsangiz, faqat dars matni ko‘rsatiladi.
+                      </p>
+                    </div>
+
                     <RichTextEditor
                       content={selectedTopic.content}
                       onContentChange={handleContentChange}

@@ -109,7 +109,7 @@ const nextConfig = {
           "font-src 'self' data:",
           "img-src 'self' data: blob: https:",
           "connect-src 'self' https://api.resend.com https://my.click.uz https://checkout.paycom.uz https://*.r2.cloudflarestorage.com",
-          "media-src 'self' https://*.cloudflarestream.com blob:",
+          "media-src 'self' blob: https://*.cloudflarestream.com https://*.r2.cloudflarestorage.com https://*.r2.dev",
           "frame-src 'self' https://customer-*.cloudflarestream.com https://www.youtube.com https://player.vimeo.com",
           "object-src 'none'",
           "base-uri 'self'",

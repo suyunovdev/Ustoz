@@ -123,11 +123,12 @@ export async function POST(req: NextRequest) {
       topics: Array.isArray(topics) && topics.length
         ? {
             createMany: {
-              data: topics.map((t: { title: string; duration?: string; content?: string }, i: number) => ({
+              data: topics.map((t: { title: string; duration?: string; content?: string; videoUrl?: string | null }, i: number) => ({
                 title: t.title,
                 orderIndex: i + 1,
                 duration: t.duration || '0 min',
                 content: t.content || '',
+                videoUrl: typeof t.videoUrl === 'string' && t.videoUrl.trim() ? t.videoUrl.trim() : null,
               })),
             },
           }

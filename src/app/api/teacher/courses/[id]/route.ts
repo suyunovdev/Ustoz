@@ -128,6 +128,7 @@ export async function PATCH(
             orderIndex: i + 1,
             duration: incoming[i].duration || '0 min',
             content: incoming[i].content || '',
+            videoUrl: typeof incoming[i].videoUrl === 'string' && incoming[i].videoUrl.trim() ? incoming[i].videoUrl.trim() : null,
             hasQuiz: !!incoming[i].hasQuiz,
           },
         });
@@ -140,6 +141,7 @@ export async function PATCH(
             orderIndex: i + 1,
             duration: incoming[i].duration || '0 min',
             content: incoming[i].content || '',
+            videoUrl: typeof incoming[i].videoUrl === 'string' && incoming[i].videoUrl.trim() ? incoming[i].videoUrl.trim() : null,
             hasQuiz: !!incoming[i].hasQuiz,
           },
         });

@@ -51,9 +51,22 @@ export async function GET(
     return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
   }
 
+  // Kontent himoyasi: pullik mavzuning matni va video havolasi (asosiy pullik
+  // aktiv) faqat yozilgan talaba / muallif / admin uchun. Yozilmagan foydalanuvchi
+  // kurriculum ro'yxatini (sarlavha, davomiylik, tartib) ko'radi, lekin
+  // `content`/`videoUrl` yashiriladi — `isFreePreview` mavzular bundan mustasno
+  // (ular ataylab bepul namuna sifatida ochiq).
+  const hasFullAccess = isEnrolled || isOwner || isAdmin;
+  const topics = course.topics.map((tp) =>
+    hasFullAccess || tp.isFreePreview
+      ? tp
+      : { ...tp, content: '', videoUrl: null },
+  );
+
   return jsonResponse({
     course: {
       ...course,
+      topics,
       priceUzs: course.priceUzs.toString(),
       priceUsd: course.priceUsd.toString(),
       enrollmentCount: course.enrollmentCount,

@@ -125,7 +125,7 @@ const LearningInterfaceInteractive = () => {
         duration: t.duration || '—',
         isCompleted: completedIds.has(t.id),
         isCurrent: false,
-        videoUrl: t.content || '',
+        videoUrl: t.videoUrl || '',
       }));
 
       // URL'dan topicId yoki birinchi tugatilmagan
