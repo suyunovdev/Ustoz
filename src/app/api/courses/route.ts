@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
       category: c.category,
       subjectCategory: c.subjectCategory,
       targetAudience: c.targetAudience,
+      gradeLevel: c.gradeLevel,
       language: c.language,
       difficultyLevel: c.difficultyLevel,
       priceUzs: c.priceUzs.toString(),

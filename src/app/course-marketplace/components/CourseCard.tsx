@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
+import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/AppIcon';
-import { getSubjectLabel, getAudienceLabel } from '@/lib/data/subject-labels';
+import { getSubjectLabel, getAudienceLabel, getDifficultyLabel } from '@/lib/data/subject-labels';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface Course {
@@ -89,7 +90,7 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
 
         {/* Difficulty Badge */}
         <div className="absolute bottom-3 left-3 px-3 py-1 bg-card rounded-full text-xs font-medium shadow-warm">
-          {course.difficulty}
+          {getDifficultyLabel(course.difficulty)}
         </div>
       </div>
 
@@ -117,13 +118,7 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
 
         {/* Instructor */}
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-muted">
-            <AppImage
-              src={course.instructorImage}
-              alt={course.instructorImageAlt}
-              className="w-full h-full object-cover"
-            />
-          </div>
+          <Avatar src={course.instructorImage} name={course.instructor} size={32} />
           <span className="text-sm text-muted-foreground">{course.instructor}</span>
         </div>
 

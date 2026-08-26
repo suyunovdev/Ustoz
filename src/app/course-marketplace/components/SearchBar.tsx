@@ -7,12 +7,13 @@ import { useI18n } from '@/contexts/I18nContext';
 interface SearchBarProps {
   onSearch: (query: string) => void;
   placeholder?: string;
+  defaultValue?: string;
 }
 
-const SearchBar = ({ onSearch, placeholder }: SearchBarProps) => {
+const SearchBar = ({ onSearch, placeholder, defaultValue = '' }: SearchBarProps) => {
   const { t } = useI18n();
   const resolvedPlaceholder = placeholder || t('marketplace.searchCourses');
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(defaultValue);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

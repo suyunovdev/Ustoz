@@ -239,10 +239,13 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
                   />
                 </div>
               </div>
+              {/* Slayder so'm miqyosida (ilgari max=1000 edi — barcha real kurslarni
+                  filtrlab tashlardi). 0–5 mln so'm, 50 ming qadam. */}
               <input
                 type="range"
                 min="0"
-                max="1000"
+                max="5000000"
+                step="50000"
                 value={localFilters.priceRange[1]}
                 onChange={(e) => handlePriceChange(1, Number(e.target.value))}
                 className="w-full accent-primary"

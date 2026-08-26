@@ -13,6 +13,8 @@ import LoadingSkeleton from './LoadingSkeleton';
 import ErrorState from '@/components/common/ErrorState';
 import { useI18n } from '@/contexts/I18nContext';
 
+const WISHLIST_KEY = 'ustoz_marketplace_wishlist';
+
 interface Course {
   id: string;
   title: string;
@@ -29,6 +31,10 @@ interface Course {
   difficulty: string;
   language: string;
   category: string;
+  subjectCategory: string;
+  targetAudience: string;
+  gradeLevel: number | null;
+  createdAt: string;
 }
 
 interface Category {
@@ -84,6 +90,14 @@ const MarketplaceInteractive = () => {
 
   useEffect(() => {
     setIsHydrated(true);
+    // Saqlangan kurslarni localStorage'dan tiklash (backend wishlist yo'q —
+    // hech bo'lmaganda qurilmada barqaror saqlanadi, reload'da yo'qolmaydi)
+    try {
+      const raw = localStorage.getItem(WISHLIST_KEY);
+      if (raw) setWishlistedCourses(JSON.parse(raw));
+    } catch {
+      /* ignore */
+    }
     fetchCourses();
   }, []);
 
@@ -101,9 +115,11 @@ const MarketplaceInteractive = () => {
         id: c.id,
         title: c.title,
         instructor: c.teacherName || t('auth.teacher'),
-        instructorImage: c.teacherAvatar || 'https://img.rocket.new/generatedImages/rocket_gen_img_19acf6093-1763297372321.png',
+        // Avatar bo'lmasa bo'sh — CourseCard initials-fallback ko'rsatadi (generic
+        // template rasm EMAS)
+        instructorImage: c.teacherAvatar || '',
         instructorImageAlt: t('marketplace.instructorImageAlt', { name: c.teacherName || t('auth.teacher') }),
-        coverImage: optimizeImageUrl(c.coverImage || 'https://images.unsplash.com/photo-1516101922849-2bf0be616449', 500),
+        coverImage: c.coverImage ? optimizeImageUrl(c.coverImage, 500) : '',
         coverImageAlt: t('marketplace.courseCoverAlt', { title: c.title }),
         rating: Number(c.rating) || 0,
         reviewCount: c.reviewCount || 0,
@@ -113,6 +129,10 @@ const MarketplaceInteractive = () => {
         difficulty: c.difficultyLevel || 'Beginner',
         language: c.language || 'uz',
         category: c.category || 'other',
+        subjectCategory: c.subjectCategory || '',
+        targetAudience: c.targetAudience || '',
+        gradeLevel: typeof c.gradeLevel === 'number' ? c.gradeLevel : null,
+        createdAt: c.createdAt || '',
       }));
 
       setCourses(mapped);
@@ -153,9 +173,17 @@ const MarketplaceInteractive = () => {
 
   const handleWishlistToggle = (courseId: string) => {
     if (!isHydrated) return;
-    setWishlistedCourses((prev) =>
-      prev.includes(courseId) ? prev.filter((id) => id !== courseId) : [...prev, courseId]
-    );
+    setWishlistedCourses((prev) => {
+      const next = prev.includes(courseId)
+        ? prev.filter((id) => id !== courseId)
+        : [...prev, courseId];
+      try {
+        localStorage.setItem(WISHLIST_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
   };
 
   const filterCourses = () => {
@@ -182,8 +210,21 @@ const MarketplaceInteractive = () => {
       filtered = filtered.filter((c) => filters.languages.includes(c.language));
     }
 
+    // Qiyinlik — katta/kichik harfga bog'liq bo'lmagan taqqoslash
     if (filters.difficulty.length > 0) {
-      filtered = filtered.filter((c) => filters.difficulty.includes(c.difficulty));
+      const wanted = filters.difficulty.map((d) => d.toLowerCase());
+      filtered = filtered.filter((c) => wanted.includes((c.difficulty || '').toLowerCase()));
+    }
+
+    // Auditoriya / fan / sinf — ilgari yig'ilardi-yu qo'llanilmasdi (o'lik filtr)
+    if (filters.targetAudience) {
+      filtered = filtered.filter((c) => c.targetAudience === filters.targetAudience);
+    }
+    if (filters.subjectCategory) {
+      filtered = filtered.filter((c) => c.subjectCategory === filters.subjectCategory);
+    }
+    if (filters.gradeLevel) {
+      filtered = filtered.filter((c) => String(c.gradeLevel ?? '') === filters.gradeLevel);
     }
 
     if (filters.minRating > 0) {
@@ -201,7 +242,8 @@ const MarketplaceInteractive = () => {
         filtered.sort((a, b) => b.rating - a.rating);
         break;
       case 'newest':
-        filtered.reverse();
+        // Haqiqiy sana bo'yicha — ilgari faqat reverse() edi (noto'g'ri)
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         break;
       default:
         filtered.sort((a, b) => b.enrollmentCount - a.enrollmentCount);
@@ -271,7 +313,7 @@ const MarketplaceInteractive = () => {
           <div className="lg:col-span-3 space-y-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
-                <SearchBar onSearch={setSearchQuery} />
+                <SearchBar onSearch={setSearchQuery} defaultValue={searchQuery} />
               </div>
               <SortControls currentSort={currentSort} onSortChange={setCurrentSort} />
             </div>
