@@ -4,13 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import VideoPlayer from './VideoPlayer';
 import CourseNavigation from './CourseNavigation';
-import InteractiveTranscript from './InteractiveTranscript';
 import NoteTaking from './NoteTaking';
-import ProgressTracker from './ProgressTracker';
 import DiscussionPanel from './DiscussionPanel';
 import ResourceDownloads from './ResourceDownloads';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 import type { CourseProgressResponse } from '@/types/dashboard.types';
 import { useCompleteTopicMutation } from '@/hooks/mutations/useCompleteTopicMutation';
 import { useI18n } from '@/contexts/I18nContext';
@@ -23,6 +22,8 @@ interface Topic {
   isCompleted: boolean;
   isCurrent: boolean;
   videoUrl: string;
+  content: string;
+  moduleTitle: string;
 }
 
 interface Section {
@@ -48,7 +49,7 @@ const LearningInterfaceInteractive = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [sections, setSections] = useState<Section[]>([]);
   const [currentTopic, setCurrentTopic] = useState<Topic | null>(null);
-  const [activePanel, setActivePanel] = useState<'transcript' | 'notes' | 'discussion' | 'resources'>('transcript');
+  const [activePanel, setActivePanel] = useState<'notes' | 'discussion' | 'resources'>('notes');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
@@ -126,6 +127,8 @@ const LearningInterfaceInteractive = () => {
         isCompleted: completedIds.has(t.id),
         isCurrent: false,
         videoUrl: t.videoUrl || '',
+        content: t.content || '',
+        moduleTitle: t.moduleTitle || '',
       }));
 
       // URL'dan topicId yoki birinchi tugatilmagan
@@ -247,6 +250,13 @@ const LearningInterfaceInteractive = () => {
     );
   }
 
+  // Mavzular bo'ylab navigatsiya (oldingi / keyingi)
+  const allTopics = sections.flatMap((s) => s.topics);
+  const currentIndex = allTopics.findIndex((tp) => tp.id === currentTopic?.id);
+  const prevTopic = currentIndex > 0 ? allTopics[currentIndex - 1] : null;
+  const nextTopic =
+    currentIndex >= 0 && currentIndex < allTopics.length - 1 ? allTopics[currentIndex + 1] : null;
+
   return (
     <div className="flex flex-col h-[calc(100vh-3.5rem)] md:h-screen bg-background">
       {/* Certificate modal */}
@@ -285,143 +295,202 @@ const LearningInterfaceInteractive = () => {
       )}
 
       {/* Kurs konteksti bari (sidebar layout ichida — fixed EMAS) */}
-      <div className="relative flex-shrink-0 bg-card border-b border-border h-12 flex items-center px-4 gap-3">
-        <h1 className="text-sm font-medium text-foreground flex-1 truncate min-w-0">{courseTitle}</h1>
-        <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-shrink-0">
-          <Icon name="ChartBarIcon" size={16} />
-          <span className="font-data tabular-nums">{enrollmentProgress}%</span>
-          <span className="hidden md:inline">{t('learning.completed')}</span>
+      <div className="flex-shrink-0 bg-card border-b border-border h-12 flex items-center gap-3 px-4 sm:px-6">
+        <h1 className="text-sm font-medium text-foreground truncate min-w-0 flex-1">{courseTitle}</h1>
+        <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+          <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-500"
+              style={{ width: `${enrollmentProgress}%` }}
+            />
+          </div>
+          <span className="text-xs font-data tabular-nums text-muted-foreground">
+            {enrollmentProgress}%
+          </span>
         </div>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           aria-label={t('learning.curriculumTitle')}
-          className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+          className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors flex-shrink-0"
         >
-          <Icon name={isSidebarOpen ? 'ChevronDoubleRightIcon' : 'ChevronDoubleLeftIcon'} size={20} />
+          <Icon name="ListBulletIcon" size={20} />
         </button>
-        {/* Progress chizig'i — bar tagida */}
-        <div
-          className="absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-500"
-          style={{ width: `${enrollmentProgress}%` }}
-        />
       </div>
 
       <div className="flex flex-1 min-h-0">
-        {/* Main content */}
-        <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300`}>
-          {/* Video area */}
-          <div className="bg-black flex-shrink-0" style={{ aspectRatio: '16/9', maxHeight: '60vh' }}>
-            {currentTopic?.videoUrl ? (
-              <VideoPlayer
-                videoUrl={currentTopic.videoUrl}
-                title={currentTopic.title}
-                currentTime={currentTime}
-                onTimeUpdate={setCurrentTime}
-                playbackSpeed={playbackSpeed}
-                onSpeedChange={setPlaybackSpeed}
-                onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <div className="text-center">
-                  <Icon name="PlayCircleIcon" size={64} className="text-white/30 mx-auto mb-3" />
-                  <p className="text-white/50 text-sm">
-                    {currentTopic ? `"${currentTopic.title}" — video yuklanmagan` : 'Mavzu tanlang'}
-                  </p>
+        {/* Asosiy kontent — skroll bo'ladigan ustun */}
+        <div className="flex-1 min-w-0 overflow-y-auto">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+            {/* Dars sarlavhasi */}
+            <div className="space-y-3">
+              {currentTopic?.moduleTitle && (
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">
+                  {currentTopic.moduleTitle}
+                </p>
+              )}
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-2xl md:text-3xl font-heading font-bold text-foreground text-balance">
+                    {currentTopic?.title}
+                  </h2>
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-2 text-sm text-muted-foreground">
+                    {currentIndex >= 0 && (
+                      <span className="flex items-center gap-1">
+                        <Icon name="ListBulletIcon" size={15} />
+                        {t('learning.topicPosition', { current: currentIndex + 1, total: allTopics.length })}
+                      </span>
+                    )}
+                    {currentTopic?.duration && currentTopic.duration !== '—' && (
+                      <>
+                        <span className="text-muted-foreground/40">·</span>
+                        <span className="flex items-center gap-1">
+                          <Icon name="ClockIcon" size={15} />
+                          {currentTopic.duration}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-shrink-0">
+                  {currentTopic?.isCompleted ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success/10 text-success text-sm font-medium">
+                      <Icon name="CheckCircleIcon" size={18} variant="solid" />
+                      {t('learning.completedShort')}
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => currentTopic && handleTopicComplete(currentTopic.id)}
+                      disabled={isMarkingComplete}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-success text-white rounded-lg text-sm font-medium hover:bg-success/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-warm"
+                    >
+                      {isMarkingComplete ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          {t('learning.saving')}
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="CheckIcon" size={16} />
+                          {t('learning.markComplete')}
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
 
-          {/* Topic info */}
-          <div className="bg-card border-b border-border px-6 py-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground truncate">{currentTopic?.title}</h2>
-            <div className="flex items-center gap-3">
-              <select
-                value={playbackSpeed}
-                onChange={(e) => setPlaybackSpeed(Number(e.target.value))}
-                className="text-sm bg-background border border-border rounded px-2 py-1"
-              >
-                {[0.5, 0.75, 1, 1.25, 1.5, 2].map((s) => (
-                  <option key={s} value={s}>{s}x</option>
-                ))}
-              </select>
-              {currentTopic && !currentTopic.isCompleted && (
+            {/* Video (agar bor bo'lsa) — toza yaxlit konteyner */}
+            {currentTopic?.videoUrl && (
+              <div className="rounded-xl overflow-hidden shadow-warm-lg bg-black">
+                <VideoPlayer
+                  videoUrl={currentTopic.videoUrl}
+                  title={currentTopic.title}
+                  currentTime={currentTime}
+                  onTimeUpdate={setCurrentTime}
+                  playbackSpeed={playbackSpeed}
+                  onSpeedChange={setPlaybackSpeed}
+                  onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                />
+              </div>
+            )}
+
+            {/* Dars matni (kontent) yoki bo'sh holat */}
+            {currentTopic?.content ? (
+              <article
+                className="prose prose-neutral dark:prose-invert max-w-none prose-headings:font-heading prose-a:text-primary prose-img:rounded-lg"
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentTopic.content) }}
+              />
+            ) : !currentTopic?.videoUrl ? (
+              <div className="rounded-xl border border-dashed border-border bg-muted/30 p-10 text-center">
+                <Icon name="DocumentTextIcon" size={40} className="text-muted-foreground/50 mx-auto mb-3" />
+                <p className="text-foreground font-medium mb-1">{t('learning.materialComingSoonTitle')}</p>
+                <p className="text-sm text-muted-foreground">{t('learning.materialComingSoon')}</p>
+              </div>
+            ) : null}
+
+            {/* Oldingi / keyingi mavzu */}
+            <div className="flex items-center justify-between gap-3 pt-4 border-t border-border">
+              {prevTopic ? (
                 <button
-                  onClick={() => handleTopicComplete(currentTopic.id)}
-                  disabled={isMarkingComplete}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-success text-white rounded-md text-sm hover:bg-success/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => handleTopicSelect(prevTopic)}
+                  className="inline-flex items-center gap-2 min-w-0 text-left rounded-lg px-3 py-2 hover:bg-muted transition-colors"
                 >
-                  {isMarkingComplete ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      {t('learning.saving')}
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="CheckIcon" size={16} />
-                      Mavzuni tugatdim
-                    </>
-                  )}
+                  <Icon name="ArrowLeftIcon" size={18} className="text-muted-foreground flex-shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block text-xs text-muted-foreground">{t('learning.prevTopic')}</span>
+                    <span className="block text-sm font-medium text-foreground truncate max-w-[36vw] sm:max-w-[16rem]">{prevTopic.title}</span>
+                  </span>
                 </button>
+              ) : (
+                <span />
               )}
-              {currentTopic?.isCompleted && (
-                <span className="flex items-center gap-1 text-success text-sm font-medium">
-                  <Icon name="CheckCircleIcon" size={16} variant="solid" />
-                  Tugatildi
-                </span>
+              {nextTopic ? (
+                <button
+                  onClick={() => handleTopicSelect(nextTopic)}
+                  className="inline-flex items-center gap-2 min-w-0 text-right rounded-lg px-3 py-2 hover:bg-muted transition-colors ml-auto"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-xs text-muted-foreground">{t('learning.nextTopic')}</span>
+                    <span className="block text-sm font-medium text-foreground truncate max-w-[36vw] sm:max-w-[16rem]">{nextTopic.title}</span>
+                  </span>
+                  <Icon name="ArrowRightIcon" size={18} className="text-primary flex-shrink-0" />
+                </button>
+              ) : (
+                <span />
               )}
             </div>
-          </div>
 
-          {/* Panels */}
-          <div className="flex border-b border-border bg-card">
-            {(['transcript', 'notes', 'discussion', 'resources'] as const).map((panel) => (
-              <button
-                key={panel}
-                onClick={() => setActivePanel(panel)}
-                className={`px-4 py-2.5 text-sm font-medium transition-smooth border-b-2 ${
-                  activePanel === panel
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {panel === 'transcript' && t('learning.transcript')}
-                {panel === 'notes' && t('learning.notes')}
-                {panel === 'discussion' && t('learning.discussion')}
-                {panel === 'resources' && t('learning.materials')}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex-1 overflow-y-auto p-4">
-            {activePanel === 'transcript' && (
-              <InteractiveTranscript segments={[]} currentTime={currentTime} onSeek={setCurrentTime} />
-            )}
-            {activePanel === 'notes' && (
-              <NoteTaking notes={notes} onAddNote={handleAddNote} currentTime={currentTime} onSeek={setCurrentTime} />
-            )}
-            {activePanel === 'discussion' && (
-              <DiscussionPanel topicId={currentTopic?.id || ''} />
-            )}
-            {activePanel === 'resources' && (
-              <ResourceDownloads topicId={currentTopic?.id || ''} />
-            )}
+            {/* Tablar: Eslatmalar / Muhokama / Materiallar */}
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              <div className="flex border-b border-border">
+                {(['notes', 'discussion', 'resources'] as const).map((panel) => (
+                  <button
+                    key={panel}
+                    onClick={() => setActivePanel(panel)}
+                    className={`px-4 sm:px-5 py-3 text-sm font-medium border-b-2 -mb-px transition-smooth ${
+                      activePanel === panel
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {panel === 'notes' && t('learning.notes')}
+                    {panel === 'discussion' && t('learning.discussion')}
+                    {panel === 'resources' && t('learning.materials')}
+                  </button>
+                ))}
+              </div>
+              <div className="p-4 sm:p-5">
+                {activePanel === 'notes' && (
+                  <NoteTaking notes={notes} onAddNote={handleAddNote} currentTime={currentTime} onSeek={setCurrentTime} />
+                )}
+                {activePanel === 'discussion' && <DiscussionPanel topicId={currentTopic?.id || ''} />}
+                {activePanel === 'resources' && <ResourceDownloads topicId={currentTopic?.id || ''} />}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Sidebar */}
+        {/* Kurikulum paneli — desktop'da yon ustun, mobilda slide-over */}
         {isSidebarOpen && (
-          <div className="w-80 flex-shrink-0 border-l border-border bg-card overflow-y-auto">
-            <div className="p-3 border-b border-border">
-              <h3 className="font-medium text-foreground text-sm">{t('learning.curriculumTitle')}</h3>
-            </div>
-            <CourseNavigation
-              sections={sections}
-              currentTopicId={currentTopic?.id || ''}
-              onTopicChange={handleTopicSelect}
+          <>
+            <div
+              className="lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+              onClick={() => setIsSidebarOpen(false)}
+              aria-hidden="true"
             />
-          </div>
+            <aside className="fixed top-0 bottom-0 right-0 z-50 w-80 max-w-[85vw] border-l border-border bg-card overflow-y-auto lg:static lg:z-auto lg:max-w-none lg:flex-shrink-0">
+              <CourseNavigation
+                sections={sections}
+                currentTopicId={currentTopic?.id || ''}
+                onTopicChange={(tp) => {
+                  handleTopicSelect(tp);
+                  if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                }}
+                progress={enrollmentProgress}
+              />
+            </aside>
+          </>
         )}
       </div>
     </div>

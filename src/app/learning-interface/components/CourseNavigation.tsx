@@ -10,6 +10,8 @@ interface Topic {
   isCompleted: boolean;
   isCurrent: boolean;
   videoUrl: string;
+  content: string;
+  moduleTitle: string;
 }
 
 interface Section {
@@ -22,57 +24,82 @@ interface CourseNavigationProps {
   sections: Section[];
   currentTopicId: string;
   onTopicChange: (topic: Topic) => void;
+  progress: number;
 }
 
-const CourseNavigation = ({ sections, currentTopicId, onTopicChange }: CourseNavigationProps) => {
+const CourseNavigation = ({ sections, currentTopicId, onTopicChange, progress }: CourseNavigationProps) => {
   const { t } = useI18n();
+  const allTopics = sections.flatMap((s) => s.topics);
+  const completedCount = allTopics.filter((tp) => tp.isCompleted).length;
+
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b border-border">
-        <h2 className="font-heading font-semibold text-foreground">{t('learning.courseTopics')}</h2>
+    <div className="flex flex-col h-full">
+      {/* Sarlavha + progress (yagona) */}
+      <div className="sticky top-0 z-10 bg-card p-4 border-b border-border">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-heading font-semibold text-foreground text-sm">
+            {t('learning.courseTopics')}
+          </h2>
+          <span className="text-xs font-data tabular-nums text-muted-foreground">
+            {completedCount}/{allTopics.length}
+          </span>
+        </div>
+        <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
-        {sections.map((section) => (
-          <div key={section.id} className="border-b border-border">
-            <div className="p-4 bg-muted">
-              <h3 className="font-medium text-foreground text-sm">{section.title}</h3>
-            </div>
-            <div>
-              {section.topics.map((topic) => (
-                <button
-                  key={topic.id}
-                  onClick={() => onTopicChange(topic)}
-                  className={`w-full p-4 text-left transition-smooth border-l-4 ${
-                    topic.id === currentTopicId
-                      ? 'bg-primary/10 border-primary' :'border-transparent hover:bg-muted/50'
+      {/* Mavzular ro'yxati */}
+      <nav className="flex-1 py-2">
+        {allTopics.map((topic, i) => {
+          const active = topic.id === currentTopicId;
+          return (
+            <button
+              key={topic.id}
+              onClick={() => onTopicChange(topic)}
+              aria-current={active ? 'true' : undefined}
+              className={`w-full flex items-start gap-3 px-4 py-3 text-left border-l-2 transition-smooth ${
+                active
+                  ? 'bg-primary/10 border-primary'
+                  : 'border-transparent hover:bg-muted/50'
+              }`}
+            >
+              {/* Status / raqam */}
+              <span className="mt-0.5 flex-shrink-0">
+                {topic.isCompleted ? (
+                  <Icon name="CheckCircleIcon" size={20} variant="solid" className="text-success" />
+                ) : active ? (
+                  <Icon name="PlayCircleIcon" size={20} variant="solid" className="text-primary" />
+                ) : (
+                  <span className="flex items-center justify-center w-5 h-5 rounded-full border border-border text-[11px] font-data text-muted-foreground">
+                    {i + 1}
+                  </span>
+                )}
+              </span>
+
+              {/* Nom + meta */}
+              <span className="flex-1 min-w-0">
+                <span
+                  className={`block text-sm font-medium line-clamp-2 ${
+                    active ? 'text-primary' : 'text-foreground'
                   }`}
                 >
-                  <div className="flex items-start space-x-3">
-                    <div className="mt-0.5">
-                      {topic.isCompleted ? (
-                        <Icon name="CheckCircleIcon" size={20} variant="solid" className="text-success" />
-                      ) : topic.id === currentTopicId ? (
-                        <Icon name="PlayCircleIcon" size={20} variant="solid" className="text-primary" />
-                      ) : (
-                        <Icon name="PlayCircleIcon" size={20} className="text-muted-foreground" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium line-clamp-2 ${
-                        topic.id === currentTopicId ? 'text-primary' : 'text-foreground'
-                      }`}>
-                        {topic.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1 font-data">{topic.duration}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
+                  {topic.title}
+                </span>
+                <span className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                  {topic.videoUrl && <Icon name="VideoCameraIcon" size={13} />}
+                  {topic.duration && topic.duration !== '—' && (
+                    <span className="font-data">{topic.duration}</span>
+                  )}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </nav>
     </div>
   );
 };

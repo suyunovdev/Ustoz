@@ -2357,7 +2357,14 @@
     "noResources": "Для этой темы ещё нет материалов",
     "noComments": "Пока нет комментариев. Будьте первым.",
     "instructorBadge": "Преподаватель",
-    "noFile": "Файл не прикреплён"
+    "noFile": "Файл не прикреплён",
+    "markComplete": "Отметить пройденным",
+    "completedShort": "Пройдено",
+    "nextTopic": "Следующая тема",
+    "prevTopic": "Предыдущая тема",
+    "topicPosition": "Тема {current}/{total}",
+    "materialComingSoonTitle": "Материал готовится",
+    "materialComingSoon": "Для этой темы пока не добавлено видео или текст. Преподаватель скоро загрузит материал."
   },
   "groups": {
     "loadingData": "Загрузка данных группы...",

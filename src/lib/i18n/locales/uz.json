@@ -2357,7 +2357,14 @@
     "noResources": "Bu mavzu uchun hali material yuklanmagan",
     "noComments": "Hali izoh yo'q. Birinchi bo'lib fikr bildiring.",
     "instructorBadge": "O'qituvchi",
-    "noFile": "Fayl biriktirilmagan"
+    "noFile": "Fayl biriktirilmagan",
+    "markComplete": "Mavzuni tugatdim",
+    "completedShort": "Tugatildi",
+    "nextTopic": "Keyingi mavzu",
+    "prevTopic": "Oldingi mavzu",
+    "topicPosition": "Mavzu {current}/{total}",
+    "materialComingSoonTitle": "Material tayyorlanmoqda",
+    "materialComingSoon": "Bu mavzu uchun video yoki matn hali qo'shilmagan. O'qituvchi tez orada material joylaydi."
   },
   "groups": {
     "loadingData": "Guruh ma'lumotlari yuklanmoqda...",

@@ -2357,7 +2357,14 @@
     "noResources": "No materials for this topic yet",
     "noComments": "No comments yet. Be the first to share.",
     "instructorBadge": "Instructor",
-    "noFile": "No file attached"
+    "noFile": "No file attached",
+    "markComplete": "Mark as complete",
+    "completedShort": "Completed",
+    "nextTopic": "Next topic",
+    "prevTopic": "Previous topic",
+    "topicPosition": "Topic {current}/{total}",
+    "materialComingSoonTitle": "Material coming soon",
+    "materialComingSoon": "No video or text has been added for this topic yet. The instructor will upload material soon."
   },
   "groups": {
     "loadingData": "Loading group data...",
