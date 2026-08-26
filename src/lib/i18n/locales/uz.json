@@ -2576,7 +2576,9 @@
     "whatYouLearn": "Nimalarni o'rganasiz",
     "noDescription": "Bu kurs uchun tavsif kiritilmagan.",
     "noReviews": "Hozircha sharhlar yo'q. Birinchi bo'lib fikr bildiring!",
-    "freePreview": "Bepul"
+    "freePreview": "Bepul",
+    "subFreeBadge": "Obuna bilan bepul",
+    "subDiscountBadge": "Obuna chegirmasi −{pct}%"
   },
   "categories": {
     "mathematics": "Matematika",

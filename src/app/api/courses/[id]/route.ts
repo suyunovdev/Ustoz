@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
+import { getSubscriberDiscountPct } from '@/lib/services/subscription.service';
 
 // GET /api/courses/[id]
 export async function GET(
@@ -34,11 +35,16 @@ export async function GET(
 
   // O'quvchi enrolled ekanini tekshirish
   let isEnrolled = false;
+  // Obuna chegirmasi (0–100) — kirgan talaba uchun. Kurs narxiga qo'llanadi.
+  let subscriberDiscountPct = 0;
   if (session) {
     const enrollment = await prisma.enrollment.findFirst({
       where: { studentId: session.sub, courseId: id },
     });
     isEnrolled = !!enrollment;
+    if (session.role === 'student') {
+      subscriberDiscountPct = await getSubscriberDiscountPct(session.sub);
+    }
   }
 
   // Tasdiqlanmagan / nashr qilinmagan kursni FAQAT egasi, admin yoki
@@ -147,6 +153,7 @@ export async function GET(
       priceUsd: course.priceUsd.toString(),
       enrollmentCount: course.enrollmentCount,
       isEnrolled,
+      subscriberDiscountPct,
       ratingDistribution,
       relatedCourses: relatedRaw.map(toCard),
       instructorCourses: instructorRaw.map(toCard),

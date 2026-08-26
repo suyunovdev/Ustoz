@@ -2576,7 +2576,9 @@
     "whatYouLearn": "What you'll learn",
     "noDescription": "No description provided for this course.",
     "noReviews": "No reviews yet. Be the first to share your thoughts!",
-    "freePreview": "Free"
+    "freePreview": "Free",
+    "subFreeBadge": "Free with subscription",
+    "subDiscountBadge": "Subscription discount −{pct}%"
   },
   "categories": {
     "mathematics": "Mathematics",

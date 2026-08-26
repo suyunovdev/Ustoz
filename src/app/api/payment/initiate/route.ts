@@ -12,6 +12,7 @@ import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { isUuid } from '@/lib/validation';
+import { getSubscriberDiscountPct, applyDiscount } from '@/lib/services/subscription.service';
 import type { PaymentMethod } from '@/generated/prisma/client';
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? 'http://localhost:4028';
@@ -76,9 +77,24 @@ export async function POST(req: NextRequest) {
       if (existing?.isActive) {
         return jsonResponse({ error: 'Siz allaqachon bu kursga yozilgansiz' }, { status: 409 });
       }
+      // Obuna chegirmasi — obunachi chegirmali narxda to'laydi (o'qituvchi chegirmali
+      // summadan ulush oladi). all-access (100%) bo'lsa — bepul enroll ishlatilsin.
+      const discountPct = await getSubscriberDiscountPct(session.sub);
+      if (discountPct >= 100) {
+        return jsonResponse(
+          { error: 'Obunangiz bu kursni to\'liq qoplaydi — bepul yozilish ishlatiladi.', code: 'FREE_VIA_SUBSCRIPTION' },
+          { status: 400 },
+        );
+      }
+      const originalUzs = priceUzs;
+      priceUzs = applyDiscount(priceUzs, discountPct);
       kind = 'course';
       refId = courseId.slice(0, 8);
-      txnExtra = { kind: 'course', courseId };
+      txnExtra = {
+        kind: 'course',
+        courseId,
+        ...(discountPct > 0 ? { metadata: { originalUzs, discountPct } } : {}),
+      };
     } else {
       throw new ValidationError('courseId yoki planId majburiy');
     }

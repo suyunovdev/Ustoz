@@ -78,6 +78,37 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
   return sub !== null;
 }
 
+// Obunachi kurs chegirmasi (foizda). Env: SUBSCRIBER_COURSE_DISCOUNT_PCT (0–100).
+export const SUBSCRIBER_COURSE_DISCOUNT_PCT = (() => {
+  const raw = Number(process.env.SUBSCRIBER_COURSE_DISCOUNT_PCT);
+  if (!Number.isFinite(raw)) return 0;
+  return Math.max(0, Math.min(100, Math.round(raw)));
+})();
+
+/**
+ * Foydalanuvchining pullik kurslarga obuna chegirmasi (0–100).
+ *   - all-access reja → 100 (bepul; enroll orqali)
+ *   - boshqa faol obuna → SUBSCRIBER_COURSE_DISCOUNT_PCT
+ *   - obuna yo'q → 0
+ * Bir nechta obuna bo'lsa — eng foydalisi (kattasi) tanlanadi.
+ */
+export async function getSubscriberDiscountPct(userId: string): Promise<number> {
+  const subs = await prisma.subscription.findMany({
+    where: { userId, status: 'active', expiresAt: { gt: new Date() } },
+    select: { plan: { select: { allCoursesAccess: true } } },
+  });
+  if (subs.length === 0) return 0;
+  if (subs.some((s) => s.plan.allCoursesAccess)) return 100;
+  return SUBSCRIBER_COURSE_DISCOUNT_PCT;
+}
+
+/** Narxga chegirma qo'llab, butun so'mgacha yaxlitlaydi (100 ming'gача emas). */
+export function applyDiscount(priceUzs: number, discountPct: number): number {
+  if (discountPct <= 0) return priceUzs;
+  if (discountPct >= 100) return 0;
+  return Math.round((priceUzs * (100 - discountPct)) / 100);
+}
+
 /**
  * To'lov muvaffaqiyatli bo'lgach obunani faollashtiradi/uzaytiradi.
  * Webhook (click/complete, payme) yoki dev mock-complete'dan chaqiriladi.

@@ -22,16 +22,22 @@ interface CourseSidebarProps {
   onPurchase: () => void;
   isPurchasing: boolean;
   isEnrolled: boolean;
+  discountPct?: number;
 }
 
-const CourseSidebar = ({ course, onPurchase, isPurchasing, isEnrolled }: CourseSidebarProps) => {
+const CourseSidebar = ({ course, onPurchase, isPurchasing, isEnrolled, discountPct = 0 }: CourseSidebarProps) => {
   const { t, locale } = useI18n();
+
+  const priceUzs = course.pricing.uzs;
+  const hasDiscount = !isEnrolled && priceUzs > 0 && discountPct > 0 && discountPct < 100;
+  const allAccessFree = !isEnrolled && priceUzs > 0 && discountPct >= 100;
+  const finalUzs = hasDiscount ? Math.round((priceUzs * (100 - discountPct)) / 100) : priceUzs;
 
   const ctaLabel = isPurchasing
     ? t('courseDetails.loading')
     : isEnrolled
       ? t('courseDetails.continueLearning')
-      : course.pricing.uzs === 0
+      : priceUzs === 0 || allAccessFree
         ? t('courseDetails.enrollFree')
         : t('courseDetails.buyCourse');
 
@@ -62,11 +68,35 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing, isEnrolled }: CourseS
     <div className="sticky top-24 space-y-4">
       {/* Pricing Card */}
       <div className="bg-card rounded-md shadow-warm-lg p-6 space-y-4">
-        <div className="flex items-baseline space-x-2">
-          <span className="text-3xl font-heading font-bold text-primary">
-            {course.pricing.uzs > 0 ? formatCurrency(course.pricing.uzs, locale, 'UZS') : t('courses.free')}
-          </span>
-        </div>
+        {allAccessFree ? (
+          <div className="space-y-1">
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-heading font-bold text-success">{t('courses.free')}</span>
+              <span className="text-base text-muted-foreground line-through">{formatCurrency(priceUzs, locale, 'UZS')}</span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
+              <Icon name="SparklesIcon" size={13} />
+              {t('courseDetails.subFreeBadge')}
+            </span>
+          </div>
+        ) : hasDiscount ? (
+          <div className="space-y-1">
+            <div className="flex items-baseline gap-2 flex-wrap">
+              <span className="text-3xl font-heading font-bold text-primary">{formatCurrency(finalUzs, locale, 'UZS')}</span>
+              <span className="text-base text-muted-foreground line-through">{formatCurrency(priceUzs, locale, 'UZS')}</span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
+              <Icon name="SparklesIcon" size={13} />
+              {t('courseDetails.subDiscountBadge', { pct: discountPct })}
+            </span>
+          </div>
+        ) : (
+          <div className="flex items-baseline space-x-2">
+            <span className="text-3xl font-heading font-bold text-primary">
+              {priceUzs > 0 ? formatCurrency(priceUzs, locale, 'UZS') : t('courses.free')}
+            </span>
+          </div>
+        )}
 
         <button
           onClick={onPurchase}

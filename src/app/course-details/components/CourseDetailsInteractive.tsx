@@ -86,6 +86,7 @@ const CourseDetailsInteractive = () => {
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [discountPct, setDiscountPct] = useState(0);
   const [course, setCourse] = useState<CourseDetails | null>(null);
   const [curriculum, setCurriculum] = useState<CurriculumSection[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -196,6 +197,7 @@ const CourseDetailsInteractive = () => {
       setRelatedCourses(c.relatedCourses || []);
       setInstructorCourses(c.instructorCourses || []);
       setIsEnrolled(!!c.isEnrolled);
+      setDiscountPct(Number(c.subscriberDiscountPct) || 0);
     } catch (err) {
       console.error('Kurs yuklanmadi:', err);
       setLoadError(true);
@@ -217,8 +219,8 @@ const CourseDetailsInteractive = () => {
       return;
     }
 
-    // Bepul kurs — to'g'ridan-to'g'ri enroll
-    if (course.pricing.uzs === 0) {
+    // Bepul kurs YOKI all-access obuna (100%) — to'g'ridan-to'g'ri enroll
+    if (course.pricing.uzs === 0 || discountPct >= 100) {
       setIsPurchasing(true);
       try {
         const res = await fetch(`/api/courses/${course.id}/enroll`, {
@@ -241,11 +243,13 @@ const CourseDetailsInteractive = () => {
       return;
     }
 
-    // Pulli kurs — payment sahifasiga
+    // Pulli kurs — obuna chegirmasi qo'llangan narx bilan payment sahifasiga
+    const finalUzs =
+      discountPct > 0 ? Math.round((course.pricing.uzs * (100 - discountPct)) / 100) : course.pricing.uzs;
     const courseData = {
       id: course.id,
       title: course.title,
-      price_uzs: course.pricing.uzs,
+      price_uzs: finalUzs,
       price_usd: course.pricing.usd,
       cover_image: course.coverImage,
       instructor_name: course.instructor.name,
@@ -407,6 +411,7 @@ const CourseDetailsInteractive = () => {
               onPurchase={handlePurchase}
               isPurchasing={isPurchasing}
               isEnrolled={isEnrolled}
+              discountPct={discountPct}
             />
           </div>
         </div>

@@ -2576,7 +2576,9 @@
     "whatYouLearn": "Чему вы научитесь",
     "noDescription": "Для этого курса нет описания.",
     "noReviews": "Пока нет отзывов. Будьте первым, кто оставит отзыв!",
-    "freePreview": "Бесплатно"
+    "freePreview": "Бесплатно",
+    "subFreeBadge": "Бесплатно с подпиской",
+    "subDiscountBadge": "Скидка по подписке −{pct}%"
   },
   "categories": {
     "mathematics": "Математика",
