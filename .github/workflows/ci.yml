@@ -65,7 +65,10 @@ jobs:
       NODE_OPTIONS: "--max-old-space-size=4096"
       DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
       JWT_SECRET: "ci-test-secret-at-least-32-chars-long"
-      NEXT_PUBLIC_APP_URL: "http://localhost:4028"
+      # NEXT_PUBLIC_* build vaqtida baked bo'ladi — production public domen bo'lishi
+      # shart (appUrl()/OAuth redirect'lari shundan quriladi). localhost EMAS.
+      NEXT_PUBLIC_APP_URL: "https://ustozedu.uz"
+      NEXT_PUBLIC_SITE_URL: "https://ustozedu.uz"
 
     steps:
       - uses: actions/checkout@v4

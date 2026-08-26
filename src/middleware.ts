@@ -77,6 +77,21 @@ function matchesRoutes(pathname: string, routes: string[]): boolean {
   );
 }
 
+// nginx orqasida request.url ichki manzilni (localhost:4028) beradi — Next.js
+// standalone Host header'ni request.url uchun ishlatmaydi. Shu sabab redirect'ni
+// forwarded header'lardan (nginx qo'yadi: Host, X-Forwarded-Proto) quramiz.
+function publicRedirect(request: NextRequest, path: string): URL {
+  const host =
+    request.headers.get('x-forwarded-host') ||
+    request.headers.get('host') ||
+    request.nextUrl.host;
+  const proto =
+    request.headers.get('x-forwarded-proto') ||
+    request.nextUrl.protocol.replace(':', '') ||
+    'https';
+  return new URL(path, `${proto}://${host}`);
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -120,7 +135,7 @@ export async function middleware(request: NextRequest) {
 
   if (!session) {
     // Toza /login — bormoqchi bo'lgan sahifa redirect param sifatida saqlanmaydi
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(publicRedirect(request, '/login'));
   }
 
   const role = session.role;
@@ -128,7 +143,7 @@ export async function middleware(request: NextRequest) {
   // ─── ADMIN ONLY ───
   if (matchesRoutes(pathname, ADMIN_ONLY_ROUTES)) {
     if (role !== 'admin') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+      return NextResponse.redirect(publicRedirect(request, '/unauthorized'));
     }
     return NextResponse.next();
   }
@@ -136,7 +151,7 @@ export async function middleware(request: NextRequest) {
   // ─── TEACHER ONLY (admin ham kira oladi) ───
   if (matchesRoutes(pathname, TEACHER_ONLY_ROUTES)) {
     if (role !== 'teacher' && role !== 'admin') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+      return NextResponse.redirect(publicRedirect(request, '/unauthorized'));
     }
     return NextResponse.next();
   }
@@ -144,7 +159,7 @@ export async function middleware(request: NextRequest) {
   // ─── TEACHER OR ADMIN ───
   if (matchesRoutes(pathname, TEACHER_OR_ADMIN_ROUTES)) {
     if (role !== 'teacher' && role !== 'admin') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+      return NextResponse.redirect(publicRedirect(request, '/unauthorized'));
     }
     return NextResponse.next();
   }
@@ -152,7 +167,7 @@ export async function middleware(request: NextRequest) {
   // ─── STUDENT ONLY ───
   if (matchesRoutes(pathname, STUDENT_ONLY_ROUTES)) {
     if (role !== 'student') {
-      return NextResponse.redirect(new URL('/unauthorized', request.url));
+      return NextResponse.redirect(publicRedirect(request, '/unauthorized'));
     }
     return NextResponse.next();
   }
