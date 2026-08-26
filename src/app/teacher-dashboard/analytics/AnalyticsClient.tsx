@@ -84,7 +84,7 @@ export default function AnalyticsClient() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <ComparisonCard
               label={t('teacher.revenue')}
-              value={fmtUzs(data.comparison.currentRevenue) + ' UZS'}
+              value={`${fmtUzs(data.comparison.currentRevenue)} so'm`}
               prev={fmtUzs(data.comparison.previousRevenue)}
               delta={data.comparison.revenueDeltaPct}
               icon="CurrencyDollarIcon"
@@ -113,7 +113,7 @@ export default function AnalyticsClient() {
           <div className="bg-card border border-border rounded-md p-4 mb-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-medium">{t('teacher.dailyRevenue')} ({days} {t('teacher.daysLabel')})</h2>
-              <span className="text-xs text-muted-foreground">UZS</span>
+              <span className="text-xs text-muted-foreground">so'm</span>
             </div>
             <DailyChart points={data.dailyRevenue} />
           </div>

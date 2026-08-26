@@ -159,7 +159,7 @@ export default function ReferralsClient() {
           icon="BanknotesIcon"
           label={t('referrals.statTotalEarned')}
           value={fmtUzs(ref.totalEarnedUzs, locale)}
-          sub="UZS"
+          sub="so'm"
           color="text-success"
         />
       </div>
@@ -168,13 +168,13 @@ export default function ReferralsClient() {
         <div className="bg-warning/5 border border-warning/30 rounded-md p-4">
           <p className="text-xs text-muted-foreground">{t('referrals.pending')}</p>
           <p className="text-xl font-bold text-warning">
-            {fmtUzs(ref.pendingEarningsUzs, locale)} UZS
+            {fmtUzs(ref.pendingEarningsUzs, locale)} so'm
           </p>
         </div>
         <div className="bg-success/5 border border-success/30 rounded-md p-4">
           <p className="text-xs text-muted-foreground">{t('referrals.paid')}</p>
           <p className="text-xl font-bold text-success">
-            {fmtUzs(ref.paidEarningsUzs, locale)} UZS
+            {fmtUzs(ref.paidEarningsUzs, locale)} so'm
           </p>
         </div>
       </div>
@@ -262,7 +262,7 @@ export default function ReferralsClient() {
                 </p>
               </div>
               <p className="text-base font-bold text-success shrink-0">
-                +{fmtUzs(e.amountUzs, locale)} UZS
+                +{fmtUzs(e.amountUzs, locale)} so'm
               </p>
             </div>
           ))}

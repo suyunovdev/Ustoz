@@ -12,10 +12,10 @@ import { useI18n } from '@/contexts/I18nContext';
 
 function formatUzs(uzs: string): string {
   const n = BigInt(uzs);
-  if (n === BigInt(0)) return '0';
-  if (n >= BigInt(1_000_000)) return `${(Number(n) / 1_000_000).toFixed(1)}M`;
-  if (n >= BigInt(1_000)) return `${(Number(n) / 1_000).toFixed(0)}K`;
-  return n.toString();
+  if (n === BigInt(0)) return "0 so'm";
+  if (n >= BigInt(1_000_000)) return `${(Number(n) / 1_000_000).toFixed(1)}M so'm`;
+  if (n >= BigInt(1_000)) return `${(Number(n) / 1_000).toFixed(0)}K so'm`;
+  return `${n.toString()} so'm`;
 }
 
 function timeAgo(d: string | null, t: (key: string) => string): string {

@@ -61,14 +61,18 @@ export function formatNumber(n: number, locale: Locale): string {
 }
 
 /**
- * Valyuta formatlash. Intl valyuta so'zini tilga qarab beradi
- * (uz: "soʻm", en: "UZS", va h.k.; USD → "$").
+ * Valyuta formatlash — platforma TO'LIQ so'mda.
+ * UZS → "99 000 so'm" (Intl ba'zi muhitda "UZS" kodini berardi — biz doim "so'm"
+ * ko'rsatamiz, izchillik uchun). USD (agar qolgan bo'lsa) → Intl $ formati.
  */
 export function formatCurrency(
   amount: number,
   locale: Locale,
   currency: 'UZS' | 'USD' = 'UZS',
 ): string {
+  if (currency === 'UZS') {
+    return `${formatNumber(amount, locale)} so'm`;
+  }
   try {
     return new Intl.NumberFormat(tag(locale), {
       style: 'currency',
