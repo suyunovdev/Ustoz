@@ -12,6 +12,8 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// Immersive full-width dars pleyeri (o'z fixed course-nav bari + kontent sidebar'i
+// bor) — app sidebar EMAS, top-header (RoleBasedHeader). Bu ataylab (Udemy kabi).
 export default function LearningInterfacePage() {
   return (
     <>
