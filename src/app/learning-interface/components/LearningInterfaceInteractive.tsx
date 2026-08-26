@@ -213,8 +213,8 @@ const LearningInterfaceInteractive = () => {
 
   if (!isHydrated || isLoading) {
     return (
-      <div className="min-h-screen bg-background pt-20">
-        <div className="flex flex-col lg:flex-row gap-4 px-4 py-6 h-[calc(100vh-7rem)]">
+      <div className="min-h-screen bg-background pt-6">
+        <div className="flex flex-col lg:flex-row gap-4 px-4 py-6 h-[calc(100vh-6rem)]">
           <div className="flex-1 space-y-4 min-w-0">
             <Skeleton className="aspect-video w-full rounded-lg" />
             <Skeleton className="h-6 w-2/3" />
@@ -231,7 +231,7 @@ const LearningInterfaceInteractive = () => {
 
   if (sections.length === 0) {
     return (
-      <div className="min-h-screen bg-background pt-20 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <Icon name="VideoCameraSlashIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-foreground mb-2">{t('learning.noLessonsYet')}</h2>
@@ -248,7 +248,7 @@ const LearningInterfaceInteractive = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pt-16">
+    <div className="min-h-screen bg-background">
       {/* Certificate modal */}
       {showCertificateModal && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
@@ -284,25 +284,38 @@ const LearningInterfaceInteractive = () => {
         </div>
       )}
 
-      {/* Top bar */}
-      <div className="fixed top-16 left-0 right-0 z-40 bg-card border-b border-border h-12 flex items-center px-4 gap-4">
-        <button onClick={() => router.push('/student-dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">
+      {/* Yagona immersive kurs-bari (app header YO'Q) */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-card border-b border-border h-12 flex items-center px-4 gap-3">
+        <button
+          onClick={() => router.push('/student-dashboard')}
+          aria-label="Dashboardga qaytish"
+          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
+        >
           <Icon name="ArrowLeftIcon" size={20} />
+          <span className="hidden sm:inline text-sm font-medium">{t('learning.backToDashboard')}</span>
         </button>
-        <h1 className="text-sm font-medium text-foreground flex-1 truncate">{courseTitle}</h1>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="w-px h-5 bg-border hidden sm:block flex-shrink-0" />
+        <h1 className="text-sm font-medium text-foreground flex-1 truncate min-w-0">{courseTitle}</h1>
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground flex-shrink-0">
           <Icon name="ChartBarIcon" size={16} />
-          <span>{enrollmentProgress}% {t('learning.completed')}</span>
+          <span className="font-data tabular-nums">{enrollmentProgress}%</span>
+          <span className="hidden md:inline">{t('learning.completed')}</span>
         </div>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="text-muted-foreground hover:text-foreground transition-colors"
+          aria-label={t('learning.curriculumTitle')}
+          className="text-muted-foreground hover:text-foreground transition-colors flex-shrink-0"
         >
-          <Icon name={isSidebarOpen ? 'ChevronRightIcon' : 'ChevronLeftIcon'} size={20} />
+          <Icon name={isSidebarOpen ? 'ChevronDoubleRightIcon' : 'ChevronDoubleLeftIcon'} size={20} />
         </button>
+        {/* Progress chizig'i — bar tagida */}
+        <div
+          className="absolute bottom-0 left-0 h-0.5 bg-primary transition-all duration-500"
+          style={{ width: `${enrollmentProgress}%` }}
+        />
       </div>
 
-      <div className="pt-12 flex h-[calc(100vh-7rem)]">
+      <div className="pt-12 flex h-[calc(100vh-3rem)]">
         {/* Main content */}
         <div className={`flex-1 flex flex-col min-w-0 transition-all duration-300`}>
           {/* Video area */}
