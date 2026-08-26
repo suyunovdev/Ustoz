@@ -52,7 +52,7 @@ const SubscriptionInteractive = () => {
       ]);
 
       if (plansRes.status === 401 || myRes.status === 401) {
-        router.push('/login?redirect=/subscription');
+        router.push('/login?redirect=/student-subscription');
         return;
       }
 
@@ -93,7 +93,7 @@ const SubscriptionInteractive = () => {
         body: JSON.stringify({ planId, paymentMethod: method }),
       });
       if (res.status === 401) {
-        router.push('/login?redirect=/subscription');
+        router.push('/login?redirect=/student-subscription');
         return;
       }
       const data = await res.json();

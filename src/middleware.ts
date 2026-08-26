@@ -58,7 +58,7 @@ const AUTHENTICATED_ROUTES = [
   '/notifications',
   '/referrals',
   '/transaction-history',
-  '/subscription',
+  '/student-subscription',
   '/payment-method-selection',
   '/payment-processing',
   '/payment-success-confirmation',
