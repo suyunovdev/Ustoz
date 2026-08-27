@@ -16,7 +16,6 @@ export default function robots(): MetadataRoute.Robots {
           '/teacher-dashboard',
           '/student-dashboard',
           '/learning-interface',
-          '/quiz-interface',
           '/payment-processing',
           '/payment-method-selection',
           '/payment-success-confirmation',

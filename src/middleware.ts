@@ -65,7 +65,6 @@ const AUTHENTICATED_ROUTES = [
   '/payment-processing',
   '/payment-success-confirmation',
   '/learning-interface',
-  '/quiz-interface',
   '/tests',
   '/assignments',
   '/support',
