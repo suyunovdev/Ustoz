@@ -68,34 +68,54 @@ const LearningInterfaceInteractive = () => {
       router.push('/student-dashboard');
       return;
     }
-    loadCourse(courseId);
+    const controller = new AbortController();
+    loadCourse(courseId, controller.signal);
 
-    // Fire-and-forget: lastAccessedAt'ni yangilash (dashboard hero uchun)
-    fetch(`/api/enrollments/${courseId}/touch`, {
-      method: 'POST',
-      credentials: 'include',
-    }).catch(() => {});
+    // lastAccessedAt yangilash + o'qish vaqtini (minutes) qayd qilish.
+    const touch = (minutes = 0) =>
+      fetch(`/api/enrollments/${courseId}/touch`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: minutes ? { 'Content-Type': 'application/json' } : undefined,
+        body: minutes ? JSON.stringify({ minutes }) : undefined,
+        keepalive: true,
+      }).catch(() => {});
+
+    touch();
+
+    // Har daqiqa heartbeat — FAQAT tab ko'rinib turganda (haqiqiy vaqt, soxta emas).
+    const heartbeat = setInterval(() => {
+      if (document.visibilityState === 'visible') touch(1);
+    }, 60_000);
+
+    return () => {
+      clearInterval(heartbeat);
+      controller.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
-  const loadCourse = async (id: string) => {
+  const loadCourse = async (id: string, signal?: AbortSignal) => {
     setIsLoading(true);
     try {
       // Check auth via JWT
-      const meRes = await fetch('/api/auth/me', { credentials: 'include' });
+      const meRes = await fetch('/api/auth/me', { credentials: 'include', signal });
       if (!meRes.ok) {
         router.push('/login?redirect=/learning-interface?courseId=' + id);
         return;
       }
       const me = await meRes.json();
+      if (signal?.aborted) return;
       setUserId(me.user.id);
 
       // Load course details (includes topics + isEnrolled check)
-      const courseRes = await fetch(`/api/courses/${id}`, { credentials: 'include' });
+      const courseRes = await fetch(`/api/courses/${id}`, { credentials: 'include', signal });
       if (!courseRes.ok) {
         router.push('/course-marketplace');
         return;
       }
       const { course } = await courseRes.json();
+      if (signal?.aborted) return;
 
       if (!course.isEnrolled) {
         router.push(`/course-details?courseId=${id}`);
@@ -107,10 +127,12 @@ const LearningInterfaceInteractive = () => {
       // Real progress + completed topic IDs (Source of Truth)
       const progRes = await fetch(`/api/enrollments/${id}/progress`, {
         credentials: 'include',
+        signal,
       });
       let completedIds = new Set<string>();
       if (progRes.ok) {
         const prog: CourseProgressResponse = await progRes.json();
+        if (signal?.aborted) return;
         setEnrollmentProgress(prog.progress || 0);
         completedIds = new Set(prog.completedTopicIds);
       }
@@ -153,9 +175,10 @@ const LearningInterfaceInteractive = () => {
         },
       ]);
     } catch (err) {
+      if (signal?.aborted) return;
       console.error('Kurs yuklanmadi:', err);
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) setIsLoading(false);
     }
   };
 

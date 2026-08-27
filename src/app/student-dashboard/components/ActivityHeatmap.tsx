@@ -16,6 +16,7 @@
 import { useMemo } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { LOCALE_TAG, type Locale } from '@/lib/i18n';
+import { platformDayLabel } from '@/lib/date/platform-day';
 
 interface ActivityRow {
   date: string;
@@ -63,10 +64,9 @@ function getColor(count: number): string {
   return 'bg-green-800 dark:bg-green-400';
 }
 
+// "Bugun" — Toshkent (UTC+5) kalendar kuni, server bilan bir xil yorliq.
 function utcToday(): Date {
-  const d = new Date();
-  d.setUTCHours(0, 0, 0, 0);
-  return d;
+  return platformDayLabel();
 }
 
 function toIsoDate(d: Date): string {
@@ -74,7 +74,7 @@ function toIsoDate(d: Date): string {
 }
 
 function formatCellDate(iso: string, locale: Locale): string {
-  // "2026-05-27" → tilга mos to'liq sana
+  // "2026-05-27" → tilga mos to'liq sana
   return new Date(iso + 'T00:00:00Z').toLocaleDateString(LOCALE_TAG[locale], {
     day: 'numeric',
     month: 'long',

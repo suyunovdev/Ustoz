@@ -7,12 +7,16 @@
 
 import { activityRepo } from '@/lib/repositories';
 import type { ActivityRecord, StreakData } from '@/types/activity.types';
+import { platformDayLabel } from '@/lib/date/platform-day';
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_DAYS_WINDOW = 365;
 
 // ─── Private helpers ──────────────────────────────────────────────────────
 
+// Saqlangan activity sanalari platformDayLabel orqali UTC-midnight yorliq
+// sifatida yoziladi; bu funksiya ularni xavfsizlik uchun qayta floor qiladi
+// (identity), "bugun" esa platformDayLabel() dan Toshkent kuni bo'yicha olinadi.
 function normalizeToUtcDate(d: Date): Date {
   const copy = new Date(d);
   copy.setUTCHours(0, 0, 0, 0);
@@ -80,7 +84,7 @@ function calculateLongestFromList(activities: Array<{ date: Date }>): number {
 
 export async function getCurrentStreak(studentId: string): Promise<number> {
   const activities = await activityRepo.findRecentDates(studentId, MAX_DAYS_WINDOW);
-  return calculateCurrentFromList(activities, normalizeToUtcDate(new Date()));
+  return calculateCurrentFromList(activities, platformDayLabel());
 }
 
 export async function getLongestStreak(studentId: string): Promise<number> {
@@ -104,7 +108,7 @@ export async function getStreakData(studentId: string): Promise<StreakData> {
     };
   }
 
-  const today = normalizeToUtcDate(new Date());
+  const today = platformDayLabel();
   const mostRecent = normalizeToUtcDate(activities[0].date);
 
   return {
@@ -122,7 +126,7 @@ export async function getActivityCalendar(
   studentId: string,
   days = 90,
 ): Promise<ActivityRecord[]> {
-  const endDate = normalizeToUtcDate(new Date());
+  const endDate = platformDayLabel();
   const startDate = new Date(endDate);
   startDate.setUTCDate(startDate.getUTCDate() - days);
 

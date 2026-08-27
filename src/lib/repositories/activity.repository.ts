@@ -5,17 +5,23 @@
 
 import { prisma } from '@/lib/prisma';
 import type { Prisma } from '@/generated/prisma/client';
+import { platformDayLabel } from '@/lib/date/platform-day';
 
 type PrismaLike = Prisma.TransactionClient | typeof prisma;
 
-/** Bugun uchun activity satrini upsert qiladi (UTC sana). */
+/**
+ * Bugun uchun activity satrini upsert qiladi.
+ * Kun — Toshkent (UTC+5) kalendar kuni, UTC-midnight yorlig'i sifatida
+ * ({@link platformDayLabel}). `minutes` berilsa, minutesSpent ham inkrement qilinadi.
+ */
 export async function upsertForToday(
   studentId: string,
   tx?: Prisma.TransactionClient,
+  minutes = 0,
 ): Promise<void> {
   const client: PrismaLike = tx ?? prisma;
-  const today = new Date();
-  today.setUTCHours(0, 0, 0, 0);
+  const today = platformDayLabel();
+  const mins = Number.isFinite(minutes) && minutes > 0 ? Math.round(minutes) : 0;
 
   await client.studentActivity.upsert({
     where: { studentId_date: { studentId, date: today } },
@@ -23,11 +29,33 @@ export async function upsertForToday(
       studentId,
       date: today,
       topicsCompleted: 1,
-      minutesSpent: 0,
+      minutesSpent: mins,
     },
     update: {
       topicsCompleted: { increment: 1 },
+      ...(mins > 0 ? { minutesSpent: { increment: mins } } : {}),
     },
+  });
+}
+
+/**
+ * Faqat o'qish vaqtini (minutesSpent) qayd qiladi — topic tugatmasdan.
+ * "touch"/heartbeat endpoint'idan chaqiriladi. topicsCompleted'ni oshirmaydi.
+ */
+export async function recordMinutes(
+  studentId: string,
+  minutes: number,
+  tx?: Prisma.TransactionClient,
+): Promise<void> {
+  const mins = Number.isFinite(minutes) && minutes > 0 ? Math.round(minutes) : 0;
+  if (mins === 0) return;
+  const client: PrismaLike = tx ?? prisma;
+  const today = platformDayLabel();
+
+  await client.studentActivity.upsert({
+    where: { studentId_date: { studentId, date: today } },
+    create: { studentId, date: today, topicsCompleted: 0, minutesSpent: mins },
+    update: { minutesSpent: { increment: mins } },
   });
 }
 
