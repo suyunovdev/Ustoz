@@ -19,6 +19,22 @@ import { prisma } from '@/lib/prisma';
 
 export const PLATFORM_FEE_PCT = Number(process.env.PLATFORM_FEE_PCT ?? '15');
 
+/**
+ * Brutto summadan platforma komissiyasini hisoblaydi (butun UZS, floor).
+ * Butun tizim bo'yicha YAGONA manba — dashboard ham, earnings sahifasi ham
+ * shu funksiyani ishlatadi (aks holda ikki joyda ikki xil raqam chiqadi).
+ */
+export function platformFeeOf(gross: bigint): bigint {
+  return gross > BigInt(0)
+    ? (gross * BigInt(Math.round(PLATFORM_FEE_PCT * 100))) / BigInt(10000)
+    : BigInt(0);
+}
+
+/** O'qituvchining sof (netto) ulushi: brutto − platforma komissiyasi. */
+export function netFromGross(gross: bigint): bigint {
+  return gross - platformFeeOf(gross);
+}
+
 export interface TeacherBalance {
   grossRevenueUzs: bigint;
   refundedUzs: bigint;
@@ -65,10 +81,7 @@ export async function getBalance(teacherId: string): Promise<TeacherBalance> {
   const r = rows[0];
 
   // gross allaqachon refund'larni hisobga olmaydi (status='completed' filtri)
-  const platformFeeUzs =
-    r.gross > BigInt(0)
-      ? (r.gross * BigInt(Math.round(PLATFORM_FEE_PCT * 100))) / BigInt(10000)
-      : BigInt(0);
+  const platformFeeUzs = platformFeeOf(r.gross);
   const netRevenueUzs = r.gross - platformFeeUzs;
   const available = netRevenueUzs - r.withdrawn - r.pending;
 

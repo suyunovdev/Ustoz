@@ -763,6 +763,7 @@
     "moreItems": "Yana",
     "overviewTotalRevenue": "Umumiy daromad",
     "overviewFromAllCourses": "Barcha kurslardan",
+    "overviewNetAfterFee": "{pct}% komissiyadan keyingi sof daromad",
     "overviewActiveCourses": "Faol kurslar",
     "overviewDraftSuffix": "qoralama",
     "overviewTotalStudents": "Jami talabalar",
