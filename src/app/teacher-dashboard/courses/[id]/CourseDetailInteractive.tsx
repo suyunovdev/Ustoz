@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Icon from '@/components/ui/AppIcon';
@@ -54,8 +54,12 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
   const [bulkOpen, setBulkOpen] = useState(false);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
 
-  const topics = data?.topics ?? [];
+  const topics = useMemo(() => data?.topics ?? [], [data]);
   const groups = useMemo(() => groupByModule(topics), [topics]);
+  // Vizual (modul bo'yicha guruhlangan) tartibdagi yassi ro'yxat — drag-drop
+  // indekslari SHU tartibga mos bo'lishi shart (aks holda modullar aralashsa
+  // react-beautiful-dnd noto'g'ri joyga tashlaydi).
+  const orderedTopics = useMemo(() => groups.flatMap((g) => g.topics), [groups]);
   const existingModules = useMemo(() => {
     const set = new Set<string>();
     for (const t of topics) {
@@ -113,7 +117,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
     if (!result.destination) return;
     if (result.source.index === result.destination.index) return;
 
-    const reordered = Array.from(topics);
+    const reordered = Array.from(orderedTopics);
     const [moved] = reordered.splice(result.source.index, 1);
     reordered.splice(result.destination.index, 0, moved);
     reorderMut.mutate(reordered.map((t) => t.id), {
@@ -149,7 +153,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
               className="px-3 py-2 border border-border text-foreground rounded-md hover:bg-muted transition-smooth flex items-center gap-2 text-sm font-medium"
             >
               <Icon name="ArrowUpTrayIcon" size={16} />
-              Bulk import
+              {t('teacher.courseBulkImport')}
             </button>
             <button
               onClick={handleCreateNew}
@@ -194,7 +198,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                 onClick={() => setBulkOpen(true)}
                 className="px-6 py-3 border border-border text-foreground rounded-md hover:bg-muted transition-smooth font-medium"
               >
-                Bulk import
+                {t('teacher.courseBulkImport')}
               </button>
             </div>
           </div>
@@ -207,20 +211,18 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                   {...provided.droppableProps}
                   className="space-y-2"
                 >
-                  {groups.map((group, gIdx) => (
-                    <div key={gIdx} className="space-y-2">
-                      {/* Module header */}
-                      {group.moduleTitle && (
-                        <h3 className="text-sm font-heading font-semibold text-muted-foreground mt-4 mb-1 px-2">
-                          📂 {group.moduleTitle}
-                        </h3>
-                      )}
-                      {group.topics.map((topic) => (
-                        <Draggable
-                          key={topic.id}
-                          draggableId={topic.id}
-                          index={topics.indexOf(topic)}
-                        >
+                  {orderedTopics.map((topic, idx) => {
+                    const prev = orderedTopics[idx - 1];
+                    const showModuleHeader =
+                      !!topic.moduleTitle && topic.moduleTitle !== prev?.moduleTitle;
+                    return (
+                      <Fragment key={topic.id}>
+                        {showModuleHeader && (
+                          <h3 className="text-sm font-heading font-semibold text-muted-foreground mt-4 mb-1 px-2">
+                            📂 {topic.moduleTitle}
+                          </h3>
+                        )}
+                        <Draggable draggableId={topic.id} index={idx}>
                           {(dProvided, dSnapshot) => (
                             <div
                               ref={dProvided.innerRef}
@@ -233,7 +235,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                                 <div
                                   {...dProvided.dragHandleProps}
                                   className="shrink-0 p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground"
-                                  aria-label="Tartiblash"
+                                  aria-label={t('teacher.topicReorderAria')}
                                 >
                                   <Icon name="Bars3Icon" size={18} />
                                 </div>
@@ -258,7 +260,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                                     )}
                                     {topic.hasQuiz && (
                                       <span className="px-2 py-0.5 text-xs bg-primary/10 text-primary rounded-full">
-                                        Quiz
+                                        {t('teacher.courseQuizBadge')}
                                       </span>
                                     )}
                                   </div>
@@ -280,8 +282,8 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                                       )
                                     }
                                     className="p-2 hover:bg-muted rounded transition-smooth"
-                                    aria-label="Materiallar"
-                                    title="Materiallar"
+                                    aria-label={t('teacher.topicMaterialsAria')}
+                                    title={t('teacher.topicMaterialsAria')}
                                   >
                                     <Icon
                                       name={
@@ -296,16 +298,16 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                                   <button
                                     onClick={() => handleEdit(topic)}
                                     className="p-2 hover:bg-muted rounded transition-smooth"
-                                    aria-label="Tahrirlash"
-                                    title="Tahrirlash"
+                                    aria-label={t('teacher.topicEditAria')}
+                                    title={t('teacher.topicEditAria')}
                                   >
                                     <Icon name="PencilIcon" size={16} className="text-muted-foreground" />
                                   </button>
                                   <button
                                     onClick={() => setPendingDelete(topic)}
                                     className="p-2 hover:bg-destructive/10 rounded transition-smooth"
-                                    aria-label="O'chirish"
-                                    title="O'chirish"
+                                    aria-label={t('teacher.topicDeleteAria')}
+                                    title={t('teacher.topicDeleteAria')}
                                   >
                                     <Icon name="TrashIcon" size={16} className="text-destructive" />
                                   </button>
@@ -321,9 +323,9 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                             </div>
                           )}
                         </Draggable>
-                      ))}
-                    </div>
-                  ))}
+                      </Fragment>
+                    );
+                  })}
                   {provided.placeholder}
                 </div>
               )}
@@ -415,16 +417,16 @@ function TopicEditorModal({
       const json = await res.json();
       if (!res.ok) {
         if (json.code === 'AI_NOT_CONFIGURED') {
-          toast.error("AI hozircha sozlanmagan — admin'ga murojaat qiling");
+          toast.error(t('teacher.aiNotConfigured'));
         } else {
-          toast.error(json.error || 'AI xatosi');
+          toast.error(json.error || t('teacher.aiError'));
         }
         return;
       }
       setDescription(json.description);
       toast.success(t('teacher.aiDescriptionCreated'));
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xatolik');
+      toast.error(err instanceof Error ? err.message : t('teacher.genericError'));
     } finally {
       setAiLoading(false);
     }
@@ -467,7 +469,7 @@ function TopicEditorModal({
             type="button"
             onClick={onClose}
             className="p-1 hover:bg-muted rounded"
-            aria-label="Yopish"
+            aria-label={t('common.close')}
           >
             <Icon name="XMarkIcon" size={20} />
           </button>
@@ -483,7 +485,7 @@ function TopicEditorModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              placeholder="Masalan: React Hooks asoslari"
+              placeholder={t('teacher.topicNamePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -498,7 +500,7 @@ function TopicEditorModal({
               value={moduleTitle}
               onChange={(e) => setModuleTitle(e.target.value)}
               list="existing-modules"
-              placeholder="Masalan: 1-bo'lim: Asoslar"
+              placeholder={t('teacher.subModulePlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
             />
             {existingModules.length > 0 && (
@@ -532,7 +534,7 @@ function TopicEditorModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              placeholder="Mavzuda nimalar o'rganiladi (qisqacha)"
+              placeholder={t('teacher.topicDescPlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-y text-sm"
             />
           </div>
@@ -540,7 +542,7 @@ function TopicEditorModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-foreground mb-1">
-                Video URL
+                {t('teacher.courseVideoUrl')}
               </label>
               <input
                 type="url"
@@ -558,7 +560,7 @@ function TopicEditorModal({
                 type="text"
                 value={duration}
                 onChange={(e) => setDuration(e.target.value)}
-                placeholder="15 min"
+                placeholder={t('teacher.durationPlaceholder')}
                 className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
               />
             </div>
@@ -572,7 +574,7 @@ function TopicEditorModal({
               value={content}
               onChange={(e) => setContent(e.target.value)}
               rows={5}
-              placeholder="Mavzuga oid matn, kod misollari, va h.k."
+              placeholder={t('teacher.topicContentPlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-y text-sm font-mono"
             />
           </div>
@@ -585,7 +587,7 @@ function TopicEditorModal({
                 onChange={(e) => setIsFreePreview(e.target.checked)}
                 className="w-4 h-4"
               />
-              <span>🎁 Bepul preview (yozilmagan talabalar ham ko'rishi mumkin)</span>
+              <span>{t('teacher.topicFreePreviewLabel')}</span>
             </label>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
@@ -594,7 +596,7 @@ function TopicEditorModal({
                 onChange={(e) => setIsLocked(e.target.checked)}
                 className="w-4 h-4"
               />
-              <span>🔒 Qulflangan (oldingisi tugagandan keyin ochiladi)</span>
+              <span>{t('teacher.topicLockedLabel')}</span>
             </label>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input
@@ -603,7 +605,7 @@ function TopicEditorModal({
                 onChange={(e) => setHasQuiz(e.target.checked)}
                 className="w-4 h-4"
               />
-              <span>📝 Mavzu testi mavjud</span>
+              <span>{t('teacher.topicHasQuizLabel')}</span>
             </label>
           </div>
         </div>
@@ -684,10 +686,14 @@ function BulkImportModal({
       });
       const json = await res.json();
       if (!res.ok) {
-        toast.error(json.error || 'Bulk import xatosi');
+        toast.error(json.error || t('teacher.bulkError'));
         return;
       }
-      toast.success(`${json.createdCount} ta mavzu qo'shildi${json.errorCount > 0 ? ` (${json.errorCount} xato)` : ''}`);
+      toast.success(
+        json.errorCount > 0
+          ? t('teacher.bulkSuccessWithErrors', { count: json.createdCount, errors: json.errorCount })
+          : t('teacher.bulkSuccess', { count: json.createdCount }),
+      );
       onSuccess();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Xatolik');
@@ -707,7 +713,7 @@ function BulkImportModal({
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-heading font-semibold text-foreground">
-            Bulk import — ko'p mavzu bir vaqtda
+            {t('teacher.bulkImportHeading')}
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded">
             <Icon name="XMarkIcon" size={20} />
@@ -716,12 +722,12 @@ function BulkImportModal({
 
         <div className="mb-4 p-3 bg-muted/50 rounded text-xs text-muted-foreground">
           <p className="mb-1">
-            <strong>Format:</strong> har qatorda bitta mavzu. Ustunlar <code className="bg-card px-1 rounded">|</code> bilan ajratiladi:
+            <strong>Format:</strong> {t('teacher.bulkFormatHelp')}
           </p>
           <code className="block bg-card p-2 rounded">
             Title | Description | Duration | VideoURL | ModuleTitle
           </code>
-          <p className="mt-2">Faqat Title majburiy, qolganlari ixtiyoriy. Excel'dan nusxa olib joylashtirish mumkin.</p>
+          <p className="mt-2">{t('teacher.bulkOnlyTitleRequired')}</p>
         </div>
 
         <textarea
@@ -734,7 +740,7 @@ function BulkImportModal({
 
         <div className="flex items-center justify-between mt-4">
           <p className="text-sm text-muted-foreground">
-            {parsed.length} ta qator, <span className="text-success font-medium">{validCount} yaroqli</span>
+            {t('teacher.bulkRowsStat', { rows: parsed.length, valid: validCount })}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -752,7 +758,7 @@ function BulkImportModal({
               {loading && (
                 <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
               )}
-              {validCount} ta mavzu qo'shish
+              {t('teacher.bulkAddButton', { count: validCount })}
             </button>
           </div>
         </div>

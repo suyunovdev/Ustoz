@@ -188,12 +188,19 @@ export async function duplicateCourse(
       isPublished: false,
       moderationStatus: 'draft',
       topics: {
+        // BARCHA mazmun maydonlari ko'chiriladi — aks holda nusxada video, modul,
+        // bepul-preview va qulf bayroqlari yo'qolardi.
         create: source.topics.map((t) => ({
           title: t.title,
+          description: t.description,
           content: t.content,
           orderIndex: t.orderIndex,
           duration: t.duration,
+          videoUrl: t.videoUrl,
+          moduleTitle: t.moduleTitle,
           hasQuiz: t.hasQuiz,
+          isFreePreview: t.isFreePreview,
+          isLocked: t.isLocked,
         })),
       },
     },

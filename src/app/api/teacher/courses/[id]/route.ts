@@ -17,6 +17,19 @@ import {
 import { CourseNotFoundError, ValidationError } from '@/lib/errors';
 import { recomputeEnrollmentsForCourse } from '@/lib/services/progress.service';
 
+/** Reconcile'da bitta mavzu qatoriga yoziladigan maydonlar (create ham, update ham). */
+function buildTopicWrite(tp: Record<string, unknown>, order: number) {
+  const videoUrl = typeof tp.videoUrl === 'string' && tp.videoUrl.trim() ? tp.videoUrl.trim() : null;
+  return {
+    title: String(tp.title).trim(),
+    orderIndex: order,
+    duration: typeof tp.duration === 'string' && tp.duration ? tp.duration : '0 min',
+    content: typeof tp.content === 'string' ? tp.content : '',
+    videoUrl,
+    hasQuiz: !!tp.hasQuiz,
+  };
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -67,6 +80,36 @@ export async function PATCH(
       }
     }
 
+    // ── Matn maydonlari — tur/uzunlik tekshiruvi (aks holda number/uzun input
+    //    to'g'ridan-to'g'ri Prisma'ga borib 500 berardi) ──
+    const assertStr = (v: unknown, field: string, max: number) => {
+      if (typeof v !== 'string') throw new ValidationError(`${field} matn bo'lishi kerak`);
+      if (v.length > max) throw new ValidationError(`${field} ${max} belgidan oshmasin`);
+    };
+    if (b.title !== undefined) {
+      assertStr(b.title, 'title', 200);
+      if (b.title.trim().length < 2) throw new ValidationError('title kamida 2 belgi');
+    }
+    if (b.description !== undefined && b.description !== null) assertStr(b.description, 'description', 5000);
+    if (b.category !== undefined && b.category !== null) assertStr(b.category, 'category', 100);
+    if (b.language !== undefined && b.language !== null) assertStr(b.language, 'language', 50);
+    if (b.coverImage !== undefined && b.coverImage !== null) assertStr(b.coverImage, 'coverImage', 2000);
+    if (b.difficultyLevel !== undefined && b.difficultyLevel !== null) assertStr(b.difficultyLevel, 'difficultyLevel', 50);
+
+    // gradeLevel — musbat butun yoki bo'sh (NaN yozilmasin)
+    let gradeLevelUpdate: number | null | undefined;
+    if (b.gradeLevel !== undefined) {
+      if (b.gradeLevel === null || b.gradeLevel === '') {
+        gradeLevelUpdate = null;
+      } else {
+        const n = Number(b.gradeLevel);
+        if (!Number.isInteger(n) || n < 0 || n > 20) {
+          throw new ValidationError("gradeLevel noto'g'ri (0–20 oralig'ida butun son)");
+        }
+        gradeLevelUpdate = n;
+      }
+    }
+
     // Enum maydonlar (mavjud bo'lsa) — oldindan tekshiramiz (aniq 400 xabar).
     if (b.targetAudience !== undefined &&
         !(Object.values(TargetAudience) as string[]).includes(b.targetAudience)) {
@@ -82,75 +125,76 @@ export async function PATCH(
     // qayta tekshiruvga qaytaradi (jonlilikdan vaqtincha olib turadi).
     const needsReReview = existing.moderationStatus === 'approved';
 
-    const updated = await prisma.course.update({
-      where: { id },
-      data: {
-        ...(b.title && { title: b.title }),
-        ...(b.description !== undefined && { description: b.description }),
-        ...(b.category && { category: b.category }),
-        ...(b.categoryId !== undefined && { categoryId: b.categoryId }),
-        ...(b.targetAudience && { targetAudience: b.targetAudience }),
-        ...(b.subjectCategory && { subjectCategory: b.subjectCategory }),
-        ...(b.gradeLevel !== undefined && {
-          gradeLevel: b.gradeLevel ? Number(b.gradeLevel) : null,
-        }),
-        ...(priceUpdate !== undefined && { priceUzs: priceUpdate }),
-        ...(b.coverImage !== undefined && { coverImage: b.coverImage }),
-        ...(b.language && { language: b.language }),
-        ...(b.difficultyLevel !== undefined && { difficultyLevel: b.difficultyLevel }),
-        ...(needsReReview && {
-          moderationStatus: 'submitted',
-          isPublished: false,
-          adminFeedback: null,
-        }),
-      },
+    // Kiruvchi mavzular (bo'lsa) — title'ni oldindan validatsiya (recon.dan avval).
+    const incomingTopics = Array.isArray(b.topics)
+      ? (b.topics as Array<Record<string, unknown>>)
+      : null;
+    if (incomingTopics) {
+      incomingTopics.forEach((tp, i) => {
+        const title = typeof tp.title === 'string' ? tp.title.trim() : '';
+        if (title.length < 2) throw new ValidationError(`Mavzu #${i + 1}: nomi kamida 2 belgi`);
+        if (title.length > 200) throw new ValidationError(`Mavzu #${i + 1}: nomi 200 belgidan oshmasin`);
+      });
+    }
+
+    // Kurs yangilash + mavzu reconcile — BITTA transaction (yarim yangilanish
+    // qolmasin). Reconcile POZITSIYA bo'yicha: mavjud qatorlar joyida yangilanadi
+    // (id saqlanadi → topic_completions saqlanadi), ortiqchasi qo'shiladi, kamaygani
+    // o'chiriladi. Ilgari bu updates/creates/delete alohida, transaction'siz edi.
+    let topicCountChanged = false;
+    const updated = await prisma.$transaction(async (tx) => {
+      const course = await tx.course.update({
+        where: { id },
+        data: {
+          ...(b.title && { title: b.title }),
+          ...(b.description !== undefined && { description: b.description }),
+          ...(b.category && { category: b.category }),
+          ...(b.categoryId !== undefined && { categoryId: b.categoryId }),
+          ...(b.targetAudience && { targetAudience: b.targetAudience }),
+          ...(b.subjectCategory && { subjectCategory: b.subjectCategory }),
+          ...(gradeLevelUpdate !== undefined && { gradeLevel: gradeLevelUpdate }),
+          ...(priceUpdate !== undefined && { priceUzs: priceUpdate }),
+          ...(b.coverImage !== undefined && { coverImage: b.coverImage }),
+          ...(b.language && { language: b.language }),
+          ...(b.difficultyLevel !== undefined && { difficultyLevel: b.difficultyLevel }),
+          ...(needsReReview && {
+            moderationStatus: 'submitted',
+            isPublished: false,
+            adminFeedback: null,
+          }),
+        },
+      });
+
+      if (incomingTopics) {
+        const existingTopics = await tx.courseTopic.findMany({
+          where: { courseId: id },
+          orderBy: { orderIndex: 'asc' },
+          select: { id: true },
+        });
+        topicCountChanged = existingTopics.length !== incomingTopics.length;
+        const overlap = Math.min(existingTopics.length, incomingTopics.length);
+        for (let i = 0; i < overlap; i++) {
+          await tx.courseTopic.update({
+            where: { id: existingTopics[i].id },
+            data: buildTopicWrite(incomingTopics[i], i + 1),
+          });
+        }
+        for (let i = overlap; i < incomingTopics.length; i++) {
+          await tx.courseTopic.create({
+            data: { courseId: id, ...buildTopicWrite(incomingTopics[i], i + 1) },
+          });
+        }
+        if (existingTopics.length > incomingTopics.length) {
+          const toDelete = existingTopics.slice(incomingTopics.length).map((tp) => tp.id);
+          await tx.courseTopic.deleteMany({ where: { id: { in: toDelete } } });
+        }
+      }
+      return course;
     });
 
-    // Topics yangilash — POZITSIYA bo'yicha reconcile.
-    // Ilgari deleteMany+createMany ishlatilardi → mavjud topic'lar yangi UUID
-    // oladi va `topic_completions` (onDelete: Cascade) O'CHIB KETADI, ya'ni bitta
-    // tahrir barcha talabalar progressini yo'q qilardi. Endi mavjud qatorlar
-    // JOYIDA yangilanadi (id saqlanadi → completions saqlanadi), ortiqchasi
-    // qo'shiladi, kamaygani o'chiriladi.
-    if (Array.isArray(b.topics)) {
-      const incoming = b.topics as Array<Record<string, any>>;
-      const existingTopics = await prisma.courseTopic.findMany({
-        where: { courseId: id },
-        orderBy: { orderIndex: 'asc' },
-        select: { id: true },
-      });
-      const overlap = Math.min(existingTopics.length, incoming.length);
-      for (let i = 0; i < overlap; i++) {
-        await prisma.courseTopic.update({
-          where: { id: existingTopics[i].id },
-          data: {
-            title: incoming[i].title,
-            orderIndex: i + 1,
-            duration: incoming[i].duration || '0 min',
-            content: incoming[i].content || '',
-            videoUrl: typeof incoming[i].videoUrl === 'string' && incoming[i].videoUrl.trim() ? incoming[i].videoUrl.trim() : null,
-            hasQuiz: !!incoming[i].hasQuiz,
-          },
-        });
-      }
-      for (let i = overlap; i < incoming.length; i++) {
-        await prisma.courseTopic.create({
-          data: {
-            courseId: id,
-            title: incoming[i].title,
-            orderIndex: i + 1,
-            duration: incoming[i].duration || '0 min',
-            content: incoming[i].content || '',
-            videoUrl: typeof incoming[i].videoUrl === 'string' && incoming[i].videoUrl.trim() ? incoming[i].videoUrl.trim() : null,
-            hasQuiz: !!incoming[i].hasQuiz,
-          },
-        });
-      }
-      if (existingTopics.length > incoming.length) {
-        const toDelete = existingTopics.slice(incoming.length).map((t) => t.id);
-        await prisma.courseTopic.deleteMany({ where: { id: { in: toDelete } } });
-      }
-      // Mavzular soni o'zgargan bo'lishi mumkin → talabalar progressini qayta hisoblash
+    // Progress qayta hisoblash faqat mavzu SONI o'zgargandagina (tartib/kontent
+    // maxrajni o'zgartirmaydi). Transaction tashqarisida — o'zi tx ochadi.
+    if (topicCountChanged) {
       await recomputeEnrollmentsForCourse(id);
     }
 
