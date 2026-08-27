@@ -138,10 +138,20 @@ export async function listAssignments(
     include: {
       course: { select: { title: true } },
       _count: { select: { submissions: true } },
-      submissions: { where: { status: 'graded' }, select: { id: true } },
     },
     orderBy: { dueDate: 'asc' },
   });
+
+  // Baholangan soni — bitta groupBy (ilgari har assignment uchun graded qatorlar
+  // materializatsiya qilinib .length olinardi — ortiqcha, E12).
+  const gradedCounts = rows.length
+    ? await prisma.assignmentSubmission.groupBy({
+        by: ['assignmentId'],
+        where: { assignmentId: { in: rows.map((r) => r.id) }, status: 'graded' },
+        _count: { _all: true },
+      })
+    : [];
+  const gradedByAssignment = new Map(gradedCounts.map((g) => [g.assignmentId, g._count._all]));
 
   return rows.map((r) => ({
     id: r.id,
@@ -162,7 +172,7 @@ export async function listAssignments(
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
     courseTitle: r.course.title,
-    gradedCount: r.submissions.length,
+    gradedCount: gradedByAssignment.get(r.id) ?? 0,
   }));
 }
 
@@ -222,6 +232,14 @@ export async function upsertSubmission(
   input: CreateSubmissionInput,
 ): Promise<SubmissionRow> {
   return prisma.$transaction(async (tx) => {
+    // Bir (assignment, student) juftligi uchun konkurrent submit'larni
+    // serializatsiya qilamiz — aks holda ikki bir vaqtdagi so'rov "mavjud emas"
+    // deb o'qib, ikkalasi ham CREATE qilib, ikkita revision-1 qatori yaratardi
+    // (schema'da (assignmentId, studentId) unique yo'q — revision modeli buni
+    // talab qiladi). pg_advisory_xact_lock — migratsiyasiz guard (groups'dagi
+    // FOR UPDATE lock idiomasi kabi), transaction oxirida avtomatik bo'shaydi.
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${input.assignmentId}), hashtext(${input.studentId}))`;
+
     const existing = await tx.assignmentSubmission.findFirst({
       where: { assignmentId: input.assignmentId, studentId: input.studentId },
       orderBy: { revisionNumber: 'desc' },

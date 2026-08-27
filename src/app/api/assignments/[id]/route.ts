@@ -35,7 +35,7 @@ export async function GET(
         );
       }
       const enrolled = await prisma.enrollment.findFirst({
-        where: { courseId: a.courseId, studentId: session.sub },
+        where: { courseId: a.courseId, studentId: session.sub, isActive: true },
         select: { id: true },
       });
       if (!enrolled) {

@@ -155,7 +155,13 @@ export async function getStudentDetailForTeacher(
         studentId,
         assignment: { course: { teacherId } },
       },
-      select: { status: true, grade: true },
+      select: {
+        status: true,
+        grade: true,
+        assignmentId: true,
+        revisionNumber: true,
+        assignment: { select: { maxScore: true } },
+      },
     }),
     prisma.certificate.count({
       where: { studentId, course: { teacherId } },
@@ -179,14 +185,30 @@ export async function getStudentDetailForTeacher(
     testStats.length > 0
       ? testStats.reduce((s, a) => s + Number(a.percentage ?? 0), 0) / testStats.length
       : null;
-  const gradedSubmissions = assignmentStats.filter(
-    (a) => a.status === 'graded' && a.grade !== null,
-  );
+  // Har topshiriq uchun FAQAT eng so'nggi baholangan submission hisobga olinadi
+  // (M5: dublikat 'graded' revision qatorlari ikki marta sanalmasin), va ball
+  // FOIZga normalizatsiya qilinadi (M6: 8/10 va 90/100 aralashib ma'nosiz
+  // o'rtacha bermasin).
+  const latestGradedByAssignment = new Map<
+    string,
+    { grade: number; maxScore: number; rev: number }
+  >();
+  for (const a of assignmentStats) {
+    if (a.status !== 'graded' || a.grade === null) continue;
+    const maxScore = a.assignment?.maxScore ?? 0;
+    if (maxScore <= 0) continue;
+    const prev = latestGradedByAssignment.get(a.assignmentId);
+    if (!prev || a.revisionNumber > prev.rev) {
+      latestGradedByAssignment.set(a.assignmentId, { grade: a.grade, maxScore, rev: a.revisionNumber });
+    }
+  }
+  const gradedList = Array.from(latestGradedByAssignment.values());
   const avgAssignment =
-    gradedSubmissions.length > 0
-      ? gradedSubmissions.reduce((s, a) => s + (a.grade ?? 0), 0) /
-        gradedSubmissions.length
+    gradedList.length > 0
+      ? gradedList.reduce((s, g) => s + (g.grade / g.maxScore) * 100, 0) / gradedList.length
       : null;
+  // Noyob topshiriqlar (revision qatorlari emas) bo'yicha sanaymiz.
+  const distinctSubmittedAssignments = new Set(assignmentStats.map((a) => a.assignmentId)).size;
 
   return {
     studentId: profile.id,
@@ -208,8 +230,8 @@ export async function getStudentDetailForTeacher(
     totalTestAttempts: testStats.length,
     passedTestAttempts: passedAttempts,
     avgTestScore: avgTest !== null ? Math.round(avgTest * 100) / 100 : null,
-    totalAssignmentSubmissions: assignmentStats.length,
-    gradedAssignmentSubmissions: gradedSubmissions.length,
+    totalAssignmentSubmissions: distinctSubmittedAssignments,
+    gradedAssignmentSubmissions: gradedList.length,
     avgAssignmentGrade: avgAssignment !== null ? Math.round(avgAssignment * 100) / 100 : null,
     totalCertificates: certCount,
     totalPaymentsUzs: payments._sum?.amountUzs ?? BigInt(0),

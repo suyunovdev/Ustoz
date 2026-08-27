@@ -1,14 +1,24 @@
 /**
  * POST /api/assignments/[id]/submit
  * Topshiriq topshirish.
+ *
+ * Barcha validatsiya (kursga yozilganlik, muddat, kontent turi, URL, bo'sh
+ * submission) `submitAssignment` service'ida. Ilgari bu route service'ni chetlab
+ * o'tib, to'g'ridan-to'g'ri repo'ga yozardi — bo'sh/yaroqsiz topshiriq qabul
+ * qilinardi (C1).
  */
 import type { NextRequest } from 'next/server';
 import { requireStudent, errorResponse } from '@/lib/auth-helpers';
-import { jsonResponse } from '@/lib/json';
-import { assignmentRepo } from '@/lib/repositories';
-import { prisma } from '@/lib/prisma';
+import { jsonResponse, serializeData } from '@/lib/json';
 import { ValidationError } from '@/lib/errors';
-import { serializeData } from '@/lib/json';
+import {
+  submitAssignment,
+  type SubmitInput,
+  AssignmentNotFoundError,
+  AssignmentNotPublishedError,
+  DeadlinePassedError,
+  NotEnrolledError,
+} from '@/lib/services/assignment.service';
 
 export async function POST(
   req: NextRequest,
@@ -25,49 +35,29 @@ export async function POST(
       throw new ValidationError('JSON formatida xato');
     }
 
-    const assignment = await assignmentRepo.findAssignmentWithCourse(assignmentId);
-    if (!assignment) {
-      return jsonResponse({ error: 'Topshiriq topilmadi' }, { status: 404 });
-    }
-    if (assignment.status !== 'published') {
-      return jsonResponse({ error: 'Bu topshiriq hali faol emas' }, { status: 400 });
-    }
+    const input: SubmitInput = {
+      submissionText: typeof body.submissionText === 'string' ? body.submissionText : undefined,
+      submissionUrl: typeof body.submissionUrl === 'string' ? body.submissionUrl : undefined,
+      attachments: Array.isArray(body.attachments)
+        ? (body.attachments as SubmitInput['attachments'])
+        : undefined,
+    };
 
-    // Ownership/enrollment: faqat kursga yozilgan talaba topshira oladi
-    // (GET yo'lidagi tekshiruv bilan izchil — IDOR/data-pollution oldini oladi).
-    const enrolled = await prisma.enrollment.findFirst({
-      where: { courseId: assignment.courseId, studentId: session.sub },
-      select: { id: true },
-    });
-    if (!enrolled) {
-      return jsonResponse(
-        { error: 'Kursga yozilmagansiz', code: 'NOT_ENROLLED' },
-        { status: 403 },
-      );
-    }
-
-    const now = new Date();
-    const isLate = now > assignment.dueDate;
-    // Muddat o'tgan va kech topshirishga ruxsat yo'q → rad etamiz
-    if (isLate && !assignment.allowLateSubmission) {
-      return jsonResponse(
-        { error: 'Topshirish muddati tugagan', code: 'DEADLINE_PASSED' },
-        { status: 400 },
-      );
-    }
-
-    const submission = await assignmentRepo.upsertSubmission({
-      assignmentId,
-      studentId: session.sub,
-      courseId: assignment.courseId,
-      submissionText: typeof body.submissionText === 'string' ? body.submissionText : null,
-      submissionUrl: typeof body.submissionUrl === 'string' ? body.submissionUrl : null,
-      attachments: Array.isArray(body.attachments) ? body.attachments as never[] : [],
-      isLate,
-    });
-
+    const submission = await submitAssignment(assignmentId, session.sub, input);
     return jsonResponse({ submission: serializeData(submission) }, { status: 201 });
   } catch (err) {
+    if (err instanceof AssignmentNotFoundError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 404 });
+    }
+    if (err instanceof AssignmentNotPublishedError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 400 });
+    }
+    if (err instanceof NotEnrolledError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 403 });
+    }
+    if (err instanceof DeadlinePassedError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 400 });
+    }
     return errorResponse(err);
   }
 }
