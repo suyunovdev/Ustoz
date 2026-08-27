@@ -239,6 +239,9 @@ export async function POST(request: NextRequest) {
         }
 
         const performTime = Date.now();
+        // justCompleted: obuna faollashtirish va referral hook FAQAT haqiqiy
+        // status o'tishida (bir marta) bajarilsin — replay'da takrorlanmasin (C5).
+        let justCompleted = false;
         try {
           // Tranzaksiyani completed qilish + enrollment yaratish — atomik
           await prisma.$transaction(async (tx) => {
@@ -251,6 +254,7 @@ export async function POST(request: NextRequest) {
               },
             });
             if (flip.count === 0) return; // allaqachon completed — idempotent
+            justCompleted = true;
 
             // Obuna to'lovi — enrollment YO'Q (tx'dan tashqarida faollashadi)
             if (transaction.kind === 'subscription' || !transaction.courseId) return;
@@ -278,8 +282,9 @@ export async function POST(request: NextRequest) {
           return createPaymeError(-31008, 'Failed to perform transaction', body.id);
         }
 
-        // Obuna to'lovi bo'lsa — obunani faollashtirish (best-effort)
-        if (transaction.kind === 'subscription' && transaction.planId) {
+        // Obuna to'lovi bo'lsa — obunani faollashtirish (best-effort).
+        // FAQAT shu so'rov statusni "completed"ga o'tkazgan bo'lsa (replay emas).
+        if (justCompleted && transaction.kind === 'subscription' && transaction.planId) {
           try {
             await activateSubscriptionFromPayment(transaction.studentId, transaction.planId, transaction.id);
           } catch (e) {
@@ -287,11 +292,14 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Referral komissiya (best-effort)
-        try {
-          await handlePaymentCompleted(transaction.id);
-        } catch (e) {
-          console.error('Payme referral hook error:', e);
+        // Referral komissiya (best-effort) — faqat haqiqiy completion'da,
+        // aks holda replay webhook komissiyani ikki marta hisoblardi.
+        if (justCompleted) {
+          try {
+            await handlePaymentCompleted(transaction.id);
+          } catch (e) {
+            console.error('Payme referral hook error:', e);
+          }
         }
 
         return NextResponse.json({

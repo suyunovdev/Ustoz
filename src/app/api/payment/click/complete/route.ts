@@ -172,7 +172,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Mark as completed va enrollment yaratish — atomik
+    // Mark as completed va enrollment yaratish — atomik.
+    // justCompleted: obunani FAQAT haqiqiy status o'tishida (bir marta)
+    // faollashtirish uchun — replay webhook'da qayta uzaytirilmasin (C5).
+    let justCompleted = false;
     try {
       await prisma.$transaction(async (tx) => {
         // Atomik status transition — concurrent/replay webhook'da FAQAT bir marta
@@ -187,6 +190,7 @@ export async function POST(request: NextRequest) {
           },
         });
         if (flip.count === 0) return; // allaqachon completed — idempotent
+        justCompleted = true;
 
         // Obuna to'lovi bo'lsa — enrollment YO'Q (obuna tx'dan tashqarida faollashadi)
         if (transaction.kind === 'subscription' || !transaction.courseId) return;
@@ -224,8 +228,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Obuna to'lovi bo'lsa — obunani faollashtirish (best-effort)
-    if (transaction.kind === 'subscription' && transaction.planId) {
+    // Obuna to'lovi bo'lsa — obunani faollashtirish (best-effort).
+    // FAQAT shu so'rov statusni "completed"ga o'tkazgan bo'lsa (justCompleted) —
+    // aks holda replay webhook obunani ikkinchi marta uzaytirib yuborardi.
+    if (justCompleted && transaction.kind === 'subscription' && transaction.planId) {
       try {
         await activateSubscriptionFromPayment(transaction.studentId, transaction.planId, transaction.id);
       } catch (e) {
@@ -233,11 +239,14 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Referral komissiya (best-effort — muvaffaqiyatsizlik to'lovni buzmaydi)
-    try {
-      await handlePaymentCompleted(transaction.id);
-    } catch (e) {
-      console.error('Click referral hook error:', e);
+    // Referral komissiya (best-effort — muvaffaqiyatsizlik to'lovni buzmaydi).
+    // Faqat haqiqiy completion'da — replay webhook komissiyani takrorlamasin.
+    if (justCompleted) {
+      try {
+        await handlePaymentCompleted(transaction.id);
+      } catch (e) {
+        console.error('Click referral hook error:', e);
+      }
     }
 
     // Success
