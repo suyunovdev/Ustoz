@@ -34,7 +34,7 @@ function dashboardHref(role: string): string {
   return '/student-dashboard';
 }
 
-// Rasmni brauzerда 256px kvadratga kesib/kichraytiradi (JPEG data URL, ~20-40KB).
+// Rasmni brauzerda 256px kvadratga kesib/kichraytiradi (JPEG data URL, ~20-40KB).
 // Server-yuki YO'Q, R2 kerak emas, barcha rol uchun ishlaydi.
 function resizeToDataUrl(file: File, size = 256, quality = 0.85): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -262,8 +262,9 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
       <h2 className="font-medium mb-3">{t('profile.profileInfo')}</h2>
 
       <div>
-        <label className="block text-sm font-medium mb-1">{t('profile.fullName')}</label>
+        <label htmlFor="profile-fullname" className="block text-sm font-medium mb-1">{t('profile.fullName')}</label>
         <input
+          id="profile-fullname"
           type="text"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
@@ -275,10 +276,11 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
       {profile.role === 'teacher' && (
         <>
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="profile-headline" className="block text-sm font-medium mb-1">
               {t('profile.tagline')}
             </label>
             <input
+              id="profile-headline"
               type="text"
               value={headline}
               onChange={(e) => setHeadline(e.target.value)}
@@ -289,8 +291,9 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">{t('profile.bio')}</label>
+            <label htmlFor="profile-bio" className="block text-sm font-medium mb-1">{t('profile.bio')}</label>
             <textarea
+              id="profile-bio"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={4}
@@ -304,10 +307,11 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="profile-expertise" className="block text-sm font-medium mb-1">
               {t('profile.topics')}
             </label>
             <input
+              id="profile-expertise"
               type="text"
               value={expertiseStr}
               onChange={(e) => setExpertiseStr(e.target.value)}
@@ -328,8 +332,9 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
                 { key: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/…' },
               ].map((f) => (
                 <div key={f.key} className="grid grid-cols-[100px_1fr] gap-2 items-center">
-                  <label className="text-xs text-muted-foreground">{f.label}</label>
+                  <label htmlFor={`profile-social-${f.key}`} className="text-xs text-muted-foreground">{f.label}</label>
                   <input
+                    id={`profile-social-${f.key}`}
                     type="url"
                     value={social[f.key] ?? ''}
                     onChange={(e) => setSocialField(f.key, e.target.value)}
@@ -404,8 +409,9 @@ function PasswordTab() {
     <form onSubmit={handleSubmit} className="bg-card border border-border rounded-md p-6 space-y-4 max-w-md">
       <h2 className="font-medium mb-3">{t('profile.changePassword2')}</h2>
       <div>
-        <label className="block text-sm font-medium mb-1">{t('profile.oldPassword')}</label>
+        <label htmlFor="profile-old-password" className="block text-sm font-medium mb-1">{t('profile.oldPassword')}</label>
         <input
+          id="profile-old-password"
           type="password"
           value={oldPassword}
           onChange={(e) => setOldPassword(e.target.value)}
@@ -414,8 +420,9 @@ function PasswordTab() {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">{t('profile.newPasswordLabel')}</label>
+        <label htmlFor="profile-new-password" className="block text-sm font-medium mb-1">{t('profile.newPasswordLabel')}</label>
         <input
+          id="profile-new-password"
           type="password"
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
@@ -426,8 +433,9 @@ function PasswordTab() {
         <p className="text-xs text-muted-foreground mt-1">{t('profile.minChars')}</p>
       </div>
       <div>
-        <label className="block text-sm font-medium mb-1">{t('profile.confirmNewPasswordLabel')}</label>
+        <label htmlFor="profile-confirm-password" className="block text-sm font-medium mb-1">{t('profile.confirmNewPasswordLabel')}</label>
         <input
+          id="profile-confirm-password"
           type="password"
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
@@ -630,8 +638,9 @@ function AccountTab({ profile }: { profile: ProfileDTO }) {
             <p className="text-sm text-muted-foreground mb-3">
               {t('profile.deletionRequestDesc')}
             </p>
-            <label className="block text-xs font-medium mb-1">{t('profile.reasonOptional')}</label>
+            <label htmlFor="profile-deletion-reason" className="block text-xs font-medium mb-1">{t('profile.reasonOptional')}</label>
             <textarea
+              id="profile-deletion-reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={3}

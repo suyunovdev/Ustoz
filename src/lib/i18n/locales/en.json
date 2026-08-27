@@ -2746,6 +2746,7 @@
   },
   "verify": {
     "revoked": "Revoked",
+    "suspended": "Temporarily invalid",
     "verified": "Verified",
     "certificate": "Certificate",
     "awardedTo": "Awarded to",
@@ -2841,6 +2842,8 @@
     "timeRemaining": "Time remaining"
   },
   "tests": {
+    "question": "Question",
+    "answered": "answered",
     "loadFailed": "Failed to load",
     "passedTitle": "Congratulations! You passed",
     "failedTitle": "Sorry, you did not pass",

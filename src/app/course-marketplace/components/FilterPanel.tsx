@@ -255,10 +255,11 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
 
           {/* Target Audience */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-3">
+            <label htmlFor="filter-audience" className="block text-sm font-medium text-foreground mb-3">
               {t('misc.audience')}
             </label>
             <select
+              id="filter-audience"
               value={localFilters.targetAudience}
               onChange={(e) => setLocalFilters({ ...localFilters, targetAudience: e.target.value, subjectCategory: '', gradeLevel: '' })}
               className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -275,10 +276,11 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
           {/* Subject Category */}
           {localFilters.targetAudience && (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-3">
+              <label htmlFor="filter-subject" className="block text-sm font-medium text-foreground mb-3">
                 {t('misc.subjectName')}
               </label>
               <select
+                id="filter-subject"
                 value={localFilters.subjectCategory}
                 onChange={(e) => setLocalFilters({ ...localFilters, subjectCategory: e.target.value })}
                 className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -300,10 +302,11 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
           {/* Grade Level (only for school students) */}
           {isSchoolAudience && (
             <div>
-              <label className="block text-sm font-medium text-foreground mb-3">
+              <label htmlFor="filter-grade" className="block text-sm font-medium text-foreground mb-3">
                 {t('misc.grade')}
               </label>
               <select
+                id="filter-grade"
                 value={localFilters.gradeLevel}
                 onChange={(e) => setLocalFilters({ ...localFilters, gradeLevel: e.target.value })}
                 className="w-full px-3 py-2 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"

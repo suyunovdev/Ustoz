@@ -98,23 +98,26 @@ const CourseDetailsInteractive = () => {
   useEffect(() => {
     setIsHydrated(true);
     if (courseId) {
-      loadCourse(courseId);
-    } else {
-      // No courseId — redirect to marketplace
-      router.push('/course-marketplace');
+      const controller = new AbortController();
+      loadCourse(courseId, controller.signal);
+      return () => controller.abort();
     }
+    // No courseId — redirect to marketplace
+    router.push('/course-marketplace');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
-  const loadCourse = async (id: string) => {
+  const loadCourse = async (id: string, signal?: AbortSignal) => {
     setIsLoading(true);
     setLoadError(false);
     try {
-      const res = await fetch(`/api/courses/${id}`, { credentials: 'include' });
+      const res = await fetch(`/api/courses/${id}`, { credentials: 'include', signal });
       if (!res.ok) {
         router.push('/course-marketplace');
         return;
       }
       const { course: c } = await res.json();
+      if (signal?.aborted) return; // kurs almashdi/unmount — eskirgan javobni tashlaymiz
       if (!c) {
         router.push('/course-marketplace');
         return;
@@ -199,10 +202,11 @@ const CourseDetailsInteractive = () => {
       setIsEnrolled(!!c.isEnrolled);
       setDiscountPct(Number(c.subscriberDiscountPct) || 0);
     } catch (err) {
+      if (signal?.aborted) return;
       console.error('Kurs yuklanmadi:', err);
       setLoadError(true);
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) setIsLoading(false);
     }
   };
 
@@ -214,6 +218,7 @@ const CourseDetailsInteractive = () => {
 
   const handlePurchase = async () => {
     if (!course) return;
+    if (isPurchasing) return; // ikki marta bosishdan himoya (disabled'ga qo'shimcha)
     if (isEnrolled) {
       router.push(`/learning-interface?courseId=${course.id}`);
       return;

@@ -2746,6 +2746,7 @@
   },
   "verify": {
     "revoked": "Bekor qilingan",
+    "suspended": "Vaqtincha yaroqsiz",
     "verified": "Tasdiqlandi",
     "certificate": "Sertifikat",
     "awardedTo": "Quyidagi shaxsga taqdim etiladi",
@@ -2841,6 +2842,8 @@
     "timeRemaining": "Qolgan vaqt"
   },
   "tests": {
+    "question": "Savol",
+    "answered": "javob berilgan",
     "loadFailed": "Yuklab bo'lmadi",
     "passedTitle": "Tabriklaymiz! O'tdingiz",
     "failedTitle": "Afsus, o'tmadingiz",

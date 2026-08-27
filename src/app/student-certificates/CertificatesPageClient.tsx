@@ -27,27 +27,32 @@ const CertificatesPageClient = () => {
   const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
-    loadCertificates();
+    const controller = new AbortController();
+    loadCertificates(controller.signal);
+    return () => controller.abort();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadCertificates = async () => {
+  const loadCertificates = async (signal?: AbortSignal) => {
     setIsLoading(true);
     setLoadError(false);
     try {
-      const res = await fetch('/api/certificates/my', { credentials: 'include' });
+      const res = await fetch('/api/certificates/my', { credentials: 'include', signal });
       if (res.status === 401) {
         router.push('/login?redirect=/student-certificates');
         return;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
+      if (signal?.aborted) return;
       setCertificates(data.certificates || []);
       setSubscribed(Boolean(data.subscribed));
     } catch (err) {
+      if (signal?.aborted) return; // unmount/qayta-so'rov — eskirgan javobni e'tiborsiz qoldiramiz
       console.error('Sertifikatlarni yuklashda xato:', err);
       setLoadError(true);
     } finally {
-      setIsLoading(false);
+      if (!signal?.aborted) setIsLoading(false);
     }
   };
 

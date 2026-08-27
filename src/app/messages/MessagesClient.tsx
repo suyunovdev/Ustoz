@@ -342,6 +342,7 @@ function ConversationThread({ conversationId }: { conversationId: string }) {
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={t('messages.writeMessage')}
+          aria-label={t('messages.writeMessage')}
           maxLength={4000}
           className="flex-1 px-4 py-2 bg-muted/30 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-primary"
         />

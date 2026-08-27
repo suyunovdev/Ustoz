@@ -93,6 +93,7 @@ export default function TakeTestClient({ testId }: Props) {
 
   const handleSubmit = async (auto = false) => {
     if (!data) return;
+    if (submitting) return; // ikki marta yuborish / timer auto-submit poygasidan himoya
     setSubmitting(true);
     try {
       const res = await fetch(`/api/attempts/${data.attempt.id}/submit`, {
@@ -203,6 +204,8 @@ export default function TakeTestClient({ testId }: Props) {
               <button
                 key={qi.id}
                 onClick={() => setCurrentIdx(i)}
+                aria-current={i === currentIdx ? 'true' : undefined}
+                aria-label={`${t('tests.question')} ${i + 1}${answered ? ` — ${t('tests.answered')}` : ''}`}
                 className={`w-7 h-7 rounded-md text-xs font-medium transition-smooth ${
                   i === currentIdx
                     ? 'bg-primary text-primary-foreground'
