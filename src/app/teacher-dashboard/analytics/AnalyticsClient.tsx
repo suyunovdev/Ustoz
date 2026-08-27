@@ -290,7 +290,7 @@ function DailyChart({ points }: { points: DailyPointDTO[] }) {
             <div
               key={p.date}
               className="flex-1 flex flex-col justify-end items-center gap-px relative group"
-              title={`${p.date}\nDaromad: ${fmtUzs(p.revenue)}\nYozilish: ${p.enrollments}`}
+              title={`${p.date}\n${t('teacher.revenue')}: ${fmtUzs(p.revenue)}\n${t('teacher.enrollments')}: ${p.enrollments}`}
             >
               <div
                 className="w-full bg-primary/40 rounded-t-sm transition-all"

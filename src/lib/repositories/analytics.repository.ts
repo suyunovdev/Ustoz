@@ -6,6 +6,17 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import { PLATFORM_FEE_PCT } from '@/lib/repositories/earnings.repository';
+
+/**
+ * Brutto → netto (o'qituvchi ulushi): platforma komissiyasi ayrilgan.
+ * Foiz manbasi — canonical `PLATFORM_FEE_PCT` (earnings/balans bilan bir xil).
+ */
+function netFromGross(gross: bigint): bigint {
+  if (gross <= BigInt(0)) return BigInt(0);
+  const fee = (gross * BigInt(Math.round(PLATFORM_FEE_PCT * 100))) / BigInt(10000);
+  return gross - fee;
+}
 
 export interface DailyRevenueRow {
   date: Date;
@@ -25,31 +36,34 @@ export async function getDailyRevenue(
   const rows = await prisma.$queryRaw<
     Array<{ date: Date; revenue: bigint; enrollments: bigint; payments: bigint }>
   >`
-    WITH dates AS (
+    WITH today AS (SELECT (now() AT TIME ZONE 'Asia/Tashkent')::date AS d),
+    dates AS (
       SELECT generate_series(
-        CURRENT_DATE - ((${days} - 1)::int * INTERVAL '1 day'),
-        CURRENT_DATE,
+        (SELECT d FROM today) - ((${days} - 1)::int),
+        (SELECT d FROM today),
         '1 day'::interval
       )::date AS date
     ),
     rev AS (
-      SELECT pt.created_at::date AS date,
+      SELECT ((pt.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date AS date,
              COALESCE(SUM(pt.amount_uzs), 0)::bigint AS revenue,
              COUNT(*)::bigint AS payments
       FROM payment_transactions pt
       JOIN courses c ON c.id = pt.course_id
       WHERE c.teacher_id = ${teacherId}::uuid
         AND pt.status = 'completed'
-        AND pt.created_at >= CURRENT_DATE - ((${days} - 1)::int * INTERVAL '1 day')
+        AND ((pt.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date
+            >= (SELECT d FROM today) - ((${days} - 1)::int)
       GROUP BY 1
     ),
     enroll AS (
-      SELECT e.enrolled_at::date AS date,
+      SELECT ((e.enrolled_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date AS date,
              COUNT(*)::bigint AS enrollments
       FROM enrollments e
       JOIN courses c ON c.id = e.course_id
       WHERE c.teacher_id = ${teacherId}::uuid
-        AND e.enrolled_at >= CURRENT_DATE - ((${days} - 1)::int * INTERVAL '1 day')
+        AND ((e.enrolled_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date
+            >= (SELECT d FROM today) - ((${days} - 1)::int)
       GROUP BY 1
     )
     SELECT d.date,
@@ -61,9 +75,10 @@ export async function getDailyRevenue(
     LEFT JOIN enroll e ON e.date = d.date
     ORDER BY d.date ASC
   `;
+  // Netto daromad — platforma komissiyasi ayrilgan (#2), earnings bilan izchil.
   return rows.map((r) => ({
     date: r.date,
-    revenue: r.revenue,
+    revenue: netFromGross(r.revenue),
     enrollments: Number(r.enrollments),
     payments: Number(r.payments),
   }));
@@ -83,38 +98,53 @@ export async function compareRevenue(
   teacherId: string,
   days: number,
 ): Promise<CompareRevenueRow> {
+  // MUHIM: to'lov va yozilish MUSTAQIL subquery'larda hisoblanadi. Ilgari ikkalasi
+  // bitta LEFT JOIN'da edi → kartezian fan-out: SUM(amount_uzs) har to'lovni har
+  // yozilish uchun sanab, daromadni ~yozilishlar soniga shishirardi (#1 KRITIK).
+  // Sana chegaralari Toshkent (UTC+5) kuni bo'yicha — platformaning qolgan
+  // kun-hisobi bilan izchil (#3). created_at UTC naive timestamp.
   const rows = await prisma.$queryRaw<
-    Array<{
-      curRev: bigint;
-      prevRev: bigint;
-      curEnr: bigint;
-      prevEnr: bigint;
-    }>
+    Array<{ curRev: bigint; prevRev: bigint; curEnr: bigint; prevEnr: bigint }>
   >`
+    WITH bounds AS (
+      SELECT
+        (now() AT TIME ZONE 'Asia/Tashkent')::date - ((${days} - 1)::int) AS cur_start,
+        (now() AT TIME ZONE 'Asia/Tashkent')::date - ((${days * 2} - 1)::int) AS prev_start
+    )
     SELECT
-      COALESCE(SUM(pt.amount_uzs) FILTER (
-        WHERE pt.created_at >= CURRENT_DATE - ((${days} - 1)::int * INTERVAL '1 day')
+      COALESCE((
+        SELECT SUM(pt.amount_uzs) FROM payment_transactions pt
+        JOIN courses c ON c.id = pt.course_id
+        WHERE c.teacher_id = ${teacherId}::uuid AND pt.status = 'completed'
+          AND ((pt.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date >= b.cur_start
       ), 0)::bigint AS "curRev",
-      COALESCE(SUM(pt.amount_uzs) FILTER (
-        WHERE pt.created_at >= CURRENT_DATE - ((${days * 2} - 1)::int * INTERVAL '1 day')
-          AND pt.created_at < CURRENT_DATE - ((${days} - 1)::int * INTERVAL '1 day')
+      COALESCE((
+        SELECT SUM(pt.amount_uzs) FROM payment_transactions pt
+        JOIN courses c ON c.id = pt.course_id
+        WHERE c.teacher_id = ${teacherId}::uuid AND pt.status = 'completed'
+          AND ((pt.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date >= b.prev_start
+          AND ((pt.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date < b.cur_start
       ), 0)::bigint AS "prevRev",
-      COUNT(DISTINCT e.id) FILTER (
-        WHERE e.enrolled_at >= CURRENT_DATE - ((${days} - 1)::int * INTERVAL '1 day')
-      )::bigint AS "curEnr",
-      COUNT(DISTINCT e.id) FILTER (
-        WHERE e.enrolled_at >= CURRENT_DATE - ((${days * 2} - 1)::int * INTERVAL '1 day')
-          AND e.enrolled_at < CURRENT_DATE - ((${days} - 1)::int * INTERVAL '1 day')
-      )::bigint AS "prevEnr"
-    FROM courses c
-    LEFT JOIN payment_transactions pt ON pt.course_id = c.id AND pt.status = 'completed'
-    LEFT JOIN enrollments e ON e.course_id = c.id
-    WHERE c.teacher_id = ${teacherId}::uuid
+      COALESCE((
+        SELECT COUNT(*) FROM enrollments e
+        JOIN courses c ON c.id = e.course_id
+        WHERE c.teacher_id = ${teacherId}::uuid
+          AND ((e.enrolled_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date >= b.cur_start
+      ), 0)::bigint AS "curEnr",
+      COALESCE((
+        SELECT COUNT(*) FROM enrollments e
+        JOIN courses c ON c.id = e.course_id
+        WHERE c.teacher_id = ${teacherId}::uuid
+          AND ((e.enrolled_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date >= b.prev_start
+          AND ((e.enrolled_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent')::date < b.cur_start
+      ), 0)::bigint AS "prevEnr"
+    FROM bounds b
   `;
   const r = rows[0];
+  // Netto — platforma komissiyasi ayrilgan (earnings/balans bilan izchil, #2).
   return {
-    currentRevenue: r.curRev,
-    previousRevenue: r.prevRev,
+    currentRevenue: netFromGross(r.curRev),
+    previousRevenue: netFromGross(r.prevRev),
     currentEnrollments: Number(r.curEnr),
     previousEnrollments: Number(r.prevEnr),
   };
@@ -252,7 +282,8 @@ export async function getCourseAnalytics(
     activeEnrollments: Number(r.activeEnr),
     completedEnrollments: Number(r.completedEnr),
     avgProgress: Math.round(r.avgProgress ?? 0),
-    totalRevenueUzs: r.totalRev,
+    // Netto — platforma komissiyasi ayrilgan (earnings bilan izchil, #2).
+    totalRevenueUzs: netFromGross(r.totalRev),
     totalRefundsUzs: r.totalRefunds,
     reviewCount: Number(r.reviewCount),
     avgRating: Math.round((r.avgRating ?? 0) * 100) / 100,
@@ -285,7 +316,11 @@ export async function getTopicFunnel(courseId: string): Promise<TopicFunnelRow[]
       ct.id AS "topicId",
       ct.title AS "topicTitle",
       ct.order_index AS "orderIndex",
-      COALESCE((SELECT COUNT(*)::bigint FROM topic_completions WHERE topic_id = ct.id), 0) AS "completions",
+      COALESCE((SELECT COUNT(*)::bigint FROM topic_completions tc
+        WHERE tc.topic_id = ct.id
+          AND EXISTS (SELECT 1 FROM enrollments en
+                      WHERE en.student_id = tc.student_id AND en.course_id = ${courseId}::uuid)
+      ), 0) AS "completions",
       COALESCE((SELECT COUNT(*)::bigint FROM enrollments WHERE course_id = ${courseId}::uuid), 0) AS "totalEnrolled"
     FROM course_topics ct
     WHERE ct.course_id = ${courseId}::uuid
@@ -298,7 +333,7 @@ export async function getTopicFunnel(courseId: string): Promise<TopicFunnelRow[]
     completions: Number(r.completions),
     completionRate:
       r.totalEnrolled > 0
-        ? Math.round((Number(r.completions) / Number(r.totalEnrolled)) * 100)
+        ? Math.min(100, Math.round((Number(r.completions) / Number(r.totalEnrolled)) * 100))
         : 0,
   }));
 }
