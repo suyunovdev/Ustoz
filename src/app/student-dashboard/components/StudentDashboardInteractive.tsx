@@ -23,6 +23,7 @@ import type {
 import type { RecommendedCourse } from '@/types/recommendation.types';
 import { useStudentDashboard } from '@/hooks/queries/useStudentDashboard';
 import { useActivityCalendar } from '@/hooks/queries/useActivityCalendar';
+import { useAuth } from '@/contexts/AuthContext';
 
 type DashboardTab = 'continue' | 'my-courses' | 'recommended';
 const VALID_TABS: DashboardTab[] = ['continue', 'my-courses', 'recommended'];
@@ -65,9 +66,10 @@ const StudentDashboardInteractive = () => {
     return VALID_TABS.includes(t as DashboardTab) ? (t as DashboardTab) : 'continue';
   })();
 
-  const [isHydrated, setIsHydrated] = useState(false);
   const [activeView, setActiveView] = useState<DashboardTab>(initialTab);
-  const [userName, setUserName] = useState('Foydalanuvchi');
+  // Foydalanuvchi ismi AuthContext'dan — alohida /api/auth/me so'rovi (waterfall) shart emas.
+  const { user } = useAuth();
+  const userName = user?.fullName || user?.email || 'Foydalanuvchi';
 
   // Dashboard data — TanStack Query (cached + auto refetch)
   const dashboardQuery = useStudentDashboard();
@@ -94,21 +96,6 @@ const StudentDashboardInteractive = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [extraRecommendations, setExtraRecommendations] = useState<RecommendedCourse[]>([]);
   const [loadingMore, setLoadingMore] = useState(false);
-
-  // User name (faqat 1 marta — AuthContext bilan birga keladi keyinroq)
-  useEffect(() => {
-    setIsHydrated(true);
-    fetch('/api/auth/me', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d?.user?.fullName) setUserName(d.user.fullName);
-        else if (dashboardQuery.isError && (dashboardQuery.error as any)?.message?.includes('401')) {
-          router.push('/login');
-        }
-      })
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // 401 handling — dashboardQuery xato berganida login'ga
   useEffect(() => {
@@ -171,7 +158,10 @@ const StudentDashboardInteractive = () => {
     .filter((e) => e.progress > 0 && !e.isCompleted)
     .slice(0, 4);
 
-  if (!isHydrated) {
+  // Skeleton FAQAT haqiqiy cache-miss (SSR prefetch bo'lmagan client-navigatsiya)
+  // holatida ko'rsatiladi. Prefetch qilingan sahifada data darhol mavjud —
+  // ortiqcha "hydration gate" skeleton chaqnashi yo'q.
+  if (loadingCourses && !data) {
     return (
       <div className="min-h-screen bg-background py-8 px-4">
         <div className="max-w-7xl mx-auto">

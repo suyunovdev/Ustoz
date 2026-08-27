@@ -11,16 +11,29 @@ export async function GET(req: NextRequest) {
   try {
     const session = await requireAuth(req);
 
-    const transactions = await prisma.paymentTransaction.findMany({
+    const { searchParams } = new URL(req.url);
+    const limitRaw = Number(searchParams.get('limit'));
+    const limit = Number.isFinite(limitRaw) && limitRaw >= 1 ? Math.min(50, Math.floor(limitRaw)) : 20;
+    const cursor = searchParams.get('cursor') || undefined;
+
+    // Cursor pagination: limit+1 o'qib, oxirgisini keyingi sahifa kaliti sifatida
+    // ajratamiz (ilgari qattiq take:100 edi — og'ir tarixlar jimgina kesilardi).
+    const rows = await prisma.paymentTransaction.findMany({
       where: { studentId: session.sub },
       include: {
         course: { select: { title: true, teacherId: true } },
       },
       orderBy: { createdAt: 'desc' },
-      take: 100,
+      take: limit + 1,
+      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
     });
 
+    const hasMore = rows.length > limit;
+    const transactions = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? transactions[transactions.length - 1].id : null;
+
     return jsonResponse({
+      nextCursor,
       transactions: transactions.map((t) => ({
         id: t.id,
         course_id: t.courseId,

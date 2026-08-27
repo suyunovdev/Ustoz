@@ -8,6 +8,7 @@
  * Data layer: repository'lar orqali (test qilish oson).
  */
 
+import { unstable_cache } from 'next/cache';
 import { serializeData } from '@/lib/json';
 import { enrollmentRepo, certificateRepo } from '@/lib/repositories';
 import { computeProgressForEnrollments } from './dashboard-progress.helper';
@@ -15,13 +16,30 @@ import { getStreakData } from './streak.service';
 import { getRecommendedCourses } from './recommendation.service';
 import type { DashboardData } from '@/types/dashboard.types';
 
+/**
+ * Tavsiyalar sekin o'zgaradi, lekin har dashboard renderida 4–6 tartiblangan
+ * so'rov qilardi (P4). Foydalanuvchi bo'yicha 5 daqiqa keshlaymiz; enroll
+ * bo'lganda `recommendations:<studentId>` tegi orqali darhol bekor qilinadi.
+ */
+export function recommendationsCacheTag(studentId: string): string {
+  return `recommendations:${studentId}`;
+}
+
+function getCachedRecommendations(studentId: string) {
+  return unstable_cache(
+    () => getRecommendedCourses(studentId, 6),
+    ['dashboard-recommendations', studentId],
+    { revalidate: 300, tags: [recommendationsCacheTag(studentId)] },
+  )();
+}
+
 export async function loadDashboardData(studentId: string): Promise<DashboardData> {
   // 1) Parallel data fetch (har data source 1 query — N+1 yo'q)
   const [enrollments, certificates, streakData, recommended] = await Promise.all([
     enrollmentRepo.findActiveByStudent(studentId),
     certificateRepo.findByStudent(studentId),
     getStreakData(studentId),
-    getRecommendedCourses(studentId, 6),
+    getCachedRecommendations(studentId),
   ]);
 
   // 2) Progress meta (N+1'siz: helper'da 2 ta query barcha enrollment uchun)

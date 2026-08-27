@@ -27,6 +27,23 @@ export async function create(
   await client.topicCompletion.create({ data });
 }
 
+/**
+ * Idempotent yaratish — `createMany({ skipDuplicates })` orqali ON CONFLICT DO NOTHING.
+ * Bir vaqtda kelgan ikki so'rov ham xatosiz (P2002 emas) ishlaydi; yangi satr
+ * yaratilsa `true`, allaqachon mavjud bo'lsa `false` qaytaradi.
+ */
+export async function createIfNew(
+  data: { studentId: string; topicId: string; courseId: string },
+  tx?: Prisma.TransactionClient,
+): Promise<boolean> {
+  const client: PrismaLike = tx ?? prisma;
+  const res = await client.topicCompletion.createMany({
+    data: [data],
+    skipDuplicates: true,
+  });
+  return res.count > 0;
+}
+
 export async function countByStudentAndCourse(
   studentId: string,
   courseId: string,
