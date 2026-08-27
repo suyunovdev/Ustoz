@@ -31,8 +31,11 @@ export class EnrollmentAccessDeniedError extends Error {
 export async function listStudents(
   teacherId: string,
   filters: { courseId?: string; search?: string; activeOnly?: boolean } = {},
-) {
-  return studentRepo.listTeacherStudents(teacherId, filters);
+  page: { limit?: number; offset?: number } = {},
+): Promise<{ students: Awaited<ReturnType<typeof studentRepo.listTeacherStudents>>['rows']; total: number; hasMore: boolean }> {
+  const { rows, total } = await studentRepo.listTeacherStudents(teacherId, filters, page);
+  const offset = Math.max(Math.floor(page.offset ?? 0), 0);
+  return { students: rows, total, hasMore: offset + rows.length < total };
 }
 
 export async function getStudentDetail(

@@ -1,7 +1,10 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { queryKeys } from './queryKeys';
+
+/** Talabalar ro'yxati sahifasi uchun bir sahifadagi talabalar soni. */
+export const TEACHER_STUDENTS_PAGE_SIZE = 30;
 
 export interface TeacherStudentListItemDTO {
   studentId: string;
@@ -67,6 +70,53 @@ export function useTeacherStudents(filters: {
       }
       return res.json() as Promise<{ students: TeacherStudentListItemDTO[] }>;
     },
+    staleTime: 30_000,
+  });
+}
+
+interface TeacherStudentsPageDTO {
+  students: TeacherStudentListItemDTO[];
+  total: number;
+  hasMore: boolean;
+  nextOffset: number;
+}
+
+/**
+ * Talabalar ro'yxati sahifasi uchun paginatsiyalangan (infinite) variant —
+ * "Ko'proq yuklash" bilan sahifama-sahifa. Jami sonni (`total`) ham qaytaradi,
+ * shu sabab jimgina qirqim (ilgarigi LIMIT 500) yo'q. Picker'lar (guruh/sertifikat)
+ * odatdagi `useTeacherStudents`ni ishlatadi — bu ularга tegmaydi.
+ */
+export function useTeacherStudentsInfinite(filters: {
+  courseId?: string;
+  search?: string;
+  activeOnly?: boolean;
+} = {}) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.teacherStudentsPaged(filters),
+    initialPageParam: 0,
+    queryFn: async ({ pageParam }): Promise<TeacherStudentsPageDTO> => {
+      const p = new URLSearchParams();
+      if (filters.courseId) p.set('courseId', filters.courseId);
+      if (filters.search) p.set('search', filters.search);
+      if (filters.activeOnly) p.set('activeOnly', 'true');
+      p.set('limit', String(TEACHER_STUDENTS_PAGE_SIZE));
+      p.set('offset', String(pageParam));
+      const res = await fetch(`/api/teacher/students?${p.toString()}`, {
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error || `Talabalar yuklanmadi (${res.status})`);
+      }
+      const data = (await res.json()) as {
+        students: TeacherStudentListItemDTO[];
+        total: number;
+        hasMore: boolean;
+      };
+      return { ...data, nextOffset: pageParam + data.students.length };
+    },
+    getNextPageParam: (last) => (last.hasMore ? last.nextOffset : undefined),
     staleTime: 30_000,
   });
 }

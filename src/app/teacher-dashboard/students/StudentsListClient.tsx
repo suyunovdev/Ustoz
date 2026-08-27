@@ -5,9 +5,10 @@ import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import AppImage from '@/components/ui/AppImage';
 import { toast } from '@/components/common/Toaster';
-import { useTeacherStudents } from '@/hooks/queries/useTeacherStudents';
+import { useTeacherStudentsInfinite } from '@/hooks/queries/useTeacherStudents';
 import { useTeacherDashboard } from '@/hooks/queries/useTeacherDashboard';
 import { useBroadcastToCourseMutation } from '@/hooks/mutations/useTeacherStudentMutations';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { useI18n } from '@/contexts/I18nContext';
 
 function formatUzs(uzs: string): string {
@@ -37,15 +38,25 @@ export default function StudentsListClient() {
   const [activeOnly, setActiveOnly] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
 
-  const { data, isLoading, error } = useTeacherStudents({
+  // Qidiruv debounce qilinadi — har harfda emas, foydalanuvchi to'xtagach so'rov.
+  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useTeacherStudentsInfinite({
     courseId: courseFilter || undefined,
-    search: search.trim() || undefined,
+    search: debouncedSearch || undefined,
     activeOnly,
   });
   const dashboard = useTeacherDashboard();
   const courses = dashboard.data?.courses ?? [];
 
-  const students = data?.students ?? [];
+  const students = data?.pages.flatMap((p) => p.students) ?? [];
+  const total = data?.pages[0]?.total ?? students.length;
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -56,10 +67,10 @@ export default function StudentsListClient() {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Dashboard
+            {t('teacher.studentsBackToDashboard')}
           </Link>
           <h1 className="text-2xl font-heading font-semibold text-foreground">{t('teacher.studentsTitle')}</h1>
-          <p className="text-sm text-muted-foreground">{students.length} {t('teacher.studentsCount')}</p>
+          <p className="text-sm text-muted-foreground">{total} {t('teacher.studentsCount')}</p>
         </div>
         {courses.length > 0 && (
           <button
@@ -67,7 +78,7 @@ export default function StudentsListClient() {
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 flex items-center gap-2 text-sm font-medium"
           >
             <Icon name="MegaphoneIcon" size={16} />
-            Broadcast
+            {t('teacher.studentsBroadcastBtn')}
           </button>
         )}
       </div>
@@ -142,7 +153,7 @@ export default function StudentsListClient() {
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center text-sm font-medium">
-                  {s.fullName.charAt(0)}
+                  {s.fullName.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -167,7 +178,7 @@ export default function StudentsListClient() {
                   <p className="text-muted-foreground">{t('teacher.studentsProgressLabel')}</p>
                   <p className="font-medium text-foreground">{s.avgProgress}%</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right" title={t('teacher.studentsPaymentHint')}>
                   <p className="text-muted-foreground">{t('teacher.studentsPaymentLabel')}</p>
                   <p className="font-medium text-foreground">{formatUzs(s.totalPayments)}</p>
                 </div>
@@ -178,6 +189,25 @@ export default function StudentsListClient() {
               </div>
             </Link>
           ))}
+
+          {/* Paginatsiya — jimgina qirqim yo'q: ko'rsatilgan / jami va "ko'proq". */}
+          <div className="flex flex-col items-center gap-2 pt-2">
+            <p className="text-xs text-muted-foreground">
+              {students.length} / {total}
+            </p>
+            {hasNextPage && (
+              <button
+                onClick={() => fetchNextPage()}
+                disabled={isFetchingNextPage}
+                className="px-4 py-2 border border-border rounded-md text-sm font-medium hover:bg-muted transition-smooth disabled:opacity-50 inline-flex items-center gap-2"
+              >
+                {isFetchingNextPage && (
+                  <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                )}
+                {t('teacher.studentsLoadMore')}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

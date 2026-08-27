@@ -154,6 +154,13 @@ export const queryKeys = {
       filters.search ?? '',
       filters.activeOnly ?? false,
     ] as const,
+  teacherStudentsPaged: (filters: { courseId?: string; search?: string; activeOnly?: boolean }) =>
+    [
+      'teacher-students-paged',
+      filters.courseId ?? 'all',
+      filters.search ?? '',
+      filters.activeOnly ?? false,
+    ] as const,
   teacherStudent: (id: string) => ['teacher-student', id] as const,
   teacherGroups: (filters: { courseId?: string; status?: string; search?: string }) =>
     [
