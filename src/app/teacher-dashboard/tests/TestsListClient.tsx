@@ -66,7 +66,7 @@ export default function TestsListClient() {
           </Link>
           <h1 className="text-2xl font-heading font-semibold text-foreground">{t('teacher.tests')}</h1>
           <p className="text-sm text-muted-foreground">
-            {tests.length} {t('teacher.testCount')} · {tests.reduce((s, t) => s + t.attemptCount, 0)} {t('teacher.attempts')}
+            {tests.length} {t('teacher.testCount')} · {tests.reduce((s, tt) => s + tt.attemptCount, 0)} {t('teacher.attempts')}
           </p>
         </div>
         <button

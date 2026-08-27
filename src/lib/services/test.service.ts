@@ -67,9 +67,12 @@ async function assertEnrolledInTestCourse(
   courseId: string | null | undefined,
   studentId: string,
 ): Promise<void> {
-  if (!courseId) return; // standalone test — kursga bog'liq emas
+  // Standalone test (courseId=null) — ATAYLAB har autentifikatsiyalangan
+  // foydalanuvchiga ochiq (ochiq mashq/imtihon); kursga bog'langan test esa
+  // faqat FAOL yozilgan talabaga (M3 — hujjatlashtirilgan; M2 — isActive).
+  if (!courseId) return;
   const enrolled = await prisma.enrollment.findFirst({
-    where: { courseId, studentId },
+    where: { courseId, studentId, isActive: true },
     select: { id: true },
   });
   if (!enrolled) throw new TestNotEnrolledError();
@@ -280,6 +283,12 @@ function validateQuestionShape(input: AddQuestionInput | UpdateQuestionInput, is
     const opts = (input as AddQuestionInput).options;
     if (!opts || opts.length < 2) {
       throw new ValidationError("Variantlar kamida 2 ta bo'lishi kerak");
+    }
+    // Variant matnlari NOYOB bo'lishi shart — ballash matn tengligi bo'yicha
+    // (option.text === answer), takroriy matn noaniq baholanardi (L6).
+    const texts = opts.map((o) => o.text.trim().toLowerCase());
+    if (new Set(texts).size !== texts.length) {
+      throw new ValidationError("Variant matnlari takrorlanmasligi kerak");
     }
     const correctCount = opts.filter((o) => o.isCorrect).length;
     if (qt === 'single' && correctCount !== 1) {
@@ -545,17 +554,28 @@ export async function submitTestAttempt(
     });
   }
 
-  const percentage = totalMax > 0 ? (totalScore / totalMax) * 100 : 0;
-  // 0-ballli / 0-savolli testni o'tib bo'lmaydi
+  // Foizni saqlanadigan qiymat bilan BIR XIL yaxlitlaymiz (repo ham 2 kasrga
+  // yaxlitlaydi) — aks holda chegarada ko'rsatilgan 80.00% "passed=false" bilan
+  // zid chiqishi mumkin edi (L4). 0-ballli / 0-savolli testni o'tib bo'lmaydi.
+  const percentage = totalMax > 0 ? Math.round((totalScore / totalMax) * 10000) / 100 : 0;
   const passed = totalMax > 0 && percentage >= test.passingScore;
 
-  const updated = await testRepo.submitAttempt({
-    attemptId,
-    answers,
-    score: totalScore,
-    maxScore: totalMax,
-    passed,
-  });
+  let updated;
+  try {
+    updated = await testRepo.submitAttempt({
+      attemptId,
+      answers,
+      score: totalScore,
+      maxScore: totalMax,
+      passed,
+    });
+  } catch (e) {
+    // Konkurrent submit poygasi (L5) — boshqa so'rov allaqachon yozgan.
+    if (e instanceof Error && e.message === 'ATTEMPT_ALREADY_SUBMITTED') {
+      throw new AttemptAlreadySubmittedError();
+    }
+    throw e;
+  }
 
   return { attempt: updated, results, passed };
 }
