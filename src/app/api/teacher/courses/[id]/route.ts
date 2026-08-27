@@ -111,7 +111,7 @@ export async function PATCH(
     // oladi va `topic_completions` (onDelete: Cascade) O'CHIB KETADI, ya'ni bitta
     // tahrir barcha talabalar progressini yo'q qilardi. Endi mavjud qatorlar
     // JOYIDA yangilanadi (id saqlanadi → completions saqlanadi), ortiqchasi
-    // qo'shiladi, kamayganи o'chiriladi.
+    // qo'shiladi, kamaygani o'chiriladi.
     if (Array.isArray(b.topics)) {
       const incoming = b.topics as Array<Record<string, any>>;
       const existingTopics = await prisma.courseTopic.findMany({

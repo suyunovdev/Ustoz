@@ -59,7 +59,7 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
       const configOk = data.config?.status === 'ok';
       const latency = data.latency_ms || 0;
 
-      // Uptime soniyada saqlanadi, ko'rsatishда formatlanadi (deploy'dan keyin
+      // Uptime soniyada saqlanadi, ko'rsatishda formatlanadi (deploy'dan keyin
       // <1 soat bo'lsa "0 soat" o'rniga daqiqa ko'rsatiladi).
       const uptimeSeconds = Math.round(data.uptime || 0);
 

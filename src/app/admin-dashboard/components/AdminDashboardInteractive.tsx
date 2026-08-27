@@ -25,7 +25,7 @@ import CourseModerationPanel from '@/app/content-moderation-dashboard/components
 import SupportTicketsPanel from './SupportTicketsPanel';
 import AuditLogPanel from './AuditLogPanel';
 import SystemHealthPanel from './SystemHealthPanel';
-// Recharts og'ir (~150KB) — faqat kerak bo'lganда yuklanadi (boshlang'ich
+// Recharts og'ir (~150KB) — faqat kerak bo'lganda yuklanadi (boshlang'ich
 // admin bundle'ni kamaytiradi). ssr:false — chart faqat client'da.
 const AnalyticsCharts = dynamic(() => import('./AnalyticsCharts'), {
   ssr: false,

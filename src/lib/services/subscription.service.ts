@@ -96,7 +96,7 @@ export async function getSubscriberDiscountPct(userId: string): Promise<number> 
   return getSubscriberCourseDiscountSetting();
 }
 
-/** Narxga chegirma qo'llab, butun so'mgacha yaxlitlaydi (100 ming'gача emas). */
+/** Narxga chegirma qo'llab, butun so'mgacha yaxlitlaydi (100 ming'gacha emas). */
 export function applyDiscount(priceUzs: number, discountPct: number): number {
   if (discountPct <= 0) return priceUzs;
   if (discountPct >= 100) return 0;

@@ -10,7 +10,7 @@ import AdminSidebar from '@/app/admin-dashboard/components/AdminSidebar';
 import StudentSidebar from '@/app/student-dashboard/components/StudentSidebar';
 
 /**
- * Rol-aware layout: kirgan foydalanuvchi rolига qarab tegishli sidebar'ni ko'rsatadi
+ * Rol-aware layout: kirgan foydalanuvchi roliga qarab tegishli sidebar'ni ko'rsatadi
  * (student / teacher / admin). Ulashilgan authenticated sahifalarda ishlatiladi.
  *
  * initialRole — server layout'dan (getSession) uzatiladi: SSR'da to'g'ri sidebar

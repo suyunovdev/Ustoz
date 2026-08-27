@@ -21,7 +21,7 @@ export interface ModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   size?: Size;
-  /** Overlay bosilганда yopilsinmi (default: ha) */
+  /** Overlay bosilganda yopilsinmi (default: ha) */
   closeOnBackdrop?: boolean;
 }
 
