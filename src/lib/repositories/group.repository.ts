@@ -66,7 +66,16 @@ export async function createGroup(input: CreateGroupInput): Promise<GroupRow> {
 }
 
 export async function findGroupById(id: string): Promise<GroupRow | null> {
-  return prisma.group.findUnique({ where: { id } });
+  // memberCount — JONLI hisoblanadi (_count.members). Denormalizatsiya qilingan
+  // `memberCount` ustuni cascade delete'da (talaba akkaunti o'chirilsa) eskirib
+  // qolardi va guruh soxta "to'la" bo'lardi. Endi hech qanday drift yo'q.
+  const g = await prisma.group.findUnique({
+    where: { id },
+    include: { _count: { select: { members: true } } },
+  });
+  if (!g) return null;
+  const { _count, ...rest } = g;
+  return { ...rest, memberCount: _count.members };
 }
 
 export interface ListGroupsFilters {
@@ -92,7 +101,11 @@ export async function listGroups(
 
   const rows = await prisma.group.findMany({
     where,
-    include: { course: { select: { title: true } } },
+    include: {
+      course: { select: { title: true } },
+      // memberCount — jonli (denormalizatsiya drift'iga qarshi, findGroupById'dagidek).
+      _count: { select: { members: true } },
+    },
     orderBy: { createdAt: 'desc' },
   });
 
@@ -107,7 +120,7 @@ export async function listGroups(
     meetingUrl: r.meetingUrl,
     scheduleNote: r.scheduleNote,
     color: r.color,
-    memberCount: r.memberCount,
+    memberCount: r._count.members,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
     courseTitle: r.course?.title ?? null,
@@ -188,10 +201,12 @@ export async function addMember(
     await tx.$queryRaw`SELECT id FROM groups WHERE id = ${groupId}::uuid FOR UPDATE`;
     const g = await tx.group.findUnique({
       where: { id: groupId },
-      select: { maxMembers: true, memberCount: true },
+      select: { maxMembers: true },
     });
     if (!g) throw new Error('GROUP_NOT_FOUND');
-    if (g.memberCount >= g.maxMembers) throw new Error('GROUP_FULL');
+    // Sig'im — HAQIQIY a'zolar soni bo'yicha (denormalizatsiya emas → drift yo'q).
+    const current = await tx.groupMember.count({ where: { groupId } });
+    if (current >= g.maxMembers) throw new Error('GROUP_FULL');
 
     // Conflict — composite primary key (groupId, studentId)
     const existing = await tx.groupMember.findUnique({
@@ -205,10 +220,6 @@ export async function addMember(
         student: { select: { id: true, fullName: true, email: true, avatarUrl: true } },
       },
     });
-    await tx.group.update({
-      where: { id: groupId },
-      data: { memberCount: { increment: 1 } },
-    });
     return {
       studentId: created.student.id,
       fullName: created.student.fullName,
@@ -220,19 +231,9 @@ export async function addMember(
 }
 
 export async function removeMember(groupId: string, studentId: string): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    const existing = await tx.groupMember.findUnique({
-      where: { groupId_studentId: { groupId, studentId } },
-    });
-    if (!existing) return;
-    await tx.groupMember.delete({
-      where: { groupId_studentId: { groupId, studentId } },
-    });
-    await tx.group.update({
-      where: { id: groupId },
-      data: { memberCount: { decrement: 1 } },
-    });
-  });
+  // memberCount jonli hisoblangani uchun (findGroupById/listGroups) faqat
+  // a'zolik qatorini o'chiramiz. deleteMany — idempotent (bo'lmasa ham xato yo'q).
+  await prisma.groupMember.deleteMany({ where: { groupId, studentId } });
 }
 
 /**
@@ -242,44 +243,40 @@ export async function removeMember(groupId: string, studentId: string): Promise<
 export async function addMembersBulk(
   groupId: string,
   studentIds: string[],
-): Promise<{ added: number; skipped: number }> {
+): Promise<{ added: number; alreadyMember: number; noCapacity: number }> {
   return prisma.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT id FROM groups WHERE id = ${groupId}::uuid FOR UPDATE`;
     const g = await tx.group.findUnique({
       where: { id: groupId },
-      select: { maxMembers: true, memberCount: true },
+      select: { maxMembers: true },
     });
     if (!g) throw new Error('GROUP_NOT_FOUND');
-    const slotsLeft = g.maxMembers - g.memberCount;
-    if (slotsLeft <= 0) return { added: 0, skipped: studentIds.length };
+    // Sig'im — HAQIQIY a'zolar soni bo'yicha (drift yo'q).
+    const current = await tx.groupMember.count({ where: { groupId } });
+    const slotsLeft = Math.max(0, g.maxMembers - current);
 
-    // Mavjud a'zolar
     const existing = await tx.groupMember.findMany({
       where: { groupId, studentId: { in: studentIds } },
       select: { studentId: true },
     });
     const existingSet = new Set(existing.map((e) => e.studentId));
-    const newOnes = studentIds.filter((id) => !existingSet.has(id)).slice(0, slotsLeft);
+    const alreadyMember = studentIds.filter((id) => existingSet.has(id)).length;
 
-    if (newOnes.length === 0) {
-      return { added: 0, skipped: studentIds.length };
+    // Yangi nomzodlar; sig'imga sig'maganlar — noCapacity (allaqachon a'zolardan alohida).
+    const candidates = studentIds.filter((id) => !existingSet.has(id));
+    const toAdd = candidates.slice(0, slotsLeft);
+    const noCapacity = candidates.length - toAdd.length;
+
+    if (toAdd.length === 0) {
+      return { added: 0, alreadyMember, noCapacity };
     }
 
     const created = await tx.groupMember.createMany({
-      data: newOnes.map((studentId) => ({ groupId, studentId })),
+      data: toAdd.map((studentId) => ({ groupId, studentId })),
       skipDuplicates: true,
     });
 
-    // memberCount'ni HAQIQATDA qo'shilgan qatorlar soniga oshiramiz (drift yo'q)
-    await tx.group.update({
-      where: { id: groupId },
-      data: { memberCount: { increment: created.count } },
-    });
-
-    return {
-      added: created.count,
-      skipped: studentIds.length - created.count,
-    };
+    return { added: created.count, alreadyMember, noCapacity };
   });
 }
 

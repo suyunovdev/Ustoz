@@ -95,7 +95,7 @@ export function useBulkAddMembersMutation(groupId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (studentIds: string[]) =>
-      call<{ added: number; skipped: number; ineligible: number }>(
+      call<{ added: number; skipped: number; ineligible: number; noCapacity: number }>(
         `/api/teacher/groups/${groupId}/members/bulk`,
         {
           method: 'POST',
