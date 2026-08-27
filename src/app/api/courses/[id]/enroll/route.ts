@@ -1,8 +1,10 @@
 import { NextRequest } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
 import { hasAllCoursesAccess } from '@/lib/services/subscription.service';
+import { recommendationsCacheTag } from '@/lib/services/dashboard.service';
 
 // POST /api/courses/[id]/enroll — Kursga yozilish (bepul kurslar uchun)
 // Faqat student roli — teacher/admin bepul kursga yozila olmaydi
@@ -23,7 +25,16 @@ export async function POST(
     return jsonResponse({ error: "Noto'g'ri kurs ID formati" }, { status: 400 });
   }
 
-  const course = await prisma.course.findFirst({ where: { id: courseId, isPublished: true } });
+  // Faqat nashr etilgan, to'xtatilmagan va rad etilmagan kursga yozilish mumkin
+  // (sertifikat auto-issue ham shu shartlarni tekshiradi — izchillik uchun).
+  const course = await prisma.course.findFirst({
+    where: {
+      id: courseId,
+      isPublished: true,
+      suspendedAt: null,
+      moderationStatus: { not: 'rejected' },
+    },
+  });
   if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
 
   // Pullik kurslar uchun to'lov talab qilinadi — LEKIN faol all-access obunachi
@@ -86,6 +97,8 @@ export async function POST(
     if (result.alreadyEnrolled) {
       return jsonResponse({ message: 'Allaqachon yozilgansiz', enrollment: result.enrollment });
     }
+    // Yangi enrollment — tavsiyalar keshi eskirdi (bu kurs endi tavsiya emas).
+    revalidateTag(recommendationsCacheTag(session.sub));
     return jsonResponse({ enrollment: result.enrollment }, { status: 201 });
   } catch (err) {
     console.error('[POST /api/courses/[id]/enroll]', err);
