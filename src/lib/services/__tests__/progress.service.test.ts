@@ -21,6 +21,7 @@ vi.mock('@/lib/repositories', () => ({
   topicCompletionRepo: {
     findByStudentAndTopic: vi.fn(),
     create: vi.fn(),
+    createIfNew: vi.fn(),
     countByStudentAndCourse: vi.fn(),
     getCompletedTopicIds: vi.fn(),
   },
@@ -137,13 +138,13 @@ describe('markTopicComplete', () => {
     vi.mocked(enrollmentRepo.findByStudentAndCourse).mockResolvedValue(
       baseEnrollment as any,
     );
-    vi.mocked(topicCompletionRepo.findByStudentAndTopic).mockResolvedValue(null);
+    vi.mocked(topicCompletionRepo.createIfNew).mockResolvedValue(true);
     vi.mocked(topicRepo.countByCourse).mockResolvedValue(4);
     vi.mocked(topicCompletionRepo.countByStudentAndCourse).mockResolvedValue(1);
 
     const result = await markTopicComplete(STUDENT_ID, TOPIC_ID);
 
-    expect(topicCompletionRepo.create).toHaveBeenCalledOnce();
+    expect(topicCompletionRepo.createIfNew).toHaveBeenCalledOnce();
     expect(activityRepo.upsertForToday).toHaveBeenCalledOnce();
     expect(enrollmentRepo.updateProgress).toHaveBeenCalledOnce();
     expect(result.wasAlreadyCompleted).toBe(false);
@@ -160,15 +161,13 @@ describe('markTopicComplete', () => {
       ...baseEnrollment,
       progress: 25,
     } as any);
-    vi.mocked(topicCompletionRepo.findByStudentAndTopic).mockResolvedValue({
-      id: 'tc-existing',
-    });
+    vi.mocked(topicCompletionRepo.createIfNew).mockResolvedValue(false);
     vi.mocked(topicRepo.countByCourse).mockResolvedValue(4);
     vi.mocked(topicCompletionRepo.countByStudentAndCourse).mockResolvedValue(1);
 
     const result = await markTopicComplete(STUDENT_ID, TOPIC_ID);
 
-    expect(topicCompletionRepo.create).not.toHaveBeenCalled();
+    expect(topicCompletionRepo.createIfNew).toHaveBeenCalledOnce();
     expect(activityRepo.upsertForToday).not.toHaveBeenCalled();
     expect(result.wasAlreadyCompleted).toBe(true);
     expect(result.progress).toBe(25);
@@ -183,7 +182,7 @@ describe('markTopicComplete', () => {
       ...baseEnrollment,
       progress: 75,
     } as any);
-    vi.mocked(topicCompletionRepo.findByStudentAndTopic).mockResolvedValue(null);
+    vi.mocked(topicCompletionRepo.createIfNew).mockResolvedValue(true);
     vi.mocked(topicRepo.countByCourse).mockResolvedValue(4);
     vi.mocked(topicCompletionRepo.countByStudentAndCourse).mockResolvedValue(4);
 
@@ -207,9 +206,7 @@ describe('markTopicComplete', () => {
       progress: 100,
       completedAt: new Date('2026-01-01'),
     } as any);
-    vi.mocked(topicCompletionRepo.findByStudentAndTopic).mockResolvedValue({
-      id: 'tc-existing',
-    });
+    vi.mocked(topicCompletionRepo.createIfNew).mockResolvedValue(false);
     vi.mocked(topicRepo.countByCourse).mockResolvedValue(4);
     vi.mocked(topicCompletionRepo.countByStudentAndCourse).mockResolvedValue(4);
 

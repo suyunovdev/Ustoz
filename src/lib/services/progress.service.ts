@@ -61,7 +61,7 @@ export async function calculateCourseProgress(
 
 /**
  * Kursning BARCHA enrollment'lari uchun cached progress'ni qayta hisoblaydi.
- * Mavzu qo'shilганда/o'chirilganda chaqiriladi — aks holda mavjud talabalarning
+ * Mavzu qo'shilganda/o'chirilganda chaqiriladi — aks holda mavjud talabalarning
  * `enrollment.progress`/`completedAt` eskirib qoladi (masalan, mavzu qo'shilsa
  * 100% bo'lgan talaba hamon 100% ko'rinardi). Sertifikat AVTO-berilmaydi.
  */
@@ -86,6 +86,12 @@ export async function recomputeEnrollmentsForCourse(courseId: string): Promise<v
 
   // O'zgargan enrollment'larni yig'ib, bitta transaction'da yangilaymiz.
   const updates: Prisma.PrismaPromise<unknown>[] = [];
+  // Sertifikat holatini progress bilan sinxronlash uchun (C3):
+  //   progress 100 dan pastga tushsa → auto-sertifikatni SUSPEND
+  //   progress qayta 100 ga chiqsa   → suspend qilingan auto-sertifikatni REINSTATE
+  // Aks holda mavzu qo'shilganda talaba tugatmagan kursga amaldagi sertifikat qoladi.
+  const suspendStudentIds: string[] = [];
+  const reinstateStudentIds: string[] = [];
   for (const e of enrollments) {
     const completed = completedByStudent.get(e.studentId) ?? 0;
     const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -98,7 +104,29 @@ export async function recomputeEnrollmentsForCourse(courseId: string): Promise<v
         prisma.enrollment.update({ where: { id: e.id }, data: { progress, completedAt } }),
       );
     }
+    if (progress < 100) suspendStudentIds.push(e.studentId);
+    else reinstateStudentIds.push(e.studentId);
   }
+
+  // Suspend/reinstate — faqat AVTO berilgan sertifikatlarga ta'sir qiladi;
+  // qo'lda revoke qilingan (status='revoked') sertifikat sticky bo'lib qoladi.
+  if (suspendStudentIds.length > 0) {
+    updates.push(
+      prisma.certificate.updateMany({
+        where: { courseId, studentId: { in: suspendStudentIds }, status: 'active', issueSource: 'auto' },
+        data: { status: 'suspended' },
+      }),
+    );
+  }
+  if (reinstateStudentIds.length > 0) {
+    updates.push(
+      prisma.certificate.updateMany({
+        where: { courseId, studentId: { in: reinstateStudentIds }, status: 'suspended', issueSource: 'auto' },
+        data: { status: 'active' },
+      }),
+    );
+  }
+
   if (updates.length > 0) await prisma.$transaction(updates);
 }
 
@@ -133,13 +161,14 @@ export async function markTopicComplete(
     const enrollment = await enrollmentRepo.findByStudentAndCourse(studentId, courseId, tx);
     if (!enrollment) throw new EnrollmentNotFoundError(studentId, courseId);
 
-    // 3. Idempotency — avval tugatilganmi?
-    const existing = await topicCompletionRepo.findByStudentAndTopic(studentId, topicId, tx);
-    const wasAlreadyCompleted = existing !== null;
+    // 3+4. Idempotent yaratish — `createIfNew` ON CONFLICT DO NOTHING ishlatadi,
+    //      shuning uchun bir vaqtda kelgan ikkinchi so'rov P2002 tashlab 500
+    //      bermaydi, balki `false` (allaqachon mavjud) qaytaradi.
+    const created = await topicCompletionRepo.createIfNew({ studentId, topicId, courseId }, tx);
+    const wasAlreadyCompleted = !created;
 
-    // 4. Yangi bo'lsa: completion + activity (idempotent)
-    if (!wasAlreadyCompleted) {
-      await topicCompletionRepo.create({ studentId, topicId, courseId }, tx);
+    // Faoliyat (streak) — faqat haqiqatan yangi completion bo'lsa
+    if (created) {
       await activityRepo.upsertForToday(studentId, tx);
     }
 

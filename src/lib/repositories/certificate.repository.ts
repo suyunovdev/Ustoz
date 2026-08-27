@@ -99,6 +99,20 @@ export async function issueCertificate(
   });
 
   if (existing) {
+    // Kurs o'zgargani (masalan, yangi mavzu qo'shilgani) sababli VAQTINCHA
+    // to'xtatilgan (status='suspended') sertifikat — talaba kursni qayta
+    // 100% tugatib re-issue chaqirsa, uni qayta faollashtiramiz (C3).
+    if (existing.status === 'suspended') {
+      await prisma.certificate.update({
+        where: { id: existing.id },
+        data: { status: 'active' },
+      });
+      return {
+        id: existing.id,
+        certificateNumber: existing.certificateNumber,
+        created: false,
+      };
+    }
     // MUHIM: bekor qilingan (revoked) sertifikat qayta issue'da JIMGINA
     // tiklanmaydi. Revoke — ataylab qilingan admin/teacher amali; uni
     // auto-issue yoki re-issue erasib yubormasligi kerak. Tiklash faqat
@@ -194,7 +208,9 @@ export async function listStudentCertificatesDetailed(
   studentId: string,
 ): Promise<CertificateRow[]> {
   const rows = await prisma.certificate.findMany({
-    where: { studentId },
+    // 'suspended' — kurs o'zgargani sabab vaqtincha to'xtatilgan; talabaga
+    // ko'rsatmaymiz (qayta 100% tugatilsa avtomatik tiklanadi).
+    where: { studentId, status: { not: 'suspended' } },
     include: {
       student: { select: { fullName: true, email: true } },
       course: { select: { title: true, teacher: { select: { fullName: true } } } },

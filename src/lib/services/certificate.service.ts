@@ -54,7 +54,7 @@ export async function maybeAutoIssue(
 ): Promise<{ id: string; certificateNumber: string; created: boolean } | null> {
   const eligibility = await certificateRepo.isEligibleForCertificate(studentId, courseId);
   if (!eligibility.eligible) return null;
-  // Rad etilgan (rejected) yoki to'xtatilgan (suspended) kursга sertifikat
+  // Rad etilgan (rejected) yoki to'xtatilgan (suspended) kursga sertifikat
   // AVTO-berilmaydi. Vaqtinchalik qayta tekshiruvdagi (submitted/under_review)
   // kurs uchun beriladi — enrolled talaba o'rganishni davom ettirgani uchun.
   const course = await prisma.course.findUnique({
@@ -93,7 +93,7 @@ export async function manualIssueByTeacher(
   if (!course) throw new ValidationError("Kurs topilmadi");
   if (course.teacherId !== teacherId) throw new CertificateAccessDeniedError();
 
-  // forceIssue bo'lса ham talaba kursga YOZILGAN bo'lishi shart — yozilmagan
+  // forceIssue bo'lsa ham talaba kursga YOZILGAN bo'lishi shart — yozilmagan
   // talabaga sertifikat berib bo'lmaydi.
   const enrollment = await prisma.enrollment.findFirst({
     where: { studentId: input.studentId, courseId: input.courseId },

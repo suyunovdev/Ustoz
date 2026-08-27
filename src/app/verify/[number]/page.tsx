@@ -43,7 +43,10 @@ export default async function VerifyPage({
 
   const locale = await getServerLocale();
   const t = await getServerT();
-  const isRevoked = cert.status === 'revoked';
+  // Faqat 'active' sertifikat yaroqli. 'revoked' (qo'lda bekor qilingan) va
+  // 'suspended' (kurs o'zgargani sabab vaqtincha to'xtatilgan) — yaroqsiz.
+  const isValid = cert.status === 'active';
+  const statusLabel = cert.status === 'revoked' ? t('verify.revoked') : t('verify.suspended');
   const issuedAt = new Date(cert.issuedAt);
 
   return (
@@ -52,13 +55,13 @@ export default async function VerifyPage({
         <div className="bg-card border-2 border-border rounded-lg shadow-warm-lg overflow-hidden">
           <div
             className={`px-6 py-3 flex items-center justify-between ${
-              isRevoked
+              !isValid
                 ? 'bg-destructive text-destructive-foreground'
                 : 'bg-primary text-primary-foreground'
             }`}
           >
             <div className="flex items-center gap-2 text-sm">
-              {isRevoked ? `⚠️ ${t('verify.revoked')}` : `✓ ${t('verify.verified')}`}
+              {!isValid ? `⚠️ ${statusLabel}` : `✓ ${t('verify.verified')}`}
             </div>
             <div className="text-xs font-mono opacity-80">{cert.certificateNumber}</div>
           </div>
@@ -117,7 +120,7 @@ export default async function VerifyPage({
               {cert.teacherName}
             </p>
 
-            {isRevoked && cert.revokeReason && (
+            {cert.status === 'revoked' && cert.revokeReason && (
               <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm mb-4">
                 <strong>{t('verify.revokeReason')}:</strong> {cert.revokeReason}
                 {cert.revokedAt && (
