@@ -465,7 +465,27 @@ const LearningInterfaceInteractive = () => {
               )}
             </div>
 
-            {/* Tablar: AI yordamchi / Eslatmalar / Muhokama / Materiallar */}
+            {/* Savol berish — o'qituvchiga savol berishning ASOSIY yo'li.
+                Q&A paneliga o'tkazadi va input'ga fokus beradi. */}
+            <button
+              type="button"
+              onClick={() => {
+                setActivePanel('discussion');
+                setTimeout(() => document.getElementById('qa-input')?.focus(), 60);
+              }}
+              className="w-full flex items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 text-left hover:bg-primary/10 transition-smooth"
+            >
+              <span className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Icon name="QuestionMarkCircleIcon" size={22} className="text-primary" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-medium text-foreground">{t('learning.qaCtaTitle')}</span>
+                <span className="block text-sm text-muted-foreground truncate">{t('learning.qaCtaSubtitle')}</span>
+              </span>
+              <Icon name="ArrowRightIcon" size={18} className="text-primary flex-shrink-0 ml-auto" />
+            </button>
+
+            {/* Tablar: AI yordamchi / Eslatmalar / Savol-javob / Materiallar */}
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               <div className="flex border-b border-border overflow-x-auto scrollbar-hide">
                 {(['ai', 'notes', 'discussion', 'resources'] as const).map((panel) => (
@@ -485,7 +505,12 @@ const LearningInterfaceInteractive = () => {
                       </>
                     )}
                     {panel === 'notes' && t('learning.notes')}
-                    {panel === 'discussion' && t('learning.discussion')}
+                    {panel === 'discussion' && (
+                      <>
+                        <Icon name="QuestionMarkCircleIcon" size={16} variant={activePanel === 'discussion' ? 'solid' : 'outline'} />
+                        {t('learning.qa')}
+                      </>
+                    )}
                     {panel === 'resources' && t('learning.materials')}
                   </button>
                 ))}
