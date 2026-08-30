@@ -93,15 +93,17 @@ const DiscussionPanel = ({ topicId }: DiscussionPanelProps) => {
   return (
     <div className="p-6 space-y-6">
       <div>
-        <h3 className="font-heading font-semibold text-foreground mb-4">{t('learning.discussion')}</h3>
+        <h3 className="font-heading font-semibold text-foreground mb-1">{t('learning.qaTitle')}</h3>
+        <p className="text-sm text-muted-foreground mb-4">{t('learning.qaHint')}</p>
 
         <form onSubmit={handleSubmit} className="space-y-3 mb-6">
           <textarea
+            id="qa-input"
             value={newComment}
             onChange={(e) => setNewComment(e.target.value)}
-            placeholder={t('learning.commentPlaceholder')}
+            placeholder={t('learning.qaPlaceholder')}
             maxLength={2000}
-            aria-label={t('learning.commentPlaceholder')}
+            aria-label={t('learning.qaPlaceholder')}
             className="w-full px-4 py-3 border border-border rounded-md bg-background text-foreground resize-none focus:outline-none focus:ring-2 focus:ring-primary"
             rows={3}
           />
@@ -109,9 +111,10 @@ const DiscussionPanel = ({ topicId }: DiscussionPanelProps) => {
             <button
               type="submit"
               disabled={!newComment.trim() || submitting}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {submitting ? t('common.loading') : t('common.send')}
+              <Icon name="PaperAirplaneIcon" size={16} />
+              {submitting ? t('common.loading') : t('learning.qaAsk')}
             </button>
           </div>
         </form>
@@ -137,13 +140,21 @@ const DiscussionPanel = ({ topicId }: DiscussionPanelProps) => {
         </div>
       ) : comments.length === 0 ? (
         <div className="p-8 text-center bg-card rounded-md shadow-warm">
-          <Icon name="ChatBubbleLeftRightIcon" size={48} className="text-muted-foreground mx-auto mb-3" />
-          <p className="text-sm text-muted-foreground">{t('learning.noComments')}</p>
+          <Icon name="QuestionMarkCircleIcon" size={48} className="text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm font-medium text-foreground mb-1">{t('learning.qaEmpty')}</p>
+          <p className="text-sm text-muted-foreground">{t('learning.qaEmptyHint')}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {comments.map((c) => (
-            <div key={c.id} className="p-4 bg-card rounded-md shadow-warm">
+            <div
+              key={c.id}
+              className={`p-4 rounded-md shadow-warm ${
+                isStaff(c.authorRole)
+                  ? 'bg-primary/5 border border-primary/30'
+                  : 'bg-card'
+              }`}
+            >
               <div className="flex items-start space-x-3">
                 <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 bg-muted">
                   {c.authorAvatar ? (

@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
+import { useConversations } from '@/hooks/queries/useConversations';
 
 interface NavItem {
   labelKey: string;
@@ -34,6 +35,16 @@ export default function StudentSidebar({ mobileOpen, onMobileClose }: StudentSid
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useI18n();
+  const { data: convData } = useConversations();
+
+  // Xabarlar tab'i faqat talabada real suhbat bo'lganda ko'rinadi. O'qituvchiga
+  // savol berish endi dars Q&A orqali; bu bo'lim faqat o'qituvchi shaxsan yozgan
+  // suhbatlarni o'qish/javob berish uchun — bo'sh "eshik" ko'rsatilmaydi.
+  const hasConversations = (convData?.conversations?.length ?? 0) > 0;
+  const messagesUnread = convData?.totalUnread ?? 0;
+  const navItems = NAV_ITEMS.filter(
+    (item) => item.href !== '/messages' || hasConversations,
+  );
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
@@ -78,8 +89,9 @@ export default function StudentSidebar({ mobileOpen, onMobileClose }: StudentSid
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const active = isActive(item.href);
+          const unread = item.href === '/messages' ? messagesUnread : 0;
           return (
             <Link
               key={item.href}
@@ -93,7 +105,17 @@ export default function StudentSidebar({ mobileOpen, onMobileClose }: StudentSid
               }`}
             >
               <Icon name={item.icon} size={20} className={active ? '' : 'text-muted-foreground'} />
-              <span className="truncate">{t(item.labelKey)}</span>
+              <span className="truncate flex-1">{t(item.labelKey)}</span>
+              {unread > 0 && (
+                <span
+                  className={`ml-auto min-w-[1.25rem] h-5 px-1.5 rounded-full text-[11px] font-semibold flex items-center justify-center ${
+                    active ? 'bg-primary-foreground text-primary' : 'bg-primary text-primary-foreground'
+                  }`}
+                  aria-label={`${unread} ${t('messages.unread')}`}
+                >
+                  {unread > 99 ? '99+' : unread}
+                </span>
+              )}
             </Link>
           );
         })}

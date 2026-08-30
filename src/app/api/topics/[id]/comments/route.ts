@@ -9,13 +9,17 @@ import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
+import {
+  notifyTeacherOfQuestion,
+  notifyStudentsOfAnswer,
+} from '@/lib/services/topic-qa.service';
 
 const MAX_BODY = 2000;
 
 async function assertAccess(topicId: string, userId: string, role: string) {
   const topic = await prisma.courseTopic.findUnique({
     where: { id: topicId },
-    select: { id: true, courseId: true, course: { select: { teacherId: true } } },
+    select: { id: true, title: true, courseId: true, course: { select: { teacherId: true } } },
   });
   if (!topic) return { ok: false as const, status: 404, error: 'Mavzu topilmadi' };
 
@@ -102,6 +106,34 @@ export async function POST(
     const created = await prisma.topicComment.create({
       data: { topicId, userId: session.sub, body: text },
     });
+
+    // Q&A xabar zanjiri (best-effort) — savol javobsiz qolmasin.
+    //   talaba savol berdi  → o'qituvchi xabardor bo'ladi
+    //   o'qituvchi/admin javob berdi → savol bergan talabalar xabardor bo'ladi
+    try {
+      const topicTitle = access.topic.title || 'Dars';
+      const teacherId = access.topic.course?.teacherId ?? null;
+      if (session.role === 'student' && teacherId) {
+        await notifyTeacherOfQuestion({
+          teacherId,
+          studentId: session.sub,
+          courseId: access.topic.courseId,
+          topicId,
+          topicTitle,
+          body: text,
+        });
+      } else if (session.role === 'teacher' || session.role === 'admin') {
+        await notifyStudentsOfAnswer({
+          answererId: session.sub,
+          courseId: access.topic.courseId,
+          topicId,
+          topicTitle,
+          body: text,
+        });
+      }
+    } catch (e) {
+      console.error('Topic Q&A notification error:', e);
+    }
 
     const profile = await prisma.userProfile.findUnique({
       where: { id: session.sub },
