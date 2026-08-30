@@ -149,10 +149,47 @@ export async function revokeByTeacher(
 
 // ==================== READ ====================
 
-export async function verifyPublic(certificateNumber: string) {
+/**
+ * Ochiq (anonim) tekshirish uchun XAVFSIZ maydonlar — sertifikatning haqiqiyligini
+ * tasdiqlash uchun yetarli, lekin PII/ichki identifikatorlarsiz. Ilgari to'liq
+ * qator qaytarilib, `studentEmail` va ichki ID'lar (studentId/courseId/issuedById/
+ * revokedById) ochiq API'da oshkor bo'lardi — sertifikat raqamini bilgan har kim
+ * talaba emailini ola olardi.
+ */
+export interface PublicCertificate {
+  certificateNumber: string;
+  studentName: string;
+  courseTitle: string;
+  teacherName: string;
+  finalGrade: number | null;
+  completionPercent: number;
+  status: string;
+  issuedAt: Date;
+  revokedAt: Date | null;
+  revokeReason: string | null;
+  verificationUrl: string | null;
+}
+
+export async function verifyPublic(
+  certificateNumber: string,
+): Promise<PublicCertificate> {
   const cert = await certificateRepo.findByNumber(certificateNumber);
   if (!cert) throw new CertificateNotFoundError();
-  return cert;
+  // Faqat public-xavfsiz maydonlar — email/studentId/courseId/issuedById kabi
+  // PII va ichki identifikatorlar chiqarilmaydi.
+  return {
+    certificateNumber: cert.certificateNumber,
+    studentName: cert.studentNameSnapshot ?? cert.studentName,
+    courseTitle: cert.courseTitleSnapshot ?? cert.courseTitle,
+    teacherName: cert.teacherNameSnapshot ?? cert.teacherName,
+    finalGrade: cert.finalGrade,
+    completionPercent: cert.completionPercent,
+    status: cert.status,
+    issuedAt: cert.issuedAt,
+    revokedAt: cert.revokedAt,
+    revokeReason: cert.revokeReason,
+    verificationUrl: cert.verificationUrl,
+  };
 }
 
 export async function listMy(studentId: string) {

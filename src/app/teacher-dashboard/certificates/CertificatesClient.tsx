@@ -72,7 +72,7 @@ export default function CertificatesClient() {
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="CERT- raqami yoki talaba…"
+            placeholder={t('teacher.certSearchPlaceholder')}
             className="w-full pl-9 pr-3 py-2 border border-border rounded-md text-sm"
           />
         </div>
@@ -329,7 +329,7 @@ function IssueModal({
               type="text"
               value={studentSearch}
               onChange={(e) => setStudentSearch(e.target.value)}
-              placeholder="Ism yoki email…"
+              placeholder={t('teacher.certStudentSearchPlaceholder')}
               className="w-full px-3 py-2 border border-border rounded-md text-sm mb-2"
             />
             <ul className="max-h-48 overflow-y-auto border border-border rounded-md divide-y divide-border">
@@ -473,7 +473,7 @@ function RevokeModal({
             onChange={(e) => setReason(e.target.value)}
             required
             rows={4}
-            placeholder="Masalan: Plagiat aniqlandi, qayta tekshirish kerak…"
+            placeholder={t('teacher.certRevokeReasonPlaceholder')}
             className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
           />
         </div>
