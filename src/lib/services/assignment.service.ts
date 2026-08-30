@@ -102,7 +102,9 @@ async function assertCourseOwner(courseId: string, teacherId: string) {
 
 async function assertEnrollment(courseId: string, studentId: string) {
   const enrolled = await prisma.enrollment.findFirst({
-    where: { courseId, studentId },
+    // FAOL yozilish shart — bloklangan/refund qilingan talaba topshira olmaydi
+    // (student/assignments ro'yxati ham isActive filtrlaydi — izchillik).
+    where: { courseId, studentId, isActive: true },
     select: { id: true },
   });
   if (!enrolled) throw new NotEnrolledError();
@@ -133,6 +135,18 @@ export async function createAssignment(
 
   const dueDate = input.dueDate instanceof Date ? input.dueDate : new Date(input.dueDate);
   if (Number.isNaN(dueDate.getTime())) throw new ValidationError("Yaroqsiz sana");
+  // Muddat kelajakda bo'lishi shart — aks holda topshiriq darhol topshirib
+  // bo'lmaydigan holatda yaratilardi (L9).
+  if (dueDate.getTime() < Date.now()) {
+    throw new ValidationError("Topshirish muddati kelajakda bo'lishi kerak");
+  }
+
+  if (input.description && input.description.length > 5000) {
+    throw new ValidationError("Tavsif 5000 belgidan oshmasin");
+  }
+  if (input.instructions && input.instructions.length > 20000) {
+    throw new ValidationError("Ko'rsatmalar 20000 belgidan oshmasin");
+  }
 
   if (input.maxScore !== undefined) {
     if (input.maxScore < 1 || input.maxScore > 1000) {
@@ -202,8 +216,18 @@ export async function updateAssignment(
 
   const patch: UpdateAssignmentInput = {};
   if (input.title !== undefined) patch.title = validateTitle(input.title);
-  if (input.description !== undefined) patch.description = input.description;
-  if (input.instructions !== undefined) patch.instructions = input.instructions;
+  if (input.description !== undefined) {
+    if (input.description && input.description.length > 5000) {
+      throw new ValidationError("Tavsif 5000 belgidan oshmasin");
+    }
+    patch.description = input.description;
+  }
+  if (input.instructions !== undefined) {
+    if (input.instructions && input.instructions.length > 20000) {
+      throw new ValidationError("Ko'rsatmalar 20000 belgidan oshmasin");
+    }
+    patch.instructions = input.instructions;
+  }
   if (input.dueDate !== undefined) {
     const d = input.dueDate instanceof Date ? input.dueDate : new Date(input.dueDate);
     if (Number.isNaN(d.getTime())) throw new ValidationError("Yaroqsiz sana");
@@ -298,6 +322,15 @@ export async function submitAssignment(
     } catch {
       throw new ValidationError("Yaroqsiz URL");
     }
+    if (input.submissionUrl.length > 2000) throw new ValidationError("URL 2000 belgidan oshmasin");
+  }
+
+  // Hajm cheklovlari — abuse/og'ir payloadga qarshi (L10).
+  if (input.submissionText && input.submissionText.length > 20000) {
+    throw new ValidationError("Matn 20000 belgidan oshmasin");
+  }
+  if (input.attachments && input.attachments.length > 20) {
+    throw new ValidationError("20 tadan ko'p fayl biriktirib bo'lmaydi");
   }
 
   return assignmentRepo.upsertSubmission({
@@ -352,6 +385,11 @@ export async function gradeSubmission(
   if (!assignment) throw new AssignmentNotFoundError(submission.assignmentId);
   if (assignment.teacherId !== teacherId) throw new AssignmentAccessDeniedError();
 
+  // Butun son bo'lishi shart — NaN/kasr son range tekshiruvidan sirg'alib o'tib
+  // (NaN<0 va NaN>max ikkalasi false) Prisma Int ustuniga borib 500 berardi (M4).
+  if (!Number.isInteger(input.grade)) {
+    throw new ValidationError("Bal butun son bo'lishi kerak");
+  }
   if (input.grade < 0 || input.grade > assignment.maxScore) {
     throw new ValidationError(`Bal 0-${assignment.maxScore} oralig'ida`);
   }

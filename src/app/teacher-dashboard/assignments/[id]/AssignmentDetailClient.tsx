@@ -287,6 +287,11 @@ function GradeModal({
   const [applyPenalty, setApplyPenalty] = useState(submission.isLate);
 
   const handleGrade = () => {
+    // Server ham tekshiradi (M4), lekin bu yerda ham — aniq xabar + ortiqcha so'rovsiz.
+    if (!Number.isInteger(grade) || grade < 0 || grade > maxScore) {
+      toast.error(t('teacher.gradeModalScoreRange', { max: maxScore }));
+      return;
+    }
     gradeMut.mutate(
       { submissionId: submission.id, input: { grade, feedback, applyLatePenalty: applyPenalty } },
       {

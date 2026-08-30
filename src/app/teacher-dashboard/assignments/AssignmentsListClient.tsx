@@ -60,7 +60,7 @@ export default function AssignmentsListClient() {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Dashboard
+            {t('teacher.assignmentsBackToDashboard')}
           </Link>
           <h1 className="text-2xl font-heading font-semibold text-foreground">{t('teacher.assignmentsTitle')}</h1>
           <p className="text-sm text-muted-foreground">
@@ -374,7 +374,7 @@ function CreateAssignmentModal({
                 min={1}
                 max={1000}
                 value={maxScore}
-                onChange={(e) => setMaxScore(Number(e.target.value))}
+                onChange={(e) => setMaxScore(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>
@@ -417,7 +417,7 @@ function CreateAssignmentModal({
                   min={0}
                   max={100}
                   value={latePenalty}
-                  onChange={(e) => setLatePenalty(Number(e.target.value))}
+                  onChange={(e) => setLatePenalty(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
                   className="w-24 px-3 py-1.5 border border-border rounded-md text-sm"
                 />
               </div>
