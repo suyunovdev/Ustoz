@@ -28,20 +28,66 @@ export interface TeacherStudentRow {
  * Teacher'ning barcha kurslariga yozilgan talabalar aggregate qilingan.
  * Search — fullName yoki email ichida.
  */
+export interface TeacherStudentsPage {
+  rows: TeacherStudentRow[];
+  /** Filtrga mos jami noyob talabalar soni (pagination uchun). */
+  total: number;
+}
+
+/** Aniq paginatsiyada bitta sahifadagi maksimal talaba (og'ir sahifaга qarshi). */
+const MAX_STUDENTS_PER_PAGE = 100;
+/**
+ * `limit` berilmaganda (eski chaqiruvchilar — masalan guruh/sertifikat picker'lari
+ * to'liq ro'yxatni client-side filtrlaydi) qo'llaniladigan cap. Backward-compatible.
+ */
+const LEGACY_UNPAGED_CAP = 500;
+
 export async function listTeacherStudents(
   teacherId: string,
   filters: { courseId?: string; search?: string; activeOnly?: boolean } = {},
-): Promise<TeacherStudentRow[]> {
-  const search = filters.search?.trim().toLowerCase();
-  const courseFilter = filters.courseId
-    ? `AND e.course_id = $2::uuid`
-    : '';
-  const searchFilter = search
-    ? `AND (LOWER(u.full_name) LIKE '%' || $${filters.courseId ? 3 : 2} || '%' OR LOWER(u.email) LIKE '%' || $${filters.courseId ? 3 : 2} || '%')`
-    : '';
-  const activeFilter = filters.activeOnly ? `AND e.is_active = TRUE` : '';
+  page: { limit?: number; offset?: number } = {},
+): Promise<TeacherStudentsPage> {
+  const limit =
+    page.limit === undefined
+      ? LEGACY_UNPAGED_CAP
+      : Math.min(Math.max(Math.floor(page.limit), 1), MAX_STUDENTS_PER_PAGE);
+  const offset = Math.max(Math.floor(page.offset ?? 0), 0);
 
-  const sql = `
+  // Filtr shartlari + parametrlar tartibli yig'iladi. `bind` har chaqiruvda
+  // qiymatni params'ga qo'shib, uning 1-indeksli $N placeholder'ini qaytaradi —
+  // qo'lda "$${courseId?3:2}" raqamlash o'rniga (xatoga chidamli).
+  const params: (string | number)[] = [teacherId];
+  const bind = (value: string | number) => `$${params.push(value)}`;
+
+  const conds: string[] = ['c.teacher_id = $1::uuid'];
+  if (filters.courseId) conds.push(`e.course_id = ${bind(filters.courseId)}::uuid`);
+
+  const search = filters.search?.trim().toLowerCase();
+  if (search) {
+    // LIKE maxsus belgilarini (\ % _) escape qilamiz — foydalanuvchi kiritган
+    // "50%" yoki "a_b" wildcard sifatida ishlamasin (SQL injection emas —
+    // qiymat baribir parametrlangan; bu faqat qidiruv semantikasi).
+    const ph = bind(search.replace(/[\\%_]/g, '\\$&'));
+    conds.push(
+      `(LOWER(u.full_name) LIKE '%' || ${ph} || '%' ESCAPE '\\' ` +
+        `OR LOWER(u.email) LIKE '%' || ${ph} || '%' ESCAPE '\\')`,
+    );
+  }
+  if (filters.activeOnly) conds.push('e.is_active = TRUE');
+
+  const fromWhere = `
+    FROM enrollments e
+    JOIN courses c ON c.id = e.course_id
+    JOIN user_profiles u ON u.id = e.student_id
+    WHERE ${conds.join('\n      AND ')}
+  `;
+
+  // total — filtr param'lari bilan (limit/offset'gача). Alohida saqlab, list
+  // so'rovi keyin limit/offset param'larini qo'shadi.
+  const filterParams = [...params];
+  const countSql = `SELECT COUNT(*)::int AS total FROM (SELECT u.id ${fromWhere} GROUP BY u.id) sub`;
+
+  const listSql = `
     SELECT
       u.id AS "studentId",
       u.full_name AS "fullName",
@@ -61,23 +107,19 @@ export async function listTeacherStudents(
             AND p.status::text = 'completed'),
         0
       )::bigint AS "totalPayments"
-    FROM enrollments e
-    JOIN courses c ON c.id = e.course_id
-    JOIN user_profiles u ON u.id = e.student_id
-    WHERE c.teacher_id = $1::uuid
-      ${courseFilter}
-      ${searchFilter}
-      ${activeFilter}
+    ${fromWhere}
     GROUP BY u.id, u.full_name, u.email, u.avatar_url
-    ORDER BY MAX(e.last_accessed_at) DESC NULLS LAST
-    LIMIT 500
+    -- u.id — ikkilamchi kalit: bir xil last_accessed_at'da paginatsiya deterministik
+    ORDER BY MAX(e.last_accessed_at) DESC NULLS LAST, u.id ASC
+    LIMIT ${bind(limit)} OFFSET ${bind(offset)}
   `;
 
-  const params: any[] = [teacherId];
-  if (filters.courseId) params.push(filters.courseId);
-  if (search) params.push(search);
+  const [rows, countRows] = await Promise.all([
+    prisma.$queryRawUnsafe<TeacherStudentRow[]>(listSql, ...params),
+    prisma.$queryRawUnsafe<Array<{ total: number }>>(countSql, ...filterParams),
+  ]);
 
-  return prisma.$queryRawUnsafe<TeacherStudentRow[]>(sql, ...params);
+  return { rows, total: countRows[0]?.total ?? rows.length };
 }
 
 export interface StudentEnrollmentDetail {
@@ -136,43 +178,43 @@ export async function getStudentDetailForTeacher(
   });
   if (!profile) return null;
 
-  const [enrollments, testStats, assignmentStats, certCount, payments] = await Promise.all([
-    prisma.enrollment.findMany({
-      where: { studentId, course: { teacherId } },
-      include: { course: { select: { id: true, title: true } } },
-      orderBy: { enrolledAt: 'desc' },
-    }),
-    prisma.testAttempt.findMany({
-      where: {
-        studentId,
-        status: 'submitted',
-        test: { course: { teacherId } },
-      },
-      select: { passed: true, percentage: true },
-    }),
-    prisma.assignmentSubmission.findMany({
-      where: {
-        studentId,
-        assignment: { course: { teacherId } },
-      },
-      select: { status: true, grade: true },
-    }),
-    prisma.certificate.count({
-      where: { studentId, course: { teacherId } },
-    }),
-    prisma.paymentTransaction.aggregate({
-      where: {
-        studentId,
-        status: 'completed',
-        course: { teacherId },
-      },
-      _sum: { amountUzs: true },
-    }),
-  ]);
-
-  const topicCompletions = await prisma.topicCompletion.count({
-    where: { studentId, course: { teacherId } },
-  });
+  const [enrollments, testStats, assignmentStats, certCount, payments, topicCompletions] =
+    await Promise.all([
+      prisma.enrollment.findMany({
+        where: { studentId, course: { teacherId } },
+        include: { course: { select: { id: true, title: true } } },
+        orderBy: { enrolledAt: 'desc' },
+      }),
+      prisma.testAttempt.findMany({
+        where: {
+          studentId,
+          status: 'submitted',
+          test: { course: { teacherId } },
+        },
+        select: { passed: true, percentage: true },
+      }),
+      prisma.assignmentSubmission.findMany({
+        where: {
+          studentId,
+          assignment: { course: { teacherId } },
+        },
+        select: { status: true, grade: true },
+      }),
+      prisma.certificate.count({
+        where: { studentId, course: { teacherId } },
+      }),
+      prisma.paymentTransaction.aggregate({
+        where: {
+          studentId,
+          status: 'completed',
+          course: { teacherId },
+        },
+        _sum: { amountUzs: true },
+      }),
+      prisma.topicCompletion.count({
+        where: { studentId, course: { teacherId } },
+      }),
+    ]);
 
   const passedAttempts = testStats.filter((a) => a.passed).length;
   const avgTest =
