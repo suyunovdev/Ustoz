@@ -36,7 +36,10 @@ export interface TeacherDashboardData {
     underReviewCourses: number;
     rejectedCourses: number;
     totalEnrollments: number;
+    /** Netto daromad — platforma komissiyasi ayrilgan. */
     totalRevenueUzs: string;
+    /** Amaldagi platforma komissiyasi foizi. */
+    platformFeePct: number;
     avgRating: number;
   };
   monthlyRevenue: Array<{ month: string; revenue: string; enrollments: number }>;

@@ -763,6 +763,7 @@
     "moreItems": "More",
     "overviewTotalRevenue": "Total Revenue",
     "overviewFromAllCourses": "From all courses",
+    "overviewNetAfterFee": "Net income after {pct}% fee",
     "overviewActiveCourses": "Active Courses",
     "overviewDraftSuffix": "drafts",
     "overviewTotalStudents": "Total Students",

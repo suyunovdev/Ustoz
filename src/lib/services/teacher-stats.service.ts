@@ -7,7 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { teacherRepo, type TeacherCourseWithRevenue } from '@/lib/repositories';
-import { formatDate } from '@/lib/i18n/format';
+import { PLATFORM_FEE_PCT, netFromGross } from '@/lib/repositories/earnings.repository';
 
 export interface TeacherDashboardData {
   courses: Array<{
@@ -32,9 +32,14 @@ export interface TeacherDashboardData {
     underReviewCourses: number;
     rejectedCourses: number;
     totalEnrollments: number;
+    /** O'qituvchi sof (netto) daromadi — platforma komissiyasi ayrilgan. */
     totalRevenueUzs: string;
+    /** Amaldagi platforma komissiyasi foizi (netto qanday hisoblanганini ko'rsatish uchun). */
+    platformFeePct: number;
+    /** Faqat reyting olgan (reviewCount > 0) kurslar bo'yicha o'rtacha. */
     avgRating: number;
   };
+  /** Har oy uchun netto daromad. `month` — mashina o'qiydigan 'YYYY-MM' (client formatlaydi). */
   monthlyRevenue: Array<{ month: string; revenue: string; enrollments: number }>;
   recentTransactions: Array<{
     id: string;
@@ -133,15 +138,20 @@ export async function getTeacherDashboard(
     }),
   ]);
 
-  // Stats hisoblash (courses ro'yxatidan)
-  const totalRevenueBig = coursesWithRevenue.reduce(
+  // Stats hisoblash (courses ro'yxatidan). Daromad — NETTO (platforma komissiyasi
+  // ayrilgan), earnings sahifasi bilan bir xil manba (netFromGross) orqali.
+  const totalGross = coursesWithRevenue.reduce(
     (sum, c) => sum + BigInt(c.revenueUzs),
     BigInt(0),
   );
+  const totalNet = netFromGross(totalGross);
+
+  // O'rtacha reyting — faqat reyting olgan kurslar bo'yicha (reviewsiz 0.0
+  // kurslar o'rtachani sun'iy pasaytirmasligi uchun).
+  const ratedCourses = coursesWithRevenue.filter((c) => c._count.reviews > 0);
   const avgRating =
-    coursesWithRevenue.length > 0
-      ? coursesWithRevenue.reduce((sum, c) => sum + Number(c.rating), 0) /
-        coursesWithRevenue.length
+    ratedCourses.length > 0
+      ? ratedCourses.reduce((sum, c) => sum + Number(c.rating), 0) / ratedCourses.length
       : 0;
 
   const stats = {
@@ -153,11 +163,13 @@ export async function getTeacherDashboard(
     ).length,
     rejectedCourses: coursesWithRevenue.filter((c) => c.moderationStatus === 'rejected').length,
     totalEnrollments,
-    totalRevenueUzs: totalRevenueBig.toString(),
+    totalRevenueUzs: totalNet.toString(),
+    platformFeePct: PLATFORM_FEE_PCT,
     avgRating: Math.round(avgRating * 100) / 100,
   };
 
-  // Top 5 kurslar (revenue bo'yicha)
+  // Top 5 kurslar (netto revenue bo'yicha). Komissiya monoton bo'lgani uchun
+  // saralash tartibi brutto bilan bir xil; faqat ko'rsatiladigan qiymat netto.
   const topCourses = [...coursesWithRevenue]
     .sort((a, b) => Number(BigInt(b.revenueUzs) - BigInt(a.revenueUzs)))
     .slice(0, 5)
@@ -165,7 +177,7 @@ export async function getTeacherDashboard(
       id: c.id,
       title: c.title,
       enrollmentCount: c._count.enrollments,
-      revenueUzs: c.revenueUzs,
+      revenueUzs: netFromGross(BigInt(c.revenueUzs)).toString(),
       rating: Number(c.rating),
     }));
 
@@ -188,17 +200,19 @@ export async function getTeacherDashboard(
     courses: coursesWithRevenue.map(courseToDTO),
     stats,
     monthlyRevenue: monthlyRows.map((m) => ({
-      // TODO i18n: locale — server servisda request-scoped locale yo'q, default 'uz'
-      month: formatDate(m.month, 'uz', { month: 'short', year: '2-digit' }),
-      revenue: m.revenue.toString(),
+      // Locale-agnostik 'YYYY-MM' — client o'z lokali bilan formatlaydi
+      // (server servisda request-scoped locale yo'q).
+      month: m.month.toISOString().slice(0, 7),
+      revenue: netFromGross(m.revenue).toString(),
       enrollments: Number(m.enrollments),
     })),
-    recentTransactions: recentTxRows.map((t) => ({
-      id: t.id,
-      studentName: t.student_name,
-      courseTitle: t.course_title,
-      amountUzs: t.amount_uzs.toString(),
-      createdAt: t.created_at.toISOString(),
+    recentTransactions: recentTxRows.map((tx) => ({
+      id: tx.id,
+      studentName: tx.student_name,
+      courseTitle: tx.course_title,
+      // O'qituvchi bosh sahifada sof ulushini ko'radi (komissiya ayrilgan).
+      amountUzs: netFromGross(tx.amount_uzs).toString(),
+      createdAt: tx.created_at.toISOString(),
     })),
     topCourses,
     needsAttention,
@@ -218,7 +232,8 @@ function courseToDTO(c: TeacherCourseWithRevenue) {
     rating: Number(c.rating),
     reviewCount: c._count.reviews,
     topicCount: c._count.topics,
-    revenueUzs: c.revenueUzs,
+    // Netto daromad — platforma komissiyasi ayrilgan (earnings sahifasi bilan izchil).
+    revenueUzs: netFromGross(BigInt(c.revenueUzs)).toString(),
     createdAt: c.createdAt.toISOString(),
   };
 }

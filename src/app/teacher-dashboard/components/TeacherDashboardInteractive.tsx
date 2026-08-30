@@ -22,17 +22,23 @@ import {
   useDuplicateCourseMutation,
 } from '@/hooks/mutations/useTeacherCourseMutations';
 
-const VALID_TABS: ReadonlyArray<TeacherTabId> = [
-  'overview',
-  'courses',
-  'students',
-  'groups',
-  'assignments',
-  'tests',
-  'analytics',
-  'earnings',
-  'reviews',
-];
+// Bosh sahifada inline render qilinadigan tab'lar. Qolganlari alohida sahifaga ega.
+const INLINE_TABS: ReadonlyArray<TeacherTabId> = ['overview', 'courses'];
+
+// Alohida sahifaga ega tab'lar — ?tab=X to'g'ridan-to'g'ri ochilса, o'z sahifasiga
+// yo'naltiriladi (aks holda avval jimgina overview ko'rsatilardi yoki eskirgan
+// inline versiya chiqardi).
+const TAB_ROUTES: Partial<Record<TeacherTabId, string>> = {
+  students: '/teacher-dashboard/students',
+  groups: '/teacher-dashboard/groups',
+  assignments: '/teacher-dashboard/assignments',
+  tests: '/teacher-dashboard/tests',
+  analytics: '/teacher-dashboard/analytics',
+  earnings: '/teacher-dashboard/earnings',
+  reviews: '/teacher-dashboard/reviews',
+  certificates: '/teacher-dashboard/certificates',
+  messages: '/messages',
+};
 
 const TAB_TITLE_KEYS: Record<TeacherTabId, { titleKey: string; subtitleKey: string }> = {
   overview: { titleKey: 'teacher.tabOverviewTitle', subtitleKey: 'teacher.tabOverviewSubtitle' },
@@ -77,34 +83,36 @@ const TeacherDashboardInteractive = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tabFromUrl = searchParams?.get('tab');
-  const initialTab: TeacherTabId = VALID_TABS.includes(tabFromUrl as TeacherTabId)
-    ? (tabFromUrl as TeacherTabId)
-    : 'overview';
+  const isInlineTab = (tab: string | null | undefined): tab is TeacherTabId =>
+    !!tab && INLINE_TABS.includes(tab as TeacherTabId);
 
-  const [activeTab, setActiveTab] = useState<TeacherTabId>(initialTab);
+  const [activeTab, setActiveTab] = useState<TeacherTabId>(
+    isInlineTab(tabFromUrl) ? tabFromUrl : 'overview',
+  );
   const [pending, setPending] = useState<PendingAction | null>(null);
 
-  // URL ?tab=... o'zgarganda activeTab'ni yangilash
+  // ?tab=... o'zgarganda: inline bo'lsa — ko'rsatamiz; alohida sahifa tab'i bo'lsa —
+  // o'sha sahifaga yo'naltiramiz; noto'g'ri/bo'sh bo'lsa — overview.
   useEffect(() => {
-    if (VALID_TABS.includes(tabFromUrl as TeacherTabId)) {
-      setActiveTab(tabFromUrl as TeacherTabId);
+    if (isInlineTab(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    } else if (tabFromUrl && TAB_ROUTES[tabFromUrl as TeacherTabId]) {
+      router.replace(TAB_ROUTES[tabFromUrl as TeacherTabId]!);
     } else if (!tabFromUrl) {
       setActiveTab('overview');
     }
-  }, [tabFromUrl]);
-
-  useEffect(() => {
-    if (tabFromUrl && VALID_TABS.includes(tabFromUrl as TeacherTabId)) {
-      setActiveTab(tabFromUrl as TeacherTabId);
-    } else if (!tabFromUrl) {
-      setActiveTab('overview');
-    }
-  }, [tabFromUrl]);
+  }, [tabFromUrl, router]);
 
   const handleTabChange = (tabId: TeacherTabId) => {
-    setActiveTab(tabId);
-    const url = tabId === 'overview' ? '/teacher-dashboard' : `/teacher-dashboard?tab=${tabId}`;
-    router.replace(url, { scroll: false });
+    if (isInlineTab(tabId)) {
+      setActiveTab(tabId);
+      router.replace(
+        tabId === 'overview' ? '/teacher-dashboard' : `/teacher-dashboard?tab=${tabId}`,
+        { scroll: false },
+      );
+    } else if (TAB_ROUTES[tabId]) {
+      router.push(TAB_ROUTES[tabId]!);
+    }
   };
 
   const { data, isLoading, error, refetch } = useTeacherDashboard();
@@ -215,14 +223,9 @@ const TeacherDashboardInteractive = () => {
               onAction={setPending}
               onCreate={() => router.push('/course-creation')}
               onEdit={(id) => router.push(`/course-creation?edit=${id}`)}
+              onOpenTopics={(id) => router.push(`/teacher-dashboard/courses/${id}`)}
             />
           )}
-
-          {activeTab === 'earnings' && <EarningsTab data={data} isLoading={isLoading} />}
-
-          {activeTab !== 'overview' &&
-            activeTab !== 'courses' &&
-            activeTab !== 'earnings' && <SidebarRedirectMessage tab={activeTab} />}
         </div>
       {modalProps && pending && (
         <ConfirmModal
@@ -307,7 +310,7 @@ function OverviewTab({
           title={t('teacher.overviewTotalRevenue')}
           value={isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0', locale)}
           icon="CurrencyDollarIcon"
-          subtitle={t('teacher.overviewFromAllCourses')}
+          subtitle={t('teacher.overviewNetAfterFee', { pct: stats?.platformFeePct ?? 15 })}
         />
         <MetricsCard
           title={t('teacher.overviewActiveCourses')}
@@ -391,18 +394,18 @@ function OverviewTab({
           <p className="text-sm text-muted-foreground text-center py-6">{t('teacher.overviewNoPayments')}</p>
         ) : (
           <div className="space-y-2">
-            {data?.recentTransactions.map((t) => (
+            {data?.recentTransactions.map((tx) => (
               <div
-                key={t.id}
+                key={tx.id}
                 className="flex items-center justify-between p-3 border border-border rounded-md"
               >
                 <div className="min-w-0">
-                  <p className="font-medium text-foreground truncate">{t.studentName}</p>
-                  <p className="text-xs text-muted-foreground truncate">{t.courseTitle}</p>
+                  <p className="font-medium text-foreground truncate">{tx.studentName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{tx.courseTitle}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-success">{formatUzs(t.amountUzs, locale)}</p>
-                  <p className="text-xs text-muted-foreground">{formatDate(t.createdAt, locale)}</p>
+                  <p className="text-sm font-semibold text-success">{formatUzs(tx.amountUzs, locale)}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(tx.createdAt, locale)}</p>
                 </div>
               </div>
             ))}
@@ -419,12 +422,14 @@ function CoursesTab({
   onAction,
   onCreate,
   onEdit,
+  onOpenTopics,
 }: {
   courses: TeacherDashboardCourse[];
   isLoading: boolean;
   onAction: (a: PendingAction) => void;
   onCreate: () => void;
   onEdit: (id: string) => void;
+  onOpenTopics: (id: string) => void;
 }) {
   const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
   const { t, locale } = useI18n();
@@ -529,7 +534,7 @@ function CoursesTab({
                               color="text-primary"
                               onClick={() => {
                                 setOpenMenuFor(null);
-                                window.location.href = `/teacher-dashboard/courses/${course.id}`;
+                                onOpenTopics(course.id);
                               }}
                             />
                             <MenuItem
@@ -612,92 +617,6 @@ function MenuItem({
       <Icon name={icon} size={16} />
       {label}
     </button>
-  );
-}
-
-function EarningsTab({
-  data,
-  isLoading,
-}: {
-  data: ReturnType<typeof useTeacherDashboard>['data'];
-  isLoading: boolean;
-}) {
-  const { t, locale } = useI18n();
-  const stats = data?.stats;
-  const transactions = data?.recentTransactions ?? [];
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card rounded-md shadow-warm p-6">
-          <p className="text-sm text-muted-foreground mb-1">{t('teacher.earningsCurrentBalance')}</p>
-          <p className="text-3xl font-heading font-bold text-foreground">
-            {isLoading ? '—' : formatUzs(stats?.totalRevenueUzs ?? '0', locale)}
-          </p>
-        </div>
-        <div className="bg-card rounded-md shadow-warm p-6">
-          <p className="text-sm text-muted-foreground mb-1">{t('teacher.earningsPendingPayment')}</p>
-          <p className="text-3xl font-heading font-bold text-foreground">{formatCurrency(0, locale, 'UZS')}</p>
-          <p className="text-xs text-muted-foreground mt-1">{t('teacher.earningsWithdrawPhase')}</p>
-        </div>
-        <div className="bg-card rounded-md shadow-warm p-6 flex items-center justify-center">
-          <button
-            disabled
-            className="w-full px-6 py-3 bg-muted text-muted-foreground rounded-md cursor-not-allowed font-medium"
-          >
-            {t('teacher.earningsWithdrawBtn')}
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-card rounded-md shadow-warm p-6">
-        <h3 className="text-xl font-heading font-semibold text-foreground mb-4">
-          {t('teacher.earningsPaymentHistory')}
-        </h3>
-        {isLoading ? (
-          <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse h-12 bg-muted rounded-md" />
-            ))}
-          </div>
-        ) : transactions.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6">{t('teacher.earningsNoPayments')}</p>
-        ) : (
-          <div className="space-y-2">
-            {transactions.map((t) => (
-              <div
-                key={t.id}
-                className="flex items-center justify-between p-3 border border-border rounded-md"
-              >
-                <div className="min-w-0">
-                  <p className="font-medium text-foreground truncate">{t.studentName}</p>
-                  <p className="text-xs text-muted-foreground truncate">{t.courseTitle}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-semibold text-success">{formatUzs(t.amountUzs, locale)}</p>
-                  <p className="text-xs text-muted-foreground">{formatDate(t.createdAt, locale)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function SidebarRedirectMessage({ tab }: { tab: TeacherTabId }) {
-  const { t } = useI18n();
-  const keys = TAB_TITLE_KEYS[tab];
-  const tabTitle = keys ? t(keys.titleKey) : tab;
-  return (
-    <div className="bg-card rounded-md shadow-warm p-12 text-center">
-      <Icon name="Bars3Icon" size={48} className="text-muted-foreground mx-auto mb-4" />
-      <h3 className="text-xl font-heading font-semibold text-foreground mb-2">{tabTitle}</h3>
-      <p className="text-muted-foreground">
-        {t('teacher.sidebarRedirectMessage')}
-      </p>
-    </div>
   );
 }
 
