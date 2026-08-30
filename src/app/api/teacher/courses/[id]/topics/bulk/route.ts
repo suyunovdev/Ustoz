@@ -11,7 +11,9 @@
 import type { NextRequest } from 'next/server';
 import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
+import { prisma } from '@/lib/prisma';
 import { courseTopicRepo } from '@/lib/repositories';
+import { recomputeEnrollmentsForCourse } from '@/lib/services/progress.service';
 import { CourseNotFoundError, ValidationError } from '@/lib/errors';
 
 const MAX_BULK = 100;
@@ -49,36 +51,64 @@ export async function POST(
       throw new ValidationError(`Bir martada ${MAX_BULK} ta mavzudan ko'p yuborib bo'lmaydi`);
     }
 
-    const created: string[] = [];
+    // Har qatorni validatsiya qilamiz — yaroqsizlari errors[]ga, yaroqlilari
+    // bitta createMany bilan (ilgari har qator alohida create + maxOrder
+    // aggregate edi → ~2×N so'rov; endi bitta aggregate + bitta insert).
+    const validData: Array<{
+      courseId: string;
+      title: string;
+      description: string | null;
+      videoUrl: string | null;
+      duration: string;
+      moduleTitle: string | null;
+    }> = [];
     const errors: Array<{ index: number; error: string }> = [];
 
-    for (let i = 0; i < rawTopics.length; i++) {
-      const r = rawTopics[i] as RawTopic;
+    rawTopics.forEach((raw, i) => {
+      const r = raw as RawTopic;
       const title = typeof r.title === 'string' ? r.title.trim() : '';
       if (title.length < 2) {
-        errors.push({ index: i, error: "Title kamida 2 belgi" });
-        continue;
+        errors.push({ index: i, error: 'Title kamida 2 belgi' });
+        return;
       }
-      try {
-        const topic = await courseTopicRepo.create({
-          courseId,
-          title,
-          description: typeof r.description === 'string' ? r.description : null,
-          videoUrl: typeof r.videoUrl === 'string' ? r.videoUrl : null,
-          duration: typeof r.duration === 'string' ? r.duration : '0 min',
-          moduleTitle: typeof r.moduleTitle === 'string' ? r.moduleTitle : null,
-        });
-        created.push(topic.id);
-      } catch (err) {
-        errors.push({
-          index: i,
-          error: err instanceof Error ? err.message : 'Unknown',
-        });
+      if (title.length > 200) {
+        errors.push({ index: i, error: 'Title 200 belgidan oshmasin' });
+        return;
       }
+      const videoUrl = typeof r.videoUrl === 'string' && r.videoUrl.trim() ? r.videoUrl.trim() : null;
+      validData.push({
+        courseId,
+        title,
+        description: typeof r.description === 'string' ? r.description : null,
+        videoUrl,
+        duration: typeof r.duration === 'string' && r.duration ? r.duration : '0 min',
+        moduleTitle: typeof r.moduleTitle === 'string' ? r.moduleTitle : null,
+      });
+    });
+
+    let createdCount = 0;
+    if (validData.length > 0) {
+      // Yaratish — bitta transaction: oxirgi orderIndex'ni bir marta olib,
+      // ketma-ket orderIndex bilan hammasini insert qilamiz.
+      createdCount = await prisma.$transaction(async (tx) => {
+        const agg = await tx.courseTopic.aggregate({
+          where: { courseId },
+          _max: { orderIndex: true },
+        });
+        const base = agg._max.orderIndex ?? 0;
+        const result = await tx.courseTopic.createMany({
+          data: validData.map((d, idx) => ({ ...d, orderIndex: base + idx + 1 })),
+        });
+        return result.count;
+      });
+
+      // Mavzular qo'shildi → talabalar progress maxraji o'zgardi. Yakka-create
+      // yo'li buni qilardi, bulk esa o'tkazib yubordardi (progress % oshib ketardi).
+      await recomputeEnrollmentsForCourse(courseId);
     }
 
     return jsonResponse({
-      createdCount: created.length,
+      createdCount,
       errorCount: errors.length,
       errors,
     });

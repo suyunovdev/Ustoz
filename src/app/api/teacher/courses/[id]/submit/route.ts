@@ -22,6 +22,20 @@ export async function POST(
     });
     if (!course) throw new CourseNotFoundError(id);
 
+    // To'liqlik tekshiruvi — bo'sh metadatali kurs moderatsiyaga tushmasin.
+    const missing: string[] = [];
+    if (!course.title || course.title.trim().length < 3) missing.push('nom (kamida 3 belgi)');
+    if (!course.description || course.description.trim().length < 10) missing.push('tavsif (kamida 10 belgi)');
+    if (missing.length > 0) {
+      return jsonResponse(
+        {
+          error: `Tekshiruvga yuborishdan oldin to'ldiring: ${missing.join(', ')}`,
+          code: 'INCOMPLETE_COURSE',
+        },
+        { status: 400 },
+      );
+    }
+
     // Kamida bitta mavzu bo'lishi shart
     const topicCount = await prisma.courseTopic.count({ where: { courseId: id } });
     if (topicCount === 0) {

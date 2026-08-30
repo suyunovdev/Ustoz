@@ -140,15 +140,16 @@ export async function reorder(
   tx?: Prisma.TransactionClient,
 ): Promise<void> {
   const client: PrismaLike = tx ?? prisma;
-  // Bitta transaction'da updateMany'lar
-  await Promise.all(
-    orderedTopicIds.map((id, idx) =>
-      client.courseTopic.update({
-        where: { id },
-        data: { orderIndex: idx + 1 },
-      }),
-    ),
-  );
+  // KETMA-KET yangilash — interactive transaction client'da Promise.all bilan
+  // parallel query yuborish Prisma'da ishonchsiz (pool/"transaction already
+  // closed" poygalari). Tartib kam sonli mavzu ustida ishlagani uchun ketma-ket
+  // ham tez.
+  for (let idx = 0; idx < orderedTopicIds.length; idx++) {
+    await client.courseTopic.update({
+      where: { id: orderedTopicIds[idx] },
+      data: { orderIndex: idx + 1 },
+    });
+  }
 }
 
 /**
