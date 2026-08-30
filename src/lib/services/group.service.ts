@@ -78,6 +78,18 @@ function validateName(n: string) {
   return name;
 }
 
+/** Ixtiyoriy matn maydonini trim + max-uzunlik bilan tekshiradi. */
+function validateOptionalText(
+  v: string | null | undefined,
+  field: string,
+  max: number,
+): string | null {
+  if (v === null || v === undefined) return null;
+  const t = v.trim();
+  if (t.length > max) throw new ValidationError(`${field} ${max} belgidan oshmasin`);
+  return t || null;
+}
+
 async function assertCourseOwner(courseId: string, teacherId: string) {
   const c = await prisma.course.findUnique({
     where: { id: courseId },
@@ -124,11 +136,11 @@ export async function createGroup(
   return groupRepo.createGroup({
     teacherId,
     name,
-    description: input.description?.trim() ?? null,
+    description: validateOptionalText(input.description, 'Tavsif', 2000),
     courseId: input.courseId ?? null,
     maxMembers: input.maxMembers,
     meetingUrl: input.meetingUrl ?? null,
-    scheduleNote: input.scheduleNote?.trim() ?? null,
+    scheduleNote: validateOptionalText(input.scheduleNote, 'Jadval izohi', 200),
     color: input.color,
   });
 }
@@ -160,7 +172,7 @@ export async function updateGroup(
 
   const patch: UpdateGroupInput = {};
   if (input.name !== undefined) patch.name = validateName(input.name);
-  if (input.description !== undefined) patch.description = input.description;
+  if (input.description !== undefined) patch.description = validateOptionalText(input.description, 'Tavsif', 2000);
   if (input.courseId !== undefined) {
     if (input.courseId) await assertCourseOwner(input.courseId, teacherId);
     patch.courseId = input.courseId;
@@ -187,7 +199,7 @@ export async function updateGroup(
     }
     patch.meetingUrl = input.meetingUrl;
   }
-  if (input.scheduleNote !== undefined) patch.scheduleNote = input.scheduleNote;
+  if (input.scheduleNote !== undefined) patch.scheduleNote = validateOptionalText(input.scheduleNote, 'Jadval izohi', 200);
   if (input.color !== undefined) {
     if (!VALID_COLORS.includes(input.color as GroupColor)) {
       throw new ValidationError(`Noto'g'ri rang: ${input.color}`);
@@ -212,7 +224,8 @@ export async function deleteGroup(groupId: string, teacherId: string): Promise<v
  */
 async function assertStudentEligible(studentId: string, teacherId: string) {
   const enrolled = await prisma.enrollment.findFirst({
-    where: { studentId, course: { teacherId } },
+    // FAOL (isActive) enrollment shart — bloklangan/refund qilingan talaba qo'shilmaydi.
+    where: { studentId, isActive: true, course: { teacherId } },
     select: { id: true },
   });
   if (!enrolled) throw new StudentNotEnrolledError();
@@ -265,33 +278,37 @@ export async function addGroupMembersBulk(
   groupId: string,
   teacherId: string,
   studentIds: string[],
-): Promise<{ added: number; skipped: number; ineligible: number }> {
+): Promise<{ added: number; skipped: number; ineligible: number; noCapacity: number }> {
   const access = await groupRepo.isGroupOwner(groupId, teacherId);
   if (!access.ok) throw new GroupAccessDeniedError();
 
-  if (studentIds.length === 0) return { added: 0, skipped: 0, ineligible: 0 };
-  if (studentIds.length > 500) {
+  // Kiruvchi id'larni dedup qilamiz — aks holda ineligible/skipped sanoqlari
+  // takroriy id sabab noto'g'ri chiqadi.
+  const uniqueIds = Array.from(new Set(studentIds));
+  if (uniqueIds.length === 0) return { added: 0, skipped: 0, ineligible: 0, noCapacity: 0 };
+  if (uniqueIds.length > 500) {
     throw new ValidationError("Bir vaqtda 500 ta maksimum");
   }
 
-  // Enrolled talabalarni filter qilish
+  // FAOL enrollment'ga ega talabalar (bloklangan/refund emas).
   const eligible = await prisma.enrollment.findMany({
-    where: { studentId: { in: studentIds }, course: { teacherId } },
+    where: { studentId: { in: uniqueIds }, isActive: true, course: { teacherId } },
     select: { studentId: true },
     distinct: ['studentId'],
   });
-  const eligibleIds = Array.from(new Set(eligible.map((e) => e.studentId)));
-  const ineligible = studentIds.length - eligibleIds.length;
+  const eligibleIds = eligible.map((e) => e.studentId);
+  const ineligible = uniqueIds.length - eligibleIds.length;
 
   if (eligibleIds.length === 0) {
-    return { added: 0, skipped: 0, ineligible };
+    return { added: 0, skipped: 0, ineligible, noCapacity: 0 };
   }
 
   const result = await groupRepo.addMembersBulk(groupId, eligibleIds);
   return {
     added: result.added,
-    skipped: result.skipped,
+    skipped: result.alreadyMember,
     ineligible,
+    noCapacity: result.noCapacity,
   };
 }
 
@@ -313,6 +330,7 @@ export async function broadcastToGroup(
   const title = input.title.trim();
   const message = input.message.trim();
   if (title.length < 2) throw new ValidationError("Sarlavha kamida 2 belgi");
+  if (title.length > 200) throw new ValidationError("Sarlavha 200 belgidan oshmasin");
   if (message.length < 2) throw new ValidationError("Xabar kamida 2 belgi");
   if (message.length > 2000) throw new ValidationError("Xabar 2000 belgidan oshmasin");
 

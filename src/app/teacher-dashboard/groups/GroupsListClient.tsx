@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
@@ -37,8 +37,15 @@ export default function GroupsListClient() {
   const [createOpen, setCreateOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<GroupDTO | null>(null);
 
+  // Qidiruv debounce — har harfda emas, 300ms to'xtagach so'rov ketadi.
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => clearTimeout(id);
+  }, [search]);
+
   const { data, isLoading, error } = useTeacherGroups({
-    search: search.trim() || undefined,
+    search: debouncedSearch || undefined,
     status: statusFilter === 'all' ? undefined : statusFilter,
   });
   const dashboard = useTeacherDashboard();
@@ -58,7 +65,7 @@ export default function GroupsListClient() {
             className="text-sm text-muted-foreground hover:text-primary inline-flex items-center gap-1 mb-2"
           >
             <Icon name="ArrowLeftIcon" size={14} />
-            Dashboard
+            {t('teacher.groupsBackToDashboard')}
           </Link>
           <h1 className="text-2xl font-heading font-semibold text-foreground">{t('teacher.groupsTitle')}</h1>
           <p className="text-sm text-muted-foreground">
@@ -144,7 +151,7 @@ export default function GroupsListClient() {
                   <div
                     className={`w-10 h-10 rounded-md ${c.bg} ${c.text} flex items-center justify-center font-medium`}
                   >
-                    {g.name.charAt(0)}
+                    {g.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-medium text-foreground truncate">{g.name}</h3>
@@ -194,7 +201,7 @@ export default function GroupsListClient() {
                     className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
                   >
                     <Icon name="VideoCameraIcon" size={10} />
-                    Meeting link
+                    {t('teacher.groupsMeetingLink')}
                   </a>
                 )}
               </Link>
@@ -350,7 +357,7 @@ function CreateGroupModal({
                 min={1}
                 max={1000}
                 value={maxMembers}
-                onChange={(e) => setMaxMembers(Number(e.target.value))}
+                onChange={(e) => setMaxMembers(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>

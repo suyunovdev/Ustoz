@@ -76,7 +76,7 @@ export default function GroupDetailClient({ groupId }: Props) {
             <div
               className={`w-12 h-12 rounded-md ${c.bg} ${c.text} flex items-center justify-center text-xl font-medium`}
             >
-              {g.name.charAt(0)}
+              {g.name.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <h1 className="text-2xl font-heading font-semibold">{g.name}</h1>
@@ -174,7 +174,7 @@ export default function GroupDetailClient({ groupId }: Props) {
                 />
               ) : (
                 <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-medium">
-                  {m.fullName.charAt(0)}
+                  {m.fullName.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="flex-1 min-w-0">
@@ -298,10 +298,11 @@ function AddMembersModal({
   const handleSubmit = () => {
     if (selected.size === 0) return toast.error(t('teacher.addMembersNoneSelected'));
     bulkMut.mutate(Array.from(selected), {
-      onSuccess: ({ added, skipped, ineligible }) => {
+      onSuccess: ({ added, skipped, ineligible, noCapacity }) => {
         if (added > 0) toast.success(`${added} ${t('teacher.addMembersAdded')}`);
         if (skipped > 0) toast.info(`${skipped} ${t('teacher.addMembersSkipped')}`);
         if (ineligible > 0) toast.info(`${ineligible} ${t('teacher.addMembersIneligible')}`);
+        if (noCapacity > 0) toast.info(`${noCapacity} ${t('teacher.addMembersNoCapacity')}`);
         onClose();
       },
       onError: (err) => toast.error(err.message),
@@ -435,7 +436,7 @@ function BroadcastModal({
           </button>
         </div>
         <p className="text-sm text-muted-foreground mb-3">
-          "{groupName}" ({memberCount} a'zo)
+          "{groupName}" ({memberCount} {t('teacher.groupBroadcastMemberSuffix')})
         </p>
 
         <div className="space-y-3">
