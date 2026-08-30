@@ -360,20 +360,29 @@ export interface SubmitAttemptInput {
   passed: boolean;
 }
 
+/** Sentinel — service AttemptAlreadySubmittedError'ga o'giradi (L5 poyga). */
+export const ATTEMPT_ALREADY_SUBMITTED = 'ATTEMPT_ALREADY_SUBMITTED';
+
 export async function submitAttempt(input: SubmitAttemptInput): Promise<AttemptRow> {
   const percentage =
     input.maxScore > 0 ? Math.round((input.score / input.maxScore) * 10000) / 100 : 0;
-  return prisma.testAttempt.update({
-    where: { id: input.attemptId },
-    data: {
-      submittedAt: new Date(),
-      score: input.score,
-      maxScore: input.maxScore,
-      percentage,
-      passed: input.passed,
-      answers: input.answers,
-      status: 'submitted',
-    },
+  // SHARTLI update — faqat hali 'in_progress' bo'lsa. Ikki bir vaqtdagi submit
+  // bo'lса, faqat bittasi yozadi; ikkinchisi count=0 olib xato tashlaydi (L5).
+  return prisma.$transaction(async (tx) => {
+    const res = await tx.testAttempt.updateMany({
+      where: { id: input.attemptId, status: 'in_progress' },
+      data: {
+        submittedAt: new Date(),
+        score: input.score,
+        maxScore: input.maxScore,
+        percentage,
+        passed: input.passed,
+        answers: input.answers,
+        status: 'submitted',
+      },
+    });
+    if (res.count === 0) throw new Error(ATTEMPT_ALREADY_SUBMITTED);
+    return tx.testAttempt.findUniqueOrThrow({ where: { id: input.attemptId } });
   });
 }
 

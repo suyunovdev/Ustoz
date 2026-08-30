@@ -36,7 +36,21 @@ export async function GET(
       return jsonResponse({ error: "Ruxsat yo'q", code: 'TEST_ACCESS_DENIED' }, { status: 403 });
     }
 
-    const showCorrect = attempt.test.showCorrectAnswers || isTeacher || session.role === 'admin';
+    // XAVFSIZLIK (C1): bu — NATIJA endpoint'i. Talaba faqat TUGAGAN urinish
+    // (submitted/expired) natijasini ko'ra oladi. Davom etayotgan urinishda
+    // hech qanday baholash qaytarilmaydi — aks holda talaba GET qilib javob
+    // kalitini (yoki har javob uchun correct=true/false "oracle"ni) olib, keyin
+    // 100% ball bilan topshira olardi. O'qituvchi/admin istalgan holatda ko'radi.
+    const isReviewer = isTeacher || session.role === 'admin';
+    if (!isReviewer && attempt.status === 'in_progress') {
+      return jsonResponse(
+        { error: "Bu urinish hali topshirilmagan", code: 'ATTEMPT_IN_PROGRESS' },
+        { status: 409 },
+      );
+    }
+
+    // To'g'ri javob/izoh — o'qituvchi showCorrectAnswers'ni yoqqan bo'lsa yoki reviewer.
+    const showCorrect = isReviewer || attempt.test.showCorrectAnswers;
 
     const answers = (attempt.answers as Record<string, string | string[]>) || {};
     const results = attempt.test.questions.map((q) => {
