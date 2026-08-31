@@ -14,13 +14,14 @@ import { parseVideoSource } from '@/lib/video';
 
 // Kiritilgan video havolasi qanday aniqlanganini ko'rsatuvchi belgi
 function VideoSourceBadge({ url }: { url: string }) {
+  const { t } = useI18n();
   const src = parseVideoSource(url);
   const label: Record<string, string> = {
-    youtube: 'YouTube video aniqlandi',
-    vimeo: 'Vimeo video aniqlandi',
-    cloudflare: 'Cloudflare Stream aniqlandi',
-    file: 'To‘g‘ridan-to‘g‘ri video fayl aniqlandi',
-    unknown: 'Havola tanilmadi — YouTube, Vimeo yoki MP4 havolasini kiriting',
+    youtube: t('courseCreation.videoYoutube'),
+    vimeo: t('courseCreation.videoVimeo'),
+    cloudflare: t('courseCreation.videoCloudflare'),
+    file: t('courseCreation.videoFile'),
+    unknown: t('courseCreation.videoUnknown'),
     none: '',
   };
   if (src.kind === 'none') return null;
@@ -146,7 +147,7 @@ const CourseCreationInteractive = () => {
     const newTopic: Topic = {
       id: `topic-${Date.now()}`,
       order: topicNumber,
-      title: `${topicNumber}-mavzu`,
+      title: t('courseCreation.defaultTopicTitle', { n: topicNumber }),
       duration: '0 min',
       hasQuiz: false,
       isExpanded: false,
@@ -677,7 +678,7 @@ const CourseCreationInteractive = () => {
                       onClick={handleAddTopic}
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth"
                     >
-                      Birinchi mavzuni qo&apos;shish
+                      {t('courseCreation.addFirstTopic')}
                     </button>
                   </div>
                 ) : selectedTopic ? (
@@ -714,12 +715,12 @@ const CourseCreationInteractive = () => {
                         inputMode="url"
                         value={selectedTopic.videoUrl}
                         onChange={(e) => handleVideoUrlChange(e.target.value)}
-                        placeholder="YouTube, Vimeo yoki MP4 havolasi — masalan https://youtu.be/abc123"
+                        placeholder={t('courseCreation.videoUrlPlaceholder')}
                         className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                       />
                       <VideoSourceBadge url={selectedTopic.videoUrl} />
                       <p className="text-xs text-muted-foreground">
-                        Talaba darsni ochganda shu video asosiy pleyerda o‘ynatiladi. Bo‘sh qoldirsangiz, faqat dars matni ko‘rsatiladi.
+                        {t('courseCreation.videoUrlHelp')}
                       </p>
                     </div>
 
