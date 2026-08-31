@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { buildSubjectGroups, buildTargetAudiences, buildGradeLevels } from '@/lib/data/subject-groups';
 
 interface FilterOptions {
   priceRange: [number, number];
@@ -38,98 +39,10 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
     { value: 'Advanced', label: t('misc.advanced') },
   ];
   
-  const targetAudiences = [
-    { value: 'preschoolers', label: t('misc.preschoolers') },
-    { value: 'primary_school', label: t('misc.primarySchool') },
-    { value: 'middle_school', label: t('misc.middleSchool') },
-    { value: 'high_school', label: t('misc.highSchool') },
-    { value: 'school_students', label: t('misc.schoolStudents') },
-    { value: 'university_applicants', label: t('misc.universityApplicants') },
-    { value: 'university_students', label: t('misc.universityStudents') },
-    { value: 'professionals', label: t('misc.professionals') },
-    { value: 'adults', label: t('misc.adults') },
-    { value: 'seniors', label: t('misc.seniors') },
-    { value: 'independent_learners', label: t('misc.independentLearners') },
-    { value: 'all_levels', label: t('misc.allLevels') },
-  ];
-
-  // Universal kategoriya guruhlari (label -> categories.* tarjima kaliti orqali)
-  const cat = (value: string) => ({ value, label: t('categories.' + value) });
-  const subjectGroups: Array<{ group: string; options: { value: string; label: string }[] }> = [
-    {
-      group: t('marketplace.groupNaturalSciences'),
-      options: ['mathematics', 'physics', 'chemistry', 'biology', 'geometry', 'algebra', 'astronomy', 'ecology'].map(cat),
-    },
-    {
-      group: t('marketplace.groupProgrammingIt'),
-      options: ['informatics', 'programming', 'web_development', 'mobile_development', 'data_science', 'artificial_intelligence'].map(cat),
-    },
-    {
-      group: t('marketplace.groupLanguages'),
-      options: ['uzbek_language', 'english_language', 'russian_language', 'arabic_language', 'chinese_language', 'korean_language', 'german_language', 'french_language', 'turkish_language', 'spanish_language', 'japanese_language'].map(cat),
-    },
-    {
-      group: t('marketplace.groupHumanities'),
-      options: ['history', 'geography', 'philosophy', 'literature', 'sociology'].map(cat),
-    },
-    {
-      group: t('marketplace.groupArtCreativity'),
-      options: ['music', 'singing', 'painting', 'drawing', 'photography', 'videography', 'cinema', 'theater', 'dance', 'design'].map(cat),
-    },
-    {
-      group: t('marketplace.groupHandicrafts'),
-      options: ['pottery', 'woodworking', 'sewing', 'knitting', 'embroidery', 'handcraft', 'jewelry'].map(cat),
-    },
-    {
-      group: t('marketplace.groupVocational'),
-      options: ['cooking', 'confectionery', 'barbering', 'hairstyling', 'makeup', 'manicure', 'tailoring'].map(cat),
-    },
-    {
-      group: t('marketplace.groupSportsHealth'),
-      options: ['fitness', 'yoga', 'football', 'basketball', 'martial_arts', 'swimming', 'chess', 'nutrition', 'sports_general'].map(cat),
-    },
-    {
-      group: t('marketplace.groupMedicinePsychology'),
-      options: ['pharmacy', 'nursing', 'psychology', 'medicine_general', 'first_aid'].map(cat),
-    },
-    {
-      group: t('marketplace.groupLaw'),
-      options: ['law_general', 'civil_law', 'tax_law'].map(cat),
-    },
-    {
-      group: t('marketplace.groupAgriculture'),
-      options: ['agriculture', 'gardening', 'livestock', 'beekeeping'].map(cat),
-    },
-    {
-      group: t('marketplace.groupEngineering'),
-      options: ['engineering_general', 'electrical', 'mechanics', 'construction', 'automotive', 'plumbing'].map(cat),
-    },
-    {
-      group: t('marketplace.groupBusinessManagement'),
-      options: ['business_management', 'entrepreneurship', 'marketing', 'finance', 'accounting', 'logistics', 'project_management', 'hr_management'].map(cat),
-    },
-    {
-      group: t('marketplace.groupPersonalDevelopment'),
-      options: ['leadership', 'public_speaking', 'time_management', 'sales', 'negotiation', 'personal_development'].map(cat),
-    },
-    {
-      group: t('marketplace.groupChildrenParents'),
-      options: ['early_development', 'parenting', 'child_psychology'].map(cat),
-    },
-    {
-      group: t('marketplace.groupReligionSpirituality'),
-      options: ['religion_islam', 'quran_studies', 'arabic_studies', 'religion_general'].map(cat),
-    },
-    {
-      group: t('marketplace.groupOther'),
-      options: ['other'].map(cat),
-    },
-  ];
-
-  const gradeLevels = Array.from({ length: 11 }, (_, i) => ({
-    value: String(i + 1),
-    label: t('marketplace.gradeLevel', { grade: i + 1 })
-  }));
+  const targetAudiences = buildTargetAudiences(t);
+  // Fan guruhlari — kurs yaratish formasi bilan yagona manba (subject-groups.ts).
+  const subjectGroups = buildSubjectGroups(t);
+  const gradeLevels = buildGradeLevels(t);
 
   const isSchoolAudience =
     localFilters.targetAudience === 'school_students' ||

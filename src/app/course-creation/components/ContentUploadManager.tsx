@@ -97,7 +97,7 @@ const ContentUploadManager = ({ materialId, onFilesChange, files }: ContentUploa
     const newFile: FileAttachment = {
       id: `link-${Date.now()}`,
       name: getLinkDisplayName(externalLink, linkType),
-      size: 'External',
+      size: t('courseCreation.sizeExternal'),
       type: linkType,
       url: externalLink
     };
@@ -114,9 +114,9 @@ const ContentUploadManager = ({ materialId, onFilesChange, files }: ContentUploa
   };
 
   const getLinkDisplayName = (url: string, type: string): string => {
-    if (type === 'youtube') return 'YouTube Video';
-    if (type === 'telegram') return 'Telegram Channel';
-    return 'External Link';
+    if (type === 'youtube') return t('courseCreation.typeYoutube');
+    if (type === 'telegram') return t('courseCreation.typeTelegram');
+    return t('courseCreation.typeExternal');
   };
 
   const getFileIcon = (type: string) => {

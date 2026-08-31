@@ -116,7 +116,7 @@ const PublishingControls = ({
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">{t('courseCreation.priceUZSLabel')}</p>
               <p className="text-lg font-semibold text-foreground">
-                {Number(metadata.priceUZS) > 0 ? `${Number(metadata.priceUZS).toLocaleString('uz')} so'm` : 'Bepul'}
+                {Number(metadata.priceUZS) > 0 ? `${Number(metadata.priceUZS).toLocaleString('uz')} so'm` : t('courses.free')}
               </p>
             </div>
             {metadata.targetAudience && (
