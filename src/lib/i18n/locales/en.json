@@ -2510,7 +2510,7 @@
     "step2Help": "Select students using search and filters",
     "step3Help": "Balance the group by performance and level",
     "step4Help": "Review and save the group details",
-    "courseBindingHelp": "The group is linked to one course. Students will only have access to that course's materials.",
+    "courseBindingHelp": "The group is organized around this course. You can only add students who are enrolled in your courses.",
     "noCourseWarning": "You don't have any courses yet. Create a course first, then link a group to it.",
     "descriptionPlaceholder": "Brief information about the group, goals and plans...",
     "maxStudentsOptimal": "Optimal: 20-30 students",
