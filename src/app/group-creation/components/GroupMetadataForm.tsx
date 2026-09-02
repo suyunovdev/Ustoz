@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -10,6 +9,8 @@ interface GroupMetadata {
   courseId: string;
   maxStudents: number;
   balancingStrategy: 'performance' | 'random' | 'manual';
+  meetingUrl: string;
+  scheduleNote: string;
 }
 
 interface TeacherCourseOption {
@@ -24,39 +25,48 @@ interface GroupMetadataFormProps {
   coursesLoading?: boolean;
 }
 
+// Server bilan bir xil chegaralar (group.service.ts): nom 2-100, tavsif ≤2000,
+// jadval izohi ≤200, meetingUrl yaroqli URL bo'lishi kerak.
+const isValidUrl = (v: string) => {
+  try { new URL(v); return true; } catch { return false; }
+};
+
 const GroupMetadataForm = ({ metadata, onMetadataChange, courses, coursesLoading }: GroupMetadataFormProps) => {
   const { t } = useI18n();
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (field: keyof GroupMetadata, value: any) => {
+  const handleChange = (field: keyof GroupMetadata, value: string | number) => {
     onMetadataChange({ ...metadata, [field]: value });
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors({ ...errors, [field]: '' });
-    }
   };
+
+  // Real-vaqt validatsiya — foydalanuvchi kiritayotganda ko'rsatiladi
+  const trimmedName = metadata.name.trim();
+  const nameError = trimmedName.length > 0 && (trimmedName.length < 2 || trimmedName.length > 100);
+  const descError = metadata.description.length > 2000;
+  const scheduleError = metadata.scheduleNote.trim().length > 200;
+  const urlError = metadata.meetingUrl.trim().length > 0 && !isValidUrl(metadata.meetingUrl.trim());
 
   return (
     <div className="space-y-6">
       {/* Group Name */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          Guruh nomi <span className="text-red-500">*</span>
+          {t('groups.groupName')} <span className="text-red-500">*</span>
         </label>
         <input
           type="text"
           value={metadata.name}
           onChange={(e) => handleChange('name', e.target.value)}
           placeholder={t('groups.groupName')}
-          className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground"
+          maxLength={100}
+          className={`w-full px-4 py-3 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${nameError ? 'border-red-500' : 'border-input'}`}
         />
-        {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+        {nameError && <p className="text-red-500 text-sm mt-1">{t('groups.nameError')}</p>}
       </div>
 
       {/* Course Selection */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          Kurs <span className="text-red-500">*</span>
+          {t('groups.courseLabel')} <span className="text-red-500">*</span>
         </label>
         <div className="relative">
           <select
@@ -80,44 +90,77 @@ const GroupMetadataForm = ({ metadata, onMetadataChange, courses, coursesLoading
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none"
           />
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          Guruh bitta kursga bog'lanadi. O'quvchilar faqat shu kurs materiallariga kirish huquqiga ega bo'ladi.
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">{t('groups.courseBindingHelp')}</p>
         {!coursesLoading && courses.length === 0 && (
-          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
-            Sizda hali kurs yo'q. Avval kurs yarating, so'ng unga guruh bog'lang.
-          </p>
+          <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">{t('groups.noCourseWarning')}</p>
         )}
-        {errors.courseId && <p className="text-red-500 text-sm mt-1">{errors.courseId}</p>}
       </div>
 
       {/* Description */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          Tavsif (ixtiyoriy)
+          {t('groups.descriptionOptional')}
         </label>
         <textarea
           value={metadata.description}
           onChange={(e) => handleChange('description', e.target.value)}
-          placeholder="Guruh haqida qisqacha ma'lumot, maqsad va rejalar..."
+          placeholder={t('groups.descriptionPlaceholder')}
           rows={4}
-          className="w-full px-4 py-3 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground resize-none"
+          maxLength={2000}
+          className={`w-full px-4 py-3 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground resize-none ${descError ? 'border-red-500' : 'border-input'}`}
         />
+        <div className="flex items-center justify-between mt-1">
+          {descError ? (
+            <p className="text-red-500 text-sm">{t('groups.descError')}</p>
+          ) : <span />}
+          <span className="text-xs text-muted-foreground">{metadata.description.length}/2000</span>
+        </div>
+      </div>
+
+      {/* Live lesson link (ixtiyoriy) */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          {t('groups.meetingUrl')}
+        </label>
+        <input
+          type="url"
+          value={metadata.meetingUrl}
+          onChange={(e) => handleChange('meetingUrl', e.target.value)}
+          placeholder={t('groups.meetingUrlPlaceholder')}
+          className={`w-full px-4 py-3 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${urlError ? 'border-red-500' : 'border-input'}`}
+        />
+        {urlError && <p className="text-red-500 text-sm mt-1">{t('groups.urlError')}</p>}
+      </div>
+
+      {/* Schedule note (ixtiyoriy) */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">
+          {t('groups.scheduleNote')}
+        </label>
+        <input
+          type="text"
+          value={metadata.scheduleNote}
+          onChange={(e) => handleChange('scheduleNote', e.target.value)}
+          placeholder={t('groups.scheduleNotePlaceholder')}
+          maxLength={200}
+          className={`w-full px-4 py-3 bg-background border rounded-md focus:outline-none focus:ring-2 focus:ring-ring text-foreground placeholder:text-muted-foreground ${scheduleError ? 'border-red-500' : 'border-input'}`}
+        />
+        {scheduleError && <p className="text-red-500 text-sm mt-1">{t('groups.scheduleError')}</p>}
       </div>
 
       {/* Max Students */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">
-          Maksimal o'quvchilar soni
+          {t('groups.maxStudents')}
         </label>
         <div className="flex items-center space-x-4">
           <input
             type="range"
-            min="5"
-            max="50"
-            step="5"
+            min="1"
+            max="100"
+            step="1"
             value={metadata.maxStudents}
-            onChange={(e) => handleChange('maxStudents', parseInt(e.target.value))}
+            onChange={(e) => handleChange('maxStudents', parseInt(e.target.value, 10))}
             className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
           />
           <div className="w-20 px-3 py-2 bg-primary/10 border border-primary/30 rounded-md text-center">
@@ -125,18 +168,18 @@ const GroupMetadataForm = ({ metadata, onMetadataChange, courses, coursesLoading
           </div>
         </div>
         <div className="flex items-center justify-between mt-2">
-          <p className="text-xs text-muted-foreground">Optimal: 20-30 o'quvchi</p>
+          <p className="text-xs text-muted-foreground">{t('groups.maxStudentsOptimal')}</p>
           <div className="flex items-center space-x-1">
             <Icon name="InformationCircleIcon" size={16} className="text-muted-foreground" />
-            <p className="text-xs text-muted-foreground">Katta guruhlar boshqarish qiyin bo'lishi mumkin</p>
+            <p className="text-xs text-muted-foreground">{t('groups.maxStudentsHint')}</p>
           </div>
         </div>
       </div>
 
-      {/* Balancing Strategy */}
+      {/* Balancing Strategy — yaratish paytida talabalarni taqsimlash usuli */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-3">
-          Guruh muvozanatlash strategiyasi
+          {t('groups.balancingStrategyLabel')}
         </label>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button
@@ -151,9 +194,7 @@ const GroupMetadataForm = ({ metadata, onMetadataChange, courses, coursesLoading
               <Icon name="ChartBarIcon" size={20} className="text-primary" />
               <span className="font-semibold text-foreground">{t('groups.byResult')}</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Yuqori, o'rta va past natijali o'quvchilarni muvozanatli taqsimlash
-            </p>
+            <p className="text-xs text-muted-foreground">{t('groups.byResultDesc')}</p>
             {metadata.balancingStrategy === 'performance' && (
               <div className="mt-2 flex items-center space-x-1 text-primary">
                 <Icon name="CheckCircleIcon" size={16} />
@@ -174,13 +215,11 @@ const GroupMetadataForm = ({ metadata, onMetadataChange, courses, coursesLoading
               <Icon name="ArrowPathIcon" size={20} className="text-primary" />
               <span className="font-semibold text-foreground">{t('groups.random')}</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              O'quvchilarni tasodifiy tarzda taqsimlash
-            </p>
+            <p className="text-xs text-muted-foreground">{t('groups.randomDesc')}</p>
             {metadata.balancingStrategy === 'random' && (
               <div className="mt-2 flex items-center space-x-1 text-primary">
                 <Icon name="CheckCircleIcon" size={16} />
-                <span className="text-xs font-medium">Tanlangan</span>
+                <span className="text-xs font-medium">{t('groups.selected')}</span>
               </div>
             )}
           </button>
@@ -196,13 +235,11 @@ const GroupMetadataForm = ({ metadata, onMetadataChange, courses, coursesLoading
               <Icon name="HandRaisedIcon" size={20} className="text-primary" />
               <span className="font-semibold text-foreground">{t('groups.manual')}</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              O'zingiz tanlab, qo'lda taqsimlash
-            </p>
+            <p className="text-xs text-muted-foreground">{t('groups.manualDesc')}</p>
             {metadata.balancingStrategy === 'manual' && (
               <div className="mt-2 flex items-center space-x-1 text-primary">
                 <Icon name="CheckCircleIcon" size={16} />
-                <span className="text-xs font-medium">Tanlangan</span>
+                <span className="text-xs font-medium">{t('groups.selected')}</span>
               </div>
             )}
           </button>
@@ -215,9 +252,7 @@ const GroupMetadataForm = ({ metadata, onMetadataChange, courses, coursesLoading
           <Icon name="LightBulbIcon" size={20} className="text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
           <div>
             <h4 className="font-semibold text-foreground mb-1">{t('groups.advice')}</h4>
-            <p className="text-sm text-muted-foreground">
-              "Natijaga ko'ra" strategiyasi eng samarali hisoblanadi. Bu usul guruhda turli darajadagi o'quvchilarni muvozanatli taqsimlaydi va o'zaro yordam ko'rsatishga imkon beradi.
-            </p>
+            <p className="text-sm text-muted-foreground">{t('groups.adviceBody')}</p>
           </div>
         </div>
       </div>
