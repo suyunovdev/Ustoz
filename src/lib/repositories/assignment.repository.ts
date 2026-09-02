@@ -238,7 +238,10 @@ export async function upsertSubmission(
     // (schema'da (assignmentId, studentId) unique yo'q — revision modeli buni
     // talab qiladi). pg_advisory_xact_lock — migratsiyasiz guard (groups'dagi
     // FOR UPDATE lock idiomasi kabi), transaction oxirida avtomatik bo'shaydi.
-    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${input.assignmentId}), hashtext(${input.studentId}))`;
+    // $executeRaw — pg_advisory_xact_lock() 'void' qaytaradi; $queryRaw uni
+    // deserializatsiya qila olmay xato berardi ("Failed to deserialize column
+    // of type 'void'"). executeRaw natijani o'qimaydi, shu sabab to'g'ri ishlaydi.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${input.assignmentId}), hashtext(${input.studentId}))`;
 
     const existing = await tx.assignmentSubmission.findFirst({
       where: { assignmentId: input.assignmentId, studentId: input.studentId },
