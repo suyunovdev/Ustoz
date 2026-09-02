@@ -214,23 +214,12 @@ const CourseCreationInteractive = () => {
     setSaveError(null);
 
     try {
-      const validTargetAudiences = ['school_students', 'university_students', 'independent_learners'];
-      const validSubjectCategories = [
-        'mathematics', 'physics', 'chemistry', 'biology', 'geometry', 'algebra',
-        'informatics', 'uzbek_language', 'english_language', 'russian_language',
-        'history', 'geography', 'programming', 'web_development',
-        'mobile_development', 'data_science', 'artificial_intelligence',
-        'business_management', 'entrepreneurship', 'marketing', 'finance',
-        'design', 'other'
-      ];
-
-      const targetAudience = validTargetAudiences.includes(metadata.targetAudience)
-        ? metadata.targetAudience
-        : 'school_students';
-
-      const subjectCategory = validSubjectCategories.includes(metadata.subjectCategory)
-        ? metadata.subjectCategory
-        : 'other';
+      // Tanlangan qiymatlar TO'G'RIDAN-TO'G'RI yuboriladi — server Prisma enum'ga
+      // qarshi validatsiya qiladi (barcha ~90 fan / ~12 auditoriya). Ilgari client
+      // qisqa (~24) whitelist bilan tanlovni 'other'/'school_students'ga jimgina
+      // tushirib, ma'lumot yo'qotardi (masalan "Ashula" → "Boshqa").
+      const targetAudience = metadata.targetAudience;
+      const subjectCategory = metadata.subjectCategory;
 
       const topicsPayload = topics.map((t) => ({
         title: t.title,
