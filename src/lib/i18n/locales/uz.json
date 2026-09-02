@@ -2510,7 +2510,7 @@
     "step2Help": "Qidiruv va filtrlar yordamida o'quvchilarni tanlang",
     "step3Help": "Guruhni natija va darajaga ko'ra muvozanatlang",
     "step4Help": "Guruh ma'lumotlarini tekshiring va saqlang",
-    "courseBindingHelp": "Guruh bitta kursga bog'lanadi. O'quvchilar faqat shu kurs materiallariga kirish huquqiga ega bo'ladi.",
+    "courseBindingHelp": "Guruh shu kurs atrofida tashkil qilinadi. Guruhga faqat kurslaringizga yozilgan o'quvchilarni qo'shishingiz mumkin.",
     "noCourseWarning": "Sizda hali kurs yo'q. Avval kurs yarating, so'ng unga guruh bog'lang.",
     "descriptionPlaceholder": "Guruh haqida qisqacha ma'lumot, maqsad va rejalar...",
     "maxStudentsOptimal": "Optimal: 20-30 o'quvchi",
