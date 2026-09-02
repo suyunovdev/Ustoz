@@ -32,6 +32,8 @@ interface GroupMetadata {
   courseId: string;
   maxStudents: number;
   balancingStrategy: 'performance' | 'random' | 'manual';
+  meetingUrl: string;
+  scheduleNote: string;
 }
 
 interface SavedGroup {
@@ -40,8 +42,10 @@ interface SavedGroup {
   description: string;
   courseId: string;
   studentCount: number;
+  maxMembers: number;
+  meetingUrl: string;
+  scheduleNote: string;
   createdAt: string;
-  balancingStrategy: string;
 }
 
 const GroupCreationInteractive = () => {
@@ -58,13 +62,16 @@ const GroupCreationInteractive = () => {
   const [selectedGroup, setSelectedGroup] = useState<SavedGroup | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SavedGroup | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const [metadata, setMetadata] = useState<GroupMetadata>({
     name: '',
     description: '',
     courseId: '',
     maxStudents: 30,
-    balancingStrategy: 'performance'
+    balancingStrategy: 'performance',
+    meetingUrl: '',
+    scheduleNote: '',
   });
 
   const [selectedStudents, setSelectedStudents] = useState<Student[]>([]);
@@ -138,8 +145,10 @@ const GroupCreationInteractive = () => {
             description: g.description || '',
             courseId: g.courseId || '',
             studentCount: g.memberCount || 0,
+            maxMembers: g.maxMembers || 0,
+            meetingUrl: g.meetingUrl || '',
+            scheduleNote: g.scheduleNote || '',
             createdAt: g.createdAt,
-            balancingStrategy: 'performance',
           }))
         );
         setLoadingGroups(false);
@@ -185,10 +194,10 @@ const GroupCreationInteractive = () => {
   }
 
   const steps = [
-    { id: 'metadata', label: `1. ${t('groups.groupInfo')}`, icon: 'InformationCircleIcon', helpText: "Guruh haqida umumiy ma\'lumotlarni kiriting" },
-    { id: 'selection', label: `2. ${t('groups.selectStudents')}`, icon: 'UserGroupIcon', helpText: "Qidiruv va filtrlar yordamida o\'quvchilarni tanlang" },
-    { id: 'balancing', label: `3. ${t('groups.groupBalance')}`, icon: 'ScaleIcon', helpText: "Guruhni natija va darajaga ko\'ra muvozanatlang" },
-    { id: 'review', label: `4. ${t('groups.review')}`, icon: 'CheckCircleIcon', helpText: "Guruh ma\'lumotlarini tekshiring va saqlang" }
+    { id: 'metadata', label: `1. ${t('groups.groupInfo')}`, icon: 'InformationCircleIcon', helpText: t('groups.step1Help') },
+    { id: 'selection', label: `2. ${t('groups.selectStudents')}`, icon: 'UserGroupIcon', helpText: t('groups.step2Help') },
+    { id: 'balancing', label: `3. ${t('groups.groupBalance')}`, icon: 'ScaleIcon', helpText: t('groups.step3Help') },
+    { id: 'review', label: `4. ${t('groups.review')}`, icon: 'CheckCircleIcon', helpText: t('groups.step4Help') }
   ];
 
   const getCurrentStepNumber = () => steps.findIndex(s => s.id === activeStep) + 1;
@@ -207,29 +216,56 @@ const GroupCreationInteractive = () => {
     }
   };
 
+  // Server bilan bir xil metadata validatsiyasi (group.service.ts).
+  const metadataValid = () => {
+    const n = metadata.name.trim();
+    if (n.length < 2 || n.length > 100) return false;
+    if (!metadata.courseId) return false;
+    if (metadata.description.length > 2000) return false;
+    if (metadata.scheduleNote.trim().length > 200) return false;
+    if (metadata.meetingUrl.trim()) {
+      try { new URL(metadata.meetingUrl.trim()); } catch { return false; }
+    }
+    return true;
+  };
+
   const handleCreateGroup = async () => {
+    // Ikki marta bosishdan himoya + yakuniy validatsiya
+    if (isCreating) return;
+    if (!metadataValid()) {
+      toast.error(t('groups.fixErrors'));
+      setActiveStep('metadata');
+      return;
+    }
+    setIsCreating(true);
+
     // 1) Guruhni yaratamiz
     let groupId: string | undefined;
     try {
+      const meetingUrl = metadata.meetingUrl.trim();
+      const scheduleNote = metadata.scheduleNote.trim();
       const res = await fetch('/api/teacher/groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          name: metadata.name,
+          name: metadata.name.trim(),
           description: metadata.description,
           courseId: metadata.courseId || null,
-          maxMembers: 30,
+          maxMembers: metadata.maxStudents,
+          ...(meetingUrl ? { meetingUrl } : {}),
+          ...(scheduleNote ? { scheduleNote } : {}),
         }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `Xatolik (${res.status})`);
+        throw new Error(err?.error || `${t('common.error')} (${res.status})`);
       }
       const data = await res.json();
       groupId = data.group?.id;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Guruhni yaratib bo'lmadi");
+      toast.error(err instanceof Error ? err.message : t('groups.groupCreateFailed'));
+      setIsCreating(false);
       return;
     }
 
@@ -244,10 +280,10 @@ const GroupCreationInteractive = () => {
           body: JSON.stringify({ studentIds }),
         });
         if (!mRes.ok) {
-          toast.error("Guruh yaratildi, lekin ba'zi a'zolarni qo'shib bo'lmadi");
+          toast.error(t('groups.membersPartialFail'));
         }
       } catch {
-        toast.error("Guruh yaratildi, lekin a'zolarni qo'shishda xatolik");
+        toast.error(t('groups.membersPartialFail'));
       }
     }
 
@@ -258,16 +294,17 @@ const GroupCreationInteractive = () => {
     setTimeout(() => {
       setShowSuccessModal(false);
       // Reset form and go back to list
-      setMetadata({ name: '', description: '', courseId: '', maxStudents: 30, balancingStrategy: 'performance' });
+      setMetadata({ name: '', description: '', courseId: '', maxStudents: 30, balancingStrategy: 'performance', meetingUrl: '', scheduleNote: '' });
       setSelectedStudents([]);
       setActiveStep('metadata');
       setView('list');
+      setIsCreating(false);
     }, 2000);
   };
 
   const canProceed = () => {
     switch (activeStep) {
-      case 'metadata': return !!(metadata.name && metadata.courseId);
+      case 'metadata': return metadataValid();
       case 'selection': return selectedStudents.length > 0;
       case 'balancing': return true;
       case 'review': return true;
@@ -284,11 +321,11 @@ const GroupCreationInteractive = () => {
         method: 'DELETE',
         credentials: 'include',
       });
-      if (!res.ok) throw new Error(`Xatolik (${res.status})`);
+      if (!res.ok) throw new Error(`${t('common.error')} (${res.status})`);
     } catch (err) {
       // Muvaffaqiyatsiz — ro'yxatni tiklaymiz
       setSavedGroups(prev);
-      toast.error(err instanceof Error ? err.message : "Guruhni o'chirib bo'lmadi");
+      toast.error(err instanceof Error ? err.message : t('groups.groupDeleteFailed'));
     }
   };
 
@@ -309,12 +346,32 @@ const GroupCreationInteractive = () => {
     } catch { return dateStr; }
   };
 
+  // courseId -> kurs nomi (topilmasa bo'sh); xom UUID ko'rsatmaslik uchun
+  const courseTitleFor = (courseId: string) =>
+    teacherCourses.find((c) => c.id === courseId)?.title || '';
+
+  // O'chirishni tasdiqlash modali — ham ro'yxat, ham batafsil ko'rinishda
+  const deleteConfirmEl = (
+    <ConfirmModal
+      open={!!deleteTarget}
+      title={t('groups.deleteGroup')}
+      message={t('groups.deleteConfirm', { name: deleteTarget?.name ?? '' })}
+      confirmLabel={t('groups.deleteGroup')}
+      cancelLabel={t('common.cancel')}
+      variant="danger"
+      isLoading={isDeleting}
+      onConfirm={confirmDeleteGroup}
+      onCancel={() => setDeleteTarget(null)}
+    />
+  );
+
   // ─── LIST VIEW ───────────────────────────────────────────────────────────────
   if (view === 'list') {
     // ─── DETAIL VIEW ─────────────────────────────────────────────────────────
     if (selectedGroup) {
       return (
         <div className="min-h-screen bg-background pt-16">
+          {deleteConfirmEl}
           <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-3xl">
             <button
               onClick={() => setSelectedGroup(null)}
@@ -347,13 +404,10 @@ const GroupCreationInteractive = () => {
                 </div>
                 <div className="bg-muted/30 rounded-md p-4">
                   <div className="flex items-center space-x-2 mb-1">
-                    <Icon name="ScaleIcon" size={18} className="text-primary" />
-                    <span className="text-sm font-medium text-foreground">{t('groups.balancingStrategy')}</span>
+                    <Icon name="UserPlusIcon" size={18} className="text-primary" />
+                    <span className="text-sm font-medium text-foreground">{t('groups.maxStudentsLabel')}</span>
                   </div>
-                  <p className="text-lg font-semibold text-foreground">
-                    {selectedGroup.balancingStrategy === 'performance' ? "Natija bo'yicha" :
-                     selectedGroup.balancingStrategy === 'random' ? 'Tasodifiy' : "Qo'lda"}
-                  </p>
+                  <p className="text-lg font-semibold text-foreground">{selectedGroup.maxMembers || '—'}</p>
                 </div>
                 <div className="bg-muted/30 rounded-md p-4">
                   <div className="flex items-center space-x-2 mb-1">
@@ -366,12 +420,36 @@ const GroupCreationInteractive = () => {
                   <div className="bg-muted/30 rounded-md p-4">
                     <div className="flex items-center space-x-2 mb-1">
                       <Icon name="BookOpenIcon" size={18} className="text-primary" />
-                      <span className="text-sm font-medium text-foreground">Kurs ID</span>
+                      <span className="text-sm font-medium text-foreground">{t('groups.courseLabel')}</span>
                     </div>
-                    <p className="text-lg font-semibold text-foreground truncate">{selectedGroup.courseId}</p>
+                    <p className="text-lg font-semibold text-foreground truncate">
+                      {courseTitleFor(selectedGroup.courseId) || '—'}
+                    </p>
+                  </div>
+                )}
+                {selectedGroup.scheduleNote && (
+                  <div className="bg-muted/30 rounded-md p-4">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Icon name="ClockIcon" size={18} className="text-primary" />
+                      <span className="text-sm font-medium text-foreground">{t('groups.scheduleLabel')}</span>
+                    </div>
+                    <p className="text-lg font-semibold text-foreground">{selectedGroup.scheduleNote}</p>
                   </div>
                 )}
               </div>
+
+              {selectedGroup.meetingUrl && (
+                <a
+                  href={selectedGroup.meetingUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center space-x-2 px-4 py-3 mb-6 bg-primary/10 text-primary rounded-md hover:bg-primary/20 transition-smooth text-sm font-medium w-fit"
+                >
+                  <Icon name="VideoCameraIcon" size={18} />
+                  <span>{t('groups.meetingLink')}</span>
+                  <Icon name="ArrowTopRightOnSquareIcon" size={14} />
+                </a>
+              )}
 
               <div className="flex gap-3 pt-4 border-t border-border">
                 <button
@@ -391,6 +469,7 @@ const GroupCreationInteractive = () => {
 
     return (
       <div className="min-h-screen bg-background pt-16">
+        {deleteConfirmEl}
         <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
@@ -425,20 +504,20 @@ const GroupCreationInteractive = () => {
                 </div>
               ))}
             </div>
+          ) : groupsError && savedGroups.length === 0 ? (
+            <ErrorState message={t('groups.loadError')} onRetry={loadGroups} />
           ) : savedGroups.length === 0 ? (
             <div className="bg-card rounded-md border-2 border-dashed border-border p-16 text-center">
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Icon name="UserGroupIcon" size={40} className="text-primary" />
               </div>
               <h3 className="text-xl font-heading font-semibold text-foreground mb-3">{t('groups.noGroupsYet')}</h3>
-              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                Birinchi guruhingizni yarating. O'quvchilarni guruhlarga ajratib, ularning o'qish jarayonini samarali boshqaring.
-              </p>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">{t('groups.noGroupsDescFull')}</p>
               <button
                 onClick={() => { setView('create'); setShowGuideModal(true); }}
                 className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium"
               >
-                Birinchi guruhni yaratish
+                {t('groups.createFirstGroup')}
               </button>
             </div>
           ) : (
@@ -450,9 +529,9 @@ const GroupCreationInteractive = () => {
                       <Icon name="UserGroupIcon" size={24} className="text-primary" />
                     </div>
                     <button
-                      onClick={() => handleDeleteGroup(group.id)}
+                      onClick={() => setDeleteTarget(group)}
                       className="p-1.5 text-muted-foreground hover:text-destructive transition-smooth rounded-md hover:bg-destructive/10"
-                      title="O'chirish"
+                      title={t('groups.deleteGroup')}
                     >
                       <Icon name="TrashIcon" size={16} />
                     </button>
@@ -464,19 +543,22 @@ const GroupCreationInteractive = () => {
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                       <Icon name="UsersIcon" size={16} />
-                      <span>{group.studentCount} ta o'quvchi</span>
+                      <span>{group.studentCount} {t('groups.studentsLabel')}</span>
                     </div>
                     <div className="flex items-center space-x-2 text-sm text-muted-foreground">
                       <Icon name="CalendarIcon" size={16} />
                       <span>{formatDate(group.createdAt)}</span>
                     </div>
-                    {group.balancingStrategy && (
+                    {group.scheduleNote && (
                       <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <Icon name="ScaleIcon" size={16} />
-                        <span>
-                          {group.balancingStrategy === 'performance' ? "Natija bo'yicha" :
-                           group.balancingStrategy === 'random' ? 'Tasodifiy' : "Qo'lda"}
-                        </span>
+                        <Icon name="ClockIcon" size={16} />
+                        <span className="line-clamp-1">{group.scheduleNote}</span>
+                      </div>
+                    )}
+                    {group.meetingUrl && (
+                      <div className="flex items-center space-x-2 text-sm text-primary">
+                        <Icon name="VideoCameraIcon" size={16} />
+                        <span>{t('groups.meetingLink')}</span>
                       </div>
                     )}
                   </div>
@@ -485,7 +567,7 @@ const GroupCreationInteractive = () => {
                       onClick={() => setSelectedGroup(group)}
                       className="w-full py-2 text-sm text-primary hover:bg-primary/10 rounded-md transition-smooth font-medium"
                     >
-                      Batafsil ko'rish
+                      {t('groups.viewDetails')}
                     </button>
                   </div>
                 </div>
@@ -536,7 +618,7 @@ const GroupCreationInteractive = () => {
                 onClick={() => setShowGuideModal(false)}
                 className="w-full mt-6 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium"
               >
-                Tushundim, boshlash
+                {t('groups.understood')}
               </button>
             </div>
           </div>
@@ -562,7 +644,7 @@ const GroupCreationInteractive = () => {
             className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-smooth mb-4"
           >
             <Icon name="ArrowLeftIcon" size={20} />
-            <span>Guruhlar ro'yxatiga qaytish</span>
+            <span>{t('groups.backToList')}</span>
           </button>
           <h1 className="text-3xl font-heading font-bold text-foreground">{t('groups.createNewGroupTitle')}</h1>
           <p className="text-muted-foreground mt-2">{t('groups.createDesc')}</p>
@@ -651,7 +733,7 @@ const GroupCreationInteractive = () => {
               className="flex items-center space-x-2 px-6 py-3 bg-muted text-foreground rounded-md hover:bg-muted/80 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon name="ArrowLeftIcon" size={20} />
-              <span>Orqaga</span>
+              <span>{t('common.back')}</span>
             </button>
 
             {getCurrentStepNumber() < 4 ? (
@@ -666,10 +748,20 @@ const GroupCreationInteractive = () => {
             ) : (
               <button
                 onClick={handleCreateGroup}
-                className="flex items-center space-x-2 px-6 py-3 bg-green-500 text-white rounded-md hover:bg-green-600 transition-smooth"
+                disabled={isCreating || !metadataValid()}
+                className="flex items-center space-x-2 px-6 py-3 bg-green-500 text-white rounded-md hover:bg-green-600 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Icon name="CheckIcon" size={20} />
-                <span>{t('groups.saveGroup')}</span>
+                {isCreating ? (
+                  <>
+                    <Icon name="ArrowPathIcon" size={20} className="animate-spin" />
+                    <span>{t('groups.creating')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Icon name="CheckIcon" size={20} />
+                    <span>{t('groups.saveGroup')}</span>
+                  </>
+                )}
               </button>
             )}
           </div>
