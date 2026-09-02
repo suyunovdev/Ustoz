@@ -102,9 +102,28 @@ jobs:
     steps:
       - name: VPS'ga SSH deploy
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           command_timeout: 20m
-          script: bash /home/deploy/deploy-ustoz.sh main
+          # GH_TOKEN'ni VPS'ga uzatamiz — deploy-ustoz.sh'dagi `git clone` endi
+          # AUTENTIFIKATSIYALI bo'ladi. Ilgari anonim clone edi → GitHub IP'ni
+          # rate-limit qilib "could not read Username" xatosi berardi.
+          envs: GH_TOKEN
+          script: |
+            # Token'ni git credential store'ga yozamiz (github.com uchun).
+            # GITHUB_TOKEN run oxirida tugaydi — qoldig'i zararsiz; har deploy'da yangilanadi.
+            git config --global credential.helper "store --file=$HOME/.gh-ci-creds"
+            printf 'https://x-access-token:%s@github.com\n' "$GH_TOKEN" > "$HOME/.gh-ci-creds"
+            chmod 600 "$HOME/.gh-ci-creds"
+            # Public URL'ni token bilan almashtiramiz — dastlabki so'rov ham
+            # anonim emas, autentifikatsiyali (rate-limitga tushmaydi).
+            git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
+            bash /home/deploy/deploy-ustoz.sh main
+            EXIT=$?
+            # Tozalash — token'li insteadOf'ni olib tashlaymiz.
+            git config --global --remove-section url."https://x-access-token:${GH_TOKEN}@github.com/" 2>/dev/null || true
+            exit $EXIT
