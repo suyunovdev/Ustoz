@@ -16,6 +16,7 @@ import { complete, isAnthropicConfigured } from '@/lib/ai/anthropic-client';
 import { hasActiveSubscription } from '@/lib/services/subscription.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { getSubjectLabel } from '@/lib/data/subject-labels';
+import { platformDayLabel, platformDayIso } from '@/lib/date/platform-day';
 
 const DAILY_LIMIT = 10;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -57,7 +58,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const day = new Date().toISOString().slice(0, 10);
+    // Kunlik limit — O'zbekiston kalendar kuni bo'yicha (UTC EMAS).
+    const day = platformDayIso(platformDayLabel());
     const rl = await checkRateLimit(`practice-exam:${session.sub}:${day}`, DAILY_LIMIT, DAY_MS);
     if (!rl.allowed) {
       return jsonResponse(

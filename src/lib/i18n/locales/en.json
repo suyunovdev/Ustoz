@@ -3209,5 +3209,11 @@
     "limitReached": "Daily exam limit reached. Continue tomorrow.",
     "notConfigured": "AI is unavailable right now.",
     "genFailed": "Could not generate questions. Try again."
+  },
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{n} min ago",
+    "hoursAgo": "{n} h ago",
+    "daysAgo": "{n} d ago"
   }
 }

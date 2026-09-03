@@ -84,15 +84,17 @@ export async function getTeacherDashboard(
     teacherRepo.findCoursesWithRevenue(teacherId),
     // 6 oylik daromad + yozilishlar — bitta raw SQL
     prisma.$queryRaw<MonthlyRow[]>`
+      -- Oylik bucketlar O'zbekiston (Asia/Tashkent) kalendariga ko'ra hisoblanadi:
+      -- oy chegarasidagi (00:00–05:00 mahalliy) to'lov to'g'ri oyga tushishi uchun.
       WITH months AS (
         SELECT generate_series(
-          date_trunc('month', NOW() - INTERVAL '5 months'),
-          date_trunc('month', NOW()),
+          date_trunc('month', (NOW() AT TIME ZONE 'Asia/Tashkent') - INTERVAL '5 months'),
+          date_trunc('month', (NOW() AT TIME ZONE 'Asia/Tashkent')),
           '1 month'::interval
         ) AS month
       ),
       revenue AS (
-        SELECT date_trunc('month', pt.created_at) AS month,
+        SELECT date_trunc('month', (pt.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent') AS month,
                COALESCE(SUM(pt.amount_uzs), 0)::bigint AS revenue
         FROM payment_transactions pt
         JOIN courses c ON c.id = pt.course_id
@@ -102,7 +104,7 @@ export async function getTeacherDashboard(
         GROUP BY 1
       ),
       enroll AS (
-        SELECT date_trunc('month', e.enrolled_at) AS month,
+        SELECT date_trunc('month', (e.enrolled_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent') AS month,
                COUNT(*)::bigint AS enrollments
         FROM enrollments e
         JOIN courses c ON c.id = e.course_id

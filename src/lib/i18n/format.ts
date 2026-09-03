@@ -7,8 +7,18 @@
  */
 import { LOCALE_TAG, type Locale } from './index';
 
+// Platforma auditoriyasi 100% O'zbekistonda (Asia/Tashkent, UTC+5, DST yo'q).
+// Sana/vaqt DOIM Toshkent vaqtida ko'rsatiladi — aks holda server (RSC/SSR, prodda
+// UTC) UTC sanani render qiladi va client (UTC+5) bilan farq qiladi (hydration/xato).
+// Chaqiruvchi opts'da timeZone bersa (masalan heatmap 'UTC'), o'sha ustun turadi.
+const TASHKENT_TZ = 'Asia/Tashkent';
+
 function tag(locale: Locale): string {
   return LOCALE_TAG[locale] ?? 'uz-UZ';
+}
+
+function withTz(opts: Intl.DateTimeFormatOptions): Intl.DateTimeFormatOptions {
+  return { timeZone: TASHKENT_TZ, ...opts };
 }
 
 export function formatDate(
@@ -18,7 +28,7 @@ export function formatDate(
 ): string {
   if (value === null || value === undefined || value === '') return '';
   try {
-    return new Date(value).toLocaleDateString(tag(locale), opts);
+    return new Date(value).toLocaleDateString(tag(locale), withTz(opts));
   } catch {
     return '';
   }
@@ -37,7 +47,7 @@ export function formatDateTime(
 ): string {
   if (value === null || value === undefined || value === '') return '';
   try {
-    return new Date(value).toLocaleString(tag(locale), opts);
+    return new Date(value).toLocaleString(tag(locale), withTz(opts));
   } catch {
     return '';
   }
@@ -50,7 +60,7 @@ export function formatTime(
 ): string {
   if (value === null || value === undefined || value === '') return '';
   try {
-    return new Date(value).toLocaleTimeString(tag(locale), opts);
+    return new Date(value).toLocaleTimeString(tag(locale), withTz(opts));
   } catch {
     return '';
   }

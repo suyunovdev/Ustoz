@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime } from '@/lib/i18n/format';
 
 interface LiveSession {
   id: string;
@@ -28,6 +30,7 @@ const EMPTY = {
 };
 
 const LiveSessionsAdminPanel = () => {
+  const { locale } = useI18n();
   const [sessions, setSessions] = useState<LiveSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ ...EMPTY });
@@ -139,7 +142,7 @@ const LiveSessionsAdminPanel = () => {
                   {!s.isPublished && <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Yashirin</span>}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {new Date(s.startsAt).toLocaleString('uz')} · {s.durationMin} daq · {s.hostName}
+                  {formatDateTime(s.startsAt, locale)} · {s.durationMin} daq · {s.hostName}
                 </p>
                 <a href={s.meetingUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary hover:underline break-all">{s.meetingUrl}</a>
               </div>
