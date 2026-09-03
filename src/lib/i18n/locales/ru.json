@@ -1377,7 +1377,11 @@
     "removeStudentMessage": "{name} будет убран(а) с курса \"{course}\". Это удалит прогресс, тесты и задания.",
     "messageToStudent": "Сообщение для {name}",
     "relatedCourseLabel": "Связанный курс (необязательно)",
-    "generalOption": "— общее —"
+    "generalOption": "— общее —",
+    "settings": "Настройки",
+    "settingsSaved": "Настройки сохранены",
+    "timeRequiredForPublish": "Для публикации нужен лимит времени (минимум 1 минута)",
+    "titleTooShort": "Название должно быть не менее 3 символов"
   },
   "marketplace": {
     "searchCourses": "Поиск курсов",

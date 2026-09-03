@@ -1377,7 +1377,11 @@
     "removeStudentMessage": "{name} will be removed from \"{course}\". This deletes progress, tests and assignments.",
     "messageToStudent": "Message to {name}",
     "relatedCourseLabel": "Related course (optional)",
-    "generalOption": "— general —"
+    "generalOption": "— general —",
+    "settings": "Settings",
+    "settingsSaved": "Settings saved",
+    "timeRequiredForPublish": "A time limit (at least 1 minute) is required to publish",
+    "titleTooShort": "Title must be at least 3 characters"
   },
   "marketplace": {
     "searchCourses": "Search Courses",

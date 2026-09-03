@@ -1377,7 +1377,11 @@
     "removeStudentMessage": "{name} \"{course}\" kursdan olib tashlanadi. Bu progress, test va vazifalarni o'chiradi.",
     "messageToStudent": "{name}'ga xabar",
     "relatedCourseLabel": "Kurs bilan bog'liq (ixtiyoriy)",
-    "generalOption": "— umumiy —"
+    "generalOption": "— umumiy —",
+    "settings": "Sozlamalar",
+    "settingsSaved": "Sozlamalar saqlandi",
+    "timeRequiredForPublish": "E'lon qilish uchun vaqt limiti (kamida 1 daqiqa) kerak",
+    "titleTooShort": "Sarlavha kamida 3 belgi bo'lishi kerak"
   },
   "marketplace": {
     "searchCourses": "Kurslarni qidirish",

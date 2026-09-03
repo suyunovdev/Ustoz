@@ -47,6 +47,15 @@ export default function TestBuilderClient({ testId }: Props) {
   const [adderOpen, setAdderOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<QuestionDTO | null>(null);
 
+  // Test sozlamalari tahriri (vaqt limiti, o'tish %, urinishlar, sarlavha, tavsif).
+  // Vaqt limitisiz yaratilgan test'ni e'lon qilish mumkin bo'lishi uchun shart.
+  const [showSettings, setShowSettings] = useState(false);
+  const [sTitle, setSTitle] = useState('');
+  const [sDescription, setSDescription] = useState('');
+  const [sPassingScore, setSPassingScore] = useState(70);
+  const [sTimeLimitMin, setSTimeLimitMin] = useState<number | ''>('');
+  const [sAllowedAttempts, setSAllowedAttempts] = useState(0);
+
   const attempts = useTeacherTestAttempts(testId, showAttempts);
 
   if (isLoading) return <div className="p-8">{t('common.loading')}</div>;
@@ -56,8 +65,50 @@ export default function TestBuilderClient({ testId }: Props) {
   const test = data.test;
   const isPublished = test.status === 'published';
 
+  const openSettings = () => {
+    setSTitle(test.title);
+    setSDescription(test.description ?? '');
+    setSPassingScore(test.passingScore);
+    setSTimeLimitMin(test.timeLimitSec ? Math.round(test.timeLimitSec / 60) : '');
+    setSAllowedAttempts(test.allowedAttempts);
+    setShowSettings(true);
+  };
+
+  const saveSettings = () => {
+    const title = sTitle.trim();
+    if (title.length < 3) {
+      toast.error(t('teacher.titleTooShort'));
+      return;
+    }
+    const timeLimitSec =
+      typeof sTimeLimitMin === 'number' && sTimeLimitMin > 0 ? sTimeLimitMin * 60 : null;
+    updateTest.mutate(
+      {
+        title,
+        description: sDescription.trim() || null,
+        passingScore: sPassingScore,
+        timeLimitSec,
+        allowedAttempts: sAllowedAttempts,
+      },
+      {
+        onSuccess: () => {
+          toast.success(t('teacher.settingsSaved'));
+          setShowSettings(false);
+        },
+        onError: (err) => toast.error(err.message),
+      },
+    );
+  };
+
   const handlePublishToggle = () => {
     const newStatus = isPublished ? 'draft' : 'published';
+    // E'lon qilishda vaqt limiti majburiy — o'rnatilmagan bo'lsa, xato o'rniga
+    // to'g'ridan-to'g'ri sozlamalar panelini ochamiz (foydalanuvchi qamalib qolmasin).
+    if (newStatus === 'published' && !test.timeLimitSec) {
+      toast.error(t('teacher.timeRequiredForPublish'));
+      openSettings();
+      return;
+    }
     updateTest.mutate(
       { status: newStatus },
       {
@@ -98,6 +149,13 @@ export default function TestBuilderClient({ testId }: Props) {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <button
+            onClick={() => (showSettings ? setShowSettings(false) : openSettings())}
+            className="px-3 py-2 border border-border rounded-md hover:bg-muted text-sm flex items-center gap-2"
+          >
+            <Icon name="Cog6ToothIcon" size={14} />
+            {t('teacher.settings')}
+          </button>
+          <button
             onClick={() => setShowAttempts((v) => !v)}
             className="px-3 py-2 border border-border rounded-md hover:bg-muted text-sm flex items-center gap-2"
           >
@@ -119,6 +177,108 @@ export default function TestBuilderClient({ testId }: Props) {
           </button>
         </div>
       </div>
+
+      {showSettings && (
+        <div className="bg-card border border-border rounded-md p-4 mb-6">
+          <h3 className="font-medium mb-4 flex items-center gap-2">
+            <Icon name="Cog6ToothIcon" size={16} />
+            {t('teacher.settings')}
+          </h3>
+          <div className="space-y-3">
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                {t('teacher.title')} *
+              </label>
+              <input
+                type="text"
+                value={sTitle}
+                onChange={(e) => setSTitle(e.target.value)}
+                maxLength={200}
+                className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-foreground mb-1">
+                {t('teacher.description')}
+              </label>
+              <textarea
+                value={sDescription}
+                onChange={(e) => setSDescription(e.target.value)}
+                rows={2}
+                maxLength={1000}
+                className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y bg-background"
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  {t('teacher.passingPercent')}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={sPassingScore}
+                  onChange={(e) => setSPassingScore(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  {t('teacher.timeMinutes')}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={180}
+                  value={sTimeLimitMin}
+                  onChange={(e) =>
+                    setSTimeLimitMin(e.target.value === '' ? '' : Number(e.target.value))
+                  }
+                  placeholder={t('teacher.unlimited')}
+                  className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">
+                  {t('teacher.attempts')}
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  max={20}
+                  value={sAllowedAttempts}
+                  onChange={(e) => setSAllowedAttempts(Number(e.target.value))}
+                  placeholder={t('teacher.unlimited')}
+                  className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">{t('teacher.timeRequiredForPublish')}</p>
+          </div>
+          <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-border">
+            <button
+              type="button"
+              onClick={() => setShowSettings(false)}
+              disabled={updateTest.isPending}
+              className="px-4 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              onClick={saveSettings}
+              disabled={updateTest.isPending}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm flex items-center gap-2 disabled:opacity-50"
+            >
+              {updateTest.isPending && (
+                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              )}
+              {t('common.save')}
+            </button>
+          </div>
+        </div>
+      )}
 
       {showAttempts && (
         <div className="bg-card border border-border rounded-md p-4 mb-6">
