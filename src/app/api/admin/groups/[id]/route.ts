@@ -1,12 +1,12 @@
 /**
- * DELETE /api/admin/courses/[id]
- * Admin istalgan kursni o'chiradi (egalik/obuna cheklovisiz — force delete).
+ * DELETE /api/admin/groups/[id]
+ * Admin istalgan guruhni o'chiradi (egalik cheklovisiz).
  */
 
 import type { NextRequest } from 'next/server';
 import { requireAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
-import { adminDeleteCourse, ContentNotFoundError } from '@/lib/services/admin-content.service';
+import { adminDeleteGroup, ContentNotFoundError } from '@/lib/services/admin-content.service';
 
 export async function DELETE(
   req: NextRequest,
@@ -15,7 +15,7 @@ export async function DELETE(
   try {
     await requireAdmin(req);
     const { id } = await params;
-    await adminDeleteCourse(id);
+    await adminDeleteGroup(id);
     return jsonResponse({ success: true });
   } catch (err) {
     if (err instanceof ContentNotFoundError) {
