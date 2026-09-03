@@ -36,6 +36,28 @@ export async function adminDeleteCourse(courseId: string): Promise<void> {
   }
 }
 
+export class CannotDeleteAdminError extends Error {
+  code = 'CANNOT_DELETE_ADMIN';
+  constructor() {
+    super("Admin akkauntini o'chirib bo'lmaydi");
+  }
+}
+
+/**
+ * Istalgan o'qituvchi/o'quvchi akkauntini o'chirish.
+ * Admin akkauntlar himoyalangan (o'chirilmaydi). User o'chirilganda
+ * user_profiles va barcha bog'liq kontent DB CASCADE bilan ketadi.
+ */
+export async function adminDeleteUser(userId: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!user) throw new ContentNotFoundError('Foydalanuvchi', userId);
+  if (user.role === 'admin') throw new CannotDeleteAdminError();
+  await prisma.user.delete({ where: { id: userId } });
+}
+
 /** Istalgan guruhni o'chirish (a'zolar cascade bilan). */
 export async function adminDeleteGroup(groupId: string): Promise<void> {
   try {
