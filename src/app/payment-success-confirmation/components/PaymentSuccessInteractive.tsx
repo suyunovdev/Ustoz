@@ -182,6 +182,7 @@ const PaymentSuccessInteractive = () => {
 
   const generateReceiptHTML = (transaction: Transaction, course: Course): string => {
     const formattedDate = new Date(transaction.completed_at).toLocaleString('uz-UZ', {
+      timeZone: 'Asia/Tashkent',
       year: 'numeric',
       month: 'long',
       day: 'numeric',

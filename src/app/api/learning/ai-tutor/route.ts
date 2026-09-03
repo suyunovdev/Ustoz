@@ -25,6 +25,7 @@ import { ValidationError } from '@/lib/errors';
 import { complete, isAnthropicConfigured } from '@/lib/ai/anthropic-client';
 import { hasActiveSubscription } from '@/lib/services/subscription.service';
 import { checkRateLimit } from '@/lib/rateLimit';
+import { platformDayLabel, platformDayIso } from '@/lib/date/platform-day';
 
 const DAILY_LIMIT = 30;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -94,8 +95,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3) Kunlik limit (UTC sana bo'yicha)
-    const day = new Date().toISOString().slice(0, 10);
+    // 3) Kunlik limit (O'zbekiston kalendar kuni bo'yicha — UTC EMAS).
+    // Aks holda limit 05:00 (mahalliy)da yangilanadi va 00:00–05:00 oraliq
+    // oldingi kunga hisoblanadi.
+    const day = platformDayIso(platformDayLabel());
     const rl = await checkRateLimit(`ai-tutor:${session.sub}:${day}`, DAILY_LIMIT, DAY_MS);
     if (!rl.allowed) {
       return jsonResponse(

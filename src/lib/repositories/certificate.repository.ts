@@ -11,6 +11,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { randomBytes } from 'node:crypto';
+import { platformDayLabel } from '@/lib/date/platform-day';
 
 export type CertificateStatus = 'active' | 'revoked';
 export type IssueSource = 'auto' | 'manual' | 'admin';
@@ -50,8 +51,11 @@ export type StudentCertificateRow = {
 };
 
 function generateCertificateNumber(): string {
-  // CERT-YYYY-XXXXXX (max 20 char)
-  const year = new Date().getFullYear();
+  // CERT-YYYY-XXXXXX (max 20 char).
+  // Yil O'zbekiston (Asia/Tashkent) kalendar yili bo'yicha — server UTC yili EMAS.
+  // Aks holda yangi yilning 00:00–05:00 (mahalliy) oralig'ida berilgan sertifikat
+  // oldingi yil raqamini oladi va ko'rsatiladigan sana bilan ziddiyatga tushadi.
+  const year = platformDayLabel().getUTCFullYear();
   const rand = randomBytes(3).toString('hex').toUpperCase();
   return `CERT-${year}-${rand}`;
 }

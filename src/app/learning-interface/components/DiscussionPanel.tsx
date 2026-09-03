@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatDate } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 interface DiscussionPanelProps {
   topicId: string;
@@ -20,21 +22,25 @@ interface Comment {
   isMine: boolean;
 }
 
-function relativeTime(iso: string): string {
+function relativeTime(
+  iso: string,
+  t: (key: string, params?: Record<string, string | number>) => string,
+  locale: Locale,
+): string {
   const then = new Date(iso).getTime();
   const diff = Math.max(0, Date.now() - then);
   const min = Math.floor(diff / 60000);
-  if (min < 1) return 'hozirgina';
-  if (min < 60) return `${min} daqiqa oldin`;
+  if (min < 1) return t('time.justNow');
+  if (min < 60) return t('time.minutesAgo', { n: min });
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} soat oldin`;
+  if (hr < 24) return t('time.hoursAgo', { n: hr });
   const d = Math.floor(hr / 24);
-  if (d < 30) return `${d} kun oldin`;
-  return new Date(iso).toLocaleDateString();
+  if (d < 30) return t('time.daysAgo', { n: d });
+  return formatDate(iso, locale);
 }
 
 const DiscussionPanel = ({ topicId }: DiscussionPanelProps) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,7 +181,7 @@ const DiscussionPanel = ({ topicId }: DiscussionPanelProps) => {
                         </span>
                       )}
                     </div>
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">{relativeTime(c.createdAt)}</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">{relativeTime(c.createdAt, t, locale)}</span>
                   </div>
                   <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap break-words">{c.body}</p>
                 </div>

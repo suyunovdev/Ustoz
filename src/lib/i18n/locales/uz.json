@@ -3209,5 +3209,11 @@
     "limitReached": "Bugungi imtihon limiti tugadi. Ertaga davom eting.",
     "notConfigured": "AI hozircha mavjud emas.",
     "genFailed": "Savollar tuzib bo‘lmadi. Qayta urinib ko‘ring."
+  },
+  "time": {
+    "justNow": "hozirgina",
+    "minutesAgo": "{n} daqiqa oldin",
+    "hoursAgo": "{n} soat oldin",
+    "daysAgo": "{n} kun oldin"
   }
 }
