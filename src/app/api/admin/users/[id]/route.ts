@@ -17,6 +17,11 @@ import {
   applyAction,
   type UserActionPayload,
 } from '@/lib/services/user-management.service';
+import {
+  adminDeleteUser,
+  CannotDeleteAdminError,
+  ContentNotFoundError,
+} from '@/lib/services/admin-content.service';
 import { ValidationError } from '@/lib/errors';
 import type { UserRole } from '@/generated/prisma/client';
 
@@ -72,6 +77,31 @@ export async function PATCH(
     const updated = await applyAction(session.sub, userId, payload, req);
     return jsonResponse({ user: updated });
   } catch (err) {
+    return errorResponse(err);
+  }
+}
+
+/**
+ * DELETE /api/admin/users/[id]
+ * O'qituvchi/o'quvchi akkauntini o'chiradi (admin himoyalangan). Auth: admin only.
+ */
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    await requireAdmin(req);
+    const { id: userId } = await params;
+    if (!userId) throw new ValidationError('User ID berilmagan');
+    await adminDeleteUser(userId);
+    return jsonResponse({ success: true });
+  } catch (err) {
+    if (err instanceof CannotDeleteAdminError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 403 });
+    }
+    if (err instanceof ContentNotFoundError) {
+      return jsonResponse({ error: err.message, code: err.code }, { status: 404 });
+    }
     return errorResponse(err);
   }
 }
