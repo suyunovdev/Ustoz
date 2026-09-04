@@ -102,7 +102,13 @@ const SubscriptionInteractive = () => {
         return;
       }
       console.error('Toʻlovni boshlashda xato:', data);
-      toast.error(t('subscription.paymentInitFailed'));
+      // To'lov shlyuzi hali sozlanmagan — foydalanuvchini administrator (qo'lda
+      // obuna) tomon yo'naltiramiz. Aks holda server xabari yoki umumiy xato.
+      if (data.code === 'GATEWAY_NOT_CONFIGURED') {
+        toast.error(t('subscription.paymentUnavailable'));
+      } else {
+        toast.error(typeof data.error === 'string' ? data.error : t('subscription.paymentInitFailed'));
+      }
       setProcessing(null);
     } catch (err) {
       console.error('Toʻlovni boshlashda xato:', err);

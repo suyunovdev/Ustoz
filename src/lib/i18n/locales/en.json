@@ -3144,7 +3144,9 @@
     "allAccessBadge": "All courses",
     "startFree": "Start free",
     "manage": "Manage subscription",
-    "expiresOn": "Expiry date"
+    "expiresOn": "Expiry date",
+    "paymentInitFailed": "Failed to start payment. Please try again.",
+    "paymentUnavailable": "Payment isn't available yet. Contact the administrator to get a subscription."
   },
   "admin.statusOffline": "Offline",
   "admin.statusDegraded": "Degraded",

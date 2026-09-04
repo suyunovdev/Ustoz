@@ -3144,7 +3144,9 @@
     "allAccessBadge": "Barcha kurslar",
     "startFree": "Bepul boshlash",
     "manage": "Obunani boshqarish",
-    "expiresOn": "Tugash sanasi"
+    "expiresOn": "Tugash sanasi",
+    "paymentInitFailed": "To'lovni boshlashda xato yuz berdi. Iltimos qayta urinib ko'ring.",
+    "paymentUnavailable": "To'lov tizimi hozircha ulanmagan. Obuna olish uchun administrator bilan bog'laning."
   },
   "admin.statusOffline": "Oflayn",
   "admin.statusDegraded": "Qisman ishlamoqda",
