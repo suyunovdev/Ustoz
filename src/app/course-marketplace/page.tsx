@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { getServerT } from '@/lib/i18n/server';
+import { getSession } from '@/lib/auth';
 
 // Dynamic import to fix chunk loading issues
 const MarketplaceInteractive = dynamic(
@@ -29,6 +30,9 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function CourseMarketplacePage() {
-  return <MarketplaceInteractive />;
+export default async function CourseMarketplacePage() {
+  // Login qilgan foydalanuvchi sidebar shell ichida ko'radi — katta marketing hero
+  // o'rniga ixcham app-sarlavha ko'rsatiladi (flash bo'lmasligi uchun server'dan).
+  const session = await getSession();
+  return <MarketplaceInteractive authed={!!session} />;
 }

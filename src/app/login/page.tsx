@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import Link from 'next/link';
 import LoginInteractive from './components/LoginInteractive';
+import AuthBrandPanel, { AuthMobileBrand } from '@/app/register/components/AuthBrandPanel';
+import ThemeToggle from '@/components/common/ThemeToggle';
+import { AUTH_FORM_REMAP, AUTH_PAPER } from '@/app/register/components/authTheme';
 import { getServerT } from '@/lib/i18n/server';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -11,37 +15,40 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const t = await getServerT();
   return (
-    <div className="min-h-screen bg-background">
-      <main className="pt-16 pb-16 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <Suspense fallback={<div className="flex items-center justify-center py-16"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
-            <LoginInteractive />
-          </Suspense>
-        </div>
-      </main>
+    <div className="min-h-screen lg:grid lg:grid-cols-[1.05fr_1fr]">
+      {/* Brend paneli (faqat lg+) */}
+      <AuthBrandPanel
+        title={t('landing.heroTitle')}
+        subtitle={t('landing.missionDesc')}
+        trust={[t('landing.trustQualityGuarantee'), t('landing.trustSecurePayment'), t('landing.trustDataProtection')]}
+      />
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="flex items-center justify-center w-8 h-8 bg-primary rounded-md">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" className="text-primary-foreground" />
-                  <path d="M2 17L12 22L22 17" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M2 12L12 17L22 12" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <span className="text-lg font-heading font-bold text-foreground">Ustoz</span>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              &copy; {new Date().getFullYear()} Ustoz. All rights reserved.
-            </p>
+      {/* Forma ustuni — token'lar yangi palitraga qayta belgilangan */}
+      <main
+        className="flex flex-col min-h-screen"
+        style={{ ...AUTH_FORM_REMAP, background: AUTH_PAPER }}
+      >
+        <div className="flex justify-end px-4 sm:px-6 pt-4">
+          <ThemeToggle />
+        </div>
+        <AuthMobileBrand />
+        <div className="flex-1 flex items-center justify-center px-4 py-8 sm:py-10">
+          <div className="w-full max-w-md">
+            <Suspense fallback={<div className="flex items-center justify-center py-16"><div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" /></div>}>
+              <LoginInteractive />
+            </Suspense>
           </div>
         </div>
-      </footer>
+
+        <footer className="px-4 py-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            &copy; {new Date().getFullYear()} Ustoz. {t('landing.footerRights')}
+          </p>
+        </footer>
+      </main>
     </div>
   );
 }

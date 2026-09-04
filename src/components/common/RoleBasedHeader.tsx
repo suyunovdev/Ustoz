@@ -7,6 +7,7 @@ import Icon from '@/components/ui/AppIcon';
 import LanguageSelector from './LanguageSelector';
 import NotificationBell from './NotificationBell';
 import UserMenu from './UserMenu';
+import ThemeToggle from './ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -130,7 +131,8 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
           </nav>
 
           {/* Right Section */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2">
+            <ThemeToggle />
             {userId && <NotificationBell userId={userId} />}
 
             {/* Logged-in: avatar menu (til + theme + chiqish ichida) */}

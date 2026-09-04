@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import ThemeToggle from '@/components/common/ThemeToggle';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -168,6 +169,7 @@ export default function AdminSidebar({
             </div>
             <Icon name="ChevronRightIcon" size={16} className="text-muted-foreground flex-shrink-0" />
           </button>
+          <ThemeToggle variant="row" className="mt-1" />
           <button
             onClick={async () => {
               try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }); } catch { /* ignore */ }

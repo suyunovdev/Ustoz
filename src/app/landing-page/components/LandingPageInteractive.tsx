@@ -3,12 +3,33 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import RoleBasedHeader from '@/components/common/RoleBasedHeader';
 import Icon from '@/components/ui/AppIcon';
 import { optimizeImageUrl } from '@/lib/imageUrl';
 import AppImage from '@/components/ui/AppImage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
+import GirihEmblem from './GirihEmblem';
+import ThemeToggle from '@/components/common/ThemeToggle';
+
+// ═══ Palitra ═══
+// Landing o'zining barqaror "qog'oz + siyoh" palitrasiga ega — app'ning light/dark
+// tokenlariga bog'lanmaydi (marketing sahifa izchil brend ko'rinishi uchun).
+// Semantik brend o'zgaruvchilari (tailwind.css :root / .dark) — light/dark toggle'ga
+// to'liq javob beradi. Band = doim qorong'i seksiya; page/surface/text = temaga qarab.
+const INK = 'var(--brand-band)'; // qorong'i band — hero/how-it-works/CTA
+const INK_DEEP = 'var(--brand-band-deep)'; // eng chuqur — footer/stats
+const PAPER = 'var(--brand-page)'; // sahifa foni
+const PAPER_CARD = 'var(--brand-surface)'; // karta yuzasi
+const GOLD = 'var(--brand-gold)'; // za'faron oltin — band ustida urg'u
+const GOLD_ICON = 'var(--brand-gold-on-surface)'; // qog'oz/surface ustidagi oltin (AA)
+const BRICK = 'var(--brand-brick)'; // g'isht/madder — kam urg'u
+const MALACHITE = 'var(--brand-malachite)'; // malaxit — sertifikat/muvaffaqiyat
+const INK_TEXT = 'var(--brand-text)'; // asosiy matn (surface ustida)
+const MUTE = 'var(--brand-text-mute)'; // ikkilamchi matn
+const LINE = 'var(--brand-line)'; // ipdek chegara
+const TRACK = 'var(--brand-track)'; // progress/skeleton fon
+
+const DISPLAY = { fontFamily: 'var(--font-display)' } as const;
 
 interface PopularCourse {
   id: string;
@@ -28,33 +49,31 @@ interface Teacher {
   studentCount: number;
 }
 
-// ─── Scroll Animation Hook ───
-// immediate=true — ekran tepasidagi (above-the-fold) kontent uchun: darhol
-// ko'rinadi, scroll-reveal kutmaydi (aks holda hero ~1.5s bo'sh turardi).
-function useScrollReveal(immediate = false) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isVisible, setIsVisible] = useState(immediate);
-
-  useEffect(() => {
-    if (immediate) return; // allaqachon ko'rinadi
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setIsVisible(true); },
-      { threshold: 0.15 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [immediate]);
-
-  return { ref, isVisible };
+function fmt(n: number): string {
+  return n.toLocaleString('en-US').replace(/,/g, ' ');
 }
 
-// ─── Counter Animation Hook ───
-function useCountUp(target: number, duration = 1500, active = false) {
+// ─── In-view trigger (counter/progress uchun) ───
+function useInView(threshold = 0.2) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || seen) return;
+    const obs = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) setSeen(true); },
+      { threshold },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [seen, threshold]);
+  return { ref, seen };
+}
+
+function useCountUp(target: number, duration = 1400, active = false) {
   const [count, setCount] = useState(0);
   useEffect(() => {
-    if (!active || target === 0) { setCount(0); return; }
+    if (!active || target === 0) { setCount(active ? target : 0); return; }
     let start = 0;
     const step = Math.max(1, Math.ceil(target / (duration / 16)));
     const timer = setInterval(() => {
@@ -67,35 +86,166 @@ function useCountUp(target: number, duration = 1500, active = false) {
   return count;
 }
 
-// ─── FAQ Item ───
-function FaqItem({ q, a }: { q: string; a: string }) {
-  const [open, setOpen] = useState(false);
+// ─── Landing header (shaffof → scroll'da siyoh) ───
+function LandingHeader() {
+  const { t, locale, setLocale } = useI18n();
+  const [solid, setSolid] = useState(false);
+  const [menu, setMenu] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setSolid(window.scrollY > 24);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+  const langs = ['uz', 'ru', 'en'] as const;
+
   return (
-    <div className="border border-border rounded-md overflow-hidden">
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between p-5 text-left hover:bg-muted/50 transition-smooth"
-        aria-expanded={open}
-      >
-        <span className="font-medium text-foreground pr-4">{q}</span>
-        <Icon name={open ? 'ChevronUpIcon' : 'ChevronDownIcon'} size={20} className="text-muted-foreground flex-shrink-0" />
-      </button>
-      {open && (
-        <div className="px-5 pb-5 text-muted-foreground" role="region">{a}</div>
+    <header
+      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+      style={{
+        background: solid ? 'rgba(14, 19, 48, 0.92)' : 'transparent',
+        backdropFilter: solid ? 'saturate(140%) blur(10px)' : 'none',
+        borderBottom: solid ? `1px solid rgba(223,162,58,0.18)` : '1px solid transparent',
+      }}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <span
+              className="flex items-center justify-center w-9 h-9 rounded-[10px]"
+              style={{ background: GOLD, boxShadow: '0 2px 10px rgba(223,162,58,0.35)' }}
+            >
+              {/* sakkiz-nurli yulduz — girih yadro logotipi */}
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                <path d="M12 1.5l2.4 5.1 5.6.7-4.1 3.9 1.1 5.6L12 19.9 6.9 22.8 8 17.2 3.9 13.3l5.6-.7L12 1.5z" fill={INK} opacity="0.92" />
+              </svg>
+            </span>
+            <span className="text-xl font-semibold tracking-tight" style={{ ...DISPLAY, color: '#F7F1E4' }}>
+              Ustoz
+            </span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <ThemeToggle tone="onDark" />
+            {/* Til tanlagich */}
+            <div className="hidden sm:flex items-center rounded-full p-0.5" style={{ background: 'rgba(247,241,228,0.10)' }}>
+              {langs.map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLocale(l)}
+                  className="px-2.5 py-1 text-xs font-semibold rounded-full transition-colors"
+                  style={locale === l
+                    ? { background: GOLD, color: INK }
+                    : { color: 'rgba(247,241,228,0.65)' }}
+                  aria-pressed={locale === l}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+
+            <Link
+              href="/login"
+              className="hidden sm:inline-flex px-4 py-2 text-sm font-medium rounded-md transition-colors"
+              style={{ color: '#F7F1E4' }}
+            >
+              {t('auth.login')}
+            </Link>
+            <Link
+              href="/register"
+              className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-md transition-transform hover:-translate-y-0.5"
+              style={{ background: GOLD, color: INK }}
+            >
+              {t('auth.register')}
+            </Link>
+
+            <button
+              onClick={() => setMenu(!menu)}
+              className="sm:hidden p-2 rounded-md"
+              style={{ color: '#F7F1E4' }}
+              aria-label="Menu"
+            >
+              <Icon name={menu ? 'XMarkIcon' : 'Bars3Icon'} size={22} />
+            </button>
+          </div>
+        </div>
+
+        {menu && (
+          <div className="sm:hidden pb-4 flex items-center gap-3">
+            <div className="flex items-center rounded-full p-0.5" style={{ background: 'rgba(247,241,228,0.10)' }}>
+              {langs.map((l) => (
+                <button
+                  key={l}
+                  onClick={() => setLocale(l)}
+                  className="px-3 py-1.5 text-xs font-semibold rounded-full"
+                  style={locale === l ? { background: GOLD, color: INK } : { color: 'rgba(247,241,228,0.65)' }}
+                >
+                  {l.toUpperCase()}
+                </button>
+              ))}
+            </div>
+            <Link href="/login" className="px-3 py-1.5 text-sm rounded-md" style={{ color: '#F7F1E4' }}>
+              {t('auth.login')}
+            </Link>
+          </div>
+        )}
+      </div>
+    </header>
+  );
+}
+
+// ─── Bo'lim sarlavhasi (qog'oz fonda) ───
+function SectionHead({ eyebrow, title, desc }: { eyebrow?: string; title: string; desc?: string }) {
+  return (
+    <div className="mb-12 max-w-2xl">
+      {eyebrow && (
+        <div className="flex items-center gap-3 mb-4">
+          <span className="h-px w-8" style={{ background: GOLD }} />
+          <span className="text-sm font-semibold" style={{ color: BRICK }}>{eyebrow}</span>
+        </div>
       )}
+      <h2 className="text-3xl md:text-[2.6rem] leading-[1.08] font-medium" style={{ ...DISPLAY, color: INK_TEXT }}>
+        {title}
+      </h2>
+      {desc && <p className="mt-4 text-lg leading-relaxed" style={{ color: MUTE }}>{desc}</p>}
     </div>
   );
 }
 
-// ═══════════════════════════════════════════
-// MAIN COMPONENT
+// ─── FAQ ───
+function FaqItem({ q, a, isOpen, onToggle }: { q: string; a: string; isOpen: boolean; onToggle: () => void }) {
+  return (
+    <div style={{ borderBottom: `1px solid ${LINE}` }}>
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between gap-4 py-5 text-left"
+        aria-expanded={isOpen}
+      >
+        <span className="text-lg font-medium" style={{ color: INK_TEXT }}>{q}</span>
+        <span
+          className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full transition-transform duration-300"
+          style={{ border: `1px solid ${LINE}`, transform: isOpen ? 'rotate(45deg)' : 'none', color: GOLD }}
+        >
+          <Icon name="PlusIcon" size={16} />
+        </span>
+      </button>
+      <div
+        className="grid transition-all duration-300"
+        style={{ gridTemplateRows: isOpen ? '1fr' : '0fr' }}
+      >
+        <div className="overflow-hidden">
+          <p className="pb-6 pr-12 leading-relaxed" style={{ color: MUTE }}>{a}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ═══════════════════════════════════════════
 const LandingPageInteractive = () => {
   const { user, loading: authLoading } = useAuth();
   const { t } = useI18n();
   const router = useRouter();
 
-  // Login qilingan foydalanuvchini dashboard'ga yo'naltirish
   useEffect(() => {
     if (authLoading) return;
     if (user) {
@@ -105,11 +255,13 @@ const LandingPageInteractive = () => {
       else router.replace('/student-dashboard');
     }
   }, [user, authLoading, router]);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [stats, setStats] = useState({ totalCourses: 0, activeStudents: 0, successfulTeachers: 0, certificatesAwarded: 0 });
   const [popularCourses, setPopularCourses] = useState<PopularCourse[]>([]);
   const [featuredTeachers, setFeaturedTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const CATEGORIES = useMemo(() => [
     { label: t('landing.catProgramming'), icon: 'CodeBracketIcon', key: 'programming' },
@@ -131,25 +283,12 @@ const LandingPageInteractive = () => {
     { q: t('landing.faq6Q'), a: t('landing.faq6A') },
   ], [t]);
 
-  // Scroll reveal refs
-  const heroReveal = useScrollReveal(true); // hero — above-the-fold, darhol ko'rinadi
-  const howItWorksReveal = useScrollReveal();
-  const categoriesReveal = useScrollReveal();
-  const coursesReveal = useScrollReveal();
-  const statsReveal = useScrollReveal();
-  const teachersReveal = useScrollReveal();
-  const testimonialsReveal = useScrollReveal();
-  const faqReveal = useScrollReveal();
-  const aboutReveal = useScrollReveal();
-  const ctaBannerReveal = useScrollReveal();
-  const studentWorksReveal = useScrollReveal();
-  const partnersReveal = useScrollReveal();
-
-  // Counter animations
-  const c1 = useCountUp(stats.totalCourses, 1200, statsReveal.isVisible);
-  const c2 = useCountUp(stats.activeStudents, 1200, statsReveal.isVisible);
-  const c3 = useCountUp(stats.successfulTeachers, 1200, statsReveal.isVisible);
-  const c4 = useCountUp(stats.certificatesAwarded, 1200, statsReveal.isVisible);
+  const statsView = useInView();
+  const worksView = useInView();
+  const c1 = useCountUp(stats.totalCourses, 1400, statsView.seen);
+  const c2 = useCountUp(stats.activeStudents, 1400, statsView.seen);
+  const c3 = useCountUp(stats.successfulTeachers, 1400, statsView.seen);
+  const c4 = useCountUp(stats.certificatesAwarded, 1400, statsView.seen);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -158,7 +297,6 @@ const LandingPageInteractive = () => {
           fetch('/api/courses?limit=6&sortBy=enrollments', { credentials: 'include' }),
           fetch('/api/stats'),
         ]);
-
         if (coursesRes.ok) {
           const { courses } = await coursesRes.json();
           setPopularCourses(
@@ -173,7 +311,6 @@ const LandingPageInteractive = () => {
             })),
           );
         }
-
         if (statsRes.ok) {
           const s = await statsRes.json();
           setStats({
@@ -182,8 +319,6 @@ const LandingPageInteractive = () => {
             successfulTeachers: s.successfulTeachers || 0,
             certificatesAwarded: s.certificatesAwarded || 0,
           });
-
-          // Featured teachers placeholder from stats
           setFeaturedTeachers([
             { id: '1', fullName: 'Aziza Karimova', avatarUrl: null, courseCount: 5, studentCount: 120 },
             { id: '2', fullName: 'Sardor Rahimov', avatarUrl: null, courseCount: 3, studentCount: 89 },
@@ -207,467 +342,395 @@ const LandingPageInteractive = () => {
     }
   }, [searchQuery, router]);
 
-  const animClass = (visible: boolean) =>
-    `transition-all duration-700 ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`;
+  const statLine = [
+    { v: stats.totalCourses, label: t('landing.statCourses') },
+    { v: stats.successfulTeachers, label: t('landing.statTeachers') },
+    { v: stats.activeStudents, label: t('landing.statStudents') },
+  ].filter((s) => s.v > 0);
 
   return (
-    <div className="min-h-screen bg-background scroll-smooth">
-      <RoleBasedHeader userRole={null} currentPath="/" />
+    <div style={{ background: PAPER, color: INK_TEXT }} className="min-h-screen font-sans">
+      <LandingHeader />
 
-      <main className="pt-16">
+      <main>
         {/* ═══ HERO ═══ */}
-        <section className="relative bg-gradient-to-br from-primary via-secondary to-primary text-primary-foreground py-20 md:py-28 overflow-hidden">
-          {/* Animated bg circles */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-white/5 rounded-full animate-pulse" />
-            <div className="absolute -bottom-32 -left-32 w-[500px] h-[500px] bg-white/5 rounded-full animate-pulse" style={{ animationDelay: '1s' }} />
-          </div>
-
-          <div ref={heroReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 ${animClass(heroReveal.isVisible)}`}>
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+        <section className="relative overflow-hidden" style={{ background: INK }}>
+          {/* nozik radial nur */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(120% 80% at 78% 30%, rgba(223,162,58,0.16), transparent 60%)' }}
+          />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 md:pt-36 pb-16 md:pb-24 relative">
+            <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-center">
+              {/* Chap — matn */}
               <div>
-                <div className="inline-flex items-center px-4 py-2 bg-white/10 rounded-full text-sm mb-6 backdrop-blur-sm">
-                  <Icon name="SparklesIcon" size={16} className="mr-2" />
-                  {t('landing.badge')}
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="h-px w-10" style={{ background: GOLD }} />
+                  <span className="text-sm font-medium" style={{ color: GOLD }}>{t('landing.since')}</span>
                 </div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold mb-6 leading-tight">
+
+                <h1
+                  className="font-medium leading-[1.02] tracking-[-0.01em]"
+                  style={{ ...DISPLAY, color: '#F7F1E4', fontSize: 'clamp(2.6rem, 6vw, 4.6rem)' }}
+                >
                   {t('landing.heroTitle')}
                 </h1>
-                <p className="text-lg md:text-xl mb-8 opacity-90">
+
+                <p className="mt-6 text-lg md:text-xl leading-relaxed max-w-xl" style={{ color: 'rgba(247,241,228,0.72)' }}>
                   {t('landing.heroDesc')}
                 </p>
 
-                {/* Hero Search */}
-                <form onSubmit={handleSearch} className="flex bg-white/10 backdrop-blur-sm rounded-lg p-2 mb-8 border border-white/20" role="search">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={t('landing.searchPlaceholder')}
-                    aria-label={t('landing.searchPlaceholder')}
-                    className="flex-1 bg-transparent text-primary-foreground placeholder-white/60 px-4 py-3 outline-none text-base"
-                  />
-                  <button
-                    type="submit"
-                    aria-label={t('common.search')}
-                    className="px-6 py-3 bg-accent text-accent-foreground rounded-md font-medium hover:opacity-90 transition-smooth flex-shrink-0"
+                {/* Qidiruv */}
+                <form onSubmit={handleSearch} className="mt-8 max-w-xl" role="search">
+                  <div
+                    className="flex items-center rounded-xl overflow-hidden"
+                    style={{ background: 'rgba(247,241,228,0.07)', border: '1px solid rgba(247,241,228,0.16)' }}
                   >
-                    <Icon name="MagnifyingGlassIcon" size={20} />
-                  </button>
+                    <Icon name="MagnifyingGlassIcon" size={20} className="ml-4" style={{ color: 'rgba(247,241,228,0.5)' }} />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={t('landing.searchPlaceholder')}
+                      aria-label={t('landing.searchPlaceholder')}
+                      className="flex-1 bg-transparent px-3 py-4 outline-none text-base"
+                      style={{ color: '#F7F1E4' }}
+                    />
+                    <button
+                      type="submit"
+                      className="m-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold flex-shrink-0 transition-transform hover:-translate-y-0.5"
+                      style={{ background: GOLD, color: INK }}
+                    >
+                      {t('common.search')}
+                    </button>
+                  </div>
                 </form>
 
-                <div className="flex flex-col sm:flex-row gap-4">
+                <div className="mt-6 flex flex-col sm:flex-row gap-3">
                   <Link
                     href="/register"
-                    className="inline-flex items-center justify-center px-8 py-4 bg-accent text-accent-foreground rounded-md font-medium hover:scale-105 transition-smooth shadow-warm-lg"
+                    className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg font-semibold transition-transform hover:-translate-y-0.5"
+                    style={{ background: '#F7F1E4', color: INK }}
                   >
-                    <Icon name="AcademicCapIcon" size={24} className="mr-2" />
                     {t('landing.startFree')}
+                    <Icon name="ArrowRightIcon" size={18} />
                   </Link>
                   <a
                     href="#courses"
-                    className="inline-flex items-center justify-center px-8 py-4 bg-white/10 backdrop-blur-sm text-primary-foreground rounded-md font-medium hover:bg-white/20 transition-smooth border border-white/20"
+                    className="inline-flex items-center justify-center px-7 py-3.5 rounded-lg font-medium transition-colors"
+                    style={{ color: '#F7F1E4', border: '1px solid rgba(247,241,228,0.24)' }}
                   >
                     {t('landing.viewCourses')}
                   </a>
                 </div>
-              </div>
 
-              {/* Hero Stats Card */}
-              <div className="hidden md:block">
-                <div className="bg-primary-foreground rounded-xl p-8 shadow-warm-2xl">
-                  <div className="grid grid-cols-2 gap-6">
-                    {[
-                      { icon: 'BookOpenIcon', value: `${stats.totalCourses}+`, label: t('landing.statCourses'), bg: 'bg-primary', color: 'text-primary' },
-                      { icon: 'UserGroupIcon', value: `${stats.activeStudents}+`, label: t('landing.statStudents'), bg: 'bg-secondary', color: 'text-secondary' },
-                      { icon: 'UserIcon', value: `${stats.successfulTeachers}+`, label: t('landing.statTeachers'), bg: 'bg-accent', color: 'text-accent-foreground' },
-                      { icon: 'TrophyIcon', value: `${stats.certificatesAwarded}+`, label: t('landing.statCertificates'), bg: 'bg-success', color: 'text-success' },
-                    ].map((s, i) => (
-                      <div key={i} className="text-center">
-                        <div className={`flex items-center justify-center w-14 h-14 ${s.bg} rounded-lg mb-3 mx-auto`}>
-                          <Icon name={s.icon} size={28} className="text-primary-foreground" variant="solid" />
-                        </div>
-                        <div className={`text-2xl font-heading font-bold ${s.color}`}>{s.value}</div>
-                        <div className="text-xs text-muted-foreground">{s.label}</div>
+                {/* Stat qatori */}
+                {statLine.length > 0 && (
+                  <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-3">
+                    {statLine.map((s, i) => (
+                      <div key={i} className="flex items-baseline gap-2">
+                        <span className="text-2xl font-semibold" style={{ ...DISPLAY, color: GOLD }}>{fmt(s.v)}+</span>
+                        <span className="text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>{s.label}</span>
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+
+              {/* O'ng — girih emblema */}
+              <div className="relative hidden lg:flex items-center justify-center">
+                <div className="w-full max-w-[460px] aspect-square">
+                  <GirihEmblem className="w-full h-full" />
                 </div>
               </div>
             </div>
           </div>
+
+          {/* pastki qog'oz burchagi */}
+          <svg className="block w-full" viewBox="0 0 1440 48" preserveAspectRatio="none" style={{ height: 40 }}>
+            <path d="M0 48 L1440 48 L1440 0 C1080 40 360 40 0 0 Z" style={{ fill: PAPER }} />
+          </svg>
         </section>
 
-        {/* ═══ HOW IT WORKS ═══ */}
-        <section className="py-16 md:py-24">
-          <div ref={howItWorksReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(howItWorksReveal.isVisible)}`}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('landing.howItWorksTitle')}</h2>
-              <p className="text-lg text-muted-foreground">{t('landing.howItWorksDesc')}</p>
+        {/* ═══ KATEGORIYALAR ═══ */}
+        <section className="py-14 md:py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-end justify-between flex-wrap gap-4 mb-8">
+              <h2 className="text-2xl md:text-3xl font-medium" style={{ ...DISPLAY, color: INK_TEXT }}>
+                {t('landing.categoriesTitle')}
+              </h2>
+              <Link href="/course-marketplace" className="text-sm font-semibold inline-flex items-center gap-1.5" style={{ color: BRICK }}>
+                {t('landing.viewAllCourses')} <Icon name="ArrowRightIcon" size={15} />
+              </Link>
             </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                { step: '1', title: t('landing.step1Title'), desc: t('landing.step1Desc'), icon: 'UserPlusIcon', color: 'bg-primary' },
-                { step: '2', title: t('landing.step2Title'), desc: t('landing.step2Desc'), icon: 'MagnifyingGlassIcon', color: 'bg-secondary' },
-                { step: '3', title: t('landing.step3Title'), desc: t('landing.step3Desc'), icon: 'PlayCircleIcon', color: 'bg-accent' },
-              ].map((item, i) => (
-                <div key={i} className="relative text-center group">
-                  {i < 2 && (
-                    <div className="hidden md:block absolute top-12 left-[60%] w-[80%] h-0.5 bg-border" />
-                  )}
-                  <div className={`inline-flex items-center justify-center w-24 h-24 ${item.color} rounded-2xl mb-6 shadow-warm-lg group-hover:scale-110 transition-smooth`}>
-                    <Icon name={item.icon} size={40} className="text-primary-foreground" />
-                  </div>
-                  <div className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">{t('landing.step')} {item.step}</div>
-                  <h3 className="text-xl font-heading font-bold mb-3">{item.title}</h3>
-                  <p className="text-muted-foreground">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ═══ CATEGORIES ═══ */}
-        <section className="py-16 md:py-20 bg-muted">
-          <div ref={categoriesReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(categoriesReveal.isVisible)}`}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('landing.categoriesTitle')}</h2>
-              <p className="text-lg text-muted-foreground">{t('landing.categoriesDesc')}</p>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {CATEGORIES.map((cat) => (
                 <Link
                   key={cat.key}
                   href={`/course-marketplace?category=${cat.key}`}
-                  className="flex flex-col items-center p-6 bg-card rounded-xl shadow-warm hover:shadow-warm-lg hover:-translate-y-1 transition-all duration-300 group"
+                  className="group flex items-center gap-3 px-4 py-4 rounded-xl transition-all"
+                  style={{ background: PAPER_CARD, border: `1px solid ${LINE}` }}
                 >
-                  <div className="w-14 h-14 bg-primary/10 rounded-xl flex items-center justify-center mb-3 group-hover:bg-primary group-hover:scale-110 transition-all duration-300">
-                    <Icon name={cat.icon} size={28} className="text-primary group-hover:text-primary-foreground transition-colors" />
-                  </div>
-                  <span className="font-medium text-sm text-foreground">{cat.label}</span>
+                  <span
+                    className="flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-colors"
+                    style={{ background: 'rgba(223,162,58,0.14)', color: GOLD_ICON }}
+                  >
+                    <Icon name={cat.icon} size={18} />
+                  </span>
+                  <span className="text-sm font-medium truncate" style={{ color: INK_TEXT }}>{cat.label}</span>
                 </Link>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ═══ POPULAR COURSES ═══ */}
-        <section id="courses" className="py-16 md:py-24">
-          <div ref={coursesReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(coursesReveal.isVisible)}`}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('landing.popularCoursesTitle')}</h2>
-              <p className="text-lg text-muted-foreground">{t('landing.popularCoursesDesc')}</p>
-            </div>
-
+        {/* ═══ MASHHUR KURSLAR ═══ */}
+        <section id="courses" className="py-14 md:py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHead
+              eyebrow={t('landing.popularCoursesTitle')}
+              title={t('landing.popularCoursesDesc')}
+            />
             {loading ? (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="bg-card rounded-xl shadow-warm animate-pulse">
-                    <div className="h-48 bg-muted rounded-t-xl" />
-                    <div className="p-6 space-y-3">
-                      <div className="h-5 bg-muted rounded w-3/4" />
-                      <div className="h-4 bg-muted rounded w-1/2" />
-                      <div className="h-4 bg-muted rounded w-1/3" />
+                  <div key={i} className="rounded-2xl animate-pulse" style={{ background: PAPER_CARD, border: `1px solid ${LINE}` }}>
+                    <div className="h-44 rounded-t-2xl" style={{ background: TRACK }} />
+                    <div className="p-5 space-y-3">
+                      <div className="h-5 rounded w-3/4" style={{ background: TRACK }} />
+                      <div className="h-4 rounded w-1/2" style={{ background: TRACK }} />
                     </div>
                   </div>
                 ))}
               </div>
+            ) : popularCourses.length > 0 ? (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {popularCourses.map((course) => (
+                  <Link
+                    key={course.id}
+                    href={`/course-details?courseId=${course.id}`}
+                    className="group rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
+                    style={{ background: PAPER_CARD, border: `1px solid ${LINE}` }}
+                  >
+                    <div className="relative h-44 overflow-hidden" style={{ background: TRACK }}>
+                      <AppImage
+                        src={course.coverImage}
+                        alt={course.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      {course.price === 0 && (
+                        <span
+                          className="absolute top-3 left-3 px-2.5 py-1 text-xs font-bold rounded-md"
+                          style={{ background: MALACHITE, color: '#fff' }}
+                        >
+                          {t('landing.free')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="p-5">
+                      <h3 className="text-lg font-semibold leading-snug mb-2 line-clamp-2" style={{ color: INK_TEXT }}>
+                        {course.title}
+                      </h3>
+                      <p className="text-sm mb-4" style={{ color: MUTE }}>
+                        {t('landing.instructor')}: {course.instructor}
+                      </p>
+                      <div className="flex items-center justify-between pt-3" style={{ borderTop: `1px solid ${LINE}` }}>
+                        <div className="flex items-center gap-1.5 text-sm">
+                          <Icon name="StarIcon" size={16} style={{ color: GOLD }} variant="solid" />
+                          <span className="font-semibold" style={{ color: INK_TEXT }}>{course.rating.toFixed(1)}</span>
+                          <span style={{ color: MUTE }}>({course.enrollmentCount})</span>
+                        </div>
+                        <div className="font-semibold" style={{ color: course.price === 0 ? MALACHITE : INK_TEXT }}>
+                          {course.price === 0 ? t('landing.free') : `${fmt(course.price)} so'm`}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {popularCourses.length > 0 ? (
-                  popularCourses.map((course) => (
-                    <Link
-                      key={course.id}
-                      href={`/course-details?courseId=${course.id}`}
-                      className="bg-card rounded-xl shadow-warm hover:shadow-warm-xl hover:-translate-y-2 transition-all duration-300 overflow-hidden group"
-                    >
-                      <div className="relative h-48 overflow-hidden bg-muted">
-                        <AppImage
-                          src={course.coverImage}
-                          alt={course.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                        {course.price === 0 && (
-                          <span className="absolute top-3 left-3 px-3 py-1 bg-success text-white text-xs font-bold rounded-full uppercase">{t('landing.free')}</span>
-                        )}
-                        {/* Hover video preview overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
-                          <div className="flex items-center justify-center absolute inset-0">
-                            <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-warm-lg transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                              <Icon name="PlayIcon" size={28} className="text-primary ml-1" variant="solid" />
-                            </div>
-                          </div>
-                          <p className="text-white text-sm line-clamp-2 relative z-10">{course.title}</p>
-                          <div className="flex items-center gap-2 mt-1 relative z-10">
-                            <span className="text-white/80 text-xs">{course.instructor}</span>
-                            <span className="text-white/60 text-xs">•</span>
-                            <span className="text-accent text-xs font-medium flex items-center">
-                              <Icon name="StarIcon" size={12} className="mr-0.5" variant="solid" />
-                              {course.rating.toFixed(1)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-6">
-                        <h3 className="text-lg font-heading font-bold mb-2 line-clamp-2 group-hover:text-primary transition-colors">{course.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-4">{t('landing.instructor')}: {course.instructor}</p>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <Icon name="StarIcon" size={16} className="text-accent mr-1" variant="solid" />
-                            <span className="text-sm font-medium">{course.rating.toFixed(1)}</span>
-                            <span className="text-sm text-muted-foreground ml-2">({course.enrollmentCount})</span>
-                          </div>
-                          <div className="text-lg font-bold text-primary">
-                            {course.price === 0 ? t('landing.free') : `${course.price.toLocaleString()} so'm`}
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="col-span-3 text-center py-12">
-                    <Icon name="BookOpenIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">{t('landing.noCourses')}</p>
-                  </div>
-                )}
+              <div className="text-center py-16 rounded-2xl" style={{ border: `1px dashed ${LINE}` }}>
+                <Icon name="BookOpenIcon" size={40} className="mx-auto mb-3" style={{ color: MUTE }} />
+                <p style={{ color: MUTE }}>{t('landing.noCourses')}</p>
               </div>
             )}
+          </div>
+        </section>
 
-            <div className="text-center mt-12">
-              <Link
-                href="/course-marketplace"
-                className="inline-flex items-center justify-center px-8 py-4 bg-primary text-primary-foreground rounded-lg font-medium hover:scale-105 transition-smooth shadow-warm"
-              >
-                {t('landing.viewAllCourses')}
-                <Icon name="ArrowRightIcon" size={20} className="ml-2" />
-              </Link>
+        {/* ═══ QANDAY ISHLAYDI (ketma-ketlik) ═══ */}
+        <section className="py-16 md:py-24" style={{ background: INK }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="max-w-2xl mb-14">
+              <h2 className="text-3xl md:text-[2.6rem] leading-[1.08] font-medium" style={{ ...DISPLAY, color: '#F7F1E4' }}>
+                {t('landing.howItWorksTitle')}
+              </h2>
+              <p className="mt-4 text-lg" style={{ color: 'rgba(247,241,228,0.66)' }}>{t('landing.howItWorksDesc')}</p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-px" style={{ background: 'rgba(247,241,228,0.12)' }}>
+              {[
+                { n: '01', title: t('landing.step1Title'), desc: t('landing.step1Desc') },
+                { n: '02', title: t('landing.step2Title'), desc: t('landing.step2Desc') },
+                { n: '03', title: t('landing.step3Title'), desc: t('landing.step3Desc') },
+              ].map((item) => (
+                <div key={item.n} className="p-8 md:p-10" style={{ background: INK }}>
+                  <div className="text-5xl font-medium mb-6" style={{ ...DISPLAY, color: GOLD }}>{item.n}</div>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#F7F1E4' }}>{item.title}</h3>
+                  <p className="leading-relaxed" style={{ color: 'rgba(247,241,228,0.62)' }}>{item.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ═══ STATISTICS (Counter Animation) ═══ */}
-        <section className="py-16 md:py-24 bg-muted">
-          <div ref={statsReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(statsReveal.isVisible)}`}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('landing.statsTitle')}</h2>
-              <p className="text-lg text-muted-foreground">{t('landing.statsDesc')}</p>
+        {/* ═══ USTOZLAR ═══ */}
+        <section className="py-16 md:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHead
+              eyebrow={t('landing.featuredTeachersTitle')}
+              title={t('landing.featuredTeachersDesc')}
+            />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredTeachers.map((teacher) => (
+                <div key={teacher.id} className="rounded-2xl p-6" style={{ background: PAPER_CARD, border: `1px solid ${LINE}` }}>
+                  <div className="flex items-center gap-4 mb-5">
+                    <div
+                      className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
+                      style={{ background: INK }}
+                    >
+                      {teacher.avatarUrl ? (
+                        <AppImage src={teacher.avatarUrl} alt={teacher.fullName} className="w-full h-full rounded-full object-cover" />
+                      ) : (
+                        <span className="text-lg font-semibold" style={{ ...DISPLAY, color: GOLD }}>
+                          {teacher.fullName.split(' ').map((w) => w[0]).slice(0, 2).join('')}
+                        </span>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold truncate" style={{ color: INK_TEXT }}>{teacher.fullName}</h3>
+                      <p className="text-sm truncate" style={{ color: BRICK }}>{t('landing.instructor')}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-5 text-sm pt-4" style={{ borderTop: `1px solid ${LINE}`, color: MUTE }}>
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="BookOpenIcon" size={15} /> {teacher.courseCount} {t('landing.course')}
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Icon name="UserGroupIcon" size={15} /> {fmt(teacher.studentCount)}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
+          </div>
+        </section>
 
+        {/* ═══ RAQAMLARDA ═══ (barcha qiymat 0 bo'lsa ko'rsatilmaydi) */}
+        {(stats.totalCourses + stats.activeStudents + stats.successfulTeachers + stats.certificatesAwarded) > 0 && (
+        <section ref={statsView.ref} className="py-16 md:py-20" style={{ background: INK_DEEP }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {[
-                { icon: 'BookOpenIcon', value: c1, label: t('landing.totalCourses'), bg: 'bg-primary', color: 'text-primary' },
-                { icon: 'UserGroupIcon', value: c2, label: t('landing.activeStudents'), bg: 'bg-secondary', color: 'text-secondary' },
-                { icon: 'UserIcon', value: c3, label: t('landing.teachers'), bg: 'bg-accent', color: 'text-accent-foreground' },
-                { icon: 'TrophyIcon', value: c4, label: t('landing.certificates'), bg: 'bg-success', color: 'text-success' },
+                { v: c1, label: t('landing.totalCourses') },
+                { v: c2, label: t('landing.activeStudents') },
+                { v: c3, label: t('landing.teachers') },
+                { v: c4, label: t('landing.certificates') },
               ].map((s, i) => (
-                <div key={i} className="text-center">
-                  <div className={`flex items-center justify-center w-20 h-20 ${s.bg} rounded-2xl mb-4 mx-auto`}>
-                    <Icon name={s.icon} size={40} className="text-primary-foreground" variant="solid" />
+                <div key={i} className="text-center md:text-left">
+                  <div className="text-4xl md:text-5xl font-medium" style={{ ...DISPLAY, color: GOLD }}>
+                    {fmt(s.v)}<span style={{ color: 'rgba(247,241,228,0.4)' }}>+</span>
                   </div>
-                  <div className={`text-4xl font-heading font-bold ${s.color} mb-2`}>{s.value}+</div>
-                  <div className="text-muted-foreground">{s.label}</div>
+                  <div className="mt-2 text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>{s.label}</div>
                 </div>
               ))}
             </div>
           </div>
         </section>
+        )}
 
-        {/* ═══ FEATURED TEACHERS ═══ */}
-        <section className="py-16 md:py-24">
-          <div ref={teachersReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(teachersReveal.isVisible)}`}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('landing.featuredTeachersTitle')}</h2>
-              <p className="text-lg text-muted-foreground">{t('landing.featuredTeachersDesc')}</p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredTeachers.map((teacher) => (
-                <div key={teacher.id} className="bg-card rounded-xl p-6 shadow-warm hover:shadow-warm-lg hover:-translate-y-1 transition-all duration-300 text-center">
-                  <div className="w-20 h-20 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center mx-auto mb-4">
-                    {teacher.avatarUrl ? (
-                      <AppImage src={teacher.avatarUrl} alt={teacher.fullName} className="w-full h-full rounded-full object-cover" />
-                    ) : (
-                      <Icon name="UserIcon" size={36} className="text-primary-foreground" variant="solid" />
-                    )}
-                  </div>
-                  <h3 className="text-lg font-heading font-bold mb-1">{teacher.fullName}</h3>
-                  <div className="flex items-center justify-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Icon name="BookOpenIcon" size={14} /> {teacher.courseCount} {t('landing.course')}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Icon name="UserGroupIcon" size={14} /> {teacher.studentCount}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ═══ CTA BANNER ═══ */}
-        <section className="py-12">
-          <div ref={ctaBannerReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(ctaBannerReveal.isVisible)}`}>
-            <div className="bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-2xl p-8 md:p-12 text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-white/5 pointer-events-none" />
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4 relative z-10">{t('landing.ctaTitle')}</h2>
-              <p className="text-lg opacity-90 mb-8 max-w-2xl mx-auto relative z-10">
-                {t('landing.ctaDesc')}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center relative z-10">
-                <Link href="/register?role=student" className="inline-flex items-center justify-center px-8 py-4 bg-accent text-accent-foreground rounded-lg font-medium hover:scale-105 transition-smooth shadow-warm-lg">
-                  {t('landing.ctaStudent')}
-                </Link>
-                <Link href="/register?role=teacher" className="inline-flex items-center justify-center px-8 py-4 bg-white/15 text-primary-foreground rounded-lg font-medium hover:bg-white/25 transition-smooth border border-white/30">
-                  {t('landing.ctaTeacher')}
-                </Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══ STUDENT WORKS GALLERY ═══ */}
-        <section className="py-16 md:py-24">
-          <div ref={studentWorksReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(studentWorksReveal.isVisible)}`}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('landing.studentWorksTitle')}</h2>
-              <p className="text-lg text-muted-foreground">{t('landing.studentWorksDesc')}</p>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* ═══ TALABALAR NATIJALARI ═══ */}
+        <section ref={worksView.ref} className="py-16 md:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHead eyebrow={t('landing.studentWorksTitle')} title={t('landing.studentWorksDesc')} />
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
-                { name: 'Dilshod Nazarov', course: 'Python Dasturlash', progress: 100, cert: true, avatar: 'bg-primary', emoji: '🎓' },
-                { name: 'Madina Umarova', course: 'Web Development', progress: 100, cert: true, avatar: 'bg-secondary', emoji: '💻' },
-                { name: 'Bekzod Tursunov', course: 'Data Science', progress: 85, cert: false, avatar: 'bg-accent', emoji: '📊' },
-                { name: 'Zarina Karimova', course: 'UI/UX Dizayn', progress: 100, cert: true, avatar: 'bg-success', emoji: '🎨' },
-              ].map((student, i) => (
-                <div
-                  key={i}
-                  className="bg-card rounded-xl p-6 shadow-warm hover:shadow-warm-lg hover:-translate-y-1 transition-all duration-300 border border-border/50"
-                >
-                  <div className="flex items-center mb-4">
-                    <div className={`w-12 h-12 ${student.avatar} rounded-full flex items-center justify-center mr-3`}>
-                      <span className="text-xl">{student.emoji}</span>
+                { name: 'Dilshod Nazarov', course: 'Python Dasturlash', progress: 100, cert: true },
+                { name: 'Madina Umarova', course: 'Web Development', progress: 100, cert: true },
+                { name: 'Bekzod Tursunov', course: 'Data Science', progress: 85, cert: false },
+                { name: 'Zarina Karimova', course: 'UI/UX Dizayn', progress: 100, cert: true },
+              ].map((s, i) => (
+                <div key={i} className="rounded-2xl p-6" style={{ background: PAPER_CARD, border: `1px solid ${LINE}` }}>
+                  <h4 className="font-semibold" style={{ color: INK_TEXT }}>{s.name}</h4>
+                  <p className="text-sm mb-5" style={{ color: MUTE }}>{s.course}</p>
+                  <div className="flex justify-between text-xs mb-1.5" style={{ color: MUTE }}>
+                    <span>{t('landing.workProgress')}</span>
+                    <span className="font-semibold" style={{ color: INK_TEXT }}>{s.progress}%</span>
+                  </div>
+                  <div className="w-full rounded-full h-1.5 mb-4" style={{ background: TRACK }}>
+                    <div
+                      className="h-1.5 rounded-full transition-all ease-out"
+                      style={{ width: worksView.seen ? `${s.progress}%` : '0%', transitionDuration: '1200ms', background: s.cert ? MALACHITE : GOLD }}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 text-xs font-medium" style={{ color: s.cert ? MALACHITE : GOLD_ICON }}>
+                    <Icon name={s.cert ? 'CheckBadgeIcon' : 'ArrowTrendingUpIcon'} size={16} variant={s.cert ? 'solid' : 'outline'} />
+                    {s.cert ? t('landing.workCertEarned') : `${s.progress}% ${t('landing.workProgress')}`}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ FIKRLAR ═══ */}
+        <section className="py-16 md:py-24" style={{ background: PAPER_CARD }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHead eyebrow={t('landing.testimonialsTitle')} title={t('landing.testimonialsDesc')} />
+            <div className="grid md:grid-cols-3 gap-6">
+              {[
+                { name: t('landing.testimonial1Name'), role: t('landing.testimonial1Role'), text: t('landing.testimonial1') },
+                { name: t('landing.testimonial2Name'), role: t('landing.testimonial2Role'), text: t('landing.testimonial2') },
+                { name: t('landing.testimonial3Name'), role: t('landing.testimonial3Role'), text: t('landing.testimonial3') },
+              ].map((item, i) => (
+                <figure key={i} className="rounded-2xl p-7 flex flex-col" style={{ background: PAPER, border: `1px solid ${LINE}` }}>
+                  <div className="text-5xl leading-none mb-3" style={{ ...DISPLAY, color: GOLD }}>&ldquo;</div>
+                  <blockquote className="flex-1 text-[1.05rem] leading-relaxed italic" style={{ ...DISPLAY, color: INK_TEXT }}>
+                    {item.text}
+                  </blockquote>
+                  <figcaption className="mt-6 flex items-center gap-3 pt-5" style={{ borderTop: `1px solid ${LINE}` }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: INK }}>
+                      <span className="text-sm font-semibold" style={{ color: GOLD }}>{item.name.charAt(0)}</span>
                     </div>
                     <div>
-                      <h4 className="font-heading font-bold text-foreground">{student.name}</h4>
-                      <p className="text-xs text-muted-foreground">{student.course}</p>
+                      <div className="font-semibold text-sm" style={{ color: INK_TEXT }}>{item.name}</div>
+                      <div className="text-xs" style={{ color: MUTE }}>{item.role}</div>
                     </div>
-                  </div>
-
-                  {/* Progress bar */}
-                  <div className="mb-3">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">{t('landing.workProgress')}</span>
-                      <span className="font-medium text-foreground">{student.progress}%</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className={`h-2 rounded-full transition-all duration-1000 ${student.progress === 100 ? 'bg-success' : 'bg-primary'}`}
-                        style={{ width: studentWorksReveal.isVisible ? `${student.progress}%` : '0%' }}
-                      />
-                    </div>
-                  </div>
-
-                  {student.cert ? (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-success/10 rounded-lg">
-                      <Icon name="CheckBadgeIcon" size={18} className="text-success" variant="solid" />
-                      <span className="text-xs font-medium text-success">{t('landing.workCertEarned')}</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg">
-                      <Icon name="ArrowTrendingUpIcon" size={18} className="text-primary" />
-                      <span className="text-xs font-medium text-primary">{student.progress}% {t('landing.workProgress')}</span>
-                    </div>
-                  )}
-                </div>
+                  </figcaption>
+                </figure>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ═══ PARTNER ORGANIZATIONS ═══ */}
-        <section className="py-16 md:py-20 bg-muted">
-          <div ref={partnersReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(partnersReveal.isVisible)}`}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('landing.partnersTitle')}</h2>
-              <p className="text-lg text-muted-foreground">{t('landing.partnersDesc')}</p>
-            </div>
-
-            {/* Partner logos grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6 mb-8">
-              {[
-                { name: "O'zMU", full: "O'zbekiston Milliy Universiteti" },
-                { name: 'TATU', full: "Toshkent Axborot Texnologiyalari Universiteti" },
-                { name: 'TDIU', full: "Toshkent Davlat Iqtisodiyot Universiteti" },
-                { name: 'TDPU', full: "Toshkent Davlat Pedagogika Universiteti" },
-                { name: 'TSTU', full: "Toshkent Davlat Texnika Universiteti" },
-                { name: 'SamDU', full: "Samarqand Davlat Universiteti" },
-              ].map((partner, i) => (
-                <div
-                  key={i}
-                  className="group bg-card rounded-xl p-6 shadow-warm hover:shadow-warm-lg transition-all duration-300 flex flex-col items-center justify-center text-center relative overflow-hidden"
-                >
-                  {/* Logo placeholder */}
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-secondary/10 rounded-xl flex items-center justify-center mb-3 group-hover:from-primary/20 group-hover:to-secondary/20 transition-all duration-300">
-                    <span className="text-lg font-heading font-bold text-primary">{partner.name}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-tight">{partner.full}</p>
-
-                  {/* Hover shine effect */}
-                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        {/* ═══ HAMKORLAR ═══ */}
+        <section className="py-14 md:py-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <p className="text-center text-sm font-medium mb-8" style={{ color: MUTE }}>{t('landing.partnersDesc')}</p>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-x-6 gap-y-8 items-center">
+              {["O'zMU", 'TATU', 'TDIU', 'TDPU', 'TSTU', 'SamDU'].map((p, i) => (
+                <div key={i} className="text-center text-lg font-semibold tracking-wide" style={{ ...DISPLAY, color: MUTE }}>
+                  {p}
                 </div>
               ))}
             </div>
-
-            {/* Trust badge */}
-            <div className="flex items-center justify-center gap-8 pt-6 border-t border-border">
+            <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 pt-8" style={{ borderTop: `1px solid ${LINE}` }}>
               {[
                 { icon: 'ShieldCheckIcon', text: t('landing.trustDataProtection') },
                 { icon: 'LockClosedIcon', text: t('landing.trustSecurePayment') },
                 { icon: 'CheckBadgeIcon', text: t('landing.trustQualityGuarantee') },
-              ].map((badge, i) => (
-                <div key={i} className="flex items-center gap-2 text-muted-foreground">
-                  <Icon name={badge.icon} size={18} className="text-success" />
-                  <span className="text-sm hidden sm:inline">{badge.text}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ═══ TESTIMONIALS ═══ */}
-        <section className="py-16 md:py-24 bg-muted">
-          <div ref={testimonialsReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(testimonialsReveal.isVisible)}`}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('landing.testimonialsTitle')}</h2>
-              <p className="text-lg text-muted-foreground">{t('landing.testimonialsDesc')}</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8">
-              {[
-                { name: t('landing.testimonial1Name'), role: t('landing.testimonial1Role'), text: t('landing.testimonial1'), bg: 'bg-primary' },
-                { name: t('landing.testimonial2Name'), role: t('landing.testimonial2Role'), text: t('landing.testimonial2'), bg: 'bg-secondary' },
-                { name: t('landing.testimonial3Name'), role: t('landing.testimonial3Role'), text: t('landing.testimonial3'), bg: 'bg-accent' },
-              ].map((item, i) => (
-                <div key={i} className="bg-card rounded-xl p-6 shadow-warm hover:shadow-warm-lg transition-all duration-300">
-                  <div className="flex items-center mb-4">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Icon key={star} name="StarIcon" size={18} className="text-accent" variant="solid" />
-                    ))}
-                  </div>
-                  <p className="mb-6 text-muted-foreground leading-relaxed">&ldquo;{item.text}&rdquo;</p>
-                  <div className="flex items-center">
-                    <div className={`w-12 h-12 ${item.bg} rounded-full flex items-center justify-center mr-3`}>
-                      <Icon name="UserIcon" size={24} className="text-primary-foreground" variant="solid" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-foreground">{item.name}</div>
-                      <div className="text-sm text-muted-foreground">{item.role}</div>
-                    </div>
-                  </div>
+              ].map((b, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm" style={{ color: MUTE }}>
+                  <Icon name={b.icon} size={17} style={{ color: MALACHITE }} />
+                  {b.text}
                 </div>
               ))}
             </div>
@@ -676,188 +739,132 @@ const LandingPageInteractive = () => {
 
         {/* ═══ FAQ ═══ */}
         <section className="py-16 md:py-24">
-          <div ref={faqReveal.ref} className={`max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(faqReveal.isVisible)}`}>
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">{t('landing.faqTitle')}</h2>
-              <p className="text-lg text-muted-foreground">{t('landing.faqDesc')}</p>
-            </div>
-
-            <div className="space-y-3">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+            <SectionHead eyebrow={t('landing.faqTitle')} title={t('landing.faqDesc')} />
+            <div>
               {FAQ_DATA.map((faq, i) => (
-                <FaqItem key={i} q={faq.q} a={faq.a} />
+                <FaqItem key={i} q={faq.q} a={faq.a} isOpen={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? null : i)} />
               ))}
             </div>
           </div>
         </section>
 
-        {/* ═══ ABOUT ═══ */}
-        <section id="about" className="py-16 md:py-24 bg-muted overflow-hidden">
-          <div ref={aboutReveal.ref} className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ${animClass(aboutReveal.isVisible)}`}>
-
-            {/* Hero banner */}
-            <div className="relative bg-gradient-to-br from-primary via-secondary to-primary text-primary-foreground rounded-2xl p-8 md:p-14 mb-16 overflow-hidden">
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute -top-20 -right-20 w-72 h-72 bg-white/5 rounded-full" />
-                <div className="absolute -bottom-16 -left-16 w-56 h-56 bg-white/5 rounded-full" />
+        {/* ═══ BIZ HAQIMIZDA ═══ */}
+        <section id="about" className="py-16 md:py-24" style={{ background: PAPER_CARD }}>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center mb-16">
+              <div>
+                <SectionHead eyebrow={t('landing.aboutTitle')} title={t('landing.visionDesc')} desc={t('landing.aboutDesc1')} />
+                <p className="leading-relaxed" style={{ color: MUTE }}>{t('landing.aboutDesc2')}</p>
               </div>
-              <div className="relative z-10 max-w-3xl">
-                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full text-sm mb-6 backdrop-blur-sm">
-                  <Icon name="SparklesIcon" size={16} />
-                  {t('landing.since')}
+              <div className="rounded-2xl p-8 md:p-10 relative overflow-hidden" style={{ background: INK }}>
+                <div className="absolute -right-16 -bottom-16 w-64 h-64 opacity-[0.13]">
+                  <GirihEmblem className="w-full h-full" />
                 </div>
-                <h2 className="text-3xl md:text-5xl font-heading font-bold mb-6 leading-tight">{t('landing.aboutTitle')}</h2>
-                <p className="text-lg md:text-xl opacity-90 leading-relaxed">
-                  {t('landing.aboutDesc1')}
-                </p>
-              </div>
-            </div>
-
-            {/* Vision + Mission — bento grid */}
-            <div className="grid md:grid-cols-5 gap-6 mb-16">
-              {/* Vision — katta */}
-              <div className="md:col-span-3 bg-card rounded-2xl p-8 shadow-warm-lg hover:shadow-warm-xl transition-all duration-300 group relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
-                <div className="relative z-10">
-                  <div className="w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-5">
-                    <Icon name="EyeIcon" size={28} className="text-primary-foreground" />
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(223,162,58,0.16)' }}>
+                    <Icon name="FlagIcon" size={22} style={{ color: GOLD }} />
                   </div>
-                  <h3 className="text-2xl font-heading font-bold mb-3">{t('landing.visionTitle')}</h3>
-                  <p className="text-muted-foreground text-lg leading-relaxed">{t('landing.visionDesc')}</p>
-                  <p className="text-muted-foreground mt-3">{t('landing.aboutDesc2')}</p>
-                </div>
-              </div>
-
-              {/* Mission — kichik */}
-              <div className="md:col-span-2 bg-gradient-to-br from-secondary to-primary text-primary-foreground rounded-2xl p-8 shadow-warm-lg hover:shadow-warm-xl transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
-                <div className="absolute bottom-0 right-0 w-32 h-32 bg-white/5 rounded-full translate-y-1/2 translate-x-1/2" />
-                <div className="relative z-10">
-                  <div className="w-14 h-14 bg-white/15 backdrop-blur-sm rounded-xl flex items-center justify-center mb-5">
-                    <Icon name="FlagIcon" size={28} />
-                  </div>
-                  <h3 className="text-2xl font-heading font-bold mb-3">{t('landing.missionTitle')}</h3>
-                  <p className="opacity-90 text-lg leading-relaxed">{t('landing.missionDesc')}</p>
-                </div>
-                <div className="flex items-center gap-3 mt-6 pt-5 border-t border-white/20 relative z-10">
-                  <div className="text-center">
-                    <div className="text-2xl font-heading font-bold">{stats.totalCourses}+</div>
-                    <div className="text-xs opacity-70">{t('landing.statCourses')}</div>
-                  </div>
-                  <div className="w-px h-10 bg-white/20" />
-                  <div className="text-center">
-                    <div className="text-2xl font-heading font-bold">{stats.activeStudents}+</div>
-                    <div className="text-xs opacity-70">{t('landing.statStudents')}</div>
-                  </div>
-                  <div className="w-px h-10 bg-white/20" />
-                  <div className="text-center">
-                    <div className="text-2xl font-heading font-bold">{stats.successfulTeachers}+</div>
-                    <div className="text-xs opacity-70">{t('landing.statTeachers')}</div>
-                  </div>
+                  <h3 className="text-2xl font-medium mb-3" style={{ ...DISPLAY, color: '#F7F1E4' }}>{t('landing.missionTitle')}</h3>
+                  <p className="text-lg leading-relaxed" style={{ color: 'rgba(247,241,228,0.72)' }}>{t('landing.missionDesc')}</p>
                 </div>
               </div>
             </div>
 
-            {/* Values — horizontal scroll on mobile, grid on desktop */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {[
-                { title: t('landing.valQuality'), desc: t('landing.valQualityDesc'), icon: 'ShieldCheckIcon', color: 'from-primary to-primary/80' },
-                { title: t('landing.valConvenience'), desc: t('landing.valConvenienceDesc'), icon: 'ClockIcon', color: 'from-secondary to-secondary/80' },
-                { title: t('landing.valCommunity'), desc: t('landing.valCommunityDesc'), icon: 'HeartIcon', color: 'from-accent to-accent/80' },
-                { title: t('landing.valInnovation'), desc: t('landing.valInnovationDesc'), icon: 'LightBulbIcon', color: 'from-success to-success/80' },
+                { title: t('landing.valQuality'), desc: t('landing.valQualityDesc'), icon: 'ShieldCheckIcon' },
+                { title: t('landing.valConvenience'), desc: t('landing.valConvenienceDesc'), icon: 'ClockIcon' },
+                { title: t('landing.valCommunity'), desc: t('landing.valCommunityDesc'), icon: 'HeartIcon' },
+                { title: t('landing.valInnovation'), desc: t('landing.valInnovationDesc'), icon: 'LightBulbIcon' },
               ].map((v, i) => (
-                <div key={i} className="bg-card rounded-2xl p-6 shadow-warm hover:shadow-warm-lg hover:-translate-y-2 transition-all duration-300 group">
-                  <div className={`w-12 h-12 bg-gradient-to-br ${v.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon name={v.icon} size={24} className="text-white" />
-                  </div>
-                  <h3 className="font-heading font-bold text-lg mb-2">{v.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{v.desc}</p>
+                <div key={i} className="p-6 rounded-2xl" style={{ background: PAPER, border: `1px solid ${LINE}` }}>
+                  <Icon name={v.icon} size={22} style={{ color: GOLD_ICON }} className="mb-4" />
+                  <h3 className="font-semibold text-lg mb-2" style={{ color: INK_TEXT }}>{v.title}</h3>
+                  <p className="text-sm leading-relaxed" style={{ color: MUTE }}>{v.desc}</p>
                 </div>
               ))}
             </div>
+          </div>
+        </section>
 
-            {/* Contact — split design */}
-            <div className="grid md:grid-cols-2 gap-0 rounded-2xl overflow-hidden shadow-warm-xl">
-              {/* Left — gradient with text */}
-              <div className="bg-gradient-to-br from-primary to-secondary text-primary-foreground p-8 md:p-12 flex flex-col justify-center">
-                <h2 className="text-3xl font-heading font-bold mb-4">{t('landing.contactTitle')}</h2>
-                <p className="opacity-90 mb-8 leading-relaxed">
-                  {t('landing.aboutDesc1')}
-                </p>
-                <Link
-                  href="/register"
-                  className="inline-flex items-center justify-center w-fit px-8 py-4 bg-accent text-accent-foreground rounded-xl font-medium hover:scale-105 transition-smooth shadow-warm-lg"
-                >
-                  <Icon name="AcademicCapIcon" size={22} className="mr-2" />
-                  {t('landing.startFree')}
-                </Link>
+        {/* ═══ CTA ═══ */}
+        <section className="py-16 md:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="relative rounded-3xl overflow-hidden px-6 py-14 md:px-16 md:py-20 text-center" style={{ background: INK }}>
+              <div className="absolute -left-24 -top-24 w-80 h-80 opacity-[0.14]">
+                <GirihEmblem className="w-full h-full" />
               </div>
-              {/* Right — contact cards */}
-              <div className="bg-card p-8 md:p-12 flex flex-col justify-center">
-                <div className="space-y-6">
-                  {[
-                    { icon: 'EnvelopeIcon', label: t('landing.contactEmail'), value: 'info@ustoz-talim.uz', color: 'bg-primary' },
-                    { icon: 'PhoneIcon', label: t('landing.contactPhone'), value: '+998 90 123 45 67', color: 'bg-secondary' },
-                    { icon: 'MapPinIcon', label: t('landing.contactAddress'), value: t('landing.contactCity'), color: 'bg-accent' },
-                  ].map((c, i) => (
-                    <div key={i} className="flex items-center gap-4 group">
-                      <div className={`w-12 h-12 ${c.color} rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                        <Icon name={c.icon} size={22} className="text-primary-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">{c.label}</p>
-                        <p className="font-medium text-foreground">{c.value}</p>
-                      </div>
-                    </div>
-                  ))}
+              <div className="absolute -right-24 -bottom-24 w-80 h-80 opacity-[0.14]">
+                <GirihEmblem className="w-full h-full" />
+              </div>
+              <div className="relative max-w-2xl mx-auto">
+                <h2 className="text-3xl md:text-5xl font-medium leading-tight mb-5" style={{ ...DISPLAY, color: '#F7F1E4' }}>
+                  {t('landing.ctaTitle')}
+                </h2>
+                <p className="text-lg mb-9" style={{ color: 'rgba(247,241,228,0.7)' }}>{t('landing.ctaDesc')}</p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                  <Link
+                    href="/register?role=student"
+                    className="inline-flex items-center justify-center px-7 py-3.5 rounded-lg font-semibold transition-transform hover:-translate-y-0.5"
+                    style={{ background: GOLD, color: INK }}
+                  >
+                    {t('landing.ctaStudent')}
+                  </Link>
+                  <Link
+                    href="/register?role=teacher"
+                    className="inline-flex items-center justify-center px-7 py-3.5 rounded-lg font-medium transition-colors"
+                    style={{ color: '#F7F1E4', border: '1px solid rgba(247,241,228,0.28)' }}
+                  >
+                    {t('landing.ctaTeacher')}
+                  </Link>
                 </div>
               </div>
             </div>
-
           </div>
         </section>
 
         {/* ═══ FOOTER ═══ */}
-        <footer className="bg-card py-12 border-t border-border">
+        <footer className="pt-16 pb-10" style={{ background: INK_DEEP }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid md:grid-cols-4 gap-8 mb-8">
-              <div>
-                <div className="flex items-center space-x-2 mb-4">
-                  <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-lg">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" className="text-primary-foreground" />
-                      <path d="M2 17L12 22L22 17" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M2 12L12 17L22 12" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <div className="grid md:grid-cols-4 gap-10 mb-12">
+              <div className="md:col-span-1">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <span className="flex items-center justify-center w-9 h-9 rounded-[10px]" style={{ background: GOLD }}>
+                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 1.5l2.4 5.1 5.6.7-4.1 3.9 1.1 5.6L12 19.9 6.9 22.8 8 17.2 3.9 13.3l5.6-.7L12 1.5z" fill={INK} opacity="0.92" />
                     </svg>
-                  </div>
-                  <span className="text-xl font-heading font-bold">Ustoz</span>
+                  </span>
+                  <span className="text-xl font-semibold" style={{ ...DISPLAY, color: '#F7F1E4' }}>Ustoz</span>
                 </div>
-                <p className="text-sm text-muted-foreground">{t('landing.footerDesc')}</p>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgba(247,241,228,0.55)' }}>{t('landing.footerDesc')}</p>
               </div>
               <div>
-                <h4 className="font-heading font-bold mb-4">{t('landing.footerPlatform')}</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><Link href="/" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerHome')}</Link></li>
-                  <li><a href="#courses" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerCourses')}</a></li>
-                  <li><a href="#about" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerAbout')}</a></li>
-                  <li><Link href="/login" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerLogin')}</Link></li>
+                <h4 className="font-semibold mb-4 text-sm" style={{ color: '#F7F1E4' }}>{t('landing.footerPlatform')}</h4>
+                <ul className="space-y-2.5 text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>
+                  <li><Link href="/" className="hover:text-white transition-colors">{t('landing.footerHome')}</Link></li>
+                  <li><a href="#courses" className="hover:text-white transition-colors">{t('landing.footerCourses')}</a></li>
+                  <li><a href="#about" className="hover:text-white transition-colors">{t('landing.footerAbout')}</a></li>
+                  <li><Link href="/login" className="hover:text-white transition-colors">{t('landing.footerLogin')}</Link></li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-heading font-bold mb-4">{t('landing.footerTeachers')}</h4>
-                <ul className="space-y-2 text-sm">
-                  <li><Link href="/register?role=teacher" className="text-muted-foreground hover:text-primary transition-smooth">{t('landing.footerBecomeTeacher')}</Link></li>
+                <h4 className="font-semibold mb-4 text-sm" style={{ color: '#F7F1E4' }}>{t('landing.footerTeachers')}</h4>
+                <ul className="space-y-2.5 text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>
+                  <li><Link href="/register?role=teacher" className="hover:text-white transition-colors">{t('landing.footerBecomeTeacher')}</Link></li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-heading font-bold mb-4">{t('landing.footerContact')}</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li className="flex items-center"><Icon name="EnvelopeIcon" size={16} className="mr-2" /> info@ustoz-talim.uz</li>
-                  <li className="flex items-center"><Icon name="PhoneIcon" size={16} className="mr-2" /> +998 90 123 45 67</li>
-                  <li className="flex items-center"><Icon name="MapPinIcon" size={16} className="mr-2" /> {t('landing.contactCity')}</li>
+                <h4 className="font-semibold mb-4 text-sm" style={{ color: '#F7F1E4' }}>{t('landing.footerContact')}</h4>
+                <ul className="space-y-2.5 text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>
+                  <li className="flex items-center gap-2"><Icon name="EnvelopeIcon" size={15} /> info@ustoz-talim.uz</li>
+                  <li className="flex items-center gap-2"><Icon name="PhoneIcon" size={15} /> +998 90 123 45 67</li>
+                  <li className="flex items-center gap-2"><Icon name="MapPinIcon" size={15} /> {t('landing.contactCity')}</li>
                 </ul>
               </div>
             </div>
-            <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
-              <p>&copy; 2026 Ustoz. {t('landing.footerRights')}</p>
+            <div className="pt-8 text-center text-sm" style={{ borderTop: '1px solid rgba(247,241,228,0.12)', color: 'rgba(247,241,228,0.45)' }}>
+              &copy; 2026 Ustoz. {t('landing.footerRights')}
             </div>
           </div>
         </footer>

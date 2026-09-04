@@ -11,6 +11,8 @@ import SortControls from './SortControls';
 import CourseGrid from './CourseGrid';
 import LoadingSkeleton from './LoadingSkeleton';
 import ErrorState from '@/components/common/ErrorState';
+import GirihEmblem from '@/app/landing-page/components/GirihEmblem';
+import { AUTH_FORM_REMAP, AUTH_INK, AUTH_PAPER, AUTH_GOLD, AUTH_INK_TEXT } from '@/app/register/components/authTheme';
 import { useI18n } from '@/contexts/I18nContext';
 
 const WISHLIST_KEY = 'ustoz_marketplace_wishlist';
@@ -58,7 +60,7 @@ interface FilterOptions {
   tags?: string[];
 }
 
-const MarketplaceInteractive = () => {
+const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
   const { t } = useI18n();
   const searchParams = useSearchParams();
   const [isHydrated, setIsHydrated] = useState(false);
@@ -256,7 +258,7 @@ const MarketplaceInteractive = () => {
 
   if (!isHydrated) {
     return (
-      <div className="min-h-screen bg-background py-6">
+      <div className="min-h-screen py-6" style={{ ...AUTH_FORM_REMAP, background: AUTH_PAPER }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             <div className="lg:col-span-1">
@@ -275,19 +277,59 @@ const MarketplaceInteractive = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-6">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-heading font-bold">{t('courses.courseMarketplace')}</h1>
-              <p className="text-muted-foreground mt-2">
-                {filteredCourses.length} {t('courses.coursesAvailable')}
-              </p>
+    <div className="min-h-screen" style={{ ...AUTH_FORM_REMAP, background: AUTH_PAPER, color: AUTH_INK_TEXT }}>
+      {authed ? (
+        /* Login qilgan — ixcham app-sarlavha (qog'ozda, katta marketing band'siz) */
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-2">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="h-px w-8" style={{ background: AUTH_GOLD }} />
+            <span className="text-sm font-medium" style={{ color: 'var(--brand-gold-on-surface)' }}>
+              {filteredCourses.length} {t('courses.coursesAvailable')}
+            </span>
+          </div>
+          <h1
+            className="font-medium leading-[1.05] tracking-[-0.01em]"
+            style={{ fontFamily: 'var(--font-display)', color: AUTH_INK_TEXT, fontSize: 'clamp(1.9rem, 3vw, 2.8rem)' }}
+          >
+            {t('courses.courseMarketplace')}
+          </h1>
+        </div>
+      ) : (
+        /* Mehmon — to'liq branded ink hero band */
+        <section className="relative overflow-hidden" style={{ background: AUTH_INK }}>
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(100% 80% at 85% 20%, rgba(223,162,58,0.15), transparent 60%)' }}
+          />
+          <div className="absolute -right-24 -bottom-28 w-96 h-96 opacity-[0.14] pointer-events-none hidden md:block">
+            <GirihEmblem className="w-full h-full" />
+          </div>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 relative">
+            <h1
+              className="font-medium leading-[1.05] tracking-[-0.01em]"
+              style={{ fontFamily: 'var(--font-display)', color: '#F7F1E4', fontSize: 'clamp(2.2rem, 4vw, 3.4rem)' }}
+            >
+              {t('courses.courseMarketplace')}
+            </h1>
+            <p className="mt-3 text-lg max-w-xl" style={{ color: 'rgba(247,241,228,0.68)' }}>
+              {t('landing.missionDesc')}
+            </p>
+            <div className="mt-6 inline-flex items-baseline gap-2">
+              <span className="text-3xl font-semibold" style={{ fontFamily: 'var(--font-display)', color: AUTH_GOLD }}>
+                {filteredCourses.length}
+              </span>
+              <span className="text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>{t('courses.coursesAvailable')}</span>
             </div>
+          </div>
+        </section>
+      )}
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <div className="flex justify-end mb-4 lg:hidden">
             <button
               onClick={() => setIsFilterOpen(true)}
-              className="lg:hidden flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md"
+              className="flex items-center space-x-2 px-4 py-2 bg-primary text-primary-foreground rounded-md"
             >
               <Icon name="AdjustmentsHorizontalIcon" size={20} />
               <span>{t('misc.filters')}</span>

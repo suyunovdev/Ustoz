@@ -401,10 +401,14 @@
     "receiptItem": "Xizmat",
     "receiptFor": "Uchun"
   },
+  "theme": {
+    "switchToDark": "Qorong'i rejim",
+    "switchToLight": "Yorug' rejim"
+  },
   "landing": {
     "badge": "O'zbekistonning #1 ta'lim platformasi",
-    "heroTitle": "Bilim Olish va O'rgatish Uchun Zamonaviy Platforma",
-    "heroDesc": "Ustoz platformasi orqali o'qituvchilar sifatli kurslar yaratadi, o'quvchilar esa professional bilimlar oladi.",
+    "heroTitle": "Har bir ilmning ustozi bor",
+    "heroDesc": "O'zbek ustozlaridan onlayn kurslar — videodars, amaliyot va rasmiy sertifikat. Ustadan shogirdga uzatiladigan bilim, endi bir platformada.",
     "searchPlaceholder": "Kurs qidiring... masalan: Python, Matematika",
     "startFree": "Bepul Boshlash",
     "viewCourses": "Kurslarni Ko'rish",

@@ -401,10 +401,14 @@
     "receiptItem": "Service",
     "receiptFor": "For"
   },
+  "theme": {
+    "switchToDark": "Dark mode",
+    "switchToLight": "Light mode"
+  },
   "landing": {
     "badge": "#1 Education Platform in Uzbekistan",
-    "heroTitle": "A Modern Platform for Learning and Teaching",
-    "heroDesc": "On the Ustoz platform, teachers create quality courses and students gain professional knowledge.",
+    "heroTitle": "Every field of knowledge has its master",
+    "heroDesc": "Online courses from Uzbek teachers — video lessons, practice, and an official certificate. Knowledge passed from master to apprentice, now on one platform.",
     "searchPlaceholder": "Search courses... e.g.: Python, Mathematics",
     "startFree": "Start for Free",
     "viewCourses": "View Courses",

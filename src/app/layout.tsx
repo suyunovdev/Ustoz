@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
-import { Manrope, JetBrains_Mono } from 'next/font/google';
+import { Manrope, JetBrains_Mono, Fraunces } from 'next/font/google';
 import '../styles/index.css';
 
 // Yagona shrift tizimi (self-hosted, layout-shift yo'q, tashqi Google Fonts @import
@@ -10,6 +10,16 @@ const manrope = Manrope({
   subsets: ['latin', 'cyrillic'],
   weight: ['400', '500', '600', '700', '800'],
   variable: '--font-sans',
+  display: 'swap',
+});
+// Fraunces — FAQAT landing sahifasi display sarlavhalari uchun (var(--font-display)
+// orqali ishlatiladi). Global Manrope tizimiga tegmaydi. Optik-o'lchamli "eski uslub"
+// serif — diplom/sertifikat vakolatini beruvchi ilmiy ohang.
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  variable: '--font-display',
   display: 'swap',
 });
 const jetbrainsMono = JetBrains_Mono({
@@ -96,7 +106,7 @@ export default async function RootLayout({
   `;
 
   return (
-    <html lang={serverLocale} className={`${manrope.variable} ${jetbrainsMono.variable}`} suppressHydrationWarning>
+    <html lang={serverLocale} className={`${manrope.variable} ${jetbrainsMono.variable} ${fraunces.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="manifest" href="/manifest.json" />
