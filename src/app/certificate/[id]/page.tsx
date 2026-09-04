@@ -6,19 +6,19 @@ import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate } from '@/lib/i18n/format';
 
+// API (/api/certificates/[id]) camelCase qaytaradi (Prisma modeli). Snapshot
+// maydonlari — kurs/foydalanuvchi o'zgarsa ham sertifikatdagi asl qiymat saqlanadi.
 interface Certificate {
   id: string;
-  certificate_number: string;
-  issued_at: string;
-  verification_url: string;
-  metadata: {
-    course_title: string;
-    teacher_name: string;
-    student_name: string;
-    completed_at: string;
-  };
-  student: { full_name: string };
-  course: { title: string; teacher: { full_name: string } };
+  certificateNumber: string;
+  issuedAt: string;
+  verificationUrl: string;
+  studentName?: string;
+  studentNameSnapshot?: string;
+  courseTitle?: string;
+  courseTitleSnapshot?: string;
+  teacherName?: string;
+  teacherNameSnapshot?: string;
 }
 
 export default function CertificatePage() {
@@ -44,8 +44,8 @@ export default function CertificatePage() {
   }, [id]);
 
   const handleCopyLink = () => {
-    if (certificate?.verification_url) {
-      navigator.clipboard.writeText(certificate.verification_url);
+    if (certificate?.verificationUrl) {
+      navigator.clipboard.writeText(certificate.verificationUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -53,10 +53,14 @@ export default function CertificatePage() {
 
   const handleLinkedInShare = () => {
     if (!certificate) return;
-    const url = encodeURIComponent(certificate.verification_url);
-    const title = encodeURIComponent(t('certificate.shareTitle', { course: certificate.metadata?.course_title }));
+    const url = encodeURIComponent(certificate.verificationUrl);
+    const title = encodeURIComponent(t('certificate.shareTitle', { course: certificate.courseTitle || certificate.courseTitleSnapshot || '' }));
     window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&title=${title}`, '_blank');
   };
+
+  // Yuklab olish: chop-etish oynasi orqali "PDF sifatida saqlash".
+  // @media print CSS faqat #certificate-card'ni ko'rsatadi (pastda <style>).
+  const handleDownload = () => window.print();
 
   if (loading) {
     return (
@@ -101,7 +105,7 @@ export default function CertificatePage() {
     );
   }
 
-  const issuedDate = formatDate(certificate.issued_at, locale, {
+  const issuedDate = formatDate(certificate.issuedAt, locale, {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -110,7 +114,7 @@ export default function CertificatePage() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="border-b border-border bg-card px-6 py-4 flex items-center justify-between">
+      <div className="no-print border-b border-border bg-card px-6 py-4 flex items-center justify-between">
         <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-foreground/60 hover:text-foreground transition-colors"
@@ -142,17 +146,17 @@ export default function CertificatePage() {
             <div>
               <p className="text-gray-500 text-sm mb-2">{t('certificate.awardedTo')}</p>
               <h2 className="text-3xl font-bold text-gray-800">
-                {certificate.metadata?.student_name || certificate.student?.full_name}
+                {certificate.studentName || certificate.studentNameSnapshot}
               </h2>
             </div>
 
             <div>
               <p className="text-gray-500 text-sm">{t('certificate.forCompleting')}</p>
               <h3 className="text-2xl font-semibold text-primary mt-2">
-                {certificate.metadata?.course_title || certificate.course?.title}
+                {certificate.courseTitle || certificate.courseTitleSnapshot}
               </h3>
               <p className="text-gray-400 text-sm mt-1">
-                {t('certificate.teacher')}: {certificate.metadata?.teacher_name || certificate.course?.teacher?.full_name}
+                {t('certificate.teacher')}: {certificate.teacherName || certificate.teacherNameSnapshot}
               </p>
             </div>
 
@@ -165,7 +169,7 @@ export default function CertificatePage() {
               </div>
               <div>
                 <p className="text-xs text-gray-400 mb-0.5">{t('certificate.number')}</p>
-                <p className="font-mono font-semibold text-primary">{certificate.certificate_number}</p>
+                <p className="font-mono font-semibold text-primary">{certificate.certificateNumber}</p>
               </div>
             </div>
           </div>
@@ -174,8 +178,17 @@ export default function CertificatePage() {
           <div className="h-3 bg-gradient-to-r from-primary via-secondary to-primary" />
         </div>
 
+        {/* Yuklab olish (PDF — chop etish orqali) */}
+        <button
+          onClick={handleDownload}
+          className="no-print w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-3.5 rounded-xl font-semibold hover:bg-primary/90 transition-colors"
+        >
+          <Icon name="ArrowDownTrayIcon" size={18} />
+          {t('certificate.download')}
+        </button>
+
         {/* Harakatlar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="no-print grid grid-cols-1 sm:grid-cols-3 gap-3">
           <button
             onClick={handleCopyLink}
             className="flex items-center justify-center gap-2 border border-border bg-card text-foreground px-4 py-3 rounded-xl font-medium hover:bg-accent transition-colors text-sm"
@@ -193,7 +206,7 @@ export default function CertificatePage() {
           </button>
 
           <a
-            href={`/verify/${certificate.certificate_number}`}
+            href={`/verify/${certificate.certificateNumber}`}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors text-sm"
@@ -204,11 +217,26 @@ export default function CertificatePage() {
         </div>
 
         {/* Verifikatsiya URL */}
-        <div className="bg-card border border-border rounded-xl p-4">
+        <div className="no-print bg-card border border-border rounded-xl p-4">
           <p className="text-xs text-foreground/50 mb-1">{t('certificate.verificationLink')}</p>
-          <p className="text-sm font-mono text-primary break-all">{certificate.verification_url}</p>
+          <p className="text-sm font-mono text-primary break-all">{certificate.verificationUrl}</p>
         </div>
       </div>
+
+      {/* Chop etish (PDF) uslublari — faqat sertifikat kartasi chiqadi, ranglar bilan */}
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          #certificate-card, #certificate-card * { visibility: visible !important; }
+          #certificate-card {
+            position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+            width: 96%; max-width: 1000px; box-shadow: none !important;
+            -webkit-print-color-adjust: exact; print-color-adjust: exact;
+          }
+          .no-print { display: none !important; }
+          @page { size: landscape; margin: 12mm; }
+        }
+      `}</style>
     </div>
   );
 }
