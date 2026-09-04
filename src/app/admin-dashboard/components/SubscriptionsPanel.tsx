@@ -80,6 +80,14 @@ export default function SubscriptionsPanel() {
   const [subs, setSubs] = useState<ActiveSub[]>([]);
   const [subsLoading, setSubsLoading] = useState(true);
 
+  // Qo'lda obuna berish (grant) state
+  const [grantOpen, setGrantOpen] = useState(false);
+  const [grantEmail, setGrantEmail] = useState('');
+  const [grantPlanId, setGrantPlanId] = useState('');
+  const [grantPlans, setGrantPlans] = useState<Plan[]>([]);
+  const [granting, setGranting] = useState(false);
+  const [cancelingId, setCancelingId] = useState<string | null>(null);
+
   // Obunachi kurs chegirmasi (admin boshqaradi)
   const [discountInput, setDiscountInput] = useState('');
   const [discountSaved, setDiscountSaved] = useState<number | null>(null);
@@ -160,6 +168,73 @@ export default function SubscriptionsPanel() {
     setEditingId(null);
     setForm(EMPTY_FORM);
     setModalOpen(true);
+  };
+
+  // Qo'lda obuna berish modalini ochish — rejalarni yuklaymiz
+  const openGrant = async () => {
+    setGrantEmail('');
+    setGrantPlanId('');
+    setGrantOpen(true);
+    try {
+      const res = await fetch('/api/admin/subscription-plans', { credentials: 'include' });
+      if (res.ok) {
+        const d = await res.json();
+        const ps: Plan[] = (d.plans || []).filter((p: Plan) => p.isActive);
+        setGrantPlans(ps);
+        if (ps[0]) setGrantPlanId(ps[0].id);
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const submitGrant = async () => {
+    if (!grantEmail.trim()) {
+      toast.error('Foydalanuvchi emailini kiriting');
+      return;
+    }
+    if (!grantPlanId) {
+      toast.error('Obuna rejasini tanlang');
+      return;
+    }
+    setGranting(true);
+    try {
+      const res = await fetch('/api/admin/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: grantEmail.trim(), planId: grantPlanId }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success('Obuna qo\'lda berildi');
+        setGrantOpen(false);
+        await loadSubs();
+      } else {
+        toast.error(d.error || 'Xatolik');
+      }
+    } finally {
+      setGranting(false);
+    }
+  };
+
+  const cancelSub = async (id: string) => {
+    setCancelingId(id);
+    try {
+      const res = await fetch(`/api/admin/subscriptions/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        toast.success('Obuna bekor qilindi');
+        setSubs((prev) => prev.filter((s) => s.id !== id));
+      } else {
+        const d = await res.json().catch(() => ({}));
+        toast.error(d.error || 'Xatolik');
+      }
+    } finally {
+      setCancelingId(null);
+    }
   };
 
   const openEdit = (p: Plan) => {
@@ -297,13 +372,21 @@ export default function SubscriptionsPanel() {
             </button>
           ))}
         </div>
-        {tab === 'plans' && (
+        {tab === 'plans' ? (
           <button
             onClick={openCreate}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-smooth"
           >
             <Icon name="PlusIcon" size={16} />
             {t('admin.subNewPlan')}
+          </button>
+        ) : (
+          <button
+            onClick={openGrant}
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-smooth"
+          >
+            <Icon name="PlusIcon" size={16} />
+            Qo&apos;lda obuna berish
           </button>
         )}
       </div>
@@ -379,21 +462,32 @@ export default function SubscriptionsPanel() {
           </div>
         ) : (
           <div className="bg-card border border-border rounded-lg overflow-hidden shadow-warm">
-            <div className="hidden sm:grid grid-cols-3 gap-4 px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            <div className="hidden sm:grid grid-cols-[1.4fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
               <span>{t('admin.subUser')}</span>
               <span>{t('admin.subPlan')}</span>
               <span>{t('admin.subExpires')}</span>
+              <span className="text-right">Amal</span>
             </div>
             <div className="divide-y divide-border">
               {subs.map((s) => (
-                <div key={s.id} className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 px-5 py-4">
+                <div key={s.id} className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1fr_auto] gap-2 sm:gap-4 px-5 py-4 items-center">
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{s.userName}</p>
                     <p className="text-xs text-muted-foreground truncate">{s.userEmail}</p>
                   </div>
-                  <div className="text-sm text-foreground self-center">{s.planName}</div>
-                  <div className="text-sm text-muted-foreground self-center">
+                  <div className="text-sm text-foreground">{s.planName}</div>
+                  <div className="text-sm text-muted-foreground">
                     {formatDate(s.expiresAt, locale, { year: 'numeric', month: 'short', day: 'numeric' })}
+                  </div>
+                  <div className="sm:text-right">
+                    <button
+                      onClick={() => cancelSub(s.id)}
+                      disabled={cancelingId === s.id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-smooth disabled:opacity-50"
+                    >
+                      <Icon name="XMarkIcon" size={15} />
+                      Bekor qilish
+                    </button>
                   </div>
                 </div>
               ))}
@@ -519,6 +613,65 @@ export default function SubscriptionsPanel() {
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth text-sm font-medium disabled:opacity-50"
               >
                 {t('admin.subSave')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QO'LDA OBUNA BERISH MODAL */}
+      {grantOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
+          <div className="bg-card rounded-lg shadow-warm-lg w-full max-w-md p-6 my-8">
+            <h3 className="text-lg font-heading font-semibold text-foreground mb-1">Qo&apos;lda obuna berish</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              To&apos;lovsiz (Payme/Click integratsiyasiz) foydalanuvchiga obunani qo&apos;lda faollashtiring.
+              Mavjud faol obuna bo&apos;lsa — muddati uzaytiriladi.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Foydalanuvchi email</label>
+                <input
+                  type="email"
+                  value={grantEmail}
+                  onChange={(e) => setGrantEmail(e.target.value)}
+                  placeholder="foydalanuvchi@email.uz"
+                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-1">Obuna rejasi</label>
+                <select
+                  value={grantPlanId}
+                  onChange={(e) => setGrantPlanId(e.target.value)}
+                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {grantPlans.length === 0 && <option value="">Faol reja yo&apos;q</option>}
+                  {grantPlans.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} · {p.durationDays} kun{p.allCoursesAccess ? ' · barcha kurslar' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <button
+                onClick={() => setGrantOpen(false)}
+                className="px-4 py-2 text-foreground rounded-md hover:bg-muted transition-smooth text-sm font-medium"
+              >
+                {t('admin.subCancel')}
+              </button>
+              <button
+                onClick={submitGrant}
+                disabled={granting || !grantPlanId}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth text-sm font-medium disabled:opacity-50"
+              >
+                {granting ? 'Berilmoqda…' : 'Obuna berish'}
               </button>
             </div>
           </div>

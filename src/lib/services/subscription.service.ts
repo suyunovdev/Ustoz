@@ -145,3 +145,47 @@ export async function activateSubscriptionFromPayment(
     }
   });
 }
+
+/**
+ * Admin tomonidan QO'LDA obuna berish/faollashtirish (to'lovsiz).
+ * Payme/Click to'liq integratsiya qilinmagan davrda admin foydalanuvchiga
+ * obunani qo'lda tasdiqlaydi. Mavjud faol obuna bo'lsa — uzaytiradi; yo'q bo'lsa
+ * yangi yaratadi. sourceTransactionId = null (to'lovga bog'liq emas).
+ */
+export async function grantSubscriptionManually(
+  userId: string,
+  planId: string,
+): Promise<{ id: string; expiresAt: Date }> {
+  const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+  if (!plan) throw new ValidationError('Plan topilmadi');
+
+  return prisma.$transaction(async (tx) => {
+    const current = await tx.subscription.findFirst({
+      where: { userId, status: 'active', expiresAt: { gt: new Date() } },
+      orderBy: { expiresAt: 'desc' },
+    });
+    const base = current && current.expiresAt > new Date() ? current.expiresAt : new Date();
+    const expiresAt = new Date(base.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
+
+    if (current) {
+      const updated = await tx.subscription.update({
+        where: { id: current.id },
+        data: { planId, expiresAt, status: 'active' },
+        select: { id: true, expiresAt: true },
+      });
+      return updated;
+    }
+    return tx.subscription.create({
+      data: { userId, planId, status: 'active', expiresAt },
+      select: { id: true, expiresAt: true },
+    });
+  });
+}
+
+/** Admin obunani bekor qiladi (status='cancelled'). */
+export async function cancelSubscription(subscriptionId: string): Promise<void> {
+  await prisma.subscription.update({
+    where: { id: subscriptionId },
+    data: { status: 'cancelled' },
+  });
+}
