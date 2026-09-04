@@ -189,3 +189,95 @@ export async function cancelSubscription(subscriptionId: string): Promise<void> 
     data: { status: 'cancelled' },
   });
 }
+
+// ─────────── Obuna so'rovlari (to'lov shlyuzisiz, admin tasdig'i orqali) ───────────
+
+/**
+ * Student obuna so'rovi yaratadi (Click/Payme bosganда, gateway ulanmagan holatда).
+ * Kutilayotgan so'rov allaqachon bo'lsa — dublikat yaratmaydi, mavjudini qaytaradi.
+ */
+export async function createSubscriptionRequest(
+  userId: string,
+  planId: string,
+  paymentMethod?: string | null,
+): Promise<{ id: string; status: string; alreadyPending: boolean }> {
+  const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
+  if (!plan || !plan.isActive) throw new ValidationError('Reja topilmadi');
+
+  const existing = await prisma.subscriptionRequest.findFirst({
+    where: { userId, status: 'pending' },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true },
+  });
+  if (existing) return { id: existing.id, status: 'pending', alreadyPending: true };
+
+  const created = await prisma.subscriptionRequest.create({
+    data: { userId, planId, paymentMethod: paymentMethod ?? null, status: 'pending' },
+    select: { id: true, status: true },
+  });
+  return { ...created, alreadyPending: false };
+}
+
+/** Studentning kutilayotgan so'rovi (obuna sahifasida "ko'rib chiqilmoqda" banneri uchun). */
+export async function getPendingRequest(userId: string) {
+  const r = await prisma.subscriptionRequest.findFirst({
+    where: { userId, status: 'pending' },
+    orderBy: { createdAt: 'desc' },
+    include: { plan: { select: { name: true } } },
+  });
+  if (!r) return null;
+  return { id: r.id, planName: r.plan?.name ?? '—', paymentMethod: r.paymentMethod, createdAt: r.createdAt };
+}
+
+/** Admin — so'rovlar ro'yxati (default: kutilayotgan). */
+export async function listSubscriptionRequests(status = 'pending') {
+  const rows = await prisma.subscriptionRequest.findMany({
+    where: status === 'all' ? {} : { status },
+    orderBy: { createdAt: 'desc' },
+    take: 100,
+    include: {
+      user: { select: { fullName: true, email: true } },
+      plan: { select: { name: true, durationDays: true } },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    userName: r.user?.fullName ?? '—',
+    userEmail: r.user?.email ?? '',
+    planName: r.plan?.name ?? '—',
+    durationDays: r.plan?.durationDays ?? 0,
+    paymentMethod: r.paymentMethod,
+    status: r.status,
+    createdAt: r.createdAt,
+  }));
+}
+
+/** Admin so'rovni TASDIQLAYDI → obuna faollashadi (grantSubscriptionManually). */
+export async function approveSubscriptionRequest(
+  requestId: string,
+  adminId: string,
+): Promise<{ userId: string; expiresAt: Date }> {
+  const reqRow = await prisma.subscriptionRequest.findUnique({ where: { id: requestId } });
+  if (!reqRow) throw new ValidationError('So\'rov topilmadi');
+  if (reqRow.status !== 'pending') throw new ValidationError('So\'rov allaqachon ko\'rib chiqilgan');
+
+  const result = await grantSubscriptionManually(reqRow.userId, reqRow.planId);
+  await prisma.subscriptionRequest.update({
+    where: { id: requestId },
+    data: { status: 'approved', reviewedById: adminId, reviewedAt: new Date() },
+  });
+  return { userId: reqRow.userId, expiresAt: result.expiresAt };
+}
+
+/** Admin so'rovni RAD ETADI. */
+export async function rejectSubscriptionRequest(requestId: string, adminId: string): Promise<void> {
+  const reqRow = await prisma.subscriptionRequest.findUnique({
+    where: { id: requestId },
+    select: { id: true, status: true },
+  });
+  if (!reqRow) throw new ValidationError('So\'rov topilmadi');
+  await prisma.subscriptionRequest.update({
+    where: { id: requestId },
+    data: { status: 'rejected', reviewedById: adminId, reviewedAt: new Date() },
+  });
+}

@@ -3146,7 +3146,10 @@
     "manage": "Manage subscription",
     "expiresOn": "Expiry date",
     "paymentInitFailed": "Failed to start payment. Please try again.",
-    "paymentUnavailable": "Payment isn't available yet. Contact the administrator to get a subscription."
+    "paymentUnavailable": "Payment isn't available yet. Contact the administrator to get a subscription.",
+    "requestSent": "Your request was sent to the administrator. The subscription activates after approval.",
+    "requestPending": "Your subscription request is under review",
+    "requestPendingHint": "activates after administrator approval"
   },
   "admin.statusOffline": "Offline",
   "admin.statusDegraded": "Degraded",

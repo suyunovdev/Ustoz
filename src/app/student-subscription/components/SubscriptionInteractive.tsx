@@ -38,6 +38,7 @@ const SubscriptionInteractive = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [current, setCurrent] = useState<MySubscription | null>(null);
+  const [pending, setPending] = useState<{ planName: string } | null>(null);
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
   const [processing, setProcessing] = useState<PaymentMethod | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -69,6 +70,7 @@ const SubscriptionInteractive = () => {
       if (myRes.ok) {
         const myData = await myRes.json();
         setCurrent(myData.subscription ?? null);
+        setPending(myData.pendingRequest ?? null);
       }
     } catch (err) {
       console.error('Obuna maʼlumotlarini yuklashda xato:', err);
@@ -81,6 +83,31 @@ const SubscriptionInteractive = () => {
   useEffect(() => {
     load();
   }, [load]);
+
+  // To'lov shlyuzisiz: admin tasdig'iga obuna so'rovi yuborish
+  const sendRequest = async (planId: string, method: PaymentMethod) => {
+    try {
+      const res = await fetch('/api/subscriptions/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ planId, paymentMethod: method }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        const planName = plans.find((p) => p.id === planId)?.name ?? '';
+        setPending({ planName });
+        setOpenPlanId(null);
+        toast.success(t('subscription.requestSent'));
+      } else {
+        toast.error(typeof data.error === 'string' ? data.error : t('subscription.paymentInitFailed'));
+      }
+    } catch {
+      toast.error(t('subscription.paymentInitFailed'));
+    } finally {
+      setProcessing(null);
+    }
+  };
 
   const handlePay = async (planId: string, method: PaymentMethod) => {
     if (processing) return;
@@ -102,13 +129,13 @@ const SubscriptionInteractive = () => {
         return;
       }
       console.error('Toʻlovni boshlashda xato:', data);
-      // To'lov shlyuzi hali sozlanmagan — foydalanuvchini administrator (qo'lda
-      // obuna) tomon yo'naltiramiz. Aks holda server xabari yoki umumiy xato.
+      // To'lov shlyuzi hali ulanmagan — to'lov o'rniga ADMIN'ga obuna SO'ROVI
+      // yuboramiz. Admin tasdiqlaganda obuna faollashadi.
       if (data.code === 'GATEWAY_NOT_CONFIGURED') {
-        toast.error(t('subscription.paymentUnavailable'));
-      } else {
-        toast.error(typeof data.error === 'string' ? data.error : t('subscription.paymentInitFailed'));
+        await sendRequest(planId, method);
+        return;
       }
+      toast.error(typeof data.error === 'string' ? data.error : t('subscription.paymentInitFailed'));
       setProcessing(null);
     } catch (err) {
       console.error('Toʻlovni boshlashda xato:', err);
@@ -187,6 +214,18 @@ const SubscriptionInteractive = () => {
                       </p>
                     </div>
                   </div>
+                </div>
+              </section>
+            ) : pending ? (
+              <section className="mb-10 flex items-center gap-3 rounded-2xl border border-warning/40 bg-warning/10 p-5">
+                <div className="flex items-center justify-center w-10 h-10 bg-warning/20 rounded-lg shrink-0">
+                  <Icon name="ClockIcon" size={22} className="text-warning" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{t('subscription.requestPending')}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {pending.planName} — {t('subscription.requestPendingHint')}
+                  </p>
                 </div>
               </section>
             ) : (

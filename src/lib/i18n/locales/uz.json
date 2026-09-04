@@ -3146,7 +3146,10 @@
     "manage": "Obunani boshqarish",
     "expiresOn": "Tugash sanasi",
     "paymentInitFailed": "To'lovni boshlashda xato yuz berdi. Iltimos qayta urinib ko'ring.",
-    "paymentUnavailable": "To'lov tizimi hozircha ulanmagan. Obuna olish uchun administrator bilan bog'laning."
+    "paymentUnavailable": "To'lov tizimi hozircha ulanmagan. Obuna olish uchun administrator bilan bog'laning.",
+    "requestSent": "So'rovingiz administratorga yuborildi. Tasdiqlangach obuna faollashadi.",
+    "requestPending": "Obuna so'rovingiz ko'rib chiqilmoqda",
+    "requestPendingHint": "administrator tasdig'idan so'ng faollashadi"
   },
   "admin.statusOffline": "Oflayn",
   "admin.statusDegraded": "Qisman ishlamoqda",

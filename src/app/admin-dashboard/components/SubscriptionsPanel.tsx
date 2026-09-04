@@ -61,9 +61,26 @@ const EMPTY_FORM: PlanForm = {
   sortOrder: '0',
 };
 
+interface ReqRow {
+  id: string;
+  userName: string;
+  userEmail: string;
+  planName: string;
+  durationDays: number;
+  paymentMethod: string | null;
+  status: string;
+  createdAt: string;
+}
+
 export default function SubscriptionsPanel() {
   const { t, locale } = useI18n();
-  const [tab, setTab] = useState<'plans' | 'active'>('plans');
+  const [tab, setTab] = useState<'plans' | 'active' | 'requests'>('plans');
+
+  // Obuna so'rovlari (student → admin tasdig'i)
+  const [requests, setRequests] = useState<ReqRow[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(true);
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [pendingCount, setPendingCount] = useState(0);
 
   // Plans state
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -159,10 +176,57 @@ export default function SubscriptionsPanel() {
     }
   }, [t]);
 
+  const loadRequests = useCallback(async () => {
+    setRequestsLoading(true);
+    try {
+      const res = await fetch('/api/admin/subscription-requests?status=pending', { credentials: 'include' });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const list: ReqRow[] = data.requests || [];
+      setRequests(list);
+      setPendingCount(list.length);
+    } catch {
+      toast.error(t('admin.subError'));
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, [t]);
+
+  // Kutilayotgan so'rovlar sonini boshlanishda yuklaymiz (tab badge uchun)
+  useEffect(() => {
+    fetch('/api/admin/subscription-requests?status=pending', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d?.requests) setPendingCount(d.requests.length); })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => {
     if (tab === 'plans') loadPlans();
-    else loadSubs();
-  }, [tab, loadPlans, loadSubs]);
+    else if (tab === 'active') loadSubs();
+    else loadRequests();
+  }, [tab, loadPlans, loadSubs, loadRequests]);
+
+  const reviewRequest = async (id: string, action: 'approve' | 'reject') => {
+    setReviewingId(id);
+    try {
+      const res = await fetch(`/api/admin/subscription-requests/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action }),
+      });
+      if (res.ok) {
+        toast.success(action === 'approve' ? 'Obuna tasdiqlandi va faollashtirildi' : 'So\'rov rad etildi');
+        setRequests((prev) => prev.filter((r) => r.id !== id));
+        setPendingCount((c) => Math.max(0, c - 1));
+      } else {
+        const d = await res.json().catch(() => ({}));
+        toast.error(d.error || 'Xatolik');
+      }
+    } finally {
+      setReviewingId(null);
+    }
+  };
 
   const openCreate = () => {
     setEditingId(null);
@@ -362,17 +426,22 @@ export default function SubscriptionsPanel() {
 
       <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div className="inline-flex rounded-md border border-border bg-card p-1">
-          {(['plans', 'active'] as const).map((s) => (
+          {(['plans', 'active', 'requests'] as const).map((s) => (
             <button
               key={s}
               onClick={() => setTab(s)}
-              className={`px-4 py-2 rounded text-sm font-medium transition-smooth ${tab === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition-smooth ${tab === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              {s === 'plans' ? t('admin.subPlansTab') : t('admin.subActiveTab')}
+              {s === 'plans' ? t('admin.subPlansTab') : s === 'active' ? t('admin.subActiveTab') : 'So\'rovlar'}
+              {s === 'requests' && pendingCount > 0 && (
+                <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-bold ${tab === s ? 'bg-primary-foreground text-primary' : 'bg-warning text-warning-foreground'}`}>
+                  {pendingCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
-        {tab === 'plans' ? (
+        {tab === 'plans' && (
           <button
             onClick={openCreate}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-smooth"
@@ -380,7 +449,8 @@ export default function SubscriptionsPanel() {
             <Icon name="PlusIcon" size={16} />
             {t('admin.subNewPlan')}
           </button>
-        ) : (
+        )}
+        {tab === 'active' && (
           <button
             onClick={openGrant}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-smooth"
@@ -492,6 +562,61 @@ export default function SubscriptionsPanel() {
                 </div>
               ))}
             </div>
+          </div>
+        )
+      )}
+
+      {/* REQUESTS TAB — student obuna so'rovlari (tasdiqlash → faollashtirish) */}
+      {tab === 'requests' && (
+        requestsLoading ? (
+          <SkeletonList count={4} />
+        ) : requests.length === 0 ? (
+          <div className="bg-card rounded-md shadow-warm p-12 text-center">
+            <Icon name="InboxIcon" size={64} className="text-muted-foreground mx-auto mb-4" />
+            <p className="text-muted-foreground">Kutilayotgan obuna so&apos;rovi yo&apos;q</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {requests.map((r) => (
+              <div key={r.id} className="bg-card border border-border rounded-lg p-5 flex flex-col lg:flex-row lg:items-center gap-4 shadow-warm">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-baseline gap-3 flex-wrap mb-1">
+                    <span className="font-medium text-foreground">{r.userName}</span>
+                    <span className="text-xs text-muted-foreground truncate">{r.userEmail}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                    <span className="text-foreground font-medium">{r.planName}</span>
+                    <span className="text-xs text-muted-foreground">{r.durationDays} kun</span>
+                    {r.paymentMethod && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-medium capitalize">
+                        {r.paymentMethod}
+                      </span>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {formatDate(r.createdAt, locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => reviewRequest(r.id, 'approve')}
+                    disabled={reviewingId === r.id}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium bg-success/10 text-success hover:bg-success/20 transition-smooth disabled:opacity-50"
+                  >
+                    <Icon name="CheckIcon" size={16} />
+                    Tasdiqlash
+                  </button>
+                  <button
+                    onClick={() => reviewRequest(r.id, 'reject')}
+                    disabled={reviewingId === r.id}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-smooth disabled:opacity-50"
+                  >
+                    <Icon name="XMarkIcon" size={16} />
+                    Rad etish
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )
       )}

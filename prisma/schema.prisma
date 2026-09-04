@@ -285,6 +285,7 @@ model UserProfile {
   withdrawals          TeacherWithdrawal[]    @relation("TeacherWithdrawals")
   processedWithdrawals TeacherWithdrawal[]    @relation("ProcessedWithdrawals")
   subscriptions        Subscription[]         @relation("UserSubscriptions")
+  subscriptionRequests SubscriptionRequest[]  @relation("UserSubscriptionRequests")
   teacherConversations Conversation[]         @relation("TeacherConversations")
   studentConversations Conversation[]         @relation("StudentConversations")
   sentDirectMessages   DirectMessage[]        @relation("SentDirectMessages")
@@ -601,9 +602,32 @@ model SubscriptionPlan {
 
   subscriptions Subscription[]
   payments      PaymentTransaction[]
+  requests      SubscriptionRequest[]
 
   @@index([isActive])
   @@map("subscription_plans")
+}
+
+/// Obuna so'rovi — student Click/Payme bosganda (to'lov shlyuzi hali ulanmagan)
+/// admin tasdig'iga yuboriladigan kutilayotgan so'rov. Admin tasdiqlasa → obuna
+/// faollashadi (grantSubscriptionManually). reviewedById — tasdiqlagan admin id.
+model SubscriptionRequest {
+  id            String    @id @default(uuid()) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  planId        String    @map("plan_id") @db.Uuid
+  status        String    @default("pending") // pending | approved | rejected
+  paymentMethod String?   @map("payment_method") // click | payme
+  reviewedById  String?   @map("reviewed_by_id") @db.Uuid
+  reviewedAt    DateTime? @map("reviewed_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  user UserProfile      @relation("UserSubscriptionRequests", fields: [userId], references: [id], onDelete: Cascade)
+  plan SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("subscription_requests")
 }
 
 model Subscription {
