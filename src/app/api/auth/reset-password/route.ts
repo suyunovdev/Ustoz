@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { isEmail } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,6 +9,10 @@ export async function POST(req: NextRequest) {
 
     if (!email || !newPassword) {
       return NextResponse.json({ error: 'Email va yangi parol majburiy' }, { status: 400 });
+    }
+
+    if (!isEmail(email)) {
+      return NextResponse.json({ error: 'Email formati noto\'g\'ri' }, { status: 400 });
     }
 
     if (newPassword.length < 8) {

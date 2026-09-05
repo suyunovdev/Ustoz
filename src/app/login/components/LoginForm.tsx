@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
+import { isEmail } from '@/lib/validation';
 
 interface FormData {
   email: string;
@@ -74,10 +75,7 @@ const LoginForm = () => {
     setErrors({ general: map[err] || t('auth.oauthFailed') });
   }, [searchParams, t]);
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  const validateEmail = (email: string): boolean => isEmail(email);
 
   const validatePhone = (phone: string): boolean => {
     const phoneRegex = /^\+998[0-9]{9}$/;

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import BrandMark from '@/components/common/BrandMark';
 import { useI18n } from '@/contexts/I18nContext';
+import { isEmail, suggestEmailFix } from '@/lib/validation';
 
 type Step = 'email' | 'otp' | 'newPassword' | 'success';
 
@@ -19,6 +20,9 @@ export default function ForgotPasswordInteractive() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
+  const [devOtp, setDevOtp] = useState<string | null>(null); // dev fallback (email ketmasa)
+  const [notice, setNotice] = useState(''); // yetkazish bo'yicha neytral xabar
 
   const startResendCooldown = () => {
     setResendCooldown(60);
@@ -33,6 +37,11 @@ export default function ForgotPasswordInteractive() {
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setNotice('');
+    if (!isEmail(email)) {
+      setError(t('auth.invalidEmailFormat'));
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch('/api/auth/send-otp', {
@@ -42,6 +51,11 @@ export default function ForgotPasswordInteractive() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || t('auth.errorOccurred'));
+      // Dev fallback: email ketmasa server devOtp qaytaradi (faqat dev'da).
+      if (data.devOtp) setDevOtp(String(data.devOtp));
+      // Enumeration himoyasi: ro'yxatdan o'tmagan yoki yetkazish muvaffaqiyatsiz —
+      // bir xil neytral xabar (foydalanuvchi mavjudligini oshkor qilmaymiz).
+      if (data.emailDelivered === false && !data.devOtp) setNotice(t('auth.otpMaybeSent'));
       setStep('otp');
       startResendCooldown();
     } catch (err: unknown) {
@@ -111,6 +125,8 @@ export default function ForgotPasswordInteractive() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || t('auth.errorOccurred'));
+      if (data.devOtp) setDevOtp(String(data.devOtp));
+      if (data.emailDelivered === false && !data.devOtp) setNotice(t('auth.otpMaybeSent'));
       startResendCooldown();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : t('auth.errorOccurred'));
@@ -142,11 +158,20 @@ export default function ForgotPasswordInteractive() {
                 <input
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={e => { setEmail(e.target.value); setEmailSuggestion(suggestEmailFix(e.target.value)); }}
                   required
                   placeholder="example@email.com"
                   className="w-full px-4 py-3 rounded-xl border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
+                {emailSuggestion && (
+                  <button
+                    type="button"
+                    onClick={() => { setEmail(emailSuggestion); setEmailSuggestion(null); }}
+                    className="mt-1 text-sm text-primary hover:underline text-left"
+                  >
+                    {t('auth.emailSuggest', { email: emailSuggestion })}
+                  </button>
+                )}
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <button
@@ -167,6 +192,14 @@ export default function ForgotPasswordInteractive() {
             <p className="text-sm text-muted-foreground mb-6">
               <span className="font-medium text-foreground">{email}</span> {t('auth.otpSentToEmail')}
             </p>
+            {notice && (
+              <p className="text-sm text-muted-foreground bg-muted/50 border border-border rounded-lg p-3 mb-4">{notice}</p>
+            )}
+            {devOtp && (
+              <p className="text-sm bg-warning/15 border border-warning/40 rounded-lg p-3 mb-4 text-foreground">
+                {t('auth.devOtpNotice', { otp: devOtp })}
+              </p>
+            )}
             <form onSubmit={handleVerifyOtp} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-1">{t('auth.verificationCodeFieldLabel')}</label>

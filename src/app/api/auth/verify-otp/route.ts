@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { signToken, createSessionCookie } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 import { attributeOnSignup } from '@/lib/services/referral.service';
+import { isEmail } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,10 @@ export async function POST(req: NextRequest) {
 
     if (!email || !otp) {
       return NextResponse.json({ error: 'Email va OTP majburiy' }, { status: 400 });
+    }
+
+    if (!isEmail(email)) {
+      return NextResponse.json({ error: 'Email formati noto\'g\'ri' }, { status: 400 });
     }
 
     if (!/^\d{6}$/.test(String(otp))) {

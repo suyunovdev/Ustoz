@@ -6,6 +6,7 @@ import Icon from '@/components/ui/AppIcon';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
+import { isEmail, suggestEmailFix } from '@/lib/validation';
 
 interface FormData {
   fullName: string;
@@ -61,6 +62,7 @@ const RegistrationForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [step, setStep] = useState<1 | 2>(1); // wizard: 1 = akkaunt, 2 = rol va shartlar
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -111,10 +113,7 @@ const RegistrationForm = () => {
     return strengths[score];
   };
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  const validateEmail = (email: string): boolean => isEmail(email);
 
   const validatePhone = (phone: string): boolean => {
     const phoneRegex = /^\+998[0-9]{9}$/;
@@ -197,6 +196,10 @@ const RegistrationForm = () => {
 
     if (field === 'password' && typeof value === 'string') {
       setPasswordStrength(calculatePasswordStrength(value));
+    }
+
+    if (field === 'email' && typeof value === 'string') {
+      setEmailSuggestion(suggestEmailFix(value));
     }
 
     if (errors[field as keyof FormErrors]) {
@@ -591,6 +594,15 @@ const RegistrationForm = () => {
                 <Icon name="ExclamationCircleIcon" size={16} />
                 {errors.email}
               </p>
+            )}
+            {emailSuggestion && (
+              <button
+                type="button"
+                onClick={() => { handleInputChange('email', emailSuggestion); setEmailSuggestion(null); }}
+                className="text-sm text-primary hover:underline text-left"
+              >
+                {t('auth.emailSuggest', { email: emailSuggestion })}
+              </button>
             )}
           </div>
           </div>
