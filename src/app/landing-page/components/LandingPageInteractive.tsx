@@ -8,7 +8,7 @@ import { optimizeImageUrl } from '@/lib/imageUrl';
 import AppImage from '@/components/ui/AppImage';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
-import GirihEmblem from './GirihEmblem';
+import RegistonEmblem from './RegistonEmblem';
 import ThemeToggle from '@/components/common/ThemeToggle';
 import BrandMark from '@/components/common/BrandMark';
 
@@ -433,7 +433,7 @@ const LandingPageInteractive = () => {
               {/* O'ng — girih emblema */}
               <div className="relative hidden lg:flex items-center justify-center">
                 <div className="w-full max-w-[460px] aspect-square">
-                  <GirihEmblem className="w-full h-full" />
+                  <RegistonEmblem className="w-full h-full" />
                 </div>
               </div>
             </div>
@@ -752,7 +752,7 @@ const LandingPageInteractive = () => {
               </div>
               <div className="rounded-2xl p-8 md:p-10 relative overflow-hidden" style={{ background: INK }}>
                 <div className="absolute -right-16 -bottom-16 w-64 h-64 opacity-[0.13]">
-                  <GirihEmblem className="w-full h-full" />
+                  <RegistonEmblem className="w-full h-full" />
                 </div>
                 <div className="relative">
                   <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(223,162,58,0.16)' }}>
@@ -786,10 +786,10 @@ const LandingPageInteractive = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="relative rounded-3xl overflow-hidden px-6 py-14 md:px-16 md:py-20 text-center" style={{ background: INK }}>
               <div className="absolute -left-24 -top-24 w-80 h-80 opacity-[0.14]">
-                <GirihEmblem className="w-full h-full" />
+                <RegistonEmblem className="w-full h-full" />
               </div>
               <div className="absolute -right-24 -bottom-24 w-80 h-80 opacity-[0.14]">
-                <GirihEmblem className="w-full h-full" />
+                <RegistonEmblem className="w-full h-full" />
               </div>
               <div className="relative max-w-2xl mx-auto">
                 <h2 className="text-3xl md:text-5xl font-medium leading-tight mb-5" style={{ ...DISPLAY, color: '#F7F1E4' }}>

@@ -11,7 +11,7 @@ import SortControls from './SortControls';
 import CourseGrid from './CourseGrid';
 import LoadingSkeleton from './LoadingSkeleton';
 import ErrorState from '@/components/common/ErrorState';
-import GirihEmblem from '@/app/landing-page/components/GirihEmblem';
+import RegistonEmblem from '@/app/landing-page/components/RegistonEmblem';
 import { AUTH_FORM_REMAP, AUTH_INK, AUTH_PAPER, AUTH_GOLD, AUTH_INK_TEXT } from '@/app/register/components/authTheme';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -302,7 +302,7 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
             style={{ background: 'radial-gradient(100% 80% at 85% 20%, rgba(223,162,58,0.15), transparent 60%)' }}
           />
           <div className="absolute -right-24 -bottom-28 w-96 h-96 opacity-[0.14] pointer-events-none hidden md:block">
-            <GirihEmblem className="w-full h-full" />
+            <RegistonEmblem className="w-full h-full" />
           </div>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 relative">
             <h1

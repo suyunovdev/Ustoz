@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import GirihEmblem from '@/app/landing-page/components/GirihEmblem';
+import RegistonEmblem from '@/app/landing-page/components/RegistonEmblem';
 import BrandMark from '@/components/common/BrandMark';
 import { AUTH_INK, AUTH_GOLD, AUTH_INK_TEXT } from './authTheme';
 
@@ -40,7 +40,7 @@ export default function AuthBrandPanel({
       />
       {/* katta girih voda-belgisi */}
       <div className="absolute -right-28 -bottom-28 w-[28rem] h-[28rem] opacity-[0.16] pointer-events-none">
-        <GirihEmblem className="w-full h-full" />
+        <RegistonEmblem className="w-full h-full" />
       </div>
 
       {/* Logo */}

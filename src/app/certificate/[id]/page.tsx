@@ -6,6 +6,7 @@ import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate } from '@/lib/i18n/format';
 import GirihEmblem from '@/app/landing-page/components/GirihEmblem';
+import RegistonEmblem from '@/app/landing-page/components/RegistonEmblem';
 
 // Diplom palitrasi (qat'iy hex — chop etishда ranglar aniq chiqishi uchun)
 const CERT = {
@@ -165,7 +166,7 @@ export default function CertificatePage() {
             className="pointer-events-none absolute inset-0 flex items-center justify-center"
             style={{ opacity: 0.05, ['--girih-line' as string]: CERT.ink, ['--girih-star' as string]: CERT.ink }}
           >
-            <GirihEmblem animate={false} className="w-[60%] max-w-[420px]" />
+            <RegistonEmblem animate={false} className="w-[82%] max-w-[560px]" />
           </div>
 
           <div className="relative px-8 sm:px-16 pt-12 pb-10 text-center">
