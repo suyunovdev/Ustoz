@@ -34,9 +34,9 @@ export const FAQS: FaqItem[] = [
   {
     id: 'gs-1',
     category: 'getting_started',
-    question: "Ustoz.uz nima va u qanday ishlaydi?",
+    question: "ustozedu.uz nima va u qanday ishlaydi?",
     answer:
-      "Ustoz.uz — o'zbek tilidagi onlayn ta'lim platformasi. Talabalar kurslarga yoziladi, video darslarni ko'radi, vazifa va testlarni bajaradi. O'qituvchilar esa o'z kurslarini yaratib, daromad oladi.",
+      "ustozedu.uz — o'zbek tilidagi onlayn ta'lim platformasi. Talabalar kurslarga yoziladi, video darslarni ko'radi, vazifa va testlarni bajaradi. O'qituvchilar esa o'z kurslarini yaratib, daromad oladi.",
     keywords: ['nima', 'tushuncha', 'qanday'],
   },
   {

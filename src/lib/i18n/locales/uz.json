@@ -2801,7 +2801,7 @@
     "linkLabel": "Havola",
     "copied": "{label} nusxalandi",
     "copyFailed": "Nusxa olib bo'lmadi",
-    "shareText": "Salom! Men Ustoz.uz onlayn ta'lim platformasidan foydalanaman. Sen ham qo'shil:",
+    "shareText": "Salom! Men ustozedu.uz onlayn ta'lim platformasidan foydalanaman. Sen ham qo'shil:",
     "statClicks": "Bosishlar",
     "statSignups": "Ro'yxatdan o'tganlar",
     "conversion": "{pct}% konversiya",
@@ -2858,7 +2858,7 @@
     "revokeReason": "Bekor qilish sababi",
     "date": "Sana",
     "checkCode": "Tekshirish kodi",
-    "footer": "Ustoz.uz · Onlayn ta'lim platformasi",
+    "footer": "ustozedu.uz · Onlayn ta'lim platformasi",
     "home": "Bosh sahifa"
   },
   "help": {

@@ -38,7 +38,7 @@ describe('parseVideoSource', () => {
   });
 
   it('To\'g\'ridan-to\'g\'ri fayl (mp4/webm) → file', () => {
-    expect(parseVideoSource('https://cdn.ustoz.uz/dars.mp4').kind).toBe('file');
+    expect(parseVideoSource('https://cdn.ustozedu.uz/dars.mp4').kind).toBe('file');
     expect(parseVideoSource('https://example.com/a/b/lesson.webm?token=1').kind).toBe('file');
   });
 

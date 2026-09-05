@@ -6,7 +6,7 @@
  *   R2_ACCESS_KEY_ID      — R2 API token access key
  *   R2_SECRET_ACCESS_KEY  — R2 API token secret
  *   R2_BUCKET             — Bucket nomi
- *   R2_PUBLIC_URL         — (ixtiyoriy) public CDN URL prefix, masalan https://cdn.ustoz.uz
+ *   R2_PUBLIC_URL         — (ixtiyoriy) public CDN URL prefix, masalan https://cdn.ustozedu.uz
  *
  * Agar biror env yo'q bo'lsa, isR2Configured() false qaytaradi va API'lar 503 beradi.
  */

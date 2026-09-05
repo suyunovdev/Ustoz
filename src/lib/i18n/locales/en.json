@@ -2801,7 +2801,7 @@
     "linkLabel": "Link",
     "copied": "{label} copied",
     "copyFailed": "Could not copy",
-    "shareText": "Hi! I use the Ustoz.uz online learning platform. Join me too:",
+    "shareText": "Hi! I use the ustozedu.uz online learning platform. Join me too:",
     "statClicks": "Clicks",
     "statSignups": "Sign-ups",
     "conversion": "{pct}% conversion",
@@ -2858,7 +2858,7 @@
     "revokeReason": "Reason for revocation",
     "date": "Date",
     "checkCode": "Verification code",
-    "footer": "Ustoz.uz · Online learning platform",
+    "footer": "ustozedu.uz · Online learning platform",
     "home": "Home"
   },
   "help": {
