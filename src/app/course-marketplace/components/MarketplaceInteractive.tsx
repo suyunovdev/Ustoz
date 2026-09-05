@@ -192,8 +192,16 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
     let filtered = [...courses];
 
     if (activeCategory !== 'all') {
-      // chip id lowercase — case-insensitive taqqoslash (programming == Programming)
-      filtered = filtered.filter((c) => (c.category || '').toLowerCase() === activeCategory);
+      // Kategoriya izchil emas: chip'lar legacy `category` matnini (lowercase),
+      // landing kartalari esa `subjectCategory` enum'ini (masalan english_language)
+      // yuboradi. Ikkalasini ham qo'llab-quvvatlaymiz — aks holda landing havolalari
+      // "Kurs topilmadi" berardi.
+      const key = activeCategory.toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          (c.category || '').toLowerCase() === key ||
+          (c.subjectCategory || '').toLowerCase() === key,
+      );
     }
 
     if (searchQuery) {
