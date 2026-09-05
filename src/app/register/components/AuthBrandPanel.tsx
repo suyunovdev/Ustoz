@@ -46,7 +46,7 @@ export default function AuthBrandPanel({
       {/* Logo */}
       <Link href="/" className="relative flex items-center gap-2.5 w-fit">
         <BrandMark size={36} />
-        <span className="text-xl font-semibold" style={{ fontFamily: 'var(--font-display)', color: '#F7F1E4' }}>
+        <span className="text-xl font-semibold" style={{ fontFamily: 'var(--font-display)', color: '#E7EEF9' }}>
           Ustoz
         </span>
       </Link>
@@ -55,11 +55,11 @@ export default function AuthBrandPanel({
       <div className="relative max-w-md">
         <h2
           className="font-medium leading-[1.08] tracking-[-0.01em]"
-          style={{ fontFamily: 'var(--font-display)', color: '#F7F1E4', fontSize: 'clamp(2rem, 3vw, 3rem)' }}
+          style={{ fontFamily: 'var(--font-display)', color: '#E7EEF9', fontSize: 'clamp(2rem, 3vw, 3rem)' }}
         >
           {title}
         </h2>
-        <p className="mt-5 text-lg leading-relaxed" style={{ color: 'rgba(247,241,228,0.72)' }}>
+        <p className="mt-5 text-lg leading-relaxed" style={{ color: 'rgba(231,238,249,0.72)' }}>
           {subtitle}
         </p>
       </div>
@@ -71,7 +71,7 @@ export default function AuthBrandPanel({
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
               <path d="M5 12.5l4 4 10-10" stroke={AUTH_GOLD} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span className="text-[0.95rem]" style={{ color: 'rgba(247,241,228,0.85)' }}>{item}</span>
+            <span className="text-[0.95rem]" style={{ color: 'rgba(231,238,249,0.85)' }}>{item}</span>
           </li>
         ))}
       </ul>

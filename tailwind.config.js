@@ -64,13 +64,13 @@ module.exports = {
         xl: 'var(--radius-xl)',
       },
       fontFamily: {
-        // Yagona shrift tizimi — hamma matn Manrope (var(--font-sans)),
-        // kod/raqam JetBrains Mono (var(--font-mono)). next/font orqali yuklanadi.
-        // Barcha eski utilitalar (heading/body/caption) ham bir xil sans'ga ishora qiladi,
-        // shuning uchun 318 ta font-heading'ni tahrirlash shart emas.
+        // Brandbook shrift tizimi: matn = Nunito Sans (var(--font-sans)); sarlavha =
+        // Sora (var(--font-display), font-heading orqali 128 faylga tarqaladi);
+        // kod/raqam = JetBrains Mono (var(--font-mono)). next/font orqali yuklanadi.
         sans: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
         mono: ['var(--font-mono)', 'ui-monospace', 'monospace'],
-        heading: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
+        display: ['var(--font-display)', 'var(--font-sans)', 'sans-serif'],
+        heading: ['var(--font-display)', 'var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         body: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
         caption: ['var(--font-sans)', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
         data: ['var(--font-mono)', 'ui-monospace', 'monospace'],

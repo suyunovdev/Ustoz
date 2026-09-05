@@ -307,18 +307,18 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14 relative">
             <h1
               className="font-medium leading-[1.05] tracking-[-0.01em]"
-              style={{ fontFamily: 'var(--font-display)', color: '#F7F1E4', fontSize: 'clamp(2.2rem, 4vw, 3.4rem)' }}
+              style={{ fontFamily: 'var(--font-display)', color: '#E7EEF9', fontSize: 'clamp(2.2rem, 4vw, 3.4rem)' }}
             >
               {t('courses.courseMarketplace')}
             </h1>
-            <p className="mt-3 text-lg max-w-xl" style={{ color: 'rgba(247,241,228,0.68)' }}>
+            <p className="mt-3 text-lg max-w-xl" style={{ color: 'rgba(231,238,249,0.68)' }}>
               {t('landing.missionDesc')}
             </p>
             <div className="mt-6 inline-flex items-baseline gap-2">
               <span className="text-3xl font-semibold" style={{ fontFamily: 'var(--font-display)', color: AUTH_GOLD }}>
                 {filteredCourses.length}
               </span>
-              <span className="text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>{t('courses.coursesAvailable')}</span>
+              <span className="text-sm" style={{ color: 'rgba(231,238,249,0.6)' }}>{t('courses.coursesAvailable')}</span>
             </div>
           </div>
         </section>

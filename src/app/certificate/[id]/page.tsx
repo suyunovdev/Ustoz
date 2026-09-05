@@ -8,21 +8,21 @@ import { formatDate } from '@/lib/i18n/format';
 import GirihEmblem from '@/app/landing-page/components/GirihEmblem';
 import RegistonEmblem from '@/app/landing-page/components/RegistonEmblem';
 
-// Diplom palitrasi (qat'iy hex — chop etishда ranglar aniq chiqishi uchun)
+// Diplom palitrasi (qat'iy hex — chop etishda ranglar aniq chiqishi uchun) — brandbook
 const CERT = {
-  cream: '#FBF8EF',
-  ink: '#151B3A',
-  inkText: '#1B2140',
-  gold: '#B5872B', // krem fonda oltin (AA kontrast) — matn/chiziq
-  goldBright: '#DFA23A', // emblema/muhr
-  mute: '#6B6152',
-  line: 'rgba(21,27,58,0.14)',
+  cream: '#FFFFFF', // oq qog'oz
+  ink: '#0F2447', // Tun
+  inkText: '#17223A', // Matn
+  gold: '#1548B3', // urg'u/chiziq — chuqur ko'k (oq fonda AA)
+  goldBright: '#1F5EDC', // Ustoz ko'ki — emblema/muhr
+  sun: '#FFB930', // Quyosh — kichik urg'u (muhr nuqtasi)
+  mute: '#5F6B80', // Ikkilamchi matn
+  line: 'rgba(15,36,71,0.14)',
 };
 // Romb — burchak bezagi
 const DIAMOND = 'M12 3 L15.5 12 L12 21 L8.5 12 Z';
-// Madrasa ravog'i — header belgisi
-const ARCH_OUTER = 'M5 20 V11 C5 6 8 3.5 12 3.5 C16 3.5 19 6 19 11 V20';
-const ARCH_INNER = 'M9.5 20 V12.6 C9.5 10 10.6 8.6 12 8.6 C13.4 8.6 14.5 10 14.5 12.6 V20';
+// "U" ochiq kitob — header belgisi (brandbook)
+const U_MARK = 'M8 6v9a4 4 0 0 0 8 0V10';
 
 // API (/api/certificates/[id]) camelCase qaytaradi (Prisma modeli). Snapshot
 // maydonlari — kurs/foydalanuvchi o'zgarsa ham sertifikatdagi asl qiymat saqlanadi.
@@ -172,14 +172,13 @@ export default function CertificatePage() {
           <div className="relative px-8 sm:px-16 pt-12 pb-10 text-center">
             {/* Sarlavha */}
             <div className="flex flex-col items-center gap-2.5">
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                <path d={ARCH_OUTER} stroke={CERT.goldBright} strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
-                <path d={ARCH_INNER} stroke={CERT.goldBright} strokeWidth="1.7" strokeOpacity="0.6" strokeLinejoin="round" strokeLinecap="round" />
-                <path d="M3.5 20 H20.5" stroke={CERT.goldBright} strokeWidth="1.7" strokeLinecap="round" />
+              <svg width="44" height="44" viewBox="0 0 24 24" fill="none">
+                <path d={U_MARK} stroke={CERT.goldBright} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="16.5" cy="6.5" r="2.2" fill={CERT.sun} />
               </svg>
               <div>
-                <div className="text-3xl tracking-[0.18em] font-semibold" style={{ fontFamily: 'var(--font-display)', color: CERT.ink }}>
-                  USTOZ
+                <div className="text-3xl tracking-[0.06em] font-bold" style={{ fontFamily: 'var(--font-display)' }}>
+                  <span style={{ color: CERT.ink }}>Ustoz</span><span style={{ color: CERT.goldBright }}>Edu</span>
                 </div>
                 <div className="text-[10px] tracking-[0.35em] uppercase mt-1.5" style={{ color: CERT.gold }}>
                   {t('certificate.platformTagline')}
@@ -221,10 +220,10 @@ export default function CertificatePage() {
                 <p className="text-sm font-semibold mt-1" style={{ color: CERT.inkText }}>{issuedDate}</p>
               </div>
               <div className="flex justify-center">
-                {/* Muhr — oltin girih emblema halqa ichida */}
+                {/* Muhr — brend "U" belgisi halqa ichida (ko'k halqa, quyosh nuqta) */}
                 <div className="relative w-20 h-20">
-                  <div className="absolute inset-0 rounded-full" style={{ border: `2px solid ${CERT.gold}` }} />
-                  <div className="absolute inset-2" style={{ ['--girih-line' as string]: CERT.goldBright, ['--girih-star' as string]: CERT.gold }}>
+                  <div className="absolute inset-0 rounded-full" style={{ border: `2px solid ${CERT.goldBright}` }} />
+                  <div className="absolute inset-[18px]" style={{ ['--girih-line' as string]: CERT.goldBright, ['--girih-star' as string]: CERT.sun }}>
                     <GirihEmblem animate={false} className="w-full h-full" />
                   </div>
                 </div>

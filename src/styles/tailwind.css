@@ -8,156 +8,182 @@
 
 @layer base {
   :root {
-    /* Primary Colors — brend siyoh indigo (girih/ilm merosi) */
-    --color-primary: #151B3A; /* siyoh indigo */
-    --color-primary-foreground: #F7F1E4; /* krem */
+    /* ═══ Brend ranglar (UstozEdu brandbook v1.0) ═══
+       Asosiy: Ustoz ko'ki #1F5EDC · Tun #0F2447 · Quyosh #FFB930 (5% urg'u) */
+    --color-primary: #1F5EDC; /* Ustoz ko'ki */
+    --color-primary-foreground: #FFFFFF;
 
-    /* Secondary Colors — indigo variant (banner gradienti uchun) */
-    --color-secondary: #2A3566; /* o'rta indigo */
-    --color-secondary-foreground: #F7F1E4; /* krem */
+    /* Secondary — chuqur ko'k (gradient/banner) */
+    --color-secondary: #1548B3;
+    --color-secondary-foreground: #FFFFFF;
 
-    /* Accent Colors — za'faron oltin */
-    --color-accent: #DFA23A; /* brend oltin */
-    --color-accent-foreground: #151B3A; /* siyoh */
+    /* Accent — Quyosh (oq matn QO'YILMAYDI, kontrast past) */
+    --color-accent: #FFB930;
+    --color-accent-foreground: #0F2447; /* Tun */
 
-    /* Background Colors — qog'oz */
-    --color-background: #F4EEE1; /* qog'oz */
-    --color-foreground: #1B2140; /* siyoh matn */
+    /* Background — Fon */
+    --color-background: #F6F8FC;
+    --color-foreground: #17223A; /* Matn */
 
-    /* Surface Colors */
-    --color-card: #FBF7EE; /* iliq karta */
-    --color-card-foreground: #1B2140;
+    /* Surface */
+    --color-card: #FFFFFF;
+    --color-card-foreground: #17223A;
 
-    /* Popover Colors */
-    --color-popover: #FBF7EE;
-    --color-popover-foreground: #1B2140;
+    /* Popover */
+    --color-popover: #FFFFFF;
+    --color-popover-foreground: #17223A;
 
-    /* Muted Colors */
-    --color-muted: #EFE7D8; /* iliq muted */
-    --color-muted-foreground: #5B5142; /* iliq kul-jigar */
+    /* Muted */
+    --color-muted: #EEF3FB; /* yumshoq neytral fon */
+    --color-muted-foreground: #5F6B80; /* Ikkilamchi matn */
 
     /* Border and Input */
-    --color-border: rgba(27, 33, 64, 0.14);
-    --color-input: rgba(27, 33, 64, 0.18);
-    --color-ring: #DFA23A; /* oltin fokus */
+    --color-border: #D9E0EC; /* Chiziq */
+    --color-input: #D9E0EC;
+    --color-ring: #1F5EDC; /* ko'k fokus */
 
     /* Status Colors */
-    --color-success: #2E7D6B; /* malaxit */
-    --color-success-foreground: #FFFFFF; /* white */
-    
-    --color-warning: #D69E2E; /* yellow-600 */
-    --color-warning-foreground: #1A1A1A; /* gray-900 */
-    
-    --color-error: #E53E3E; /* red-600 */
-    --color-error-foreground: #FFFFFF; /* white */
-    
-    --color-destructive: #E53E3E; /* red-600 */
-    --color-destructive-foreground: #FFFFFF; /* white */
-    
+    --color-success: #1FA97A; /* Bog' */
+    --color-success-foreground: #FFFFFF;
+
+    --color-warning: #FFB930; /* Quyosh */
+    --color-warning-foreground: #0F2447;
+
+    --color-error: #E8574B; /* Anor */
+    --color-error-foreground: #FFFFFF;
+
+    --color-destructive: #E8574B; /* Anor */
+    --color-destructive-foreground: #FFFFFF;
+
     /* Text Colors */
-    --color-text-primary: #1B2140; /* siyoh matn */
-    --color-text-secondary: #5B5142; /* iliq kul-jigar */
+    --color-text-primary: #17223A;
+    --color-text-secondary: #5F6B80;
 
-    /* Radius */
-    --radius-sm: 6px;
+    /* Radius (brandbook): chip 999 · tugma/input 12 · karta 16 · modal 24 */
+    --radius-sm: 8px;
     --radius-md: 12px;
-    --radius-lg: 18px;
+    --radius-lg: 16px;
     --radius-xl: 24px;
+    --radius-full: 999px;
 
-    /* ═══ Brend tokenlari (landing/auth/marketplace — girih/ilm merosi) ═══
-       Qat'iy hex o'rniga semantik o'zgaruvchilar: .dark klassida qorong'i variantga
-       o'tadi. Band = doim qorong'i seksiya (hero/CTA); page = sahifa foni; surface =
-       karta; text/mute = qog'ozdagi matn; cream/gold = band ustidagi doimiy yorug'. */
-    --brand-band: #151B3A;
-    --brand-band-deep: #0E1330;
-    --brand-page: #F4EEE1;
-    --brand-surface: #FBF7EE;
+    /* ═══ Brend tokenlari (landing/auth/marketplace/sertifikat) ═══
+       band = to'q Tun seksiya (hero/CTA); page = sahifa foni; surface = karta;
+       blue/navy/sun = brend asosiy; sky = Osmon och fon. .dark'da qorong'i variant. */
+    --brand-blue: #1F5EDC;
+    --brand-blue-deep: #1548B3;
+    --brand-navy: #0F2447;
+    --brand-sun: #FFB930;
+    --brand-sky: #E4EEFF;
+    --brand-band: #0F2447; /* Tun — to'q seksiya foni */
+    --brand-band-deep: #0A1A38;
+    --brand-band-fg: #E4EEFF; /* Tun ustidagi matn — Osmon */
+    --brand-page: #F6F8FC;
+    --brand-surface: #FFFFFF;
     --brand-surface-2: #FFFFFF;
-    --brand-text: #1B2140;
-    --brand-text-mute: #5B5142;
-    --brand-line: rgba(27, 33, 64, 0.14);
-    --brand-track: rgba(27, 33, 64, 0.10);
-    --brand-cream: #F7F1E4;
-    --brand-gold: #DFA23A;
-    --brand-gold-on-surface: #A9731A;
-    --brand-brick: #B5462E;
-    --brand-malachite: #2E7D6B;
-    --brand-primary: #151B3A;
-    --brand-primary-fg: #F7F1E4;
-    --brand-muted-surface: #F1EADB;
-    --brand-input-border: rgba(27, 33, 64, 0.20);
+    --brand-text: #17223A;
+    --brand-text-mute: #5F6B80;
+    --brand-line: #D9E0EC;
+    --brand-track: rgba(15, 36, 71, 0.10);
+    --brand-cream: #FFFFFF; /* (legacy nomi) to'q fon ustidagi yorug' */
+    --brand-gold: #FFB930; /* (legacy nomi) = Quyosh */
+    --brand-gold-on-surface: #1548B3; /* och fonda urg'u matni — ko'k */
+    --brand-brick: #E8574B; /* Anor */
+    --brand-malachite: #1FA97A; /* Bog' */
+    --brand-primary: #1F5EDC;
+    --brand-primary-fg: #FFFFFF;
+    --brand-muted-surface: #E4EEFF; /* Osmon */
+    --brand-input-border: #D9E0EC;
+
+    /* Brandbook alias tokenlari (--ue-*) — kod uchun tayyor (brandbook 08) */
+    --ue-blue: #1F5EDC;
+    --ue-blue-deep: #1548B3;
+    --ue-navy: #0F2447;
+    --ue-sun: #FFB930;
+    --ue-sky: #E4EEFF;
+    --ue-mint: #1FA97A;
+    --ue-coral: #E8574B;
+    --ue-text: #17223A;
+    --ue-muted: #5F6B80;
+    --ue-line: #D9E0EC;
+    --ue-bg: #F6F8FC;
   }
 
   .dark {
-    /* Primary Colors — brend qorong'i (indigo, dark fonda ko'rinuvchan) */
-    --color-primary: #3E4C8A; /* ko'rinuvchan indigo — tugma/aktiv */
-    --color-primary-foreground: #F7F1E4; /* krem */
+    /* ═══ Brend ranglar — qorong'i (Tun asosli) ═══ */
+    --color-primary: #3B79F2; /* yorqinroq ko'k — to'q fonda ko'rinuvchan */
+    --color-primary-foreground: #FFFFFF;
 
-    /* Secondary Colors */
-    --color-secondary: #2A3566; /* chuqurroq indigo (banner gradienti) */
-    --color-secondary-foreground: #F7F1E4; /* krem */
+    --color-secondary: #1F5EDC;
+    --color-secondary-foreground: #FFFFFF;
 
-    /* Accent Colors */
-    --color-accent: #E7B24A; /* yorqinroq oltin */
-    --color-accent-foreground: #151B3A; /* siyoh */
+    --color-accent: #FFC24D; /* yorqinroq quyosh */
+    --color-accent-foreground: #0F2447; /* Tun */
 
-    /* Background Colors — brend qorong'i sahifa */
-    --color-background: #0E1330;
-    --color-foreground: #F1ECE0; /* krem matn */
+    /* Background — chuqur Tun */
+    --color-background: #0B1B36;
+    --color-foreground: #E7EEF9;
 
-    /* Surface Colors — ko'tarilgan ink */
-    --color-card: #17203F;
-    --color-card-foreground: #F1ECE0;
+    --color-card: #12294C;
+    --color-card-foreground: #E7EEF9;
 
-    /* Popover Colors */
-    --color-popover: #202A4D;
-    --color-popover-foreground: #F1ECE0;
+    --color-popover: #12294C;
+    --color-popover-foreground: #E7EEF9;
 
-    /* Muted Colors */
-    --color-muted: #202A4D;
-    --color-muted-foreground: rgba(241, 236, 224, 0.62);
+    --color-muted: #1A335C;
+    --color-muted-foreground: #9FB0CB;
 
-    /* Border and Input */
-    --color-border: rgba(247, 241, 228, 0.12);
-    --color-input: rgba(247, 241, 228, 0.16);
-    --color-ring: #E7B24A; /* oltin fokus */
+    --color-border: rgba(231, 238, 249, 0.14);
+    --color-input: rgba(231, 238, 249, 0.18);
+    --color-ring: #3B79F2;
 
-    /* Status Colors */
-    --color-success: #46B399; /* yorqin malaxit */
-    --color-success-foreground: #08110E;
+    --color-success: #2FBE8C;
+    --color-success-foreground: #04140E;
 
-    --color-warning: #ECC94B; /* yellow-500 */
-    --color-warning-foreground: #0A0F14; /* gray-950 */
+    --color-warning: #FFC24D;
+    --color-warning-foreground: #0F2447;
 
-    --color-error: #FC8181; /* red-400 */
-    --color-error-foreground: #0A0F14; /* gray-950 */
+    --color-error: #F5766A;
+    --color-error-foreground: #1A0A08;
 
-    --color-destructive: #FC8181; /* red-400 */
-    --color-destructive-foreground: #0A0F14; /* gray-950 */
+    --color-destructive: #F5766A;
+    --color-destructive-foreground: #1A0A08;
 
-    /* Text Colors */
-    --color-text-primary: #F1ECE0; /* krem */
-    --color-text-secondary: rgba(241, 236, 224, 0.62); /* muted krem */
+    --color-text-primary: #E7EEF9;
+    --color-text-secondary: #9FB0CB;
 
-    /* ═══ Brend tokenlari — qorong'i variant ═══
-       Qog'oz → chuqur ink; matn → krem; qog'ozdagi oltin yorqinlashadi. Band va krem
-       o'zgarmaydi (band doim qorong'i). */
-    --brand-band: #0B1029;
-    --brand-band-deep: #080B1C;
-    --brand-page: #0E1330;
-    --brand-surface: #17203F;
-    --brand-surface-2: #17203F;
-    --brand-text: #F1ECE0;
-    --brand-text-mute: rgba(241, 236, 224, 0.62);
-    --brand-line: rgba(247, 241, 228, 0.12);
-    --brand-track: rgba(247, 241, 228, 0.12);
-    --brand-gold-on-surface: #E7B24A;
-    --brand-brick: #D66A50;
-    --brand-malachite: #46B399;
-    --brand-primary: #3E4C8A; /* indigo — app'dagi --color-primary (dark) bilan bir xil */
-    --brand-primary-fg: #F7F1E4;
-    --brand-muted-surface: #202A4D;
-    --brand-input-border: rgba(247, 241, 228, 0.20);
+    /* ═══ Brend tokenlari — qorong'i variant ═══ */
+    --brand-blue: #3B79F2;
+    --brand-blue-deep: #1F5EDC;
+    --brand-navy: #0A1A38;
+    --brand-sun: #FFC24D;
+    --brand-sky: #1A335C;
+    --brand-band: #0A1A38;
+    --brand-band-deep: #06122A;
+    --brand-band-fg: #C7D6EE;
+    --brand-page: #0B1B36;
+    --brand-surface: #12294C;
+    --brand-surface-2: #12294C;
+    --brand-text: #E7EEF9;
+    --brand-text-mute: #9FB0CB;
+    --brand-line: rgba(231, 238, 249, 0.14);
+    --brand-track: rgba(231, 238, 249, 0.12);
+    --brand-cream: #E7EEF9;
+    --brand-gold: #FFC24D;
+    --brand-gold-on-surface: #FFC24D;
+    --brand-brick: #F5766A;
+    --brand-malachite: #2FBE8C;
+    --brand-primary: #3B79F2;
+    --brand-primary-fg: #FFFFFF;
+    --brand-muted-surface: #1A335C;
+    --brand-input-border: rgba(231, 238, 249, 0.22);
+
+    --ue-blue: #3B79F2;
+    --ue-navy: #0A1A38;
+    --ue-sun: #FFC24D;
+    --ue-text: #E7EEF9;
+    --ue-muted: #9FB0CB;
+    --ue-line: rgba(231, 238, 249, 0.14);
+    --ue-bg: #0B1B36;
   }
 }
 

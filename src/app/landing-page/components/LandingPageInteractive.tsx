@@ -21,9 +21,12 @@ const INK = 'var(--brand-band)'; // qorong'i band — hero/how-it-works/CTA
 const INK_DEEP = 'var(--brand-band-deep)'; // eng chuqur — footer/stats
 const PAPER = 'var(--brand-page)'; // sahifa foni
 const PAPER_CARD = 'var(--brand-surface)'; // karta yuzasi
-const GOLD = 'var(--brand-gold)'; // za'faron oltin — band ustida urg'u
-const GOLD_ICON = 'var(--brand-gold-on-surface)'; // qog'oz/surface ustidagi oltin (AA)
-const BRICK = 'var(--brand-brick)'; // g'isht/madder — kam urg'u
+const BLUE = 'var(--brand-blue)'; // Ustoz ko'ki — asosiy CTA/interaktiv (brandbook)
+const BLUE_DEEP = 'var(--brand-blue-deep)'; // chuqur ko'k — hover
+const WHITE = '#FFFFFF';
+const GOLD = 'var(--brand-sun)'; // Quyosh — faqat kichik urg'u (5%)
+const GOLD_ICON = 'var(--brand-gold-on-surface)'; // och fonda urg'u (ko'k)
+const BRICK = 'var(--brand-brick)'; // Anor — kam urg'u/xato
 const MALACHITE = 'var(--brand-malachite)'; // malaxit — sertifikat/muvaffaqiyat
 const INK_TEXT = 'var(--brand-text)'; // asosiy matn (surface ustida)
 const MUTE = 'var(--brand-text-mute)'; // ikkilamchi matn
@@ -103,16 +106,16 @@ function LandingHeader() {
     <header
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        background: solid ? 'rgba(14, 19, 48, 0.92)' : 'transparent',
+        background: solid ? 'rgba(15, 36, 71, 0.92)' : 'transparent',
         backdropFilter: solid ? 'saturate(140%) blur(10px)' : 'none',
-        borderBottom: solid ? `1px solid rgba(223,162,58,0.18)` : '1px solid transparent',
+        borderBottom: solid ? `1px solid rgba(31,94,220,0.18)` : '1px solid transparent',
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2.5 group">
             <BrandMark size={36} shadow />
-            <span className="text-xl font-semibold tracking-tight" style={{ ...DISPLAY, color: '#F7F1E4' }}>
+            <span className="text-xl font-semibold tracking-tight" style={{ ...DISPLAY, color: '#E7EEF9' }}>
               Ustoz
             </span>
           </Link>
@@ -120,15 +123,15 @@ function LandingHeader() {
           <div className="flex items-center gap-2">
             <ThemeToggle tone="onDark" />
             {/* Til tanlagich */}
-            <div className="hidden sm:flex items-center rounded-full p-0.5" style={{ background: 'rgba(247,241,228,0.10)' }}>
+            <div className="hidden sm:flex items-center rounded-full p-0.5" style={{ background: 'rgba(231,238,249,0.10)' }}>
               {langs.map((l) => (
                 <button
                   key={l}
                   onClick={() => setLocale(l)}
                   className="px-2.5 py-1 text-xs font-semibold rounded-full transition-colors"
                   style={locale === l
-                    ? { background: GOLD, color: INK }
-                    : { color: 'rgba(247,241,228,0.65)' }}
+                    ? { background: BLUE, color: WHITE }
+                    : { color: 'rgba(231,238,249,0.65)' }}
                   aria-pressed={locale === l}
                 >
                   {l.toUpperCase()}
@@ -139,14 +142,14 @@ function LandingHeader() {
             <Link
               href="/login"
               className="hidden sm:inline-flex px-4 py-2 text-sm font-medium rounded-md transition-colors"
-              style={{ color: '#F7F1E4' }}
+              style={{ color: '#E7EEF9' }}
             >
               {t('auth.login')}
             </Link>
             <Link
               href="/register"
               className="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-md transition-transform hover:-translate-y-0.5"
-              style={{ background: GOLD, color: INK }}
+              style={{ background: BLUE, color: WHITE }}
             >
               {t('auth.register')}
             </Link>
@@ -154,7 +157,7 @@ function LandingHeader() {
             <button
               onClick={() => setMenu(!menu)}
               className="sm:hidden p-2 rounded-md"
-              style={{ color: '#F7F1E4' }}
+              style={{ color: '#E7EEF9' }}
               aria-label="Menu"
             >
               <Icon name={menu ? 'XMarkIcon' : 'Bars3Icon'} size={22} />
@@ -164,19 +167,19 @@ function LandingHeader() {
 
         {menu && (
           <div className="sm:hidden pb-4 flex items-center gap-3">
-            <div className="flex items-center rounded-full p-0.5" style={{ background: 'rgba(247,241,228,0.10)' }}>
+            <div className="flex items-center rounded-full p-0.5" style={{ background: 'rgba(231,238,249,0.10)' }}>
               {langs.map((l) => (
                 <button
                   key={l}
                   onClick={() => setLocale(l)}
                   className="px-3 py-1.5 text-xs font-semibold rounded-full"
-                  style={locale === l ? { background: GOLD, color: INK } : { color: 'rgba(247,241,228,0.65)' }}
+                  style={locale === l ? { background: BLUE, color: WHITE } : { color: 'rgba(231,238,249,0.65)' }}
                 >
                   {l.toUpperCase()}
                 </button>
               ))}
             </div>
-            <Link href="/login" className="px-3 py-1.5 text-sm rounded-md" style={{ color: '#F7F1E4' }}>
+            <Link href="/login" className="px-3 py-1.5 text-sm rounded-md" style={{ color: '#E7EEF9' }}>
               {t('auth.login')}
             </Link>
           </div>
@@ -192,8 +195,8 @@ function SectionHead({ eyebrow, title, desc }: { eyebrow?: string; title: string
     <div className="mb-12 max-w-2xl">
       {eyebrow && (
         <div className="flex items-center gap-3 mb-4">
-          <span className="h-px w-8" style={{ background: GOLD }} />
-          <span className="text-sm font-semibold" style={{ color: BRICK }}>{eyebrow}</span>
+          <span className="h-px w-8" style={{ background: BLUE }} />
+          <span className="text-sm font-semibold" style={{ color: BLUE }}>{eyebrow}</span>
         </div>
       )}
       <h2 className="text-3xl md:text-[2.6rem] leading-[1.08] font-medium" style={{ ...DISPLAY, color: INK_TEXT }}>
@@ -351,7 +354,7 @@ const LandingPageInteractive = () => {
           {/* nozik radial nur */}
           <div
             className="absolute inset-0 pointer-events-none"
-            style={{ background: 'radial-gradient(120% 80% at 78% 30%, rgba(223,162,58,0.16), transparent 60%)' }}
+            style={{ background: 'radial-gradient(120% 80% at 78% 30%, rgba(31,94,220,0.16), transparent 60%)' }}
           />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 md:pt-36 pb-16 md:pb-24 relative">
             <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-16 items-center">
@@ -364,12 +367,12 @@ const LandingPageInteractive = () => {
 
                 <h1
                   className="font-medium leading-[1.02] tracking-[-0.01em]"
-                  style={{ ...DISPLAY, color: '#F7F1E4', fontSize: 'clamp(2.6rem, 6vw, 4.6rem)' }}
+                  style={{ ...DISPLAY, color: '#E7EEF9', fontSize: 'clamp(2.6rem, 6vw, 4.6rem)' }}
                 >
                   {t('landing.heroTitle')}
                 </h1>
 
-                <p className="mt-6 text-lg md:text-xl leading-relaxed max-w-xl" style={{ color: 'rgba(247,241,228,0.72)' }}>
+                <p className="mt-6 text-lg md:text-xl leading-relaxed max-w-xl" style={{ color: 'rgba(231,238,249,0.72)' }}>
                   {t('landing.heroDesc')}
                 </p>
 
@@ -377,9 +380,9 @@ const LandingPageInteractive = () => {
                 <form onSubmit={handleSearch} className="mt-8 max-w-xl" role="search">
                   <div
                     className="flex items-center rounded-xl overflow-hidden"
-                    style={{ background: 'rgba(247,241,228,0.07)', border: '1px solid rgba(247,241,228,0.16)' }}
+                    style={{ background: 'rgba(231,238,249,0.07)', border: '1px solid rgba(231,238,249,0.16)' }}
                   >
-                    <Icon name="MagnifyingGlassIcon" size={20} className="ml-4" style={{ color: 'rgba(247,241,228,0.5)' }} />
+                    <Icon name="MagnifyingGlassIcon" size={20} className="ml-4" style={{ color: 'rgba(231,238,249,0.5)' }} />
                     <input
                       type="text"
                       value={searchQuery}
@@ -387,12 +390,12 @@ const LandingPageInteractive = () => {
                       placeholder={t('landing.searchPlaceholder')}
                       aria-label={t('landing.searchPlaceholder')}
                       className="flex-1 bg-transparent px-3 py-4 outline-none text-base"
-                      style={{ color: '#F7F1E4' }}
+                      style={{ color: '#E7EEF9' }}
                     />
                     <button
                       type="submit"
                       className="m-1.5 px-5 py-2.5 rounded-lg text-sm font-semibold flex-shrink-0 transition-transform hover:-translate-y-0.5"
-                      style={{ background: GOLD, color: INK }}
+                      style={{ background: BLUE, color: WHITE }}
                     >
                       {t('common.search')}
                     </button>
@@ -403,7 +406,7 @@ const LandingPageInteractive = () => {
                   <Link
                     href="/register"
                     className="inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg font-semibold transition-transform hover:-translate-y-0.5"
-                    style={{ background: '#F7F1E4', color: INK }}
+                    style={{ background: BLUE, color: WHITE }}
                   >
                     {t('landing.startFree')}
                     <Icon name="ArrowRightIcon" size={18} />
@@ -411,7 +414,7 @@ const LandingPageInteractive = () => {
                   <a
                     href="#courses"
                     className="inline-flex items-center justify-center px-7 py-3.5 rounded-lg font-medium transition-colors"
-                    style={{ color: '#F7F1E4', border: '1px solid rgba(247,241,228,0.24)' }}
+                    style={{ color: '#E7EEF9', border: '1px solid rgba(231,238,249,0.24)' }}
                   >
                     {t('landing.viewCourses')}
                   </a>
@@ -423,7 +426,7 @@ const LandingPageInteractive = () => {
                     {statLine.map((s, i) => (
                       <div key={i} className="flex items-baseline gap-2">
                         <span className="text-2xl font-semibold" style={{ ...DISPLAY, color: GOLD }}>{fmt(s.v)}+</span>
-                        <span className="text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>{s.label}</span>
+                        <span className="text-sm" style={{ color: 'rgba(231,238,249,0.6)' }}>{s.label}</span>
                       </div>
                     ))}
                   </div>
@@ -452,7 +455,7 @@ const LandingPageInteractive = () => {
               <h2 className="text-2xl md:text-3xl font-medium" style={{ ...DISPLAY, color: INK_TEXT }}>
                 {t('landing.categoriesTitle')}
               </h2>
-              <Link href="/course-marketplace" className="text-sm font-semibold inline-flex items-center gap-1.5" style={{ color: BRICK }}>
+              <Link href="/course-marketplace" className="text-sm font-semibold inline-flex items-center gap-1.5" style={{ color: BLUE }}>
                 {t('landing.viewAllCourses')} <Icon name="ArrowRightIcon" size={15} />
               </Link>
             </div>
@@ -466,7 +469,7 @@ const LandingPageInteractive = () => {
                 >
                   <span
                     className="flex items-center justify-center w-9 h-9 rounded-lg flex-shrink-0 transition-colors"
-                    style={{ background: 'rgba(223,162,58,0.14)', color: GOLD_ICON }}
+                    style={{ background: 'rgba(31,94,220,0.14)', color: GOLD_ICON }}
                   >
                     <Icon name={cat.icon} size={18} />
                   </span>
@@ -554,12 +557,12 @@ const LandingPageInteractive = () => {
         <section className="py-16 md:py-24" style={{ background: INK }}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-2xl mb-14">
-              <h2 className="text-3xl md:text-[2.6rem] leading-[1.08] font-medium" style={{ ...DISPLAY, color: '#F7F1E4' }}>
+              <h2 className="text-3xl md:text-[2.6rem] leading-[1.08] font-medium" style={{ ...DISPLAY, color: '#E7EEF9' }}>
                 {t('landing.howItWorksTitle')}
               </h2>
-              <p className="mt-4 text-lg" style={{ color: 'rgba(247,241,228,0.66)' }}>{t('landing.howItWorksDesc')}</p>
+              <p className="mt-4 text-lg" style={{ color: 'rgba(231,238,249,0.66)' }}>{t('landing.howItWorksDesc')}</p>
             </div>
-            <div className="grid md:grid-cols-3 gap-px" style={{ background: 'rgba(247,241,228,0.12)' }}>
+            <div className="grid md:grid-cols-3 gap-px" style={{ background: 'rgba(231,238,249,0.12)' }}>
               {[
                 { n: '01', title: t('landing.step1Title'), desc: t('landing.step1Desc') },
                 { n: '02', title: t('landing.step2Title'), desc: t('landing.step2Desc') },
@@ -567,8 +570,8 @@ const LandingPageInteractive = () => {
               ].map((item) => (
                 <div key={item.n} className="p-8 md:p-10" style={{ background: INK }}>
                   <div className="text-5xl font-medium mb-6" style={{ ...DISPLAY, color: GOLD }}>{item.n}</div>
-                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#F7F1E4' }}>{item.title}</h3>
-                  <p className="leading-relaxed" style={{ color: 'rgba(247,241,228,0.62)' }}>{item.desc}</p>
+                  <h3 className="text-xl font-semibold mb-3" style={{ color: '#E7EEF9' }}>{item.title}</h3>
+                  <p className="leading-relaxed" style={{ color: 'rgba(231,238,249,0.62)' }}>{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -630,9 +633,9 @@ const LandingPageInteractive = () => {
               ].map((s, i) => (
                 <div key={i} className="text-center md:text-left">
                   <div className="text-4xl md:text-5xl font-medium" style={{ ...DISPLAY, color: GOLD }}>
-                    {fmt(s.v)}<span style={{ color: 'rgba(247,241,228,0.4)' }}>+</span>
+                    {fmt(s.v)}<span style={{ color: 'rgba(231,238,249,0.4)' }}>+</span>
                   </div>
-                  <div className="mt-2 text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>{s.label}</div>
+                  <div className="mt-2 text-sm" style={{ color: 'rgba(231,238,249,0.6)' }}>{s.label}</div>
                 </div>
               ))}
             </div>
@@ -755,11 +758,11 @@ const LandingPageInteractive = () => {
                   <RegistonEmblem className="w-full h-full" />
                 </div>
                 <div className="relative">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(223,162,58,0.16)' }}>
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(31,94,220,0.16)' }}>
                     <Icon name="FlagIcon" size={22} style={{ color: GOLD }} />
                   </div>
-                  <h3 className="text-2xl font-medium mb-3" style={{ ...DISPLAY, color: '#F7F1E4' }}>{t('landing.missionTitle')}</h3>
-                  <p className="text-lg leading-relaxed" style={{ color: 'rgba(247,241,228,0.72)' }}>{t('landing.missionDesc')}</p>
+                  <h3 className="text-2xl font-medium mb-3" style={{ ...DISPLAY, color: '#E7EEF9' }}>{t('landing.missionTitle')}</h3>
+                  <p className="text-lg leading-relaxed" style={{ color: 'rgba(231,238,249,0.72)' }}>{t('landing.missionDesc')}</p>
                 </div>
               </div>
             </div>
@@ -792,22 +795,22 @@ const LandingPageInteractive = () => {
                 <RegistonEmblem className="w-full h-full" />
               </div>
               <div className="relative max-w-2xl mx-auto">
-                <h2 className="text-3xl md:text-5xl font-medium leading-tight mb-5" style={{ ...DISPLAY, color: '#F7F1E4' }}>
+                <h2 className="text-3xl md:text-5xl font-medium leading-tight mb-5" style={{ ...DISPLAY, color: '#E7EEF9' }}>
                   {t('landing.ctaTitle')}
                 </h2>
-                <p className="text-lg mb-9" style={{ color: 'rgba(247,241,228,0.7)' }}>{t('landing.ctaDesc')}</p>
+                <p className="text-lg mb-9" style={{ color: 'rgba(231,238,249,0.7)' }}>{t('landing.ctaDesc')}</p>
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
                   <Link
                     href="/register?role=student"
                     className="inline-flex items-center justify-center px-7 py-3.5 rounded-lg font-semibold transition-transform hover:-translate-y-0.5"
-                    style={{ background: GOLD, color: INK }}
+                    style={{ background: BLUE, color: WHITE }}
                   >
                     {t('landing.ctaStudent')}
                   </Link>
                   <Link
                     href="/register?role=teacher"
                     className="inline-flex items-center justify-center px-7 py-3.5 rounded-lg font-medium transition-colors"
-                    style={{ color: '#F7F1E4', border: '1px solid rgba(247,241,228,0.28)' }}
+                    style={{ color: '#E7EEF9', border: '1px solid rgba(231,238,249,0.28)' }}
                   >
                     {t('landing.ctaTeacher')}
                   </Link>
@@ -824,13 +827,13 @@ const LandingPageInteractive = () => {
               <div className="md:col-span-1">
                 <div className="flex items-center gap-2.5 mb-4">
                   <BrandMark size={36} />
-                  <span className="text-xl font-semibold" style={{ ...DISPLAY, color: '#F7F1E4' }}>Ustoz</span>
+                  <span className="text-xl font-semibold" style={{ ...DISPLAY, color: '#E7EEF9' }}>Ustoz</span>
                 </div>
-                <p className="text-sm leading-relaxed" style={{ color: 'rgba(247,241,228,0.55)' }}>{t('landing.footerDesc')}</p>
+                <p className="text-sm leading-relaxed" style={{ color: 'rgba(231,238,249,0.55)' }}>{t('landing.footerDesc')}</p>
               </div>
               <div>
-                <h4 className="font-semibold mb-4 text-sm" style={{ color: '#F7F1E4' }}>{t('landing.footerPlatform')}</h4>
-                <ul className="space-y-2.5 text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>
+                <h4 className="font-semibold mb-4 text-sm" style={{ color: '#E7EEF9' }}>{t('landing.footerPlatform')}</h4>
+                <ul className="space-y-2.5 text-sm" style={{ color: 'rgba(231,238,249,0.6)' }}>
                   <li><Link href="/" className="hover:text-white transition-colors">{t('landing.footerHome')}</Link></li>
                   <li><a href="#courses" className="hover:text-white transition-colors">{t('landing.footerCourses')}</a></li>
                   <li><a href="#about" className="hover:text-white transition-colors">{t('landing.footerAbout')}</a></li>
@@ -838,21 +841,21 @@ const LandingPageInteractive = () => {
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold mb-4 text-sm" style={{ color: '#F7F1E4' }}>{t('landing.footerTeachers')}</h4>
-                <ul className="space-y-2.5 text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>
+                <h4 className="font-semibold mb-4 text-sm" style={{ color: '#E7EEF9' }}>{t('landing.footerTeachers')}</h4>
+                <ul className="space-y-2.5 text-sm" style={{ color: 'rgba(231,238,249,0.6)' }}>
                   <li><Link href="/register?role=teacher" className="hover:text-white transition-colors">{t('landing.footerBecomeTeacher')}</Link></li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-semibold mb-4 text-sm" style={{ color: '#F7F1E4' }}>{t('landing.footerContact')}</h4>
-                <ul className="space-y-2.5 text-sm" style={{ color: 'rgba(247,241,228,0.6)' }}>
+                <h4 className="font-semibold mb-4 text-sm" style={{ color: '#E7EEF9' }}>{t('landing.footerContact')}</h4>
+                <ul className="space-y-2.5 text-sm" style={{ color: 'rgba(231,238,249,0.6)' }}>
                   <li className="flex items-center gap-2"><Icon name="EnvelopeIcon" size={15} /> info@ustoz-talim.uz</li>
                   <li className="flex items-center gap-2"><Icon name="PhoneIcon" size={15} /> +998 90 123 45 67</li>
                   <li className="flex items-center gap-2"><Icon name="MapPinIcon" size={15} /> {t('landing.contactCity')}</li>
                 </ul>
               </div>
             </div>
-            <div className="pt-8 text-center text-sm" style={{ borderTop: '1px solid rgba(247,241,228,0.12)', color: 'rgba(247,241,228,0.45)' }}>
+            <div className="pt-8 text-center text-sm" style={{ borderTop: '1px solid rgba(231,238,249,0.12)', color: 'rgba(231,238,249,0.45)' }}>
               &copy; 2026 Ustoz. {t('landing.footerRights')}
             </div>
           </div>

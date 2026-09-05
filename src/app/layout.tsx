@@ -1,24 +1,22 @@
 import React from 'react';
 import type { Metadata, Viewport } from 'next';
-import { Manrope, JetBrains_Mono, Fraunces } from 'next/font/google';
+import { Nunito_Sans, JetBrains_Mono, Sora } from 'next/font/google';
 import '../styles/index.css';
 
-// Yagona shrift tizimi (self-hosted, layout-shift yo'q, tashqi Google Fonts @import
-// o'rniga). Manrope — barcha matn/sarlavha/izoh; JetBrains Mono — kod/raqam.
-// cyrillic subset: ru tili uchun.
-const manrope = Manrope({
-  subsets: ['latin', 'cyrillic'],
-  weight: ['400', '500', '600', '700', '800'],
+// Brandbook shrift tizimi (self-hosted next/font, layout-shift yo'q):
+//   Nunito Sans — matn (var(--font-sans)); Sora — sarlavha/tugma (var(--font-display));
+//   JetBrains Mono — kod/raqam (var(--font-mono)). cyrillic subset: ru tili uchun.
+const nunitoSans = Nunito_Sans({
+  subsets: ['latin', 'latin-ext', 'cyrillic'],
+  weight: ['400', '600', '700'],
   variable: '--font-sans',
   display: 'swap',
 });
-// Fraunces — FAQAT landing sahifasi display sarlavhalari uchun (var(--font-display)
-// orqali ishlatiladi). Global Manrope tizimiga tegmaydi. Optik-o'lchamli "eski uslub"
-// serif — diplom/sertifikat vakolatini beruvchi ilmiy ohang.
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  style: ['normal', 'italic'],
+// Sora — brend display shrifti: barcha sarlavhalar (font-heading), hero va tugmalar.
+// Geometrik, ochiq shakllar — zamonaviy va do'stona (brandbook 04).
+const sora = Sora({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['500', '600', '700', '800'],
   variable: '--font-display',
   display: 'swap',
 });
@@ -41,8 +39,8 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#F4EEE1' },
-    { media: '(prefers-color-scheme: dark)', color: '#0E1330' },
+    { media: '(prefers-color-scheme: light)', color: '#F6F8FC' },
+    { media: '(prefers-color-scheme: dark)', color: '#0F2447' },
   ],
 };
 
@@ -114,7 +112,7 @@ export default async function RootLayout({
   `;
 
   return (
-    <html lang={serverLocale} className={`${manrope.variable} ${jetbrainsMono.variable} ${fraunces.variable}`} suppressHydrationWarning>
+    <html lang={serverLocale} className={`${nunitoSans.variable} ${jetbrainsMono.variable} ${sora.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="manifest" href="/manifest.json" />
