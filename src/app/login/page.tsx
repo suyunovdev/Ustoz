@@ -4,6 +4,7 @@ import Link from 'next/link';
 import LoginInteractive from './components/LoginInteractive';
 import AuthBrandPanel, { AuthMobileBrand } from '@/app/register/components/AuthBrandPanel';
 import ThemeToggle from '@/components/common/ThemeToggle';
+import LocaleToggle from '@/components/common/LocaleToggle';
 import { AUTH_FORM_REMAP, AUTH_PAPER } from '@/app/register/components/authTheme';
 import { getServerT } from '@/lib/i18n/server';
 
@@ -31,8 +32,20 @@ export default async function LoginPage() {
         className="flex flex-col min-h-screen"
         style={{ ...AUTH_FORM_REMAP, background: AUTH_PAPER }}
       >
-        <div className="flex justify-end px-4 sm:px-6 pt-4">
-          <ThemeToggle />
+        <div className="flex items-center justify-between px-4 sm:px-6 pt-4">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M15 19l-7-7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            {t('nav.home')}
+          </Link>
+          <div className="flex items-center gap-2">
+            <LocaleToggle />
+            <ThemeToggle />
+          </div>
         </div>
         <AuthMobileBrand />
         <div className="flex-1 flex items-center justify-center px-4 py-8 sm:py-10">

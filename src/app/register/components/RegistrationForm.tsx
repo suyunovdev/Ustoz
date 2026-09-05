@@ -15,7 +15,6 @@ interface FormData {
   password: string;
   confirmPassword: string;
   role: 'teacher' | 'student' | '';
-  language: 'uz' | 'ru' | 'en';
   profilePhoto: File | null;
   termsAccepted: boolean;
   privacyAccepted: boolean;
@@ -53,7 +52,6 @@ const RegistrationForm = () => {
     password: '',
     confirmPassword: '',
     role: '',
-    language: 'uz',
     profilePhoto: null,
     termsAccepted: false,
     privacyAccepted: false,
@@ -781,32 +779,6 @@ const RegistrationForm = () => {
                 <span>{errors.role}</span>
               </p>
             )}
-          </div>
-
-          {/* Language Preference */}
-          <div className="bg-card rounded-md p-6 shadow-warm">
-            <h3 className="text-lg font-heading font-semibold text-foreground mb-4">{t('auth.languagePreference')}</h3>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { code: 'uz', name: "O'zbek", flag: '\u{1F1FA}\u{1F1FF}' },
-                { code: 'ru', name: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439', flag: '\u{1F1F7}\u{1F1FA}' },
-                { code: 'en', name: 'English', flag: '\u{1F1EC}\u{1F1E7}' },
-              ].map((lang) => (
-                <button
-                  key={lang.code}
-                  type="button"
-                  onClick={() => handleInputChange('language', lang.code)}
-                  className={`p-4 rounded-md border-2 transition-smooth ${
-                    formData.language === lang.code ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                  }`}
-                >
-                  <div className="text-center space-y-2">
-                    <div className="text-3xl">{lang.flag}</div>
-                    <div className="text-sm font-medium text-foreground">{lang.name}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
           </div>
 
           {/* Terms and Privacy */}
