@@ -13,6 +13,31 @@ import { LOCALE_TAG, type Locale } from './index';
 // Chaqiruvchi opts'da timeZone bersa (masalan heatmap 'UTC'), o'sha ustun turadi.
 const TASHKENT_TZ = 'Asia/Tashkent';
 
+// Ba'zi brauzerlar (ayniqsa Safari) 'uz' locale uchun to'liq oy nomlariga ega
+// emas — Intl "sentabr" o'rniga "M09" fallback beradi. Shuning uchun o'zbekcha oy
+// nomlarini o'zimiz beramiz (izchil "5-sentabr, 2026" ko'rinishi hamma joyda).
+const UZ_MONTHS_LONG = [
+  'yanvar', 'fevral', 'mart', 'aprel', 'may', 'iyun',
+  'iyul', 'avgust', 'sentabr', 'oktabr', 'noyabr', 'dekabr',
+];
+const UZ_MONTHS_SHORT = [
+  'yan', 'fev', 'mar', 'apr', 'may', 'iyn',
+  'iyl', 'avg', 'sen', 'okt', 'noy', 'dek',
+];
+
+// Berilgan sanani (Tashkent TZ) kun/oy/yil raqamlariga ajratadi — son qismlari
+// barcha brauzerda ishonchli (faqat oy NOMI muammoli).
+function dateParts(date: Date, tz: string) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+  }).formatToParts(date);
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
+  return { day: Number(get('day')), month: Number(get('month')), year: Number(get('year')) };
+}
+
 function tag(locale: Locale): string {
   return LOCALE_TAG[locale] ?? 'uz-UZ';
 }
@@ -28,7 +53,22 @@ export function formatDate(
 ): string {
   if (value === null || value === undefined || value === '') return '';
   try {
-    return new Date(value).toLocaleDateString(tag(locale), withTz(opts));
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    // O'zbekcha oy NOMI kerak bo'lsa — o'zimiz formatlaymiz (brauzer Intl'iga
+    // ishonmaymiz). Faqat toza sana (weekday/vaqt yo'q) uchun; boshqasi Intl'da.
+    if (
+      locale === 'uz' &&
+      (opts.month === 'long' || opts.month === 'short') &&
+      !opts.weekday && !opts.hour && !opts.minute && !opts.second
+    ) {
+      const tz = opts.timeZone ?? TASHKENT_TZ;
+      const { day, month, year } = dateParts(date, tz);
+      const name = (opts.month === 'long' ? UZ_MONTHS_LONG : UZ_MONTHS_SHORT)[month - 1];
+      const head = opts.day ? `${day}-${name}` : name;
+      return opts.year ? `${head}, ${year}` : head;
+    }
+    return date.toLocaleDateString(tag(locale), withTz(opts));
   } catch {
     return '';
   }

@@ -284,7 +284,14 @@ export default function CertificatePage() {
         {/* Verifikatsiya URL */}
         <div className="no-print bg-card border border-border rounded-xl p-4">
           <p className="text-xs text-foreground/50 mb-1">{t('certificate.verificationLink')}</p>
-          <p className="text-sm font-mono text-primary break-all">{certificate.verificationUrl}</p>
+          <a
+            href={certificate.verificationUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-mono text-primary break-all hover:underline"
+          >
+            {certificate.verificationUrl}
+          </a>
         </div>
       </div>
 
