@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
-import AppImage from '@/components/ui/AppImage';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
@@ -15,7 +14,6 @@ interface FormData {
   password: string;
   confirmPassword: string;
   role: 'teacher' | 'student' | '';
-  profilePhoto: File | null;
   termsAccepted: boolean;
   privacyAccepted: boolean;
 }
@@ -30,7 +28,6 @@ interface FormErrors {
   terms?: string;
   submit?: string;
   otp?: string;
-  photo?: string;
 }
 
 interface PasswordStrength {
@@ -52,7 +49,6 @@ const RegistrationForm = () => {
     password: '',
     confirmPassword: '',
     role: '',
-    profilePhoto: null,
     termsAccepted: false,
     privacyAccepted: false,
   });
@@ -64,8 +60,7 @@ const RegistrationForm = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [photoPreview, setPhotoPreview] = useState<string>('');
-  const [isDragging, setIsDragging] = useState(false);
+  const [step, setStep] = useState<1 | 2>(1); // wizard: 1 = akkaunt, 2 = rol va shartlar
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -126,7 +121,8 @@ const RegistrationForm = () => {
     return phoneRegex.test(phone);
   };
 
-  const validateForm = (): boolean => {
+  // 1-bosqich: akkaunt ma'lumotlari (ism, email/telefon, parol, tasdiq)
+  const validateStep1 = (): boolean => {
     const newErrors: FormErrors = {};
 
     if (!formData.fullName.trim()) {
@@ -161,16 +157,39 @@ const RegistrationForm = () => {
       newErrors.confirmPassword = t('auth.passwordsDoNotMatch');
     }
 
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // 2-bosqich: rol va shartlar
+  const validateStep2 = (): boolean => {
+    const newErrors: FormErrors = {};
     if (!formData.role) {
       newErrors.role = t('auth.selectRoleRequired');
     }
-
     if (!formData.termsAccepted || !formData.privacyAccepted) {
       newErrors.terms = t('auth.termsRequired');
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const validateForm = (): boolean => {
+    // Ikkalasi ham tekshiriladi; xato bo'lgan bosqichga qaytamiz (handleSubmit'da).
+    const ok1 = validateStep1();
+    if (!ok1) return false;
+    return validateStep2();
+  };
+
+  const goNext = () => {
+    if (validateStep1()) {
+      setErrors({});
+      setStep(2);
+    }
+  };
+  const goBack = () => {
+    setErrors({});
+    setStep(1);
   };
 
   const handleInputChange = (field: keyof FormData, value: string | boolean) => {
@@ -182,54 +201,6 @@ const RegistrationForm = () => {
 
     if (errors[field as keyof FormErrors]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const handlePhotoUpload = (file: File) => {
-    const validTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024;
-
-    if (!validTypes.includes(file.type)) {
-      setErrors((prev) => ({ ...prev, photo: t('auth.photoInvalidType') }));
-      return;
-    }
-
-    if (file.size > maxSize) {
-      setErrors((prev) => ({ ...prev, photo: t('auth.photoTooLarge') }));
-      return;
-    }
-    setErrors((prev) => ({ ...prev, photo: undefined }));
-
-    setFormData((prev) => ({ ...prev, profilePhoto: file }));
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPhotoPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) {
-      handlePhotoUpload(file);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handlePhotoUpload(file);
     }
   };
 
@@ -299,9 +270,9 @@ const RegistrationForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      return;
-    }
+    // Xavfsizlik: xato bo'lgan bosqichga qaytaramiz (submit faqat 2-bosqichda).
+    if (!validateStep1()) { setStep(1); return; }
+    if (!validateStep2()) { setStep(2); return; }
 
     setIsSubmitting(true);
     setErrors({});
@@ -521,7 +492,23 @@ const RegistrationForm = () => {
           </p>
         </div>
 
-        {/* Auth Method Tabs - Email only, phone disabled */}
+        {/* Progress — 2 bosqich */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className={`flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+              {step > 1 ? <Icon name="CheckIcon" size={16} /> : 1}
+            </span>
+            <span className={`text-sm font-medium ${step >= 1 ? 'text-foreground' : 'text-muted-foreground'}`}>{t('auth.stepAccount')}</span>
+          </div>
+          <span className={`flex-1 h-0.5 rounded ${step > 1 ? 'bg-primary' : 'bg-border'}`} />
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className={`flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>2</span>
+            <span className={`text-sm font-medium ${step >= 2 ? 'text-foreground' : 'text-muted-foreground'}`}>{t('auth.stepRoleTerms')}</span>
+          </div>
+        </div>
+
+        {/* Auth Method Tabs (faqat 1-bosqich) */}
+        {step === 1 && (
         <div className="flex gap-2 p-1 bg-muted rounded-lg">
           <button
             type="button"
@@ -545,9 +532,14 @@ const RegistrationForm = () => {
             </div>
           </button>
         </div>
+        )}
 
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-5">
+          {step === 1 && (
+            <>
+          {/* Ism + Email — desktop 2 ustun */}
+          <div className="grid sm:grid-cols-2 gap-4">
           {/* Full Name */}
           <div className="space-y-2">
             <label htmlFor="fullName" className="block text-sm font-medium text-foreground">
@@ -601,7 +593,10 @@ const RegistrationForm = () => {
               </p>
             )}
           </div>
+          </div>
 
+          {/* Parol + Tasdiq — desktop 2 ustun */}
+          <div className="grid sm:grid-cols-2 gap-4">
           {/* Password */}
           <div className="space-y-2">
             <label htmlFor="password" className="block text-sm font-medium text-foreground">
@@ -680,65 +675,30 @@ const RegistrationForm = () => {
               </p>
             )}
           </div>
-
-          {/* Profile Photo Upload */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-foreground">
-              {t('auth.profilePhotoLabel')}
-            </label>
-            <div
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              className={`relative border-2 border-dashed rounded-md p-6 transition-smooth ${
-                isDragging ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-              }`}
-            >
-              {photoPreview ? (
-                <div className="flex items-center space-x-4">
-                  <AppImage src={photoPreview} alt={t('auth.profilePreviewAlt')} className="w-20 h-20 rounded-full object-cover" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-foreground">{t('auth.photoUploaded')}</p>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setFormData((prev) => ({ ...prev, profilePhoto: null }));
-                        setPhotoPreview('');
-                      }}
-                      className="text-sm text-destructive hover:underline"
-                    >
-                      {t('auth.photoDelete')}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <Icon name="PhotoIcon" size={48} className="mx-auto text-muted-foreground mb-3" />
-                  <p className="text-sm text-foreground mb-1">{t('auth.photoDragText')}</p>
-                  <label className="inline-block">
-                    <span className="text-sm text-primary hover:underline cursor-pointer">{t('auth.photoSelectFile')}</span>
-                    <input type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
-                  </label>
-                  <p className="text-xs text-muted-foreground mt-2">{t('auth.photoFormats')}</p>
-                </div>
-              )}
-            </div>
-            {errors.photo && (
-              <p className="mt-2 text-sm text-destructive flex items-center gap-1">
-                <Icon name="ExclamationCircleIcon" size={16} />
-                {errors.photo}
-              </p>
-            )}
           </div>
 
+          {/* Keyingi bosqich */}
+          <button
+            type="button"
+            onClick={goNext}
+            className="w-full py-4 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-smooth flex items-center justify-center gap-2"
+          >
+            <span>{t('auth.next')}</span>
+            <Icon name="ArrowRightIcon" size={20} />
+          </button>
+            </>
+          )}
+
+          {step === 2 && (
+            <>
           {/* Role Selection */}
-          <div className="bg-card rounded-md p-6 shadow-warm">
-            <h3 className="text-lg font-heading font-semibold text-foreground mb-4">{t('auth.selectRoleTitle')}</h3>
-            <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <h3 className="text-base font-heading font-semibold text-foreground mb-3">{t('auth.selectRoleTitle')}</h3>
+            <div className="grid sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => handleInputChange('role', 'teacher')}
-                className={`p-6 rounded-md border-2 transition-smooth text-left ${
+                className={`p-4 rounded-md border-2 transition-smooth text-left ${
                   formData.role === 'teacher' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                 }`}
               >
@@ -757,7 +717,7 @@ const RegistrationForm = () => {
               <button
                 type="button"
                 onClick={() => handleInputChange('role', 'student')}
-                className={`p-6 rounded-md border-2 transition-smooth text-left ${
+                className={`p-4 rounded-md border-2 transition-smooth text-left ${
                   formData.role === 'student' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
                 }`}
               >
@@ -782,7 +742,7 @@ const RegistrationForm = () => {
           </div>
 
           {/* Terms and Privacy */}
-          <div className="bg-card rounded-md p-6 shadow-warm space-y-3">
+          <div className="rounded-md border border-border p-4 space-y-3">
             <label className="flex items-start space-x-3 cursor-pointer group">
               <input
                 type="checkbox"
@@ -830,26 +790,41 @@ const RegistrationForm = () => {
             </div>
           )}
 
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-4 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
-                <span>{t('auth.registering')}</span>
-              </>
-            ) : (
-              <>
-                <Icon name="UserPlusIcon" size={20} />
-                <span>{t('auth.createAccountButton')}</span>
-              </>
-            )}
-          </button>
+          {/* Orqaga + Akkaunt yaratish */}
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={goBack}
+              disabled={isSubmitting}
+              className="flex-1 py-4 bg-card border-2 border-border text-foreground rounded-md font-medium hover:bg-muted transition-smooth disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Icon name="ArrowLeftIcon" size={20} />
+              <span>{t('common.back')}</span>
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex-[2] py-4 bg-primary text-primary-foreground rounded-md font-medium hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin"></div>
+                  <span>{t('auth.registering')}</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="UserPlusIcon" size={20} />
+                  <span>{t('auth.createAccountButton')}</span>
+                </>
+              )}
+            </button>
+          </div>
+            </>
+          )}
         </form>
 
+        {step === 1 && (
+        <>
         {/* Google Sign Up */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
@@ -882,6 +857,8 @@ const RegistrationForm = () => {
             {t('auth.loginLink')}
           </a>
         </p>
+        </>
+        )}
       </div>
 
       {/* Terms Modal */}
