@@ -29,7 +29,7 @@ const statusColors = {
   completed: 'bg-success/15 text-success dark:text-success',
   failed: 'bg-error/15 text-error dark:text-error',
   cancelled: 'bg-muted text-muted-foreground',
-  refunded: 'bg-purple-500/15 text-purple-700 dark:text-purple-400'
+  refunded: 'bg-secondary/15 text-secondary'
 };
 
 export default function TransactionList({ transactions }: TransactionListProps) {
@@ -64,7 +64,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
 
   if (transactions.length === 0) {
     return (
-      <div className="bg-card rounded-lg shadow p-8 text-center">
+      <div className="bg-card rounded-2xl border border-border p-8 text-center">
         <svg
           className="mx-auto h-12 w-12 text-muted-foreground"
           fill="none"
@@ -87,7 +87,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
   }
 
   return (
-    <div className="bg-card rounded-lg shadow overflow-hidden">
+    <div className="bg-card rounded-2xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-border">
           <thead className="bg-muted">

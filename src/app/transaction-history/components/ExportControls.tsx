@@ -52,7 +52,7 @@ export default function ExportControls({ transactions }: ExportControlsProps) {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow p-4 mb-6">
+    <div className="bg-card rounded-2xl border border-border p-4 mb-6">
       <div className="flex flex-wrap gap-3">
         <button
           onClick={exportToCSV}

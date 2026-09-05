@@ -19,7 +19,7 @@ export default function FilterPanel({ filters, onFilterChange }: FilterPanelProp
   const { t } = useI18n();
 
   return (
-    <div className="bg-card rounded-lg shadow p-6 mb-6">
+    <div className="bg-card rounded-2xl border border-border p-6 mb-6">
       <h2 className="text-lg font-semibold text-foreground mb-4">{t('payment.filtering')}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {/* Search */}
