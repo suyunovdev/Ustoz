@@ -5,6 +5,20 @@ import { useParams, useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate } from '@/lib/i18n/format';
+import GirihEmblem from '@/app/landing-page/components/GirihEmblem';
+
+// Diplom palitrasi (qat'iy hex — chop etishда ranglar aniq chiqishi uchun)
+const CERT = {
+  cream: '#FBF8EF',
+  ink: '#151B3A',
+  inkText: '#1B2140',
+  gold: '#B5872B', // krem fonda oltin (AA kontrast) — matn/chiziq
+  goldBright: '#DFA23A', // emblema/muhr
+  mute: '#6B6152',
+  line: 'rgba(21,27,58,0.14)',
+};
+// 8-nurli yulduz (girih yadro) — bezak
+const STAR = 'M12 1.5l2.4 5.1 5.6.7-4.1 3.9 1.1 5.6L12 19.9 6.9 22.8 8 17.2 3.9 13.3l5.6-.7L12 1.5z';
 
 // API (/api/certificates/[id]) camelCase qaytaradi (Prisma modeli). Snapshot
 // maydonlari — kurs/foydalanuvchi o'zgarsa ham sertifikatdagi asl qiymat saqlanadi.
@@ -126,56 +140,101 @@ export default function CertificatePage() {
         <div className="w-20" />
       </div>
 
-      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        {/* Sertifikat */}
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* ═══ Professional diplom ═══ */}
         <div
           id="certificate-card"
-          className="bg-white border-4 border-primary/20 rounded-3xl overflow-hidden shadow-2xl"
+          className="relative rounded-2xl overflow-hidden"
+          style={{ background: CERT.cream, border: `2.5px solid ${CERT.ink}`, boxShadow: '0 24px 70px rgba(21,27,58,0.28)' }}
         >
-          {/* Top gradient */}
-          <div className="h-3 bg-gradient-to-r from-primary via-secondary to-primary" />
+          {/* Ichki oltin ramka */}
+          <div className="pointer-events-none absolute inset-[9px] rounded-xl" style={{ border: `1px solid ${CERT.gold}` }} />
 
-          <div className="p-10 text-center space-y-5">
-            <div>
-              <h1 className="text-4xl font-black tracking-widest text-primary mb-1">USTOZ</h1>
-              <p className="text-gray-400 text-xs uppercase tracking-widest">{t('certificate.platformTagline')}</p>
-            </div>
+          {/* Burchak bezaklari */}
+          {['top-5 left-5', 'top-5 right-5', 'bottom-5 left-5', 'bottom-5 right-5'].map((pos) => (
+            <svg key={pos} className={`pointer-events-none absolute ${pos}`} width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <path d={STAR} fill={CERT.gold} opacity="0.55" />
+            </svg>
+          ))}
 
-            <div className="w-20 h-0.5 bg-primary/20 mx-auto" />
-
-            <div>
-              <p className="text-gray-500 text-sm mb-2">{t('certificate.awardedTo')}</p>
-              <h2 className="text-3xl font-bold text-gray-800">
-                {certificate.studentName || certificate.studentNameSnapshot}
-              </h2>
-            </div>
-
-            <div>
-              <p className="text-gray-500 text-sm">{t('certificate.forCompleting')}</p>
-              <h3 className="text-2xl font-semibold text-primary mt-2">
-                {certificate.courseTitle || certificate.courseTitleSnapshot}
-              </h3>
-              <p className="text-gray-400 text-sm mt-1">
-                {t('certificate.teacher')}: {certificate.teacherName || certificate.teacherNameSnapshot}
-              </p>
-            </div>
-
-            <div className="w-20 h-0.5 bg-primary/20 mx-auto" />
-
-            <div className="flex items-center justify-center gap-8 text-sm text-gray-500">
-              <div>
-                <p className="text-xs text-gray-400 mb-0.5">{t('certificate.date')}</p>
-                <p className="font-medium">{issuedDate}</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400 mb-0.5">{t('certificate.number')}</p>
-                <p className="font-mono font-semibold text-primary">{certificate.certificateNumber}</p>
-              </div>
-            </div>
+          {/* Girih voda-belgisi (markazda, juda nozik) */}
+          <div
+            className="pointer-events-none absolute inset-0 flex items-center justify-center"
+            style={{ opacity: 0.05, ['--girih-line' as string]: CERT.ink, ['--girih-star' as string]: CERT.ink }}
+          >
+            <GirihEmblem animate={false} className="w-[60%] max-w-[420px]" />
           </div>
 
-          {/* Bottom gradient */}
-          <div className="h-3 bg-gradient-to-r from-primary via-secondary to-primary" />
+          <div className="relative px-8 sm:px-16 pt-12 pb-10 text-center">
+            {/* Sarlavha */}
+            <div className="flex flex-col items-center gap-2.5">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
+                <path d={STAR} fill={CERT.goldBright} />
+              </svg>
+              <div>
+                <div className="text-3xl tracking-[0.18em] font-semibold" style={{ fontFamily: 'var(--font-display)', color: CERT.ink }}>
+                  USTOZ
+                </div>
+                <div className="text-[10px] tracking-[0.35em] uppercase mt-1.5" style={{ color: CERT.gold }}>
+                  {t('certificate.platformTagline')}
+                </div>
+              </div>
+            </div>
+
+            {/* Oltin ajratgich (markazда romb) */}
+            <div className="flex items-center justify-center gap-3 my-8">
+              <span className="block h-px w-16" style={{ background: CERT.gold, opacity: 0.5 }} />
+              <span className="block w-2 h-2 rotate-45" style={{ background: CERT.gold }} />
+              <span className="block h-px w-16" style={{ background: CERT.gold, opacity: 0.5 }} />
+            </div>
+
+            <p className="text-sm" style={{ color: CERT.mute }}>{t('certificate.awardedTo')}</p>
+            <h2 className="text-4xl sm:text-5xl font-medium mt-3 leading-tight" style={{ fontFamily: 'var(--font-display)', color: CERT.inkText }}>
+              {certificate.studentName || certificate.studentNameSnapshot}
+            </h2>
+
+            {/* Ism ostidagi oltin flourish */}
+            <div className="flex items-center justify-center gap-2 mt-4">
+              <span className="block h-px w-10" style={{ background: CERT.gold, opacity: 0.5 }} />
+              <span className="block w-1.5 h-1.5 rounded-full" style={{ background: CERT.gold }} />
+              <span className="block h-px w-10" style={{ background: CERT.gold, opacity: 0.5 }} />
+            </div>
+
+            <p className="text-sm mt-7" style={{ color: CERT.mute }}>{t('certificate.forCompleting')}</p>
+            <h3 className="text-2xl sm:text-3xl font-medium mt-2" style={{ fontFamily: 'var(--font-display)', color: CERT.ink }}>
+              {certificate.courseTitle || certificate.courseTitleSnapshot}
+            </h3>
+            <p className="text-sm mt-2" style={{ color: CERT.mute }}>
+              {t('certificate.teacher')}: {certificate.teacherName || certificate.teacherNameSnapshot}
+            </p>
+
+            {/* Footer: sana | muhr | raqam */}
+            <div className="mt-10 grid grid-cols-3 items-center">
+              <div className="text-center">
+                <p className="text-[10px] uppercase tracking-widest" style={{ color: CERT.mute }}>{t('certificate.date')}</p>
+                <p className="text-sm font-semibold mt-1" style={{ color: CERT.inkText }}>{issuedDate}</p>
+              </div>
+              <div className="flex justify-center">
+                {/* Muhr — oltin girih emblema halqa ichida */}
+                <div className="relative w-20 h-20">
+                  <div className="absolute inset-0 rounded-full" style={{ border: `2px solid ${CERT.gold}` }} />
+                  <div className="absolute inset-2" style={{ ['--girih-line' as string]: CERT.goldBright, ['--girih-star' as string]: CERT.gold }}>
+                    <GirihEmblem animate={false} className="w-full h-full" />
+                  </div>
+                </div>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] uppercase tracking-widest" style={{ color: CERT.mute }}>{t('certificate.number')}</p>
+                <p className="text-sm font-semibold mt-1 font-mono" style={{ color: CERT.gold }}>{certificate.certificateNumber}</p>
+              </div>
+            </div>
+
+            {/* Beruvchi (imzo qatori) */}
+            <div className="mt-9 flex flex-col items-center">
+              <span className="block w-48 h-px" style={{ background: CERT.line }} />
+              <span className="text-xs mt-2.5" style={{ color: CERT.mute }}>Ustoz ta&apos;lim platformasi &middot; Rasmiy sertifikat</span>
+            </div>
+          </div>
         </div>
 
         {/* Yuklab olish (PDF — chop etish orqali) */}

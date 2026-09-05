@@ -35,7 +35,14 @@ function starPolygon(r: number, skip: number, rot = 0): string {
   return pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ') + ' Z';
 }
 
-export default function GirihEmblem({ className = '' }: { className?: string }) {
+export default function GirihEmblem({
+  className = '',
+  animate = true,
+}: {
+  className?: string;
+  // false — animatsiyasiz, darhol to'liq (sertifikat/print/voda-belgi uchun)
+  animate?: boolean;
+}) {
   const spokes = Array.from({ length: 16 }, (_, i) => {
     const [x1, y1] = pt(40, i * 22.5);
     const [x2, y2] = pt(190, i * 22.5);
@@ -46,7 +53,7 @@ export default function GirihEmblem({ className = '' }: { className?: string }) 
   return (
     <svg
       viewBox="0 0 400 400"
-      className={`girih ${className}`}
+      className={`girih ${animate ? '' : 'girih--static'} ${className}`}
       role="img"
       aria-label="Girih geometrik naqsh"
       fill="none"
@@ -60,6 +67,8 @@ export default function GirihEmblem({ className = '' }: { className?: string }) 
         .girih [data-fade] { opacity: 0; animation: girih-fade 1s ease forwards; }
         @keyframes girih-draw { to { stroke-dashoffset: 0; } }
         @keyframes girih-fade { to { opacity: 1; } }
+        .girih--static [data-draw] { animation: none !important; stroke-dashoffset: 0 !important; }
+        .girih--static [data-fade] { animation: none !important; opacity: 1 !important; }
         @media (prefers-reduced-motion: reduce) {
           .girih [data-draw] { animation: none; stroke-dashoffset: 0; }
           .girih [data-fade] { animation: none; opacity: 1; }
