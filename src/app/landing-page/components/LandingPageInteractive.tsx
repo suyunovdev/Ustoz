@@ -260,14 +260,15 @@ const LandingPageInteractive = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   const CATEGORIES = useMemo(() => [
-    { label: t('landing.catProgramming'), icon: 'CodeBracketIcon', key: 'programming' },
-    { label: t('landing.catMath'), icon: 'CalculatorIcon', key: 'mathematics' },
-    { label: t('landing.catEnglish'), icon: 'LanguageIcon', key: 'english_language' },
-    { label: t('landing.catDesign'), icon: 'PaintBrushIcon', key: 'design' },
-    { label: t('landing.catBusiness'), icon: 'BriefcaseIcon', key: 'business_management' },
-    { label: t('landing.catPhysics'), icon: 'BeakerIcon', key: 'physics' },
-    { label: t('landing.catHistory'), icon: 'BookOpenIcon', key: 'history' },
-    { label: t('landing.catAI'), icon: 'CpuChipIcon', key: 'artificial_intelligence' },
+    // Keng kategoriyalar — Category.slug bo'yicha (marketplace chiplari bilan izchil).
+    { label: t('landing.catProgramming'), icon: 'CodeBracketIcon', key: 'dasturlash' },
+    { label: t('landing.catScience'), icon: 'BeakerIcon', key: 'tabiiy-fanlar' },
+    { label: t('landing.catLanguages'), icon: 'LanguageIcon', key: 'tillar' },
+    { label: t('landing.catDesign'), icon: 'PaintBrushIcon', key: 'dizayn' },
+    { label: t('landing.catBusiness'), icon: 'BriefcaseIcon', key: 'biznes' },
+    { label: t('landing.catMarketing'), icon: 'MegaphoneIcon', key: 'marketing' },
+    { label: t('landing.catArt'), icon: 'MusicalNoteIcon', key: 'sanat' },
+    { label: t('landing.catMedia'), icon: 'VideoCameraIcon', key: 'media' },
   ], [t]);
 
   const FAQ_DATA = useMemo(() => [

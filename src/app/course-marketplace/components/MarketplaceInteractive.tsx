@@ -33,6 +33,7 @@ interface Course {
   difficulty: string;
   language: string;
   category: string;
+  categorySlug: string;
   subjectCategory: string;
   targetAudience: string;
   gradeLevel: number | null;
@@ -107,7 +108,7 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
     setIsLoading(true);
     setLoadError(false);
     try {
-      const res = await fetch('/api/courses?limit=50&sortBy=enrollments', {
+      const res = await fetch('/api/courses?limit=120&sortBy=enrollments', {
         credentials: 'include',
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -131,6 +132,7 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
         difficulty: c.difficultyLevel || 'Beginner',
         language: c.language || 'uz',
         category: c.category || 'other',
+        categorySlug: c.categorySlug || '',
         subjectCategory: c.subjectCategory || '',
         targetAudience: c.targetAudience || '',
         gradeLevel: typeof c.gradeLevel === 'number' ? c.gradeLevel : null,
@@ -153,11 +155,13 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
         const cleaned = raw.replace(/[_-]+/g, ' ').trim();
         return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
       };
+      // Chip kaliti = Category.slug (barqaror, landing havolalari bilan izchil);
+      // slug bo'lmasa legacy nomga tushamiz. Label doim Category nomidan.
       const catMap: Record<string, { count: number; label: string }> = {};
       mapped.forEach((c) => {
-        const raw = c.category || 'other';
-        const id = raw.toLowerCase();
-        if (!catMap[id]) catMap[id] = { count: 0, label: humanize(raw) };
+        const name = c.category || 'other';
+        const id = (c.categorySlug || name).toLowerCase();
+        if (!catMap[id]) catMap[id] = { count: 0, label: humanize(name) };
         catMap[id].count += 1;
       });
       const catList: Category[] = [
@@ -199,6 +203,7 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
       const key = activeCategory.toLowerCase();
       filtered = filtered.filter(
         (c) =>
+          (c.categorySlug || '').toLowerCase() === key ||
           (c.category || '').toLowerCase() === key ||
           (c.subjectCategory || '').toLowerCase() === key,
       );

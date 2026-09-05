@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
   const limitRaw = Number(searchParams.get('limit'));
   const page = Number.isFinite(pageRaw) && pageRaw >= 1 ? Math.floor(pageRaw) : 1;
   const limit =
-    Number.isFinite(limitRaw) && limitRaw >= 1 ? Math.min(50, Math.floor(limitRaw)) : 12;
+    Number.isFinite(limitRaw) && limitRaw >= 1 ? Math.min(120, Math.floor(limitRaw)) : 12;
   const skip = (page - 1) * limit;
   const search = searchParams.get('search') || '';
   const category = searchParams.get('category');
@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
   type CourseRow = Prisma.CourseGetPayload<{
     include: {
       teacher: { select: { fullName: true; avatarUrl: true } };
+      categoryRel: { select: { slug: true; name: true } };
       _count: { select: { enrollments: true } };
     };
   }>;
@@ -65,6 +66,7 @@ export async function GET(req: NextRequest) {
         where,
         include: {
           teacher: { select: { fullName: true, avatarUrl: true } },
+          categoryRel: { select: { slug: true, name: true } },
           _count: { select: { enrollments: true } },
         },
         orderBy,
@@ -88,6 +90,7 @@ export async function GET(req: NextRequest) {
       // to'liq muqova faqat kurs tafsiloti (/api/courses/[id]) da qaytadi.
       coverImage: c.coverImage?.startsWith('data:') ? null : c.coverImage,
       category: c.category,
+      categorySlug: c.categoryRel?.slug ?? null,
       subjectCategory: c.subjectCategory,
       targetAudience: c.targetAudience,
       gradeLevel: c.gradeLevel,
