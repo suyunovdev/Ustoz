@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
-import BrandMark, { BRAND_STAR_PATH } from '@/components/common/BrandMark';
+import BrandMark from '@/components/common/BrandMark';
 import { useI18n } from '@/contexts/I18nContext';
 
 export default function NotFound() {
@@ -27,7 +27,9 @@ export default function NotFound() {
           <span className="uz-nf-mark" role="img" aria-hidden="true">
             <span className="uz-nf-mark-glow" />
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="uz-nf-logo">
-              <path className="uz-nf-layer uz-nf-layer-top" d={BRAND_STAR_PATH} fill="currentColor" />
+              <path className="uz-nf-layer uz-nf-layer-top" d="M5 20 V11 C5 6 8 3.5 12 3.5 C16 3.5 19 6 19 11 V20" stroke="currentColor" strokeWidth="1.7" fill="none" strokeLinejoin="round" strokeLinecap="round" />
+              <path className="uz-nf-layer uz-nf-layer-mid" d="M9.5 20 V12.6 C9.5 10 10.6 8.6 12 8.6 C13.4 8.6 14.5 10 14.5 12.6 V20" stroke="currentColor" strokeWidth="1.7" fill="none" strokeLinejoin="round" strokeLinecap="round" />
+              <path className="uz-nf-layer uz-nf-layer-bot" d="M3.5 20 H20.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
             </svg>
           </span>
 

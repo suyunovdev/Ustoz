@@ -69,7 +69,7 @@ export default function AuthBrandPanel({
         {trust.map((item, i) => (
           <li key={i} className="flex items-center gap-3">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="flex-shrink-0">
-              <path d="M12 1.5l2.4 5.1 5.6.7-4.1 3.9 1.1 5.6L12 19.9 6.9 22.8 8 17.2 3.9 13.3l5.6-.7L12 1.5z" fill={AUTH_GOLD} />
+              <path d="M5 12.5l4 4 10-10" stroke={AUTH_GOLD} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
             <span className="text-[0.95rem]" style={{ color: 'rgba(247,241,228,0.85)' }}>{item}</span>
           </li>

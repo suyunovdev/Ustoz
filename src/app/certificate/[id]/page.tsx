@@ -17,8 +17,11 @@ const CERT = {
   mute: '#6B6152',
   line: 'rgba(21,27,58,0.14)',
 };
-// 8-nurli yulduz (girih yadro) — bezak
-const STAR = 'M12 1.5l2.4 5.1 5.6.7-4.1 3.9 1.1 5.6L12 19.9 6.9 22.8 8 17.2 3.9 13.3l5.6-.7L12 1.5z';
+// Romb — burchak bezagi
+const DIAMOND = 'M12 3 L15.5 12 L12 21 L8.5 12 Z';
+// Madrasa ravog'i — header belgisi
+const ARCH_OUTER = 'M5 20 V11 C5 6 8 3.5 12 3.5 C16 3.5 19 6 19 11 V20';
+const ARCH_INNER = 'M9.5 20 V12.6 C9.5 10 10.6 8.6 12 8.6 C13.4 8.6 14.5 10 14.5 12.6 V20';
 
 // API (/api/certificates/[id]) camelCase qaytaradi (Prisma modeli). Snapshot
 // maydonlari — kurs/foydalanuvchi o'zgarsa ham sertifikatdagi asl qiymat saqlanadi.
@@ -152,8 +155,8 @@ export default function CertificatePage() {
 
           {/* Burchak bezaklari */}
           {['top-5 left-5', 'top-5 right-5', 'bottom-5 left-5', 'bottom-5 right-5'].map((pos) => (
-            <svg key={pos} className={`pointer-events-none absolute ${pos}`} width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d={STAR} fill={CERT.gold} opacity="0.55" />
+            <svg key={pos} className={`pointer-events-none absolute ${pos}`} width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <path d={DIAMOND} fill={CERT.gold} opacity="0.55" />
             </svg>
           ))}
 
@@ -168,8 +171,10 @@ export default function CertificatePage() {
           <div className="relative px-8 sm:px-16 pt-12 pb-10 text-center">
             {/* Sarlavha */}
             <div className="flex flex-col items-center gap-2.5">
-              <svg width="34" height="34" viewBox="0 0 24 24" fill="none">
-                <path d={STAR} fill={CERT.goldBright} />
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
+                <path d={ARCH_OUTER} stroke={CERT.goldBright} strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round" />
+                <path d={ARCH_INNER} stroke={CERT.goldBright} strokeWidth="1.7" strokeOpacity="0.6" strokeLinejoin="round" strokeLinecap="round" />
+                <path d="M3.5 20 H20.5" stroke={CERT.goldBright} strokeWidth="1.7" strokeLinecap="round" />
               </svg>
               <div>
                 <div className="text-3xl tracking-[0.18em] font-semibold" style={{ fontFamily: 'var(--font-display)', color: CERT.ink }}>
