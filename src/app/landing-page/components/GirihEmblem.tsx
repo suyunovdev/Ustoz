@@ -1,11 +1,11 @@
 'use client';
 
-// ─── Girih emblema ───
-// Markaziy Osiyo / Islom geometriyasi: 8-burchakli o'zaro bog'langan yulduz (girih).
-// Bu motif matematika, aniqlik va ustalik (ustachilik) ramzi — "Ustoz" brendining
-// ilmiy-meros ohangini beradi. Barcha geometriya JS'da hisoblanadi (mukammal
-// simmetriya), yuklanishda chiziq-chizish (line-draw) animatsiyasi bilan chiqadi.
-// prefers-reduced-motion: animatsiyasiz, darhol to'liq ko'rinadi.
+// ─── Girih yulduzi (toza, minimal) ───
+// Bitta aniq 8-nurli o'zaro bog'langan girih yulduzi ({8/3} octagram) — Markaziy
+// Osiyo geometriyasi, matematika/aniqlik/meros ramzi. Ilgarigi ko'p qatlamli
+// "shovqinli" mandala o'rniga bitta toza yulduz. Barcha o'lchamda (favicon'dan
+// hero'gacha) aniq ko'rinadi. Ranglar CSS o'zgaruvchilari orqali (--girih-star yulduz,
+// --girih-line markaz), animate=false — statik (sertifikat/print/voda-belgi).
 
 const CX = 200;
 const CY = 200;
@@ -15,14 +15,7 @@ function pt(r: number, angleDeg: number): [number, number] {
   return [CX + r * Math.cos(a), CY + r * Math.sin(a)];
 }
 
-// n-burchak (octagon va h.k.) yopiq path
-function polygon(r: number, sides: number, rot = 0): string {
-  const step = 360 / sides;
-  const pts = Array.from({ length: sides }, (_, i) => pt(r, rot + i * step));
-  return pts.map(([x, y], i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`).join(' ') + ' Z';
-}
-
-// {8/m} yulduz-ko'pburchak (octagram) — har m-chi nuqtaga ulanadi
+// {8/skip} yulduz-ko'pburchak (octagram) — uzluksiz o'zaro bog'langan yulduz
 function starPolygon(r: number, skip: number, rot = 0): string {
   const n = 8;
   const idx: number[] = [];
@@ -43,28 +36,21 @@ export default function GirihEmblem({
   // false — animatsiyasiz, darhol to'liq (sertifikat/print/voda-belgi uchun)
   animate?: boolean;
 }) {
-  const spokes = Array.from({ length: 16 }, (_, i) => {
-    const [x1, y1] = pt(40, i * 22.5);
-    const [x2, y2] = pt(190, i * 22.5);
-    return { x1, y1, x2, y2, i };
-  });
-  const tips = Array.from({ length: 8 }, (_, i) => pt(180, i * 45));
-
   return (
     <svg
       viewBox="0 0 400 400"
       className={`girih ${animate ? '' : 'girih--static'} ${className}`}
       role="img"
-      aria-label="Girih geometrik naqsh"
+      aria-label="Girih yulduzi"
       fill="none"
     >
       <style>{`
         .girih [data-draw] {
           stroke-dasharray: 1;
           stroke-dashoffset: 1;
-          animation: girih-draw 2.2s cubic-bezier(0.65,0,0.35,1) forwards;
+          animation: girih-draw 1.6s cubic-bezier(0.65,0,0.35,1) forwards;
         }
-        .girih [data-fade] { opacity: 0; animation: girih-fade 1s ease forwards; }
+        .girih [data-fade] { opacity: 0; animation: girih-fade 0.8s ease 0.9s forwards; }
         @keyframes girih-draw { to { stroke-dashoffset: 0; } }
         @keyframes girih-fade { to { opacity: 1; } }
         .girih--static [data-draw] { animation: none !important; stroke-dashoffset: 0 !important; }
@@ -75,95 +61,19 @@ export default function GirihEmblem({
         }
       `}</style>
 
-      {/* konsentrik sakkiz-burchaklar */}
-      {[196, 150].map((r, i) => (
-        <path
-          key={`oct-${r}`}
-          data-draw
-          pathLength={1}
-          d={polygon(r, 8, i % 2 ? 22.5 : 0)}
-          stroke="var(--girih-line, #E0A032)"
-          strokeWidth={i === 0 ? 1 : 1.25}
-          strokeOpacity={i === 0 ? 0.35 : 0.55}
-          style={{ animationDelay: `${i * 0.15}s` }}
-        />
-      ))}
-
-      {/* radial spoke'lar */}
-      {spokes.map((s) => (
-        <line
-          key={`sp-${s.i}`}
-          data-draw
-          pathLength={1}
-          x1={s.x1}
-          y1={s.y1}
-          x2={s.x2}
-          y2={s.y2}
-          stroke="var(--girih-line, #E0A032)"
-          strokeWidth={0.75}
-          strokeOpacity={0.22}
-          style={{ animationDelay: `${0.2 + (s.i % 8) * 0.03}s` }}
-        />
-      ))}
-
-      {/* asosiy octagram yulduzlar (o'zaro bog'langan) */}
+      {/* Asosiy octagram yulduz */}
       <path
         data-draw
         pathLength={1}
-        d={starPolygon(180, 3, 0)}
+        d={starPolygon(176, 3)}
         stroke="var(--girih-star, #F3E4C2)"
-        strokeWidth={1.75}
-        strokeOpacity={0.9}
+        strokeWidth={3}
         strokeLinejoin="round"
-        style={{ animationDelay: '0.35s' }}
-      />
-      <path
-        data-draw
-        pathLength={1}
-        d={starPolygon(180, 3, 22.5)}
-        stroke="var(--girih-line, #E0A032)"
-        strokeWidth={1.5}
-        strokeOpacity={0.75}
-        strokeLinejoin="round"
-        style={{ animationDelay: '0.55s' }}
-      />
-      {/* ichki octagram */}
-      <path
-        data-draw
-        pathLength={1}
-        d={starPolygon(112, 3, 0)}
-        stroke="var(--girih-star, #F3E4C2)"
-        strokeWidth={1.5}
-        strokeOpacity={0.85}
-        strokeLinejoin="round"
-        style={{ animationDelay: '0.75s' }}
+        strokeLinecap="round"
       />
 
-      {/* markaziy sakkiz-burchak yadro */}
-      <path
-        data-draw
-        pathLength={1}
-        d={polygon(46, 8, 22.5)}
-        stroke="var(--girih-star, #F3E4C2)"
-        strokeWidth={1.5}
-        strokeOpacity={0.9}
-        style={{ animationDelay: '0.9s' }}
-      />
-
-      {/* yulduz uchlaridagi tugun nuqtalari */}
-      {tips.map(([x, y], i) => (
-        <circle
-          key={`tip-${i}`}
-          data-fade
-          cx={x}
-          cy={y}
-          r={3}
-          fill="var(--girih-line, #E0A032)"
-          style={{ animationDelay: `${1.4 + i * 0.05}s` }}
-        />
-      ))}
-      {/* markaziy nuqta */}
-      <circle data-fade cx={CX} cy={CY} r={4.5} fill="var(--girih-star, #F3E4C2)" style={{ animationDelay: '1.3s' }} />
+      {/* Markaziy nuqta */}
+      <circle data-fade cx={CX} cy={CY} r={6} fill="var(--girih-line, #DFA23A)" />
     </svg>
   );
 }

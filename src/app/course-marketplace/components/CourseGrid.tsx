@@ -1,6 +1,7 @@
 'use client';
 
 import CourseCard from './CourseCard';
+import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface Course {
@@ -34,11 +35,7 @@ const CourseGrid = ({ courses, onWishlistToggle, wishlistedCourses }: CourseGrid
     return (
       <div className="col-span-full flex flex-col items-center justify-center py-16 space-y-4">
         <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" className="text-muted-foreground" />
-            <path d="M2 17L12 22L22 17" stroke="currentColor" className="text-muted-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M2 12L12 17L22 12" stroke="currentColor" className="text-muted-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <Icon name="BookOpenIcon" size={48} className="text-muted-foreground" />
         </div>
         <h3 className="text-xl font-heading font-semibold">{t('courses.noCoursesFound')}</h3>
         <p className="text-muted-foreground text-center max-w-md">

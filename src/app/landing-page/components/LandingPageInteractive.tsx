@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
 import GirihEmblem from './GirihEmblem';
 import ThemeToggle from '@/components/common/ThemeToggle';
+import BrandMark from '@/components/common/BrandMark';
 
 // ═══ Palitra ═══
 // Landing o'zining barqaror "qog'oz + siyoh" palitrasiga ega — app'ning light/dark
@@ -110,15 +111,7 @@ function LandingHeader() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <span
-              className="flex items-center justify-center w-9 h-9 rounded-[10px]"
-              style={{ background: GOLD, boxShadow: '0 2px 10px rgba(223,162,58,0.35)' }}
-            >
-              {/* sakkiz-nurli yulduz — girih yadro logotipi */}
-              <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-                <path d="M12 1.5l2.4 5.1 5.6.7-4.1 3.9 1.1 5.6L12 19.9 6.9 22.8 8 17.2 3.9 13.3l5.6-.7L12 1.5z" fill={INK} opacity="0.92" />
-              </svg>
-            </span>
+            <BrandMark size={36} shadow />
             <span className="text-xl font-semibold tracking-tight" style={{ ...DISPLAY, color: '#F7F1E4' }}>
               Ustoz
             </span>
@@ -830,11 +823,7 @@ const LandingPageInteractive = () => {
             <div className="grid md:grid-cols-4 gap-10 mb-12">
               <div className="md:col-span-1">
                 <div className="flex items-center gap-2.5 mb-4">
-                  <span className="flex items-center justify-center w-9 h-9 rounded-[10px]" style={{ background: GOLD }}>
-                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 1.5l2.4 5.1 5.6.7-4.1 3.9 1.1 5.6L12 19.9 6.9 22.8 8 17.2 3.9 13.3l5.6-.7L12 1.5z" fill={INK} opacity="0.92" />
-                    </svg>
-                  </span>
+                  <BrandMark size={36} />
                   <span className="text-xl font-semibold" style={{ ...DISPLAY, color: '#F7F1E4' }}>Ustoz</span>
                 </div>
                 <p className="text-sm leading-relaxed" style={{ color: 'rgba(247,241,228,0.55)' }}>{t('landing.footerDesc')}</p>

@@ -8,6 +8,7 @@ import LanguageSelector from './LanguageSelector';
 import NotificationBell from './NotificationBell';
 import UserMenu from './UserMenu';
 import ThemeToggle from './ThemeToggle';
+import BrandMark from './BrandMark';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -99,13 +100,7 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
             }
             className="flex items-center space-x-2 transition-smooth hover:opacity-80"
           >
-            <div className="flex items-center justify-center w-10 h-10 bg-primary rounded-md">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" className="text-primary-foreground" />
-                <path d="M2 17L12 22L22 17" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M2 12L12 17L22 12" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
+            <BrandMark size={40} />
             <span className="text-xl font-heading font-bold text-foreground">Ustoz</span>
           </Link>
 

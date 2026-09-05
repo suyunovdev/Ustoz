@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import ThemeToggle from '@/components/common/ThemeToggle';
+import BrandMark from '@/components/common/BrandMark';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
 import { useConversations } from '@/hooks/queries/useConversations';
@@ -75,13 +76,7 @@ export default function StudentSidebar({ mobileOpen, onMobileClose }: StudentSid
         className="flex items-center gap-2 px-6 py-5 border-b border-border"
         onClick={onMobileClose}
       >
-        <div className="flex items-center justify-center w-9 h-9 bg-primary rounded-md shrink-0">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" className="text-primary-foreground" />
-            <path d="M2 17L12 22L22 17" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M2 12L12 17L22 12" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
+        <BrandMark size={36} className="shrink-0" />
         <div className="min-w-0">
           <p className="text-lg font-heading font-bold text-foreground leading-tight">Ustoz</p>
           <p className="text-xs text-muted-foreground">{t('teacher.sidebarRoleStudent')}</p>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import BrandMark from '@/components/common/BrandMark';
 import { useI18n } from '@/contexts/I18nContext';
 
 type Step = 'email' | 'otp' | 'newPassword' | 'success';
@@ -122,13 +123,7 @@ export default function ForgotPasswordInteractive() {
     <div className="w-full max-w-md">
       {/* Logo */}
       <div className="text-center mb-8">
-        <div className="flex items-center justify-center w-12 h-12 bg-primary rounded-xl mx-auto mb-4">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" />
-            <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </div>
+        <BrandMark size={48} className="mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-foreground">Ustoz</h1>
       </div>
 

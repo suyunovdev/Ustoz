@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import BrandMark, { BRAND_STAR_PATH } from '@/components/common/BrandMark';
 import { useI18n } from '@/contexts/I18nContext';
 
 export default function NotFound() {
@@ -26,9 +27,7 @@ export default function NotFound() {
           <span className="uz-nf-mark" role="img" aria-hidden="true">
             <span className="uz-nf-mark-glow" />
             <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="uz-nf-logo">
-              <path className="uz-nf-layer uz-nf-layer-top" d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" />
-              <path className="uz-nf-layer uz-nf-layer-mid" d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path className="uz-nf-layer uz-nf-layer-bot" d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path className="uz-nf-layer uz-nf-layer-top" d={BRAND_STAR_PATH} fill="currentColor" />
             </svg>
           </span>
 
@@ -61,13 +60,7 @@ export default function NotFound() {
 
         {/* Brend */}
         <div className="mt-12 flex items-center justify-center gap-2 opacity-70">
-          <span className="flex items-center justify-center w-6 h-6 bg-primary rounded-md">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" className="text-primary-foreground" />
-              <path d="M2 17L12 22L22 17" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M2 12L12 17L22 12" stroke="currentColor" className="text-primary-foreground" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </span>
+          <BrandMark size={24} />
           <span className="text-sm font-heading font-bold text-foreground">Ustoz</span>
         </div>
       </div>
