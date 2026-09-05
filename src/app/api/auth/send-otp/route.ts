@@ -79,14 +79,14 @@ export async function POST(req: NextRequest) {
           html: `
             <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Tasdiqlash kodingiz ichkarida — 10 daqiqa amal qiladi.</div>
             <div style="font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;max-width:460px;margin:0 auto;padding:24px;color:#1f2937;">
-              <h2 style="color:#0f4c75;margin:0 0 4px;">Ustoz platformasi</h2>
+              <h2 style="color:#151B3A;margin:0 0 4px;">Ustoz platformasi</h2>
               <p style="color:#6b7280;margin:0 0 20px;font-size:14px;">${purpose}</p>
               <p style="margin:0 0 8px;">Assalomu alaykum! Tasdiqlash kodingiz:</p>
-              <div style="font-size:34px;font-weight:700;letter-spacing:8px;color:#0f4c75;background:#f1f5f9;border-radius:10px;text-align:center;padding:16px 0;margin:12px 0;">${otp}</div>
+              <div style="font-size:34px;font-weight:700;letter-spacing:8px;color:#151B3A;background:#f1f5f9;border-radius:10px;text-align:center;padding:16px 0;margin:12px 0;">${otp}</div>
               <p style="color:#6b7280;font-size:14px;margin:0 0 4px;">Kod 10 daqiqa ichida amal qiladi. Uni hech kimga bermang.</p>
               <p style="color:#9ca3af;font-size:12px;margin:16px 0 0;">Agar siz bu kodni so'ramagan bo'lsangiz, bu xabarni e'tiborsiz qoldiring.</p>
               <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0 12px;">
-              <p style="color:#9ca3af;font-size:12px;margin:0;">Ustoz — onlayn ta'lim platformasi · <a href="https://ustozedu.uz" style="color:#0f4c75;text-decoration:none;">ustozedu.uz</a></p>
+              <p style="color:#9ca3af;font-size:12px;margin:0;">Ustoz — onlayn ta'lim platformasi · <a href="https://ustozedu.uz" style="color:#151B3A;text-decoration:none;">ustozedu.uz</a></p>
             </div>
           `,
         });

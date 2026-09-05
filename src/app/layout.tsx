@@ -40,6 +40,10 @@ import { getServerLocale } from '@/lib/i18n/server';
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#F4EEE1' },
+    { media: '(prefers-color-scheme: dark)', color: '#0E1330' },
+  ],
 };
 
 const SITE_URL =
@@ -65,7 +69,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: 'Ustoz Team' }],
   icons: {
-    icon: [{ url: '/favicon.ico', type: 'image/x-icon' }],
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: '32x32', type: 'image/x-icon' },
+    ],
+    apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
   },
   openGraph: {
     type: 'website',
@@ -110,9 +118,8 @@ export default async function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0f4c75" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
       <body>
         <AuthProvider>

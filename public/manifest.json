@@ -4,11 +4,13 @@
   "description": "O'zbek tilidagi onlayn ta'lim platformasi",
   "start_url": "/landing-page",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0f4c75",
+  "background_color": "#F4EEE1",
+  "theme_color": "#151B3A",
   "orientation": "portrait-primary",
   "icons": [
-    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+    { "src": "/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
   ],
   "categories": ["education"],
   "lang": "uz"
