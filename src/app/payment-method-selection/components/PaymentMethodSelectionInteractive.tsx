@@ -26,6 +26,7 @@ export default function PaymentMethodSelectionInteractive() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [requestSent, setRequestSent] = useState(false);
 
   const courseId = searchParams.get('courseId');
   const courseDataParam = searchParams.get('courseData');
@@ -99,18 +100,15 @@ export default function PaymentMethodSelectionInteractive() {
       setProcessing(true);
       setError('');
 
-      const response = await fetch('/api/payment/initiate', {
+      // To'lov shlyuzi (Click/Payme) hali ulanmagan — obuna kabi admin tasdig'i orqali.
+      // Student so'rov yuboradi, admin tasdiqlaganda kursga yoziladi.
+      const response = await fetch(`/api/courses/${course.id}/purchase-request`, {
         method: 'POST',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          courseId: course.id,
-          paymentMethod: selectedMethod,
-          amount: course.price_uzs,
-          currency: 'UZS'
-        })
+        body: JSON.stringify({ paymentMethod: selectedMethod })
       });
 
       const data = await response.json();
@@ -119,19 +117,8 @@ export default function PaymentMethodSelectionInteractive() {
         throw new Error(data.error || t('payment.paymentInitError'));
       }
 
-      // Navigate to payment processing screen with transaction data
-      const transactionData = {
-        transactionId: data.transactionId,
-        courseId: course.id,
-        courseTitle: course.title,
-        amount: course.price_uzs,
-        paymentMethod: selectedMethod,
-        paymentUrl: data.paymentUrl
-      };
-
-      router.push(
-        `/payment-processing?transaction_id=${data.transactionId}&payment_method=${selectedMethod}&course_id=${course.id}&amount=${course.price_uzs}&payment_url=${encodeURIComponent(data.paymentUrl)}`
-      );
+      setRequestSent(true);
+      setProcessing(false);
     } catch (err: any) {
       console.error('Payment initiation error:', err);
       setError(err.message || t('payment.paymentInitError'));
@@ -163,6 +150,36 @@ export default function PaymentMethodSelectionInteractive() {
           >
             {t('payment.backToCourses')}
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (requestSent) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-card rounded-2xl border border-border p-8 text-center">
+          <div className="w-16 h-16 rounded-full bg-success/15 flex items-center justify-center mx-auto mb-5">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" className="text-success">
+              <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-heading font-bold text-foreground mb-2">{t('payment.requestSentTitle')}</h2>
+          <p className="text-muted-foreground mb-6">{t('payment.requestSentDesc')}</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              onClick={() => router.push('/student-dashboard')}
+              className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            >
+              {t('payment.toDashboard')}
+            </button>
+            <button
+              onClick={() => router.push('/course-marketplace')}
+              className="px-6 py-3 bg-card border border-border text-foreground rounded-lg font-medium hover:bg-muted transition-colors"
+            >
+              {t('payment.backToCourses')}
+            </button>
+          </div>
         </div>
       </div>
     );

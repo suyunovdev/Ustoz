@@ -14,6 +14,7 @@ import { useRefundMutation } from '@/hooks/mutations/useRefundMutation';
 import { useI18n } from '@/contexts/I18nContext';
 import { type Locale } from '@/lib/i18n';
 import { formatDateTime, formatCurrency } from '@/lib/i18n/format';
+import CoursePurchaseRequestsPanel from './CoursePurchaseRequestsPanel';
 
 type StatusFilter = TransactionStatusDTO | 'all';
 type MethodFilter = PaymentMethodDTO | 'all';
@@ -93,7 +94,7 @@ const PaymentsPanel = () => {
     if (!refundTarget) return null;
     return {
       title: t('admin.refundPayment'),
-      message: `${refundTarget.student.fullName} (${formatUzs(refundTarget.amountUzs, locale)}) "${refundTarget.course.title}" kursi uchun to'lovni qaytaramizmi? Talaba kurs ro'yxatidan olib tashlanadi.`,
+      message: `${refundTarget.student.fullName} (${formatUzs(refundTarget.amountUzs, locale)}) "${refundTarget.course?.title ?? t('payment.subscription')}" uchun to'lovni qaytaramizmi? Talaba kurs ro'yxatidan olib tashlanadi.`,
     };
   }, [refundTarget, locale]);
 
@@ -117,6 +118,9 @@ const PaymentsPanel = () => {
 
   return (
     <div className="space-y-6">
+      {/* Kurs sotib olish so'rovlari (to'lov shlyuzisiz — admin tasdig'i) */}
+      <CoursePurchaseRequestsPanel />
+
       {/* Stats */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
@@ -233,7 +237,7 @@ const PaymentsPanel = () => {
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
-                        {tx.course.title} · {tx.student.email}
+                        {tx.course?.title ?? t('payment.subscription')} · {tx.student.email}
                       </p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
                         <span className="font-semibold text-foreground">

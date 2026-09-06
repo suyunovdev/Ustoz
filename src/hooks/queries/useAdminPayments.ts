@@ -32,7 +32,7 @@ export interface AdminTransactionDTO {
   refundReason: string | null;
   refundedById: string | null;
   student: { id: string; fullName: string; email: string };
-  course: { id: string; title: string; coverImage: string | null };
+  course: { id: string; title: string; coverImage: string | null } | null;
 }
 
 export interface AdminPaymentsStats {
