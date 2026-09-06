@@ -77,3 +77,18 @@ export function normalizeEmail(v: string): string {
 export function isOneOf<T extends readonly string[]>(v: unknown, allowed: T): v is T[number] {
   return typeof v === 'string' && (allowed as readonly string[]).includes(v);
 }
+
+/**
+ * Yagona parol siyosati — barcha oqimlar (register, OTP-signup, parol tiklash,
+ * parol almashtirish) shu funksiyani ishlatishi kerak. Xato bo'lsa xabar (string),
+ * to'g'ri bo'lsa null qaytaradi.
+ */
+export function validatePassword(password: unknown): string | null {
+  if (typeof password !== 'string' || password.length < 8) {
+    return "Parol kamida 8 ta belgidan iborat bo'lishi kerak";
+  }
+  if (!/[A-Z]/.test(password) || !/[a-z]/.test(password) || !/[0-9]/.test(password)) {
+    return "Parol kamida 1 ta katta harf, 1 ta kichik harf va 1 ta raqam bo'lishi kerak";
+  }
+  return null;
+}

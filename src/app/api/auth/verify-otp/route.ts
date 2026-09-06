@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { signToken, createSessionCookie } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 import { attributeOnSignup } from '@/lib/services/referral.service';
-import { isEmail } from '@/lib/validation';
+import { isEmail, validatePassword } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
   try {
@@ -52,7 +52,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (otpRecord.otp !== String(otp)) {
+    // OTP DB'da hash sifatida saqlanadi — constant-time bcrypt solishtiruv.
+    const otpMatches = await bcrypt.compare(String(otp), otpRecord.otp);
+    if (!otpMatches) {
       await prisma.otpCode.update({
         where: { email: normalizedEmail },
         data: { attempts: { increment: 1 } },
@@ -60,19 +62,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Noto\'g\'ri kod' }, { status: 400 });
     }
 
-    // OTP ni verified deb belgilash
-    await prisma.otpCode.update({
-      where: { email: normalizedEmail },
-      data: { verified: true },
-    });
-
-    // Signup holati — yangi user yaratish
+    // Signup holati — yangi user yaratish. Verified belgilash/OTP iste'mol qilinishi
+    // FAQAT muvaffaqiyatli yaratishdan keyin (validatsiya yiqilsa kod yonmaydi).
     if (otpRecord.type === 'signup' && fullName && password) {
       // Privilegiya oshirishning oldini olish: rol faqat whitelist'dan
       // (aks holda body'dagi {"role":"admin"} orqali admin akkaunt yaratilardi)
       const validRoles = ['student', 'teacher'];
       if (!validRoles.includes(role)) {
         return NextResponse.json({ error: 'Noto\'g\'ri rol' }, { status: 400 });
+      }
+
+      // Yagona parol siyosati (register/reset bilan bir xil)
+      const pwErr = validatePassword(password);
+      if (pwErr) {
+        return NextResponse.json({ error: pwErr }, { status: 400 });
       }
 
       const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -107,6 +110,9 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // OTP iste'mol qilindi — o'chiramiz (qayta ishlatib bo'lmaydi).
+      await prisma.otpCode.delete({ where: { email: normalizedEmail } }).catch(() => {});
+
       const token = await signToken({ sub: user.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion });
       const response = NextResponse.json({
         success: true,
@@ -121,7 +127,13 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // Password reset yoki oddiy OTP tekshiruvi
+    // Password reset yoki oddiy OTP tekshiruvi — verified deb belgilaymiz, lekin
+    // tasdiqlangan oynaga QISQA muddat (10 daqiqa) beramiz: reset-password shu
+    // muddat ichida bo'lishi shart (muddatsiz ochiq "reset eshigi" bo'lmaydi).
+    await prisma.otpCode.update({
+      where: { email: normalizedEmail },
+      data: { verified: true, expiresAt: new Date(Date.now() + 10 * 60 * 1000) },
+    });
     return NextResponse.json({ success: true });
   } catch (err) {
     console.error('[auth/verify-otp]', err);

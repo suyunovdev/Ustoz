@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { checkRateLimit } from '@/lib/rateLimit';
 
@@ -38,24 +39,21 @@ export async function POST(req: NextRequest) {
     // Email mavjudligini tekshirish — lekin javob bir xil (enumeration oldini olish)
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
-    if (type === 'signup' && existing) {
-      // Email band — lekin tashqariga aytmaymiz, shunchaki "success" qaytaramiz
-      // Haqiqiy foydalanuvchi login sahifasiga yo'naltiriladi
-      return NextResponse.json({ success: true, emailDelivered: false });
-    }
-
-    if (type === 'password_reset' && !existing) {
-      // Email topilmadi — lekin tashqariga aytmaymiz
-      return NextResponse.json({ success: true, emailDelivered: false });
+    // Enumeration himoyasi: mavjud/mavjud emas holatlarda ham javob AYNAN bir xil
+    // (`{ success: true, emailDelivered: true }`) bo'ladi — javob farqiga qarab email
+    // bazada bor-yo'qligini aniqlab bo'lmaydi. Bu holatlarda kod yaratilmaydi.
+    if ((type === 'signup' && existing) || (type === 'password_reset' && !existing)) {
+      return NextResponse.json({ success: true, emailDelivered: true });
     }
 
     const otp = generateOtp();
+    const otpHash = await bcrypt.hash(otp, 10); // DB'da hash saqlanadi (ochiq matn emas)
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 daqiqa
 
     await prisma.otpCode.upsert({
       where: { email: normalizedEmail },
-      create: { email: normalizedEmail, otp, type, expiresAt },
-      update: { otp, type, expiresAt, verified: false },
+      create: { email: normalizedEmail, otp: otpHash, type, expiresAt },
+      update: { otp: otpHash, type, expiresAt, verified: false, attempts: 0 },
     });
 
     // Email yuborish (Resend)

@@ -13,6 +13,7 @@ import bcrypt from 'bcryptjs';
 import { userProfileRepo } from '@/lib/repositories';
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
+import { validatePassword } from '@/lib/validation';
 
 export class ProfileNotFoundError extends Error {
   code = 'PROFILE_NOT_FOUND';
@@ -144,9 +145,9 @@ export async function changePassword(
   oldPassword: string,
   newPassword: string,
 ) {
-  if (newPassword.length < 6) {
-    throw new ValidationError("Yangi parol kamida 6 belgi");
-  }
+  // Yagona parol siyosati (register/OTP-signup/reset bilan bir xil).
+  const pwErr = validatePassword(newPassword);
+  if (pwErr) throw new ValidationError(pwErr);
   if (newPassword.length > 100) {
     throw new ValidationError("Parol 100 belgidan oshmasin");
   }

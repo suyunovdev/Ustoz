@@ -12,6 +12,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { signToken, COOKIE_NAME } from '@/lib/auth';
 import { normalizeEmail } from '@/lib/validation';
+import { attributeOnSignup } from '@/lib/services/referral.service';
 import {
   isGoogleOAuthConfigured,
   exchangeCodeForToken,
@@ -83,6 +84,13 @@ export async function GET(req: NextRequest) {
         select: { id: true, email: true, role: true, tokenVersion: true },
       });
       user = created;
+
+      // Referral attribution — ro'yxatdan o'tish (email/OTP) oqimidagi kabi OAuth'da ham
+      // ref_code cookie bo'lsa referrerni biriktiramiz (best-effort).
+      const refCode = req.cookies.get('ref_code')?.value;
+      if (refCode) {
+        try { await attributeOnSignup(created.id, refCode); } catch { /* silent */ }
+      }
     } else if (info.picture) {
       // Mavjud foydalanuvchi — avatar bo'sh bo'lsa Google rasmini qo'yamiz (best-effort).
       await prisma.userProfile
