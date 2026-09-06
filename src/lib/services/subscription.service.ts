@@ -210,7 +210,7 @@ export async function cancelSubscription(subscriptionId: string): Promise<void> 
 // ─────────── Obuna so'rovlari (to'lov shlyuzisiz, admin tasdig'i orqali) ───────────
 
 /**
- * Student obuna so'rovi yaratadi (Click/Payme bosganда, gateway ulanmagan holatда).
+ * Student obuna so'rovi yaratadi (Click/Payme bosganda, gateway ulanmagan holatda).
  * Kutilayotgan so'rov allaqachon bo'lsa — dublikat yaratmaydi, mavjudini qaytaradi.
  */
 export async function createSubscriptionRequest(

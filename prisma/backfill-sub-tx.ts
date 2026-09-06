@@ -1,9 +1,9 @@
 /**
  * Backfill: mavjud obunalar uchun to'lov tarixida yozuv yo'q edi
  * (grantSubscriptionManually ilgari PaymentTransaction yaratmasdi).
- * Har bir AKTIV obuna egasi uchun, agar unда birorta 'subscription' turidagi
+ * Har bir AKTIV obuna egasi uchun, agar unda birorta 'subscription' turidagi
  * tranzaksiya bo'lmasa — bittasini yaratamiz (status='completed', plan narxi).
- * Idempotent: qayta ishlatilganда dublikat yaratmaydi.
+ * Idempotent: qayta ishlatilganda dublikat yaratmaydi.
  */
 import { PrismaClient } from '../src/generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
