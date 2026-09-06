@@ -96,8 +96,7 @@ export async function processRefund(
       tx,
     );
 
-    // 2) Enrollment'ni deaktivatsiya qilish — FAQAT kurs to'lovi bo'lsa
-    // (obuna to'lovida courseId yo'q; obuna refund'i alohida ko'rib chiqiladi).
+    // 2a) Kurs to'lovi refund'i → enrollment'ni deaktivatsiya qilish.
     if (target.courseId) {
       const courseId = target.courseId;
       const deactivated = await tx.enrollment.updateMany({
@@ -110,6 +109,16 @@ export async function processRefund(
           data: { enrollmentCount: { decrement: deactivated.count } },
         });
       }
+    }
+
+    // 2b) Obuna to'lovi refund'i → shu tranzaksiyaga bog'langan obunani bekor qilish
+    // (sourceTransactionId orqali). expiresAt'ni ham hozirgi vaqtga tortamiz —
+    // gating darhol to'xtaydi, all-access/AI/sertifikat imtiyozlari o'chadi.
+    if (target.kind === 'subscription' || target.planId) {
+      await tx.subscription.updateMany({
+        where: { sourceTransactionId: txId, status: 'active' },
+        data: { status: 'cancelled', expiresAt: new Date() },
+      });
     }
 
     // 3) Audit log

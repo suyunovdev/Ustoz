@@ -38,8 +38,10 @@ export async function GET(
   // Obuna chegirmasi (0–100) — kirgan talaba uchun. Kurs narxiga qo'llanadi.
   let subscriberDiscountPct = 0;
   if (session) {
+    // FAQAT faol enrollment kirish beradi — refund/bekor qilingan (isActive=false)
+    // yozuv kontentni ochmasligi kerak.
     const enrollment = await prisma.enrollment.findFirst({
-      where: { studentId: session.sub, courseId: id },
+      where: { studentId: session.sub, courseId: id, isActive: true },
     });
     isEnrolled = !!enrollment;
     if (session.role === 'student') {

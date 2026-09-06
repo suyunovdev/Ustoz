@@ -7,6 +7,8 @@
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { createNotification } from '@/lib/repositories/notification.repository';
+import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
+import { getSubscriberDiscountPct, applyDiscount } from './subscription.service';
 
 /** Student kurs sotib olish so'rovi yaratadi. Kutilayotgan so'rov bo'lsa — dublikat qilmaydi. */
 export async function createCoursePurchaseRequest(
@@ -21,11 +23,22 @@ export async function createCoursePurchaseRequest(
   if (!course) throw new ValidationError('Kurs topilmadi');
   if (Number(course.priceUzs) <= 0) throw new ValidationError('Bu kurs bepul — sotib olish shart emas');
 
+  // All-access obunachi kursga bepul kiradi — sotib olish so'rovi mantiqsiz (UI enroll'ga
+  // yo'naltiradi, lekin API'ni to'g'ridan-to'g'ri chaqirishdan ham himoyalanamiz).
+  const discountPct = await getSubscriberDiscountPct(userId);
+  if (discountPct >= 100) {
+    throw new ValidationError('Obunangiz bu kursni bepul ochadi — sotib olish shart emas');
+  }
+
   const enrolled = await prisma.enrollment.findUnique({
     where: { studentId_courseId: { studentId: userId, courseId } },
     select: { isActive: true },
   });
   if (enrolled?.isActive) throw new ValidationError('Siz allaqachon bu kursga yozilgansiz');
+
+  // Narx snapshot'i: student rozi bo'lgan (chegirmali) summa so'rovga yoziladi —
+  // approve paytida narx o'zgarsa ham student ko'rgan summa ishlatiladi.
+  const priceSnapshot = BigInt(applyDiscount(Number(course.priceUzs), discountPct));
 
   const existing = await prisma.coursePurchaseRequest.findFirst({
     where: { userId, courseId, status: 'pending' },
@@ -35,7 +48,13 @@ export async function createCoursePurchaseRequest(
   if (existing) return { id: existing.id, status: 'pending', alreadyPending: true };
 
   const created = await prisma.coursePurchaseRequest.create({
-    data: { userId, courseId, paymentMethod: paymentMethod ?? null, status: 'pending' },
+    data: {
+      userId,
+      courseId,
+      paymentMethod: paymentMethod ?? null,
+      status: 'pending',
+      priceUzsSnapshot: priceSnapshot,
+    },
     select: { id: true, status: true },
   });
   return { ...created, alreadyPending: false };
@@ -67,7 +86,7 @@ export async function listCoursePurchaseRequests(status = 'pending') {
     studentName: r.user?.fullName ?? '—',
     studentEmail: r.user?.email ?? '',
     courseTitle: r.course?.title ?? '—',
-    priceUzs: r.course?.priceUzs?.toString() ?? '0',
+    priceUzs: (r.priceUzsSnapshot ?? r.course?.priceUzs)?.toString() ?? '0',
     paymentMethod: r.paymentMethod,
     status: r.status,
     createdAt: r.createdAt,
@@ -89,7 +108,22 @@ export async function approveCoursePurchaseRequest(
   });
   if (!course) throw new ValidationError('Kurs topilmadi');
 
+  // Student rozi bo'lgan (chegirmali) summa — snapshot bo'lsa o'sha, aks holda joriy narx.
+  const chargeAmount = reqRow.priceUzsSnapshot ?? course.priceUzs;
+
+  let txnId: string | null = null;
   await prisma.$transaction(async (tx) => {
+    // Atomik status-guard: FAQAT hali 'pending' bo'lsa 'approved' qilamiz. Parallel
+    // ikkinchi approve count=0 oladi → butun tranzaksiya bekor qilinadi (dublikat
+    // tranzaksiya/enrollment bo'lmaydi).
+    const claimed = await tx.coursePurchaseRequest.updateMany({
+      where: { id: requestId, status: 'pending' },
+      data: { status: 'approved', reviewedById: adminId, reviewedAt: new Date() },
+    });
+    if (claimed.count === 0) {
+      throw new ValidationError("So'rov allaqachon ko'rib chiqilgan");
+    }
+
     // Enrollment (race-safe) + counter
     const created = await tx.enrollment.createMany({
       data: [{ studentId: reqRow.userId, courseId: reqRow.courseId, isActive: true }],
@@ -98,30 +132,38 @@ export async function approveCoursePurchaseRequest(
     if (created.count > 0) {
       await tx.course.update({ where: { id: reqRow.courseId }, data: { enrollmentCount: { increment: 1 } } });
     } else {
-      await tx.enrollment.updateMany({
+      // Qayta faollashtirish — hisoblagichni ham qaytaramiz (refund decrement qilgan edi).
+      const reactivated = await tx.enrollment.updateMany({
         where: { studentId: reqRow.userId, courseId: reqRow.courseId, isActive: false },
         data: { isActive: true },
       });
+      if (reactivated.count > 0) {
+        await tx.course.update({ where: { id: reqRow.courseId }, data: { enrollmentCount: { increment: reactivated.count } } });
+      }
     }
     // To'lov tarixida ko'rinishi uchun completed tranzaksiya
-    await tx.paymentTransaction.create({
+    const txn = await tx.paymentTransaction.create({
       data: {
         studentId: reqRow.userId,
         kind: 'course',
         courseId: reqRow.courseId,
-        amountUzs: course.priceUzs,
+        amountUzs: chargeAmount,
         currency: 'UZS',
         paymentMethod: (reqRow.paymentMethod === 'payme' ? 'payme' : 'click') as never,
         status: 'completed',
         completedAt: new Date(),
         metadata: { source: 'purchase_request_approved' },
       },
+      select: { id: true },
     });
-    await tx.coursePurchaseRequest.update({
-      where: { id: requestId },
-      data: { status: 'approved', reviewedById: adminId, reviewedAt: new Date() },
-    });
+    txnId = txn.id;
   });
+
+  // Referral komissiyasi (best-effort, $tx'dan keyin) — sourceTransactionId @unique
+  // bo'lgani uchun qayta chaqirilsa dublikat yaratmaydi.
+  if (txnId) {
+    try { await handlePaymentCompleted(txnId); } catch (e) { console.error('[course-purchase] referral hook:', e); }
+  }
 
   await createNotification({
     recipientId: reqRow.userId,

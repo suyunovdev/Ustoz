@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { getSubscriberCourseDiscountSetting } from './platform-settings.service';
 import { createNotification } from '@/lib/repositories/notification.repository';
+import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
 
 export function serializePlan(p: {
   id: string; name: string; description: string | null; priceUzs: bigint;
@@ -140,6 +141,37 @@ export function applyDiscount(priceUzs: number, discountPct: number): number {
   return Math.round((priceUzs * (100 - discountPct)) / 100);
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Yangi obuna tugash sanasini hisoblaydi (proratsiya bilan):
+ *   - faol obuna yo'q         → now + newPlan.durationDays
+ *   - bir xil reja            → mavjud muddat ustiga qo'shish (oddiy uzaytirish)
+ *   - boshqa reja (upgrade/downgrade) → mavjud obunaning QOLGAN pul qiymati yangi
+ *     reja kunlik narxiga qayta hisoblanib, yangi reja muddatiga qo'shiladi.
+ * Bu "arzon yillik + 1 oy qimmat reja = butun yil qimmat reja" exploit'ini yopadi.
+ */
+export function computeExpiry(
+  now: Date,
+  current: { expiresAt: Date; planId: string; plan?: { priceUzs: bigint; durationDays: number } | null } | null,
+  newPlan: { id: string; priceUzs: bigint; durationDays: number },
+): Date {
+  if (!current || current.expiresAt <= now) {
+    return new Date(now.getTime() + newPlan.durationDays * DAY_MS);
+  }
+  if (current.planId === newPlan.id) {
+    return new Date(current.expiresAt.getTime() + newPlan.durationDays * DAY_MS);
+  }
+  const remainingDays = (current.expiresAt.getTime() - now.getTime()) / DAY_MS;
+  const curDaily =
+    current.plan && current.plan.durationDays > 0
+      ? Number(current.plan.priceUzs) / current.plan.durationDays
+      : 0;
+  const newDaily = newPlan.durationDays > 0 ? Number(newPlan.priceUzs) / newPlan.durationDays : 0;
+  const creditDays = newDaily > 0 ? (remainingDays * curDaily) / newDaily : 0;
+  return new Date(now.getTime() + (newPlan.durationDays + creditDays) * DAY_MS);
+}
+
 /**
  * To'lov muvaffaqiyatli bo'lgach obunani faollashtiradi/uzaytiradi.
  * Webhook (click/complete, payme) yoki dev mock-complete'dan chaqiriladi.
@@ -161,13 +193,14 @@ export async function activateSubscriptionFromPayment(
     });
     if (already) return false;
 
-    // Joriy faol obuna bo'lsa — uzaytiramiz (expiresAt + durationDays), aks holda now'dan
+    // Joriy faol obuna bo'lsa — proratsiya bilan hisoblaymiz (reja almashsa qolgan
+    // qiymat yangi rejaga konvertatsiya qilinadi), aks holda now'dan.
     const current = await tx.subscription.findFirst({
       where: { userId, status: 'active', expiresAt: { gt: new Date() } },
       orderBy: { expiresAt: 'desc' },
+      include: { plan: { select: { priceUzs: true, durationDays: true } } },
     });
-    const base = current && current.expiresAt > new Date() ? current.expiresAt : new Date();
-    const expiresAt = new Date(base.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
+    const expiresAt = computeExpiry(new Date(), current, plan);
 
     if (current) {
       // Mavjud obunani uzaytirish + planni yangilash
@@ -208,28 +241,19 @@ export async function grantSubscriptionManually(
   const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
   if (!plan) throw new ValidationError('Plan topilmadi');
 
-  const result = await prisma.$transaction(async (tx) => {
+  const { result, txnId } = await prisma.$transaction(async (tx) => {
     const current = await tx.subscription.findFirst({
       where: { userId, status: 'active', expiresAt: { gt: new Date() } },
       orderBy: { expiresAt: 'desc' },
+      include: { plan: { select: { priceUzs: true, durationDays: true } } },
     });
-    const base = current && current.expiresAt > new Date() ? current.expiresAt : new Date();
-    const expiresAt = new Date(base.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
-
-    const sub = current
-      ? await tx.subscription.update({
-          where: { id: current.id },
-          data: { planId, expiresAt, status: 'active' },
-          select: { id: true, expiresAt: true },
-        })
-      : await tx.subscription.create({
-          data: { userId, planId, status: 'active', expiresAt },
-          select: { id: true, expiresAt: true },
-        });
+    const expiresAt = computeExpiry(new Date(), current, plan);
 
     // To'lov tarixida ko'rinishi uchun obuna tranzaksiyasi (kind='subscription').
     // Gateway ulanmagan davrda status='completed' — admin tasdig'i to'lov o'rnida.
-    await tx.paymentTransaction.create({
+    // Avval yaratamiz — sourceTransactionId bo'yicha obunani unga bog'laymiz
+    // (refund shu bog'lanish orqali obunani bekor qila oladi).
+    const txn = await tx.paymentTransaction.create({
       data: {
         studentId: userId,
         kind: 'subscription',
@@ -242,10 +266,25 @@ export async function grantSubscriptionManually(
         merchantTransId: `SUB-${crypto.randomUUID()}`,
         metadata: { source: 'manual_grant', planName: plan.name },
       },
+      select: { id: true },
     });
 
-    return sub;
+    const sub = current
+      ? await tx.subscription.update({
+          where: { id: current.id },
+          data: { planId, expiresAt, status: 'active', sourceTransactionId: txn.id },
+          select: { id: true, expiresAt: true },
+        })
+      : await tx.subscription.create({
+          data: { userId, planId, status: 'active', expiresAt, sourceTransactionId: txn.id },
+          select: { id: true, expiresAt: true },
+        });
+
+    return { result: sub, txnId: txn.id };
   });
+
+  // Referral komissiyasi (best-effort) — admin-tasdiq oqimida ham referrer bonus olsin.
+  try { await handlePaymentCompleted(txnId); } catch (e) { console.error('[subscription] referral hook:', e); }
 
   // Bildirishnoma (best-effort, $tx'dan keyin — asosiy oqimni buzmaydi)
   await createNotification({
@@ -339,13 +378,27 @@ export async function approveSubscriptionRequest(
   if (!reqRow) throw new ValidationError('So\'rov topilmadi');
   if (reqRow.status !== 'pending') throw new ValidationError('So\'rov allaqachon ko\'rib chiqilgan');
 
-  const method = reqRow.paymentMethod === 'payme' ? 'payme' : 'click';
-  const result = await grantSubscriptionManually(reqRow.userId, reqRow.planId, method);
-  await prisma.subscriptionRequest.update({
-    where: { id: requestId },
+  // Atomik status-guard: so'rovni 'pending'dan 'approved'ga faqat bitta chaqiruv
+  // o'tkaza oladi. Parallel ikkinchi approve count=0 oladi → grant qilinmaydi
+  // (obuna ikki marta uzaymaydi, ikkita tranzaksiya yaratilmaydi).
+  const claimed = await prisma.subscriptionRequest.updateMany({
+    where: { id: requestId, status: 'pending' },
     data: { status: 'approved', reviewedById: adminId, reviewedAt: new Date() },
   });
-  return { userId: reqRow.userId, expiresAt: result.expiresAt };
+  if (claimed.count === 0) throw new ValidationError('So\'rov allaqachon ko\'rib chiqilgan');
+
+  const method = reqRow.paymentMethod === 'payme' ? 'payme' : 'click';
+  try {
+    const result = await grantSubscriptionManually(reqRow.userId, reqRow.planId, method);
+    return { userId: reqRow.userId, expiresAt: result.expiresAt };
+  } catch (e) {
+    // Grant yiqilsa so'rovni 'pending'ga qaytaramiz — qayta ko'rib chiqish mumkin bo'lsin.
+    await prisma.subscriptionRequest.updateMany({
+      where: { id: requestId, status: 'approved' },
+      data: { status: 'pending', reviewedById: null, reviewedAt: null },
+    });
+    throw e;
+  }
 }
 
 /** Admin so'rovni RAD ETADI. */
@@ -355,8 +408,10 @@ export async function rejectSubscriptionRequest(requestId: string, adminId: stri
     select: { id: true, status: true },
   });
   if (!reqRow) throw new ValidationError('So\'rov topilmadi');
-  await prisma.subscriptionRequest.update({
-    where: { id: requestId },
+  // Faqat 'pending' so'rovni rad etish mumkin (tasdiqlangan so'rovni rad etib bo'lmaydi).
+  if (reqRow.status !== 'pending') throw new ValidationError('So\'rov allaqachon ko\'rib chiqilgan');
+  await prisma.subscriptionRequest.updateMany({
+    where: { id: requestId, status: 'pending' },
     data: { status: 'rejected', reviewedById: adminId, reviewedAt: new Date() },
   });
 }
