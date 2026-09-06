@@ -14,7 +14,8 @@ export type NotificationTypeFilter =
   | 'assignment_submission'
   | 'course_update'
   | 'achievement'
-  | 'payment';
+  | 'payment'
+  | 'system'; // qo'llab-quvvatlash / admin xabarlari
 
 export type NotificationStatusFilter = 'unread' | 'read' | 'archived';
 

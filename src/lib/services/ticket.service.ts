@@ -22,6 +22,7 @@ import {
   type TicketPriority,
 } from '@/lib/repositories';
 import { ForbiddenError, ValidationError } from '@/lib/errors';
+import { createNotification } from '@/lib/repositories/notification.repository';
 import { log as auditLog } from './audit-log.service';
 
 export class TicketNotFoundError extends Error {
@@ -134,7 +135,7 @@ export async function replyToTicket(input: ReplyInput): Promise<TicketDetailRow>
     throw new ValidationError("Yopiq ticket'ga yangi javob yozib bo'lmaydi");
   }
 
-  return prisma.$transaction(async (tx) => {
+  const detail = await prisma.$transaction(async (tx) => {
     await ticketRepo.addMessage(
       {
         ticketId: input.ticketId,
@@ -173,6 +174,24 @@ export async function replyToTicket(input: ReplyInput): Promise<TicketDetailRow>
       },
     });
   });
+
+  // Admin javob berganda — murojaat egasiga xabar (email bilan). Foydalanuvchining o'z
+  // javobiga bildirishnoma yubormaymiz (o'ziga o'zi).
+  if (input.isAdminReply) {
+    try {
+      await createNotification({
+        recipientId: ticket.userId,
+        type: 'system',
+        title: 'Murojaatingizga javob',
+        message: `"${ticket.subject}" murojaatingizga qo'llab-quvvatlash javob berdi.`,
+        email: true,
+      });
+    } catch (e) {
+      console.error('[ticket] javob bildirishnomasi:', e);
+    }
+  }
+
+  return detail;
 }
 
 export async function changeStatus(

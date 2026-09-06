@@ -19,6 +19,7 @@ import {
   ValidationError,
 } from '@/lib/errors';
 import { log as auditLog } from './audit-log.service';
+import { createNotification } from '@/lib/repositories/notification.repository';
 
 const VALID_STATUSES: ReadonlyArray<ModerationStatus> = [
   'draft',
@@ -95,8 +96,8 @@ export async function approveCourse(
     throw new InvalidStatusTransitionError(target.moderationStatus, 'approved');
   }
 
-  return prisma.$transaction(async (tx) => {
-    const updated = await courseRepo.updateModerationStatus(
+  const updated = await prisma.$transaction(async (tx) => {
+    const u = await courseRepo.updateModerationStatus(
       courseId,
       {
         status: 'approved',
@@ -120,8 +121,24 @@ export async function approveCourse(
       },
       tx,
     );
-    return updated;
+    return u;
   });
+
+  // O'qituvchiga moderatsiya natijasi haqida xabar (email bilan — muhim hodisa).
+  try {
+    await createNotification({
+      recipientId: target.teacherId,
+      type: 'course_update',
+      title: 'Kursingiz tasdiqlandi',
+      message: `"${target.title}" kursi moderatsiyadan o'tdi va endi nashr etilgan.`,
+      relatedCourseId: courseId,
+      email: true,
+    });
+  } catch (e) {
+    console.error('[moderation] approve bildirishnomasi:', e);
+  }
+
+  return updated;
 }
 
 export async function rejectCourse(
@@ -145,8 +162,8 @@ export async function rejectCourse(
     throw new InvalidStatusTransitionError(target.moderationStatus, 'rejected');
   }
 
-  return prisma.$transaction(async (tx) => {
-    const updated = await courseRepo.updateModerationStatus(
+  const updated = await prisma.$transaction(async (tx) => {
+    const u = await courseRepo.updateModerationStatus(
       courseId,
       {
         status: 'rejected',
@@ -166,8 +183,24 @@ export async function rejectCourse(
       },
       tx,
     );
-    return updated;
+    return u;
   });
+
+  // O'qituvchiga rad etish sababi bilan xabar (email bilan — u tuzatishi kerak).
+  try {
+    await createNotification({
+      recipientId: target.teacherId,
+      type: 'course_update',
+      title: 'Kursingiz rad etildi',
+      message: `"${target.title}" kursi moderatsiyadan o'tmadi. Sabab: ${feedback}`,
+      relatedCourseId: courseId,
+      email: true,
+    });
+  } catch (e) {
+    console.error('[moderation] reject bildirishnomasi:', e);
+  }
+
+  return updated;
 }
 
 export async function requestRevision(

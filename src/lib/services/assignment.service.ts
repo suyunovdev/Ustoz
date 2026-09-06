@@ -174,7 +174,7 @@ export async function createAssignment(
     }
   }
 
-  return assignmentRepo.createAssignment({
+  const assignment = await assignmentRepo.createAssignment({
     teacherId,
     courseId: input.courseId,
     topicId: input.topicId ?? null,
@@ -188,6 +188,33 @@ export async function createAssignment(
     allowLateSubmission: input.allowLateSubmission,
     latePenaltyPercent: input.latePenaltyPercent,
   });
+
+  // Kursdagi faol talabalarga yangi topshiriq haqida bildirishnoma (in-app; email yubormaymiz
+  // — spam bo'lmasin). Best-effort — asosiy oqimni buzmaydi.
+  try {
+    const [course, students] = await Promise.all([
+      prisma.course.findUnique({ where: { id: input.courseId }, select: { title: true } }),
+      prisma.enrollment.findMany({
+        where: { courseId: input.courseId, isActive: true },
+        select: { studentId: true },
+      }),
+    ]);
+    await Promise.all(
+      students.map((s) =>
+        createNotification({
+          recipientId: s.studentId,
+          type: 'course_update',
+          title: 'Yangi topshiriq',
+          message: `"${course?.title ?? 'Kurs'}" kursida yangi topshiriq: "${title}". Muddat: ${dueDate.toLocaleDateString('uz')}.`,
+          relatedCourseId: input.courseId,
+        }),
+      ),
+    );
+  } catch (e) {
+    console.error('[assignment] yangi topshiriq bildirishnomasi:', e);
+  }
+
+  return assignment;
 }
 
 export async function getAssignmentForTeacher(
@@ -334,7 +361,7 @@ export async function submitAssignment(
     throw new ValidationError("20 tadan ko'p fayl biriktirib bo'lmaydi");
   }
 
-  return assignmentRepo.upsertSubmission({
+  const submission = await assignmentRepo.upsertSubmission({
     assignmentId,
     studentId,
     courseId: a.courseId,
@@ -343,6 +370,25 @@ export async function submitAssignment(
     attachments: input.attachments ?? [],
     isLate,
   });
+
+  // O'qituvchiga yangi topshiriq javobi haqida xabar (in-app; best-effort).
+  try {
+    const student = await prisma.userProfile.findUnique({
+      where: { id: studentId },
+      select: { fullName: true },
+    });
+    await createNotification({
+      recipientId: a.teacherId,
+      type: 'assignment_submission',
+      title: 'Yangi topshiriq javobi',
+      message: `${student?.fullName ?? 'Talaba'} "${a.title}" topshirig'iga javob yubordi${isLate ? ' (kechikkan)' : ''}.`,
+      relatedCourseId: a.courseId,
+    });
+  } catch (e) {
+    console.error('[assignment] submission bildirishnomasi:', e);
+  }
+
+  return submission;
 }
 
 export async function getMySubmission(
