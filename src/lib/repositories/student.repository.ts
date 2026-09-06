@@ -34,7 +34,7 @@ export interface TeacherStudentsPage {
   total: number;
 }
 
-/** Aniq paginatsiyada bitta sahifadagi maksimal talaba (og'ir sahifaга qarshi). */
+/** Aniq paginatsiyada bitta sahifadagi maksimal talaba (og'ir sahifaga qarshi). */
 const MAX_STUDENTS_PER_PAGE = 100;
 /**
  * `limit` berilmaganda (eski chaqiruvchilar — masalan guruh/sertifikat picker'lari
@@ -64,7 +64,7 @@ export async function listTeacherStudents(
 
   const search = filters.search?.trim().toLowerCase();
   if (search) {
-    // LIKE maxsus belgilarini (\ % _) escape qilamiz — foydalanuvchi kiritган
+    // LIKE maxsus belgilarini (\ % _) escape qilamiz — foydalanuvchi kiritgan
     // "50%" yoki "a_b" wildcard sifatida ishlamasin (SQL injection emas —
     // qiymat baribir parametrlangan; bu faqat qidiruv semantikasi).
     const ph = bind(search.replace(/[\\%_]/g, '\\$&'));
@@ -82,7 +82,7 @@ export async function listTeacherStudents(
     WHERE ${conds.join('\n      AND ')}
   `;
 
-  // total — filtr param'lari bilan (limit/offset'gача). Alohida saqlab, list
+  // total — filtr param'lari bilan (limit/offset'gacha). Alohida saqlab, list
   // so'rovi keyin limit/offset param'larini qo'shadi.
   const filterParams = [...params];
   const countSql = `SELECT COUNT(*)::int AS total FROM (SELECT u.id ${fromWhere} GROUP BY u.id) sub`;

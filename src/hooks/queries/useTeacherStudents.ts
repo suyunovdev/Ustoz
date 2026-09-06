@@ -85,7 +85,7 @@ interface TeacherStudentsPageDTO {
  * Talabalar ro'yxati sahifasi uchun paginatsiyalangan (infinite) variant —
  * "Ko'proq yuklash" bilan sahifama-sahifa. Jami sonni (`total`) ham qaytaradi,
  * shu sabab jimgina qirqim (ilgarigi LIMIT 500) yo'q. Picker'lar (guruh/sertifikat)
- * odatdagi `useTeacherStudents`ni ishlatadi — bu ularга tegmaydi.
+ * odatdagi `useTeacherStudents`ni ishlatadi — bu ularga tegmaydi.
  */
 export function useTeacherStudentsInfinite(filters: {
   courseId?: string;

@@ -110,7 +110,9 @@ function AppImage({
         quality,
         placeholder,
         blurDataURL,
-        unoptimized: true,
+        // data: URL'lar optimizatsiya qilinmaydi (Next buni qo'llab-quvvatlamaydi);
+        // lokal statik rasmlar (/assets/...) esa optimizatsiya qilinadi (WebP/resize).
+        unoptimized: imageSrc.startsWith('data:'),
         onError: handleError,
         onLoad: handleLoad,
         onClick,

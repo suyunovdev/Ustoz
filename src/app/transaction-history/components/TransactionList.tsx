@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate, formatCurrency } from '@/lib/i18n/format';
 
@@ -116,8 +116,8 @@ export default function TransactionList({ transactions }: TransactionListProps) 
           </thead>
           <tbody className="bg-card divide-y divide-border">
             {transactions.map((transaction) => (
-              <>
-                <tr key={transaction.id} className="hover:bg-muted">
+              <Fragment key={transaction.id}>
+                <tr className="hover:bg-muted">
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                     {formatDate(transaction.created_at, locale, dateOpts)}
                   </td>
@@ -223,7 +223,7 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                     </td>
                   </tr>
                 )}
-              </>
+              </Fragment>
             ))}
           </tbody>
         </table>

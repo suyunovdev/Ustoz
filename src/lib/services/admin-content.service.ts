@@ -2,7 +2,7 @@
  * Admin kontent boshqaruvi — istalgan o'qituvchining kursi/guruhini
  * o'chirish (egalik cheklovisiz). Faqat admin uchun.
  *
- * Teacher API'lari egalikка bog'langan (o'qituvchi faqat o'zinikini o'chiradi);
+ * Teacher API'lari egalikka bog'langan (o'qituvchi faqat o'zinikini o'chiradi);
  * bu servis admin uchun override beradi. O'chirish DB CASCADE'ga tayanadi
  * (kurs -> topiclar/obunalar/testlar/sharhlar; guruh -> a'zolar).
  */
@@ -78,7 +78,7 @@ export interface AdminGroupRow {
   createdAt: Date;
 }
 
-/** Barcha guruhlar (admin ko'rinishi — barcha o'qituvchilarники). */
+/** Barcha guruhlar (admin ko'rinishi — barcha o'qituvchilarniki). */
 export async function adminListGroups(): Promise<AdminGroupRow[]> {
   const groups = await prisma.group.findMany({
     orderBy: { createdAt: 'desc' },

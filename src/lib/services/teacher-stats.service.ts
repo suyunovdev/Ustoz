@@ -34,7 +34,7 @@ export interface TeacherDashboardData {
     totalEnrollments: number;
     /** O'qituvchi sof (netto) daromadi — platforma komissiyasi ayrilgan. */
     totalRevenueUzs: string;
-    /** Amaldagi platforma komissiyasi foizi (netto qanday hisoblanганini ko'rsatish uchun). */
+    /** Amaldagi platforma komissiyasi foizi (netto qanday hisoblanganini ko'rsatish uchun). */
     platformFeePct: number;
     /** Faqat reyting olgan (reviewCount > 0) kurslar bo'yicha o'rtacha. */
     avgRating: number;

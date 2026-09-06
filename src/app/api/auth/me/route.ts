@@ -1,21 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSessionFromRequest, clearSessionCookie } from '@/lib/auth';
 import { requireAuth } from '@/lib/auth-helpers';
-import { isServiceError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
   // requireAuth — JWT + DB (tokenVersion/suspend/mavjudlik) to'liq tekshiruvi.
   // Sessiya yaroqsiz bo'lsa cookie'ni TOZALAYMIZ: shu tariqa server (getSession)
   // ham "chiqilgan" holatga keladi va dashboard↔login redirect sikli uziladi.
+  // "Kim men?" endpoint'i — mehmon uchun 200 {user:null} qaytaradi (401 emas), shunda
+  // ochiq sahifalarda brauzer konsolida tarmoq xatosi ko'rinmaydi. Yaroqsiz/eskirgan
+  // sessiyada cookie TOZALANADI (self-heal: server ham "chiqilgan" holatga keladi).
   let session;
   try {
     session = await requireAuth(req);
-  } catch (err) {
-    const status = isServiceError(err) && err.code === 'FORBIDDEN' ? 403 : 401;
+  } catch {
     return NextResponse.json(
-      { error: 'Autentifikatsiya talab qilinadi' },
-      { status, headers: { 'Set-Cookie': clearSessionCookie() } },
+      { user: null },
+      { headers: { 'Set-Cookie': clearSessionCookie() } },
     );
   }
 
@@ -26,8 +27,8 @@ export async function GET(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json(
-      { error: 'Foydalanuvchi topilmadi' },
-      { status: 404, headers: { 'Set-Cookie': clearSessionCookie() } },
+      { user: null },
+      { headers: { 'Set-Cookie': clearSessionCookie() } },
     );
   }
 

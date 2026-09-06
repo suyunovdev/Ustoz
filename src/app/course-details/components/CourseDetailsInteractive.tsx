@@ -292,7 +292,7 @@ const CourseDetailsInteractive = () => {
             {t('courseDetails.breadcrumbCourses')}
           </Link>
           <Icon name="ChevronRightIcon" size={14} />
-          {course.subject && (
+          {course.subject && course.subject !== course.title && (
             <>
               <span className="hover:text-primary transition-smooth">{course.subject}</span>
               <Icon name="ChevronRightIcon" size={14} />

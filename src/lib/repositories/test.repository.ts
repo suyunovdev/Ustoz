@@ -367,7 +367,7 @@ export async function submitAttempt(input: SubmitAttemptInput): Promise<AttemptR
   const percentage =
     input.maxScore > 0 ? Math.round((input.score / input.maxScore) * 10000) / 100 : 0;
   // SHARTLI update — faqat hali 'in_progress' bo'lsa. Ikki bir vaqtdagi submit
-  // bo'lса, faqat bittasi yozadi; ikkinchisi count=0 olib xato tashlaydi (L5).
+  // bo'lsa, faqat bittasi yozadi; ikkinchisi count=0 olib xato tashlaydi (L5).
   return prisma.$transaction(async (tx) => {
     const res = await tx.testAttempt.updateMany({
       where: { id: input.attemptId, status: 'in_progress' },

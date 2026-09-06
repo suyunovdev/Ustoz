@@ -290,9 +290,10 @@ const LandingPageInteractive = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [coursesRes, statsRes] = await Promise.all([
+        const [coursesRes, statsRes, teachersRes] = await Promise.all([
           fetch('/api/courses?limit=6&sortBy=enrollments', { credentials: 'include' }),
           fetch('/api/stats'),
+          fetch('/api/teachers/featured?limit=4'),
         ]);
         if (coursesRes.ok) {
           const { courses } = await coursesRes.json();
@@ -316,12 +317,11 @@ const LandingPageInteractive = () => {
             successfulTeachers: s.successfulTeachers || 0,
             certificatesAwarded: s.certificatesAwarded || 0,
           });
-          setFeaturedTeachers([
-            { id: '1', fullName: 'Aziza Karimova', avatarUrl: null, courseCount: 5, studentCount: 120 },
-            { id: '2', fullName: 'Sardor Rahimov', avatarUrl: null, courseCount: 3, studentCount: 89 },
-            { id: '3', fullName: 'Jasur Yusupov', avatarUrl: null, courseCount: 7, studentCount: 230 },
-            { id: '4', fullName: 'Nilufar Azimova', avatarUrl: null, courseCount: 4, studentCount: 156 },
-          ]);
+        }
+        // Haqiqiy tanlangan o'qituvchilar (soxta emas) — bo'lmasa blok yashiriladi.
+        if (teachersRes.ok) {
+          const { teachers } = await teachersRes.json();
+          setFeaturedTeachers(Array.isArray(teachers) ? teachers : []);
         }
       } catch (error) {
         console.error('Error fetching landing page data:', error);
@@ -586,7 +586,8 @@ const LandingPageInteractive = () => {
           </div>
         </section>
 
-        {/* ═══ USTOZLAR ═══ */}
+        {/* ═══ USTOZLAR ═══ (haqiqiy o'qituvchi bo'lmasa — yashiriladi) */}
+        {featuredTeachers.length > 0 && (
         <section className="py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHead
@@ -627,6 +628,7 @@ const LandingPageInteractive = () => {
             </div>
           </div>
         </section>
+        )}
 
         {/* ═══ RAQAMLARDA ═══ (barcha qiymat 0 bo'lsa ko'rsatilmaydi) */}
         {(stats.totalCourses + stats.activeStudents + stats.successfulTeachers + stats.certificatesAwarded) > 0 && (

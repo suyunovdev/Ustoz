@@ -186,7 +186,7 @@ export default function CertificatePage() {
               </div>
             </div>
 
-            {/* Oltin ajratgich (markazда romb) */}
+            {/* Oltin ajratgich (markazda romb) */}
             <div className="flex items-center justify-center gap-3 my-8">
               <span className="block h-px w-16" style={{ background: CERT.gold, opacity: 0.5 }} />
               <span className="block w-2 h-2 rotate-45" style={{ background: CERT.gold }} />
