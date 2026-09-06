@@ -108,6 +108,7 @@ describe('markTopicComplete', () => {
     courseId: COURSE_ID,
     progress: 0,
     completedAt: null,
+    isActive: true,
   };
 
   it('topic topilmasa TopicNotFoundError tashlaydi', async () => {

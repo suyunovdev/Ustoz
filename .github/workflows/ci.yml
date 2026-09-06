@@ -124,6 +124,20 @@ jobs:
             git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
             bash /home/deploy/deploy-ustoz.sh main
             EXIT=$?
-            # Tozalash — token'li insteadOf'ni olib tashlaymiz.
+            # Tozalash — token'li insteadOf'ni va credential store faylini olib tashlaymiz.
             git config --global --remove-section url."https://x-access-token:${GH_TOKEN}@github.com/" 2>/dev/null || true
+            rm -f "$HOME/.gh-ci-creds"
             exit $EXIT
+
+      - name: Health check (deploy'dan keyin)
+        run: |
+          # Yangi deploy jonli javob berayotganini tekshiramiz. Muvaffaqiyatsiz bo'lsa
+          # workflow QIZIL bo'ladi — buzilgan deploy "yashil" ko'rinmaydi.
+          URL="${{ secrets.HEALTH_URL || 'https://ustozedu.uz/api/health' }}"
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo 000)
+            if [ "$code" = "200" ]; then echo "Sog'lom (urinish $i)"; exit 0; fi
+            echo "urinish $i: HTTP $code — kutilyapti..."; sleep 6
+          done
+          echo "::error::Health check muvaffaqiyatsiz — deploy tekshirilishi kerak"
+          exit 1

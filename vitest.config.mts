@@ -22,11 +22,19 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
+      // Qamrov doirasi kengaytirildi: barcha biznes-logika (services, repositories,
+      // lib yordamchilari, API route'lar). Ilgari faqat services + bitta komponent edi —
+      // coverage foizi aldamchi ko'rinardi.
       include: [
-        'src/lib/services/**/*.ts',
+        'src/lib/**/*.ts',
+        'src/app/api/**/*.ts',
         'src/app/student-dashboard/components/**/*.tsx',
       ],
-      exclude: ['**/*.test.{ts,tsx}', '**/__tests__/**'],
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        '**/__tests__/**',
+        'src/generated/**',
+      ],
     },
   },
 });
