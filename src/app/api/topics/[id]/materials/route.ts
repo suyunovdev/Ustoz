@@ -9,6 +9,7 @@ import type { NextRequest } from 'next/server';
 import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
+import { hasActiveCourseAccess } from '@/lib/services/subscription.service';
 
 export async function GET(
   req: NextRequest,
@@ -31,11 +32,8 @@ export async function GET(
     const isOwnerTeacher = session.role === 'teacher' && topic.course?.teacherId === session.sub;
     let allowed = isAdmin || isOwnerTeacher;
     if (!allowed) {
-      const enrollment = await prisma.enrollment.findUnique({
-        where: { studentId_courseId: { studentId: session.sub, courseId: topic.courseId } },
-        select: { isActive: true },
-      });
-      allowed = !!enrollment?.isActive;
+      // Faol enrollment + (obuna-manbali bo'lsa) obuna hali faol bo'lishi shart.
+      allowed = await hasActiveCourseAccess(session.sub, topic.courseId);
     }
     if (!allowed) {
       return jsonResponse({ error: 'Bu materiallarga kirish huquqingiz yo\'q' }, { status: 403 });

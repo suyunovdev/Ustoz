@@ -490,6 +490,9 @@ model Enrollment {
   progress       Int       @default(0)
   completedAt    DateTime? @map("completed_at")
   isActive       Boolean   @default(true) @map("is_active")
+  // Enrollment manbai: 'direct' (bepul yozilish / to'lov / sotib olish — doimiy kirish)
+  // yoki 'subscription' (all-access obuna orqali — obuna tugasa kirish to'xtaydi).
+  source         String    @default("direct")
   // Hero card uchun: kurs oxirgi marta ochilgan vaqt
   lastAccessedAt DateTime? @map("last_accessed_at")
 
@@ -540,7 +543,9 @@ model PaymentTransaction {
   refundedById         String?           @map("refunded_by_id") @db.Uuid
 
   student         UserProfile       @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  course          Course?           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  // Kurs o'chirilsa ham moliyaviy yozuv saqlanadi (courseId null bo'ladi, tarix
+  // buxgalteriya/nizo uchun qoladi) — Cascade o'rniga SetNull.
+  course          Course?           @relation(fields: [courseId], references: [id], onDelete: SetNull)
   plan            SubscriptionPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
   referralEarning ReferralEarning?
 

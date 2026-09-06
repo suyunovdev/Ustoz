@@ -40,7 +40,8 @@ export async function POST(
 
   // Pullik kurslar uchun to'lov talab qilinadi — LEKIN faol all-access obunachi
   // istalgan kursga bepul yozila oladi (obuna kurs narxini qoplaydi).
-  if (Number(course.priceUzs) > 0) {
+  const isPaid = Number(course.priceUzs) > 0;
+  if (isPaid) {
     const subscribed = await hasAllCoursesAccess(session.sub);
     if (!subscribed) {
       return jsonResponse(
@@ -50,6 +51,9 @@ export async function POST(
     }
     // obunachi → bepul davom etadi
   }
+  // Manba: pullik kurs bu yerda faqat obuna orqali ochiladi (obuna tugasa kirish
+  // to'xtaydi); bepul kurs — doimiy (direct).
+  const enrollmentSource = isPaid ? 'subscription' : 'direct';
 
   // Enrollment yaratish + counter inkrementi — atomik.
   // Refund'dan keyin qayta enrollment qilingan holatda counter ikki marta oshmaydi.
@@ -62,7 +66,7 @@ export async function POST(
       // 1) Noaktiv (refund'dan keyin) enrollment'ni reaktivatsiya
       const reactivated = await tx.enrollment.updateMany({
         where: { studentId: session.sub, courseId, isActive: false },
-        data: { isActive: true },
+        data: { isActive: true, source: enrollmentSource },
       });
       if (reactivated.count > 0) {
         await tx.course.update({
@@ -77,7 +81,7 @@ export async function POST(
 
       // 2) Yangi enrollment — skipDuplicates concurrent create'ni xavfsiz qiladi
       const created = await tx.enrollment.createMany({
-        data: [{ studentId: session.sub, courseId, isActive: true }],
+        data: [{ studentId: session.sub, courseId, isActive: true, source: enrollmentSource }],
         skipDuplicates: true,
       });
       const enrollment = await tx.enrollment.findUnique({

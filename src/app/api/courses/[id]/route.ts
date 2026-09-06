@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { getSessionFromRequest } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
-import { getSubscriberDiscountPct } from '@/lib/services/subscription.service';
+import { getSubscriberDiscountPct, hasActiveCourseAccess } from '@/lib/services/subscription.service';
 
 // GET /api/courses/[id]
 export async function GET(
@@ -38,12 +38,9 @@ export async function GET(
   // Obuna chegirmasi (0–100) — kirgan talaba uchun. Kurs narxiga qo'llanadi.
   let subscriberDiscountPct = 0;
   if (session) {
-    // FAQAT faol enrollment kirish beradi — refund/bekor qilingan (isActive=false)
-    // yozuv kontentni ochmasligi kerak.
-    const enrollment = await prisma.enrollment.findFirst({
-      where: { studentId: session.sub, courseId: id, isActive: true },
-    });
-    isEnrolled = !!enrollment;
+    // Amaldagi kirish: faol enrollment + (obuna-manbali bo'lsa) obuna hali faol.
+    // Refund/bekor (isActive=false) yoki obunasi tugagan yozuv kontentni ochmaydi.
+    isEnrolled = await hasActiveCourseAccess(session.sub, id);
     if (session.role === 'student') {
       subscriberDiscountPct = await getSubscriberDiscountPct(session.sub);
     }

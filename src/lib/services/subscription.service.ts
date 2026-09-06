@@ -81,6 +81,23 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
   return sub !== null;
 }
 
+/**
+ * Foydalanuvchida shu kursga AMALDAGI kirish bormi?
+ *   - faol enrollment yo'q → false
+ *   - source='direct' (bepul/to'lov/sotib olish) → true (doimiy)
+ *   - source='subscription' (all-access obuna orqali) → faqat obuna hali faol bo'lsa true
+ * Bu "1 oylik obuna bilan yozilib, obuna tugagach umrbod kirish" teshigini yopadi.
+ */
+export async function hasActiveCourseAccess(userId: string, courseId: string): Promise<boolean> {
+  const enr = await prisma.enrollment.findUnique({
+    where: { studentId_courseId: { studentId: userId, courseId } },
+    select: { isActive: true, source: true },
+  });
+  if (!enr || !enr.isActive) return false;
+  if (enr.source === 'subscription') return hasAllCoursesAccess(userId);
+  return true;
+}
+
 // ─── Tier-asosli capability gating ───
 // Tarif tier'i imkoniyatlarni belgilaydi: 1=Boshlang'ich, 2=Standart, 3=Premium.
 export type SubscriptionCapability =
