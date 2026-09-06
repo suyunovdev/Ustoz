@@ -42,6 +42,7 @@ const SubscriptionInteractive = () => {
   const [openPlanId, setOpenPlanId] = useState<string | null>(null);
   const [processing, setProcessing] = useState<PaymentMethod | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [period, setPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -145,10 +146,17 @@ const SubscriptionInteractive = () => {
   };
 
   const hasActive = current !== null && current.status === 'active';
+  // Tanlangan davr bo'yicha rejalar (oylik ≤31 kun, yillik ≥300 kun), tier bo'yicha tartib.
+  const shownPlans = plans
+    .filter((p) => (period === 'yearly' ? p.durationDays >= 300 : p.durationDays < 300))
+    .sort((a, b) => a.tier - b.tier);
+  // "Mashhur" — o'rta tarif (Standart, tier 2).
   const popularPlanId =
-    plans.length > 0
-      ? plans.reduce((top, p) => (p.tier > top.tier ? p : top), plans[0]).id
-      : null;
+    shownPlans.find((p) => p.tier === 2)?.id ??
+    (shownPlans.length ? shownPlans[Math.floor(shownPlans.length / 2)].id : null);
+  // Har ikkala davr mavjudmi (toggle ko'rsatish uchun)
+  const hasYearly = plans.some((p) => p.durationDays >= 300);
+  const hasMonthly = plans.some((p) => p.durationDays < 300);
 
   return (
     <main className="min-h-screen bg-background pt-24 pb-16">
@@ -238,14 +246,33 @@ const SubscriptionInteractive = () => {
             )}
 
             {/* Plans */}
-            <div className="mb-5">
+            <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <h2 className="text-lg font-heading font-semibold text-foreground">
                 {t('subscription.choose')}
               </h2>
+              {hasMonthly && hasYearly && (
+                <div className="inline-flex items-center rounded-full border border-border bg-card p-0.5 self-start">
+                  <button
+                    type="button"
+                    onClick={() => setPeriod('monthly')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${period === 'monthly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    {t('subscription.monthly')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPeriod('yearly')}
+                    className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors inline-flex items-center gap-1.5 ${period === 'yearly' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                  >
+                    {t('subscription.yearly')}
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${period === 'yearly' ? 'bg-primary-foreground/20' : 'bg-success/15 text-success'}`}>−17%</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
-              {plans.map((plan) => {
+              {shownPlans.map((plan) => {
                 const isPopular = plan.id === popularPlanId;
                 const isCurrent = hasActive && current?.plan.id === plan.id;
                 const isChooserOpen = openPlanId === plan.id;

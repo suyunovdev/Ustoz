@@ -80,6 +80,42 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
   return sub !== null;
 }
 
+// ─── Tier-asosli capability gating ───
+// Tarif tier'i imkoniyatlarni belgilaydi: 1=Boshlang'ich, 2=Standart, 3=Premium.
+export type SubscriptionCapability =
+  | 'certificate' | 'practice_exam' | 'live_sessions' | 'ai_tutor' | 'priority_support';
+
+const CAP_MIN_TIER: Record<SubscriptionCapability, number> = {
+  certificate: 1,
+  practice_exam: 2,
+  live_sessions: 2,
+  ai_tutor: 2,
+  priority_support: 3,
+};
+
+/** Foydalanuvchining faol obunalari ichida eng yuqori tier (obuna yo'q → 0). */
+export async function getActivePlanTier(userId: string): Promise<number> {
+  const subs = await prisma.subscription.findMany({
+    where: { userId, status: 'active', expiresAt: { gt: new Date() } },
+    select: { plan: { select: { tier: true } } },
+  });
+  return subs.reduce((max, s) => Math.max(max, s.plan?.tier ?? 0), 0);
+}
+
+/** Foydalanuvchida shu imkoniyat bormi (tarif tier'i bo'yicha). */
+export async function hasCapability(userId: string, cap: SubscriptionCapability): Promise<boolean> {
+  const tier = await getActivePlanTier(userId);
+  return tier >= CAP_MIN_TIER[cap];
+}
+
+/** AI-tutor kunlik limiti (tier'ga qarab): tier≥3 → 50, tier≥2 → 20, aks holda 0. */
+export async function getAiTutorDailyLimit(userId: string): Promise<number> {
+  const tier = await getActivePlanTier(userId);
+  if (tier >= 3) return 50;
+  if (tier >= 2) return 20;
+  return 0;
+}
+
 /**
  * Foydalanuvchining pullik kurslarga obuna chegirmasi (0–100).
  *   - all-access reja → 100 (bepul; enroll orqali)

@@ -8,7 +8,7 @@ import type { NextRequest } from 'next/server';
 import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
-import { hasActiveSubscription } from '@/lib/services/subscription.service';
+import { hasCapability } from '@/lib/services/subscription.service';
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
         orderBy: { startsAt: 'asc' },
         take: 60,
       }),
-      hasActiveSubscription(session.sub),
+      hasCapability(session.sub, 'live_sessions'),
     ]);
 
     const now = Date.now();

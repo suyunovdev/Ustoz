@@ -13,7 +13,7 @@ import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { ValidationError } from '@/lib/errors';
 import { complete, isAnthropicConfigured } from '@/lib/ai/anthropic-client';
-import { hasActiveSubscription } from '@/lib/services/subscription.service';
+import { hasCapability } from '@/lib/services/subscription.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { getSubjectLabel } from '@/lib/data/subject-labels';
 import { platformDayLabel, platformDayIso } from '@/lib/date/platform-day';
@@ -45,9 +45,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await requireStudent(req);
 
-    if (!(await hasActiveSubscription(session.sub))) {
+    if (!(await hasCapability(session.sub, 'practice_exam'))) {
       return jsonResponse(
-        { error: "Imtihon banki obuna bilan ishlaydi.", code: 'SUBSCRIPTION_REQUIRED' },
+        { error: "Amaliy imtihon Standart va Premium tariflarida ishlaydi.", code: 'SUBSCRIPTION_REQUIRED' },
         { status: 403 },
       );
     }

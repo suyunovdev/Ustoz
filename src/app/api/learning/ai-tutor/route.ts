@@ -23,7 +23,7 @@ import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { ValidationError } from '@/lib/errors';
 import { complete, isAnthropicConfigured } from '@/lib/ai/anthropic-client';
-import { hasActiveSubscription } from '@/lib/services/subscription.service';
+import { hasCapability, getAiTutorDailyLimit } from '@/lib/services/subscription.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { platformDayLabel, platformDayIso } from '@/lib/date/platform-day';
 
@@ -75,12 +75,12 @@ export async function POST(req: NextRequest) {
   try {
     const session = await requireStudent(req);
 
-    // 1) Obuna gate
-    const subscribed = await hasActiveSubscription(session.sub);
+    // 1) Obuna gate — AI-tutor Standart va Premium tariflarida (tier ≥ 2)
+    const subscribed = await hasCapability(session.sub, 'ai_tutor');
     if (!subscribed) {
       return jsonResponse(
         {
-          error: "AI o'quv yordamchisi obuna bilan ishlaydi. Obuna bo'lib, cheksiz yordam oling.",
+          error: "AI o'quv yordamchisi Standart va Premium tariflarida ishlaydi. Tarifni yangilang.",
           code: 'SUBSCRIPTION_REQUIRED',
         },
         { status: 403 },
@@ -99,11 +99,12 @@ export async function POST(req: NextRequest) {
     // Aks holda limit 05:00 (mahalliy)da yangilanadi va 00:00–05:00 oraliq
     // oldingi kunga hisoblanadi.
     const day = platformDayIso(platformDayLabel());
-    const rl = await checkRateLimit(`ai-tutor:${session.sub}:${day}`, DAILY_LIMIT, DAY_MS);
+    const dailyLimit = await getAiTutorDailyLimit(session.sub); // tier: 20 yoki 50
+    const rl = await checkRateLimit(`ai-tutor:${session.sub}:${day}`, dailyLimit, DAY_MS);
     if (!rl.allowed) {
       return jsonResponse(
         {
-          error: `Bugungi AI yordam limiti tugadi (${DAILY_LIMIT} ta). Ertaga yana davom eting.`,
+          error: `Bugungi AI yordam limiti tugadi (${dailyLimit} ta). Ertaga yana davom eting.`,
           code: 'DAILY_LIMIT_REACHED',
           remaining: 0,
         },

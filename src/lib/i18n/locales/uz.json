@@ -3147,6 +3147,8 @@
     "activeUntil": "Amal qiladi",
     "noActive": "Faol obunangiz yo'q",
     "choose": "Rejani tanlang",
+    "monthly": "Oylik",
+    "yearly": "Yillik",
     "subscribe": "Obuna bo'lish",
     "renew": "Uzaytirish",
     "perPeriodDays": "{days} kun",

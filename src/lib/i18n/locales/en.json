@@ -3147,6 +3147,8 @@
     "activeUntil": "Active until",
     "noActive": "No active subscription",
     "choose": "Choose a plan",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
     "subscribe": "Subscribe",
     "renew": "Renew",
     "perPeriodDays": "{days} days",
