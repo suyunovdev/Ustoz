@@ -28,6 +28,7 @@ import {
 } from '@/lib/repositories';
 import { ServiceError, ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
+import { createNotification } from '@/lib/repositories/notification.repository';
 
 // Barcha custom error'lar ServiceError'dan extend qilingan —
 // isServiceError() type guard to'g'ri ishlashi uchun.
@@ -576,6 +577,15 @@ export async function submitTestAttempt(
     }
     throw e;
   }
+
+  await createNotification({
+    recipientId: studentId,
+    type: 'quiz_completion',
+    title: passed ? "Testdan o'tdingiz" : 'Test yakunlandi',
+    message: `"${test.title}" testi yakunlandi: ${percentage}%${passed ? " — tabriklaymiz, o'tdingiz!" : '.'}`,
+    relatedCourseId: test.courseId,
+    relatedEntityId: test.id,
+  });
 
   return { attempt: updated, results, passed };
 }

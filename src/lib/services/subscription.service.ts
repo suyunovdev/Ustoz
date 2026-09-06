@@ -8,6 +8,7 @@
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { getSubscriberCourseDiscountSetting } from './platform-settings.service';
+import { createNotification } from '@/lib/repositories/notification.repository';
 
 export function serializePlan(p: {
   id: string; name: string; description: string | null; priceUzs: bigint;
@@ -116,13 +117,13 @@ export async function activateSubscriptionFromPayment(
   const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
   if (!plan) throw new ValidationError('Plan topilmadi');
 
-  await prisma.$transaction(async (tx) => {
+  const activated = await prisma.$transaction(async (tx) => {
     // Idempotency — shu tranzaksiya obunasi allaqachon yaratilganmi?
     const already = await tx.subscription.findFirst({
       where: { sourceTransactionId: transactionId },
       select: { id: true },
     });
-    if (already) return;
+    if (already) return false;
 
     // Joriy faol obuna bo'lsa — uzaytiramiz (expiresAt + durationDays), aks holda now'dan
     const current = await tx.subscription.findFirst({
@@ -143,7 +144,18 @@ export async function activateSubscriptionFromPayment(
         data: { userId, planId, status: 'active', expiresAt, sourceTransactionId: transactionId },
       });
     }
+    return true;
   });
+
+  if (activated) {
+    await createNotification({
+      recipientId: userId,
+      type: 'payment',
+      title: 'Obunangiz faollashtirildi',
+      message: `"${plan.name}" obunasi faollashtirildi. Endi barcha kurslardan foydalanishingiz mumkin.`,
+      metadata: { planId, kind: 'subscription' },
+    });
+  }
 }
 
 /**
@@ -160,7 +172,7 @@ export async function grantSubscriptionManually(
   const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
   if (!plan) throw new ValidationError('Plan topilmadi');
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const current = await tx.subscription.findFirst({
       where: { userId, status: 'active', expiresAt: { gt: new Date() } },
       orderBy: { expiresAt: 'desc' },
@@ -198,6 +210,17 @@ export async function grantSubscriptionManually(
 
     return sub;
   });
+
+  // Bildirishnoma (best-effort, $tx'dan keyin — asosiy oqimni buzmaydi)
+  await createNotification({
+    recipientId: userId,
+    type: 'payment',
+    title: 'Obunangiz faollashtirildi',
+    message: `"${plan.name}" obunasi faollashtirildi. Endi barcha kurslardan foydalanishingiz mumkin.`,
+    metadata: { planId, kind: 'subscription' },
+  });
+
+  return result;
 }
 
 /** Admin obunani bekor qiladi (status='cancelled'). */

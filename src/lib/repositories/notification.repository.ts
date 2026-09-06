@@ -43,6 +43,44 @@ export interface ListFilters {
   limit?: number;
 }
 
+export interface CreateNotificationInput {
+  recipientId: string;
+  type: NotificationTypeFilter;
+  title: string;
+  message: string;
+  senderId?: string | null;
+  relatedCourseId?: string | null;
+  relatedEntityId?: string | null;
+  metadata?: unknown;
+}
+
+/**
+ * Umumiy bildirishnoma yaratuvchi. Best-effort: xato ASOSIY oqimni buzmaydi
+ * (faqat log). Barcha yaratuvchilar (obuna, yozilish, baho, sertifikat...) shundan
+ * foydalanadi. Muvaffaqiyatda id, aks holda null qaytaradi.
+ */
+export async function createNotification(input: CreateNotificationInput): Promise<string | null> {
+  try {
+    const n = await prisma.notification.create({
+      data: {
+        recipientId: input.recipientId,
+        senderId: input.senderId ?? null,
+        type: input.type as never,
+        title: input.title,
+        message: input.message,
+        relatedCourseId: input.relatedCourseId ?? null,
+        relatedEntityId: input.relatedEntityId ?? null,
+        ...(input.metadata !== undefined ? { metadata: input.metadata as never } : {}),
+      },
+      select: { id: true },
+    });
+    return n.id;
+  } catch (err) {
+    console.error('[notification] yaratishda xato:', err);
+    return null;
+  }
+}
+
 export async function listForUser(
   userId: string,
   filters: ListFilters = {},

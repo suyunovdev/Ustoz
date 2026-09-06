@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
 import { hasAllCoursesAccess } from '@/lib/services/subscription.service';
 import { recommendationsCacheTag } from '@/lib/services/dashboard.service';
+import { createNotification } from '@/lib/repositories/notification.repository';
 
 // POST /api/courses/[id]/enroll — Kursga yozilish (bepul kurslar uchun)
 // Faqat student roli — teacher/admin bepul kursga yozila olmaydi
@@ -99,6 +100,13 @@ export async function POST(
     }
     // Yangi enrollment — tavsiyalar keshi eskirdi (bu kurs endi tavsiya emas).
     revalidateTag(recommendationsCacheTag(session.sub));
+    await createNotification({
+      recipientId: session.sub,
+      type: 'enrollment',
+      title: 'Kursga yozildingiz',
+      message: `"${course.title}" kursiga muvaffaqiyatli yozildingiz. O'qishni boshlashingiz mumkin.`,
+      relatedCourseId: courseId,
+    });
     return jsonResponse({ enrollment: result.enrollment }, { status: 201 });
   } catch (err) {
     console.error('[POST /api/courses/[id]/enroll]', err);

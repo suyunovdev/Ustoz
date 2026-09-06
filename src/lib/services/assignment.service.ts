@@ -24,6 +24,7 @@ import {
 } from '@/lib/repositories';
 import { ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
+import { createNotification } from '@/lib/repositories/notification.repository';
 
 export class AssignmentNotFoundError extends Error {
   code = 'ASSIGNMENT_NOT_FOUND';
@@ -400,11 +401,23 @@ export async function gradeSubmission(
     finalGrade = Math.max(0, input.grade - penalty);
   }
 
-  return assignmentRepo.gradeSubmission(submissionId, {
+  const graded = await assignmentRepo.gradeSubmission(submissionId, {
     grade: finalGrade,
     feedback: input.feedback ?? null,
     graderId: teacherId,
   });
+
+  await createNotification({
+    recipientId: submission.studentId,
+    senderId: teacherId,
+    type: 'assignment_submission',
+    title: 'Topshiriq baholandi',
+    message: `"${assignment.title}" topshirig'i baholandi: ${finalGrade}/${assignment.maxScore} ball.`,
+    relatedCourseId: assignment.courseId,
+    relatedEntityId: assignment.id,
+  });
+
+  return graded;
 }
 
 export async function returnForRevision(
@@ -421,5 +434,17 @@ export async function returnForRevision(
   if (!assignment) throw new AssignmentNotFoundError(submission.assignmentId);
   if (assignment.teacherId !== teacherId) throw new AssignmentAccessDeniedError();
 
-  return assignmentRepo.returnSubmission(submissionId, feedback.trim(), teacherId);
+  const returned = await assignmentRepo.returnSubmission(submissionId, feedback.trim(), teacherId);
+
+  await createNotification({
+    recipientId: submission.studentId,
+    senderId: teacherId,
+    type: 'assignment_submission',
+    title: 'Topshiriq qayta ishlashga qaytarildi',
+    message: `"${assignment.title}" topshirig'i qayta ishlash uchun qaytarildi. Izohni ko'ring.`,
+    relatedCourseId: assignment.courseId,
+    relatedEntityId: assignment.id,
+  });
+
+  return returned;
 }

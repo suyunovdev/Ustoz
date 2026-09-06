@@ -9,6 +9,7 @@
 import { certificateRepo } from '@/lib/repositories';
 import { ValidationError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
+import { createNotification } from '@/lib/repositories/notification.repository';
 
 export class CertificateNotFoundError extends Error {
   code = 'CERTIFICATE_NOT_FOUND';
@@ -59,18 +60,29 @@ export async function maybeAutoIssue(
   // kurs uchun beriladi — enrolled talaba o'rganishni davom ettirgani uchun.
   const course = await prisma.course.findUnique({
     where: { id: courseId },
-    select: { moderationStatus: true, suspendedAt: true },
+    select: { moderationStatus: true, suspendedAt: true, title: true },
   });
   if (!course || course.moderationStatus === 'rejected' || course.suspendedAt !== null) {
     return null;
   }
-  return certificateRepo.issueCertificate({
+  const result = await certificateRepo.issueCertificate({
     studentId,
     courseId,
     completionPercent: eligibility.progress,
     issueSource: 'auto',
     baseUrl: getBaseUrl(),
   });
+  if (result?.created) {
+    await createNotification({
+      recipientId: studentId,
+      type: 'achievement',
+      title: 'Tabriklaymiz! Sertifikat oldingiz',
+      message: `"${course.title}" kursini yakunlaganingiz uchun sertifikat berildi.`,
+      relatedCourseId: courseId,
+      relatedEntityId: result.id,
+    });
+  }
+  return result;
 }
 
 // ==================== MANUAL ISSUE (teacher) ====================
@@ -88,7 +100,7 @@ export async function manualIssueByTeacher(
 ) {
   const course = await prisma.course.findUnique({
     where: { id: input.courseId },
-    select: { teacherId: true },
+    select: { teacherId: true, title: true },
   });
   if (!course) throw new ValidationError("Kurs topilmadi");
   if (course.teacherId !== teacherId) throw new CertificateAccessDeniedError();
@@ -117,7 +129,7 @@ export async function manualIssueByTeacher(
     throw new NotEligibleError(eligibility.progress);
   }
 
-  return certificateRepo.issueCertificate({
+  const result = await certificateRepo.issueCertificate({
     studentId: input.studentId,
     courseId: input.courseId,
     finalGrade: input.finalGrade,
@@ -126,6 +138,18 @@ export async function manualIssueByTeacher(
     issuedById: teacherId,
     baseUrl: getBaseUrl(),
   });
+  if (result?.created) {
+    await createNotification({
+      recipientId: input.studentId,
+      senderId: teacherId,
+      type: 'achievement',
+      title: 'Tabriklaymiz! Sertifikat oldingiz',
+      message: `"${course.title}" kursi uchun sertifikat berildi.`,
+      relatedCourseId: input.courseId,
+      relatedEntityId: result.id,
+    });
+  }
+  return result;
 }
 
 // ==================== REVOKE ====================
