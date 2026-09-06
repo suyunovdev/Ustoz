@@ -6,7 +6,7 @@ import type { NextRequest } from 'next/server';
 import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { certificateRepo } from '@/lib/repositories';
-import { hasActiveSubscription } from '@/lib/services/subscription.service';
+import { hasCapability } from '@/lib/services/subscription.service';
 
 export async function GET(
   req: NextRequest,
@@ -34,7 +34,7 @@ export async function GET(
     // obuna qilinsa sertifikat darhol ochiladi. Public tekshiruv (/verify/[raqam])
     // bundan mustasno — u ochiq qoladi.
     if (isOwner && !isAdmin) {
-      const subscribed = await hasActiveSubscription(session.sub);
+      const subscribed = await hasCapability(session.sub, 'certificate');
       if (!subscribed) {
         const c = cert as {
           courseTitleSnapshot?: string | null;

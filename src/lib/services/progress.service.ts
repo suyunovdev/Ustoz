@@ -128,6 +128,13 @@ export async function recomputeEnrollmentsForCourse(courseId: string): Promise<v
   }
 
   if (updates.length > 0) await prisma.$transaction(updates);
+
+  // 100% ga chiqqan (lekin hali sertifikati yo'q) talabalarga avto-sertifikat berish.
+  // maybeAutoIssue idempotent — sertifikat bo'lsa qayta yaratmaydi. Bu "mavzu o'chirilib
+  // talaba 100% bo'ldi, lekin markTopicComplete boshqa otmaydi" holatini yopadi.
+  for (const studentId of reinstateStudentIds) {
+    try { await maybeAutoIssue(studentId, courseId); } catch { /* best-effort */ }
+  }
 }
 
 /**
@@ -157,9 +164,10 @@ export async function markTopicComplete(
     if (!topic) throw new TopicNotFoundError(topicId);
     const { courseId } = topic;
 
-    // 2. Enrollment tekshirish
+    // 2. Enrollment tekshirish — FAOL bo'lishi shart (refund/bekor qilingan enrollment
+    //    progress yig'ib sertifikat ololmasin).
     const enrollment = await enrollmentRepo.findByStudentAndCourse(studentId, courseId, tx);
-    if (!enrollment) throw new EnrollmentNotFoundError(studentId, courseId);
+    if (!enrollment || !enrollment.isActive) throw new EnrollmentNotFoundError(studentId, courseId);
 
     // 3+4. Idempotent yaratish — `createIfNew` ON CONFLICT DO NOTHING ishlatadi,
     //      shuning uchun bir vaqtda kelgan ikkinchi so'rov P2002 tashlab 500

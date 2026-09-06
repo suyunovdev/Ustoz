@@ -6,14 +6,14 @@ import type { NextRequest } from 'next/server';
 import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { certificateRepo } from '@/lib/repositories';
-import { hasActiveSubscription } from '@/lib/services/subscription.service';
+import { hasCapability } from '@/lib/services/subscription.service';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await requireStudent(req);
     const [certs, subscribed] = await Promise.all([
       certificateRepo.findByStudent(session.sub),
-      hasActiveSubscription(session.sub),
+      hasCapability(session.sub, 'certificate'),
     ]);
     // `subscribed` — rasmiy sertifikatni ko'rish/yuklash/ulashish obuna bilan
     // ochiladi. Yozuvning o'zi (tugatish) hammaga ko'rinadi.
