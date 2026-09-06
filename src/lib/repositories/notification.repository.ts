@@ -52,14 +52,20 @@ export interface CreateNotificationInput {
   relatedCourseId?: string | null;
   relatedEntityId?: string | null;
   metadata?: unknown;
+  /** true bo'lsa — foydalanuvchi emailiga ham brendlangan xat yuboriladi (best-effort). */
+  email?: boolean;
+  /** Email'dagi "Saytga o'tish" tugmasi manzili (default /notifications). */
+  emailCtaUrl?: string;
 }
 
 /**
  * Umumiy bildirishnoma yaratuvchi. Best-effort: xato ASOSIY oqimni buzmaydi
  * (faqat log). Barcha yaratuvchilar (obuna, yozilish, baho, sertifikat...) shundan
- * foydalanadi. Muvaffaqiyatda id, aks holda null qaytaradi.
+ * foydalanadi. email:true bo'lsa Resend orqali xat ham yuboriladi.
+ * Muvaffaqiyatda id, aks holda null qaytaradi.
  */
 export async function createNotification(input: CreateNotificationInput): Promise<string | null> {
+  let notifId: string | null = null;
   try {
     const n = await prisma.notification.create({
       data: {
@@ -74,11 +80,40 @@ export async function createNotification(input: CreateNotificationInput): Promis
       },
       select: { id: true },
     });
-    return n.id;
+    notifId = n.id;
   } catch (err) {
     console.error('[notification] yaratishda xato:', err);
-    return null;
   }
+
+  // Email (best-effort, ayrim) — bildirishnoma yaratilmagan bo'lsa ham urinib ko'ramiz emas
+  if (input.email && notifId) {
+    try {
+      const [{ sendOne }, { renderNotificationEmail }] = await Promise.all([
+        import('@/lib/email/resend-client'),
+        import('@/lib/email/notification-email'),
+      ]);
+      const user = await prisma.user.findUnique({
+        where: { id: input.recipientId },
+        select: { email: true, profile: { select: { fullName: true } } },
+      });
+      if (user?.email) {
+        await sendOne({
+          to: user.email,
+          subject: input.title,
+          html: renderNotificationEmail({
+            title: input.title,
+            message: input.message,
+            name: user.profile?.fullName ?? null,
+            ctaUrl: input.emailCtaUrl,
+          }),
+        });
+      }
+    } catch (err) {
+      console.error('[notification] email yuborishda xato:', err);
+    }
+  }
+
+  return notifId;
 }
 
 export async function listForUser(

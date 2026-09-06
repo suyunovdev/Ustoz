@@ -106,6 +106,7 @@ export async function POST(
       title: 'Kursga yozildingiz',
       message: `"${course.title}" kursiga muvaffaqiyatli yozildingiz. O'qishni boshlashingiz mumkin.`,
       relatedCourseId: courseId,
+      email: true,
     });
     return jsonResponse({ enrollment: result.enrollment }, { status: 201 });
   } catch (err) {

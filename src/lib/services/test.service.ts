@@ -585,6 +585,7 @@ export async function submitTestAttempt(
     message: `"${test.title}" testi yakunlandi: ${percentage}%${passed ? " — tabriklaymiz, o'tdingiz!" : '.'}`,
     relatedCourseId: test.courseId,
     relatedEntityId: test.id,
+    email: true,
   });
 
   return { attempt: updated, results, passed };

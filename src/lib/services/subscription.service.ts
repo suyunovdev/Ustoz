@@ -218,6 +218,7 @@ export async function grantSubscriptionManually(
     title: 'Obunangiz faollashtirildi',
     message: `"${plan.name}" obunasi faollashtirildi. Endi barcha kurslardan foydalanishingiz mumkin.`,
     metadata: { planId, kind: 'subscription' },
+    email: true,
   });
 
   return result;

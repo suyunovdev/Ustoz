@@ -415,6 +415,7 @@ export async function gradeSubmission(
     message: `"${assignment.title}" topshirig'i baholandi: ${finalGrade}/${assignment.maxScore} ball.`,
     relatedCourseId: assignment.courseId,
     relatedEntityId: assignment.id,
+    email: true,
   });
 
   return graded;
@@ -444,6 +445,7 @@ export async function returnForRevision(
     message: `"${assignment.title}" topshirig'i qayta ishlash uchun qaytarildi. Izohni ko'ring.`,
     relatedCourseId: assignment.courseId,
     relatedEntityId: assignment.id,
+    email: true,
   });
 
   return returned;

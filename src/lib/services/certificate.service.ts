@@ -80,6 +80,7 @@ export async function maybeAutoIssue(
       message: `"${course.title}" kursini yakunlaganingiz uchun sertifikat berildi.`,
       relatedCourseId: courseId,
       relatedEntityId: result.id,
+      email: true,
     });
   }
   return result;
@@ -147,6 +148,7 @@ export async function manualIssueByTeacher(
       message: `"${course.title}" kursi uchun sertifikat berildi.`,
       relatedCourseId: input.courseId,
       relatedEntityId: result.id,
+      email: true,
     });
   }
   return result;
