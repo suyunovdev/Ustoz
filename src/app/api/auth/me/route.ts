@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest } from '@/lib/auth';
+import { getSessionFromRequest, clearSessionCookie } from '@/lib/auth';
+import { requireAuth } from '@/lib/auth-helpers';
+import { isServiceError } from '@/lib/errors';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: NextRequest) {
-  const session = await getSessionFromRequest(req);
-  if (!session) {
-    return NextResponse.json({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 });
+  // requireAuth — JWT + DB (tokenVersion/suspend/mavjudlik) to'liq tekshiruvi.
+  // Sessiya yaroqsiz bo'lsa cookie'ni TOZALAYMIZ: shu tariqa server (getSession)
+  // ham "chiqilgan" holatga keladi va dashboard↔login redirect sikli uziladi.
+  let session;
+  try {
+    session = await requireAuth(req);
+  } catch (err) {
+    const status = isServiceError(err) && err.code === 'FORBIDDEN' ? 403 : 401;
+    return NextResponse.json(
+      { error: 'Autentifikatsiya talab qilinadi' },
+      { status, headers: { 'Set-Cookie': clearSessionCookie() } },
+    );
   }
 
   const user = await prisma.user.findUnique({
@@ -14,7 +25,10 @@ export async function GET(req: NextRequest) {
   });
 
   if (!user) {
-    return NextResponse.json({ error: 'Foydalanuvchi topilmadi' }, { status: 404 });
+    return NextResponse.json(
+      { error: 'Foydalanuvchi topilmadi' },
+      { status: 404, headers: { 'Set-Cookie': clearSessionCookie() } },
+    );
   }
 
   return NextResponse.json({

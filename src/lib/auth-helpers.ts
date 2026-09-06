@@ -6,10 +6,55 @@
  */
 
 import type { NextRequest } from 'next/server';
-import { getSessionFromRequest, type JWTPayload } from './auth';
+import { getSession, getSessionFromRequest, type JWTPayload } from './auth';
 import { ForbiddenError, UnauthorizedError, isServiceError } from './errors';
 import { jsonResponse } from './json';
 import { prisma } from './prisma';
+
+/**
+ * JWT dekod qilingandan so'ng sessiya DB holatini tekshiradi:
+ *   - foydalanuvchi mavjud emas         → 'unauthorized' (o'chirilgan akkaunt)
+ *   - profil suspended / deletedAt      → 'forbidden'
+ *   - token.tokenVersion != DB.version  → 'unauthorized' (parol o'zgargan / suspend)
+ * requireAuth (throws) va getVerifiedSession (null qaytaradi) shu mantiqni bo'lishadi —
+ * shu tariqa JWT-only tekshiruv (getSession/middleware) bilan DB-backed tekshiruv
+ * o'rtasidagi nomuvofiqlik (redirect sikli) yo'qoladi.
+ */
+async function validateSessionInDb(
+  session: JWTPayload,
+): Promise<'ok' | 'unauthorized' | 'forbidden'> {
+  const user = await prisma.user.findUnique({
+    where: { id: session.sub },
+    select: {
+      tokenVersion: true,
+      profile: { select: { isActive: true, deletedAt: true } },
+    },
+  });
+
+  if (!user) return 'unauthorized';
+  if (user.profile && (user.profile.isActive === false || user.profile.deletedAt !== null)) {
+    return 'forbidden';
+  }
+  // Eski (tokenVersion'siz) tokenlar ?? 0 — mavjud foydalanuvchilar default 0, mos keladi.
+  if ((session.tokenVersion ?? 0) !== user.tokenVersion) return 'unauthorized';
+  return 'ok';
+}
+
+/**
+ * Cookie'dagi sessiyani JWT + DB darajasida to'liq tekshiradi (server component uchun).
+ * Yaroqsiz (yo'q / muddati o'tgan / tokenVersion eskirgan / bloklangan) → null.
+ *
+ * getSession() faqat imzoni tekshiradi; getVerifiedSession() esa requireAuth bilan
+ * BIR XIL DB tekshiruvini qo'llaydi. Redirect qaror qabul qiluvchi sahifalar
+ * (masalan `/`) buni ishlatishi kerak — aks holda eskirgan cookie dashboard'ga
+ * redirect qilib, API 401 → login sikli hosil bo'ladi.
+ */
+export async function getVerifiedSession(): Promise<JWTPayload | null> {
+  const session = await getSession();
+  if (!session) return null;
+  const status = await validateSessionInDb(session);
+  return status === 'ok' ? session : null;
+}
 
 /**
  * Authenticated foydalanuvchi sessiyasini qaytaradi.
@@ -26,22 +71,9 @@ export async function requireAuth(req: NextRequest): Promise<JWTPayload> {
   const session = await getSessionFromRequest(req);
   if (!session) throw new UnauthorizedError();
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.sub },
-    select: {
-      tokenVersion: true,
-      profile: { select: { isActive: true, deletedAt: true } },
-    },
-  });
-
-  if (!user) throw new UnauthorizedError();
-  if (user.profile && (user.profile.isActive === false || user.profile.deletedAt !== null)) {
-    throw new ForbiddenError('Akkaunt bloklangan');
-  }
-  // Eski (tokenVersion'siz) tokenlar ?? 0 — mavjud foydalanuvchilar default 0, mos keladi.
-  if ((session.tokenVersion ?? 0) !== user.tokenVersion) {
-    throw new UnauthorizedError();
-  }
+  const status = await validateSessionInDb(session);
+  if (status === 'forbidden') throw new ForbiddenError('Akkaunt bloklangan');
+  if (status !== 'ok') throw new UnauthorizedError();
 
   return session;
 }

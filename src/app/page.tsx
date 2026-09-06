@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/auth';
+import { getVerifiedSession } from '@/lib/auth-helpers';
 import { getServerT } from '@/lib/i18n/server';
 import LandingPageInteractive from './landing-page/components/LandingPageInteractive';
 
@@ -21,7 +21,9 @@ export const dynamic = 'force-dynamic';
 // Mehmon → landing kontenti to'g'ridan-to'g'ri; authenticated → rol dashboard
 // (server-side redirect, spinner/flash yo'q).
 export default async function RootPage() {
-  const session = await getSession();
+  // getVerifiedSession — JWT + DB (tokenVersion/suspend) tekshiruvi. Eskirgan cookie
+  // bilan dashboard'ga redirect qilib, keyin API 401 → login sikli hosil bo'lmaydi.
+  const session = await getVerifiedSession();
   if (session) {
     if (session.role === 'teacher') redirect('/teacher-dashboard');
     if (session.role === 'admin') redirect('/admin-dashboard');
