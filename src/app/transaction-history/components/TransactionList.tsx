@@ -6,17 +6,19 @@ import { formatDate, formatCurrency } from '@/lib/i18n/format';
 
 interface Transaction {
   id: string;
-  course_id: string;
+  course_id: string | null;
   amount_uzs: number;
   payment_method: 'click' | 'payme';
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled' | 'refunded';
   merchant_trans_id: string;
   created_at: string;
   completed_at: string | null;
+  kind?: string; // 'course' | 'subscription'
+  plan_name?: string | null;
   courses: {
     title: string;
     teacher_id: string;
-  };
+  } | null;
 }
 
 interface TransactionListProps {
@@ -120,7 +122,12 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                     {formatDate(transaction.created_at, locale, dateOpts)}
                   </td>
                   <td className="px-6 py-4 text-sm text-foreground">
-                    <div className="max-w-xs truncate">{transaction.courses.title}</div>
+                    <div className="max-w-xs truncate">
+                      {transaction.courses?.title
+                        ?? (transaction.plan_name
+                          ? `${t('payment.subscription')}: ${transaction.plan_name}`
+                          : t('payment.subscription'))}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                     {formatCurrency(transaction.amount_uzs, locale, 'UZS')}
@@ -157,12 +164,19 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                               {transaction.merchant_trans_id}
                             </p>
                           </div>
-                          <div>
-                            <span className="font-medium text-muted-foreground">{t('payment.courseId')}:</span>
-                            <p className="text-foreground mt-1 font-mono text-xs">
-                              {transaction.course_id}
-                            </p>
-                          </div>
+                          {transaction.course_id ? (
+                            <div>
+                              <span className="font-medium text-muted-foreground">{t('payment.courseId')}:</span>
+                              <p className="text-foreground mt-1 font-mono text-xs">
+                                {transaction.course_id}
+                              </p>
+                            </div>
+                          ) : transaction.plan_name ? (
+                            <div>
+                              <span className="font-medium text-muted-foreground">{t('payment.subscription')}:</span>
+                              <p className="text-foreground mt-1">{transaction.plan_name}</p>
+                            </div>
+                          ) : null}
                         </div>
                         {transaction.completed_at && (
                           <div>
@@ -172,16 +186,16 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                             </p>
                           </div>
                         )}
-                        <div className="flex gap-2 mt-4">
-                          {transaction.status === 'completed' && (
+                        {transaction.status === 'completed' && transaction.course_id && (
+                          <div className="flex gap-2 mt-4">
                             <a
                               href={`/learning-interface?courseId=${transaction.course_id}`}
                               className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
                             >
                               {t('payment.goToCourse')}
                             </a>
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     </td>
                   </tr>

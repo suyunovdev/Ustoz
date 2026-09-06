@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
       where: { studentId: session.sub },
       include: {
         course: { select: { title: true, teacherId: true } },
+        plan: { select: { name: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -44,6 +45,7 @@ export async function GET(req: NextRequest) {
         created_at: t.createdAt.toISOString(),
         completed_at: t.completedAt ? t.completedAt.toISOString() : null,
         kind: t.kind,
+        plan_name: t.plan?.name ?? null,
         courses: t.course
           ? { title: t.course.title, teacher_id: t.course.teacherId }
           : null,

@@ -155,6 +155,7 @@ export async function activateSubscriptionFromPayment(
 export async function grantSubscriptionManually(
   userId: string,
   planId: string,
+  paymentMethod: 'click' | 'payme' = 'click',
 ): Promise<{ id: string; expiresAt: Date }> {
   const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
   if (!plan) throw new ValidationError('Plan topilmadi');
@@ -167,18 +168,34 @@ export async function grantSubscriptionManually(
     const base = current && current.expiresAt > new Date() ? current.expiresAt : new Date();
     const expiresAt = new Date(base.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
 
-    if (current) {
-      const updated = await tx.subscription.update({
-        where: { id: current.id },
-        data: { planId, expiresAt, status: 'active' },
-        select: { id: true, expiresAt: true },
-      });
-      return updated;
-    }
-    return tx.subscription.create({
-      data: { userId, planId, status: 'active', expiresAt },
-      select: { id: true, expiresAt: true },
+    const sub = current
+      ? await tx.subscription.update({
+          where: { id: current.id },
+          data: { planId, expiresAt, status: 'active' },
+          select: { id: true, expiresAt: true },
+        })
+      : await tx.subscription.create({
+          data: { userId, planId, status: 'active', expiresAt },
+          select: { id: true, expiresAt: true },
+        });
+
+    // To'lov tarixida ko'rinishi uchun obuna tranzaksiyasi (kind='subscription').
+    // Gateway ulanmagan davrda status='completed' — admin tasdig'i to'lov o'rnida.
+    await tx.paymentTransaction.create({
+      data: {
+        studentId: userId,
+        kind: 'subscription',
+        planId,
+        amountUzs: plan.priceUzs,
+        currency: 'UZS',
+        paymentMethod,
+        status: 'completed',
+        completedAt: new Date(),
+        metadata: { source: 'manual_grant', planName: plan.name },
+      },
     });
+
+    return sub;
   });
 }
 
@@ -261,7 +278,8 @@ export async function approveSubscriptionRequest(
   if (!reqRow) throw new ValidationError('So\'rov topilmadi');
   if (reqRow.status !== 'pending') throw new ValidationError('So\'rov allaqachon ko\'rib chiqilgan');
 
-  const result = await grantSubscriptionManually(reqRow.userId, reqRow.planId);
+  const method = reqRow.paymentMethod === 'payme' ? 'payme' : 'click';
+  const result = await grantSubscriptionManually(reqRow.userId, reqRow.planId, method);
   await prisma.subscriptionRequest.update({
     where: { id: requestId },
     data: { status: 'approved', reviewedById: adminId, reviewedAt: new Date() },

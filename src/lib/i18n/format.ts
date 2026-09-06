@@ -60,13 +60,24 @@ export function formatDate(
     if (
       locale === 'uz' &&
       (opts.month === 'long' || opts.month === 'short') &&
-      !opts.weekday && !opts.hour && !opts.minute && !opts.second
+      !opts.weekday
     ) {
       const tz = opts.timeZone ?? TASHKENT_TZ;
       const { day, month, year } = dateParts(date, tz);
       const name = (opts.month === 'long' ? UZ_MONTHS_LONG : UZ_MONTHS_SHORT)[month - 1];
       const head = opts.day ? `${day}-${name}` : name;
-      return opts.year ? `${head}, ${year}` : head;
+      let out = opts.year ? `${head}, ${year}` : head;
+      // Vaqt so'ralgan bo'lsa — raqamli qism barcha brauzerda ishonchli (24h).
+      if (opts.hour || opts.minute) {
+        const time = date.toLocaleTimeString('en-GB', {
+          timeZone: tz,
+          hour: opts.hour ?? '2-digit',
+          minute: opts.minute ?? '2-digit',
+          hour12: false,
+        });
+        out += `, ${time}`;
+      }
+      return out;
     }
     return date.toLocaleDateString(tag(locale), withTz(opts));
   } catch {
