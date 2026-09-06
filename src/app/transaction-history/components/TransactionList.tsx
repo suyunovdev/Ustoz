@@ -156,41 +156,64 @@ export default function TransactionList({ transactions }: TransactionListProps) 
                 {expandedId === transaction.id && (
                   <tr>
                     <td colSpan={6} className="px-6 py-4 bg-muted">
-                      <div className="space-y-2 text-sm">
-                        <div className="grid grid-cols-2 gap-4">
+                      <div className="text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
                           <div>
                             <span className="font-medium text-muted-foreground">{t('payment.transactionId')}:</span>
-                            <p className="text-foreground mt-1 font-mono text-xs">
-                              {transaction.merchant_trans_id}
+                            <p className="text-foreground mt-0.5 font-mono text-xs break-all">
+                              {transaction.merchant_trans_id || transaction.id}
                             </p>
                           </div>
-                          {transaction.course_id ? (
+                          <div>
+                            <span className="font-medium text-muted-foreground">{t('payment.type')}:</span>
+                            <p className="text-foreground mt-0.5">
+                              {transaction.course_id ? t('payment.typeCourse') : t('payment.subscription')}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">{t('payment.name')}:</span>
+                            <p className="text-foreground mt-0.5">
+                              {transaction.courses?.title ?? transaction.plan_name ?? '—'}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">{t('payment.amount')}:</span>
+                            <p className="text-foreground mt-0.5">{formatCurrency(transaction.amount_uzs, locale, 'UZS')}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">{t('payment.paymentMethod')}:</span>
+                            <p className="text-foreground mt-0.5">{paymentMethodLabels[transaction.payment_method]}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">{t('payment.status')}:</span>
+                            <p className="mt-0.5">
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${statusColors[transaction.status]}`}>
+                                {statusLabels[transaction.status]}
+                              </span>
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-muted-foreground">{t('payment.createdDate')}:</span>
+                            <p className="text-foreground mt-0.5">{formatDate(transaction.created_at, locale, dateOpts)}</p>
+                          </div>
+                          {transaction.completed_at && (
+                            <div>
+                              <span className="font-medium text-muted-foreground">{t('payment.completedDate')}:</span>
+                              <p className="text-foreground mt-0.5">{formatDate(transaction.completed_at, locale, dateOpts)}</p>
+                            </div>
+                          )}
+                          {transaction.course_id && (
                             <div>
                               <span className="font-medium text-muted-foreground">{t('payment.courseId')}:</span>
-                              <p className="text-foreground mt-1 font-mono text-xs">
-                                {transaction.course_id}
-                              </p>
+                              <p className="text-foreground mt-0.5 font-mono text-xs break-all">{transaction.course_id}</p>
                             </div>
-                          ) : transaction.plan_name ? (
-                            <div>
-                              <span className="font-medium text-muted-foreground">{t('payment.subscription')}:</span>
-                              <p className="text-foreground mt-1">{transaction.plan_name}</p>
-                            </div>
-                          ) : null}
+                          )}
                         </div>
-                        {transaction.completed_at && (
-                          <div>
-                            <span className="font-medium text-muted-foreground">{t('payment.completedDate')}:</span>
-                            <p className="text-foreground mt-1">
-                              {formatDate(transaction.completed_at, locale, dateOpts)}
-                            </p>
-                          </div>
-                        )}
                         {transaction.status === 'completed' && transaction.course_id && (
-                          <div className="flex gap-2 mt-4">
+                          <div className="flex gap-2 mt-5">
                             <a
                               href={`/learning-interface?courseId=${transaction.course_id}`}
-                              className="px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"
+                              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
                             >
                               {t('payment.goToCourse')}
                             </a>

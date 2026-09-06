@@ -191,6 +191,7 @@ export async function grantSubscriptionManually(
         paymentMethod,
         status: 'completed',
         completedAt: new Date(),
+        merchantTransId: `SUB-${crypto.randomUUID()}`,
         metadata: { source: 'manual_grant', planName: plan.name },
       },
     });
