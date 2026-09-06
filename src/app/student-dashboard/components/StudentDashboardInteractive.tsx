@@ -15,6 +15,7 @@ import SearchBar from './SearchBar';
 import CategoryFilter from './CategoryFilter';
 import QuickActions from './QuickActions';
 import Icon from '@/components/ui/AppIcon';
+import Button from '@/components/ui/Button';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate } from '@/lib/i18n/format';
 import type {
@@ -434,12 +435,16 @@ const StudentDashboardInteractive = () => {
                       />
                     ))}
                   </div>
-                  <button
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    fullWidth
+                    iconRight="ArrowRightIcon"
                     onClick={() => router.push('/student-certificates')}
-                    className="w-full mt-4 text-sm text-primary hover:underline font-medium"
+                    className="mt-4"
                   >
-                    {t('student.viewAll')} ({certificates.length}) →
-                  </button>
+                    {t('student.viewAll')} ({certificates.length})
+                  </Button>
                 </>
               )}
             </div>

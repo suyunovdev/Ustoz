@@ -161,9 +161,10 @@ const NotificationBell = ({ userId }: NotificationBellProps) => {
             <Link
               href="/notifications"
               onClick={() => setIsOpen(false)}
-              className="block text-center text-sm text-primary hover:underline py-1.5"
+              className="flex items-center justify-center gap-1.5 w-full rounded-md border border-border py-2 text-sm font-medium text-foreground hover:bg-muted transition-smooth"
             >
               {t('ui.viewAll')}
+              <Icon name="ArrowRightIcon" size={15} />
             </Link>
           </div>
         </div>

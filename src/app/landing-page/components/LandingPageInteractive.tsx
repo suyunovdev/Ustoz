@@ -456,8 +456,15 @@ const LandingPageInteractive = () => {
               <h2 className="text-2xl md:text-3xl font-medium" style={{ ...DISPLAY, color: INK_TEXT }}>
                 {t('landing.categoriesTitle')}
               </h2>
-              <Link href="/course-marketplace" className="text-sm font-semibold inline-flex items-center gap-1.5" style={{ color: BLUE }}>
-                {t('landing.viewAllCourses')} <Icon name="ArrowRightIcon" size={15} />
+              <Link
+                href="/course-marketplace"
+                className="group inline-flex items-center gap-1.5 text-sm font-semibold rounded-full px-4 py-2 transition-all hover:text-white"
+                style={{ color: BLUE, border: `1.5px solid ${BLUE}` }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = BLUE; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+              >
+                {t('landing.viewAllCourses')}
+                <Icon name="ArrowRightIcon" size={15} className="transition-transform group-hover:translate-x-0.5" />
               </Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

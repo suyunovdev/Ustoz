@@ -25,7 +25,7 @@ import {
 // Bosh sahifada inline render qilinadigan tab'lar. Qolganlari alohida sahifaga ega.
 const INLINE_TABS: ReadonlyArray<TeacherTabId> = ['overview', 'courses'];
 
-// Alohida sahifaga ega tab'lar — ?tab=X to'g'ridan-to'g'ri ochilса, o'z sahifasiga
+// Alohida sahifaga ega tab'lar — ?tab=X to'g'ridan-to'g'ri ochilsa, o'z sahifasiga
 // yo'naltiriladi (aks holda avval jimgina overview ko'rsatilardi yoki eskirgan
 // inline versiya chiqardi).
 const TAB_ROUTES: Partial<Record<TeacherTabId, string>> = {
@@ -280,8 +280,12 @@ function NeedsAttentionBanner({
             ))}
           </div>
           {items.length > 3 && (
-            <button onClick={onGoToCourses} className="mt-2 text-xs text-primary underline">
+            <button
+              onClick={onGoToCourses}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-smooth"
+            >
               {t('teacher.moreItems')} {items.length - 3} — {t('teacher.viewAllAttention')}
+              <Icon name="ArrowRightIcon" size={13} />
             </button>
           )}
         </div>
