@@ -9,6 +9,7 @@ import NotificationBell from './NotificationBell';
 import UserMenu from './UserMenu';
 import ThemeToggle from './ThemeToggle';
 import BrandMark from './BrandMark';
+import BackButton from './BackButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -85,24 +86,27 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
     <header className="fixed top-0 left-0 right-0 bg-card shadow-warm-md z-100">
       <div className="mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link
-            href={
-              PUBLIC_PAGES.some(p => activePath === p || activePath.startsWith(p + '/'))
-                ? '/'
-                : userRole === 'admin'
-                ? '/admin-dashboard'
-                : userRole === 'teacher'
-                ? '/teacher-dashboard'
-                : userRole === 'student'
-                ? '/student-dashboard'
-                : '/'
-            }
-            className="flex items-center space-x-2 transition-smooth hover:opacity-80"
-          >
-            <BrandMark size={40} />
-            <span className="text-xl font-heading font-bold text-foreground">Ustoz</span>
-          </Link>
+          {/* Logo + Orqaga */}
+          <div className="flex items-center gap-3">
+            <Link
+              href={
+                PUBLIC_PAGES.some(p => activePath === p || activePath.startsWith(p + '/'))
+                  ? '/'
+                  : userRole === 'admin'
+                  ? '/admin-dashboard'
+                  : userRole === 'teacher'
+                  ? '/teacher-dashboard'
+                  : userRole === 'student'
+                  ? '/student-dashboard'
+                  : '/'
+              }
+              className="flex items-center space-x-2 transition-smooth hover:opacity-80"
+            >
+              <BrandMark size={40} />
+              <span className="text-xl font-heading font-bold text-foreground">Ustoz</span>
+            </Link>
+            <BackButton />
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">

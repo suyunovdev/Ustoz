@@ -8,6 +8,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import TeacherSidebar from '@/app/teacher-dashboard/components/TeacherSidebar';
 import AdminSidebar from '@/app/admin-dashboard/components/AdminSidebar';
 import StudentSidebar from '@/app/student-dashboard/components/StudentSidebar';
+import BackButton from '@/components/common/BackButton';
 
 /**
  * Rol-aware layout: kirgan foydalanuvchi roliga qarab tegishli sidebar'ni ko'rsatadi
@@ -65,7 +66,10 @@ export default function RoleBasedShell({
         <div className="w-9" />
       </div>
 
-      <main id="main-content" className="md:ml-60 min-h-screen">{children}</main>
+      <main id="main-content" className="md:ml-60 min-h-screen">
+        <BackButton className="mt-4 ml-4 md:mt-5 md:ml-6" />
+        {children}
+      </main>
     </div>
   );
 }

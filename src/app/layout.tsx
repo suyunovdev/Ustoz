@@ -30,7 +30,6 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { I18nProvider } from '@/contexts/I18nContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { Toaster } from '@/components/common/Toaster';
-import BackButton from '@/components/common/BackButton';
 import CookieConsent from '@/components/common/CookieConsent';
 import Analytics from '@/components/common/Analytics';
 import { CookieConsentProvider } from '@/contexts/CookieConsentContext';
@@ -126,7 +125,6 @@ export default async function RootLayout({
             <CookieConsentProvider>
               <QueryProvider>
                 {children}
-                <BackButton />
                 <Toaster />
                 <CookieConsent />
                 <Analytics />
