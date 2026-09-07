@@ -23,8 +23,11 @@ export const AUDIT_ACTIONS = {
   USER_ROLE_CHANGE: 'user.role_change',
   COURSE_APPROVE: 'course.approve',
   COURSE_REJECT: 'course.reject',
+  COURSE_REVISION_REQUESTED: 'course.revision_requested',
   MATERIAL_APPROVE: 'material.approve',
   MATERIAL_REJECT: 'material.reject',
+  LIVE_SESSION_CREATE: 'live_session.create',
+  LIVE_SESSION_DELETE: 'live_session.delete',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];

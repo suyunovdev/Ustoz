@@ -160,7 +160,9 @@ const DIFFICULTY_LABELS: Record<string, string> = {
 };
 
 export function getDifficultyLabel(value: string | null | undefined): string {
-  if (!value) return "Boshlang'ich";
+  // Bo'sh bo'lsa BO'SH qaytaramiz — ilgari "Boshlang'ich" deb TO'QIB ko'rsatilardi
+  // (kursda daraja bo'lmasa ham). Chaqiruvchilar bo'sh bo'lsa badge'ni yashiradi.
+  if (!value) return '';
   return DIFFICULTY_LABELS[value.toLowerCase()] ?? value;
 }
 

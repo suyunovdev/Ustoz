@@ -133,7 +133,7 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
         price: Number(c.priceUzs) || 0,
         currency: 'UZS',
         enrollmentCount: c.enrollmentCount || 0,
-        difficulty: c.difficultyLevel || 'Beginner',
+        difficulty: c.difficultyLevel || '',
         language: c.language || 'uz',
         category: c.category || 'other',
         categorySlug: c.categorySlug || '',

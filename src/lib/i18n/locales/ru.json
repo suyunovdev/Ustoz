@@ -2036,7 +2036,14 @@
     "subError": "Ошибка",
     "subDurationDays": "Срок (дней)",
     "navLiveSessions": "Живые уроки",
-    "liveSessionsSubtitle": "Управление живыми уроками и вебинарами"
+    "liveSessionsSubtitle": "Управление живыми уроками и вебинарами",
+    "pendingCoursesTitle": "Очередь модерации курсов",
+    "pendingCoursesCount": "{count} в ожидании",
+    "courseQueueEmpty": "Очередь пуста — все курсы проверены",
+    "reviewQueueBtn": "Открыть очередь",
+    "degraded": "Ограничено",
+    "offline": "Офлайн",
+    "loadMore": "Показать ещё"
   },
   "courseCreation": {
     "loadingTools": "Загрузка инструментов создания курса...",
@@ -2439,7 +2446,16 @@
     "courseRevisionRequested": "Запрошена доработка",
     "confirmAction": "Подтвердить",
     "cancel": "Отмена",
-    "courseModerationTitle": "Модерация курсов"
+    "courseModerationTitle": "Модерация курсов",
+    "filterSubmitted": "Ожидают",
+    "filterRevision": "На доработке",
+    "filterApproved": "Одобрено",
+    "filterRejected": "Отклонено",
+    "filterAll": "Все",
+    "previewAction": "Просмотр",
+    "approveTitle": "Одобрить курс",
+    "approveAndPublish": "Одобрить и опубликовать",
+    "approveConfirmMessage": "«{title}» ({teacher}) — {topics} тем, цена: {price}. После одобрения курс станет доступен на маркетплейсе."
   },
   "learning": {
     "noLessonsYet": "Уроки еще не добавлены",

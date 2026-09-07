@@ -19,7 +19,7 @@ import {
   type RecipientFilter,
 } from '@/lib/repositories';
 import { ValidationError } from '@/lib/errors';
-import { sendBatch, isResendConfigured } from '@/lib/email/resend-client';
+import { sendBatch, isResendConfigured, friendlyEmailError } from '@/lib/email/resend-client';
 import { log as auditLog } from './audit-log.service';
 
 const MAX_RECIPIENTS_PER_CAMPAIGN = 1000;
@@ -160,7 +160,7 @@ export async function createAndSend(input: CreateAndSendInput): Promise<Campaign
     request: input.request,
   });
 
-  // 5) Batch send
+  // 5) Batch send — throttle standart (~4 req/s), Resend limitidan past
   const results = await sendBatch(
     limited.map((r) => ({
       to: r.email,
@@ -168,15 +168,20 @@ export async function createAndSend(input: CreateAndSendInput): Promise<Campaign
       html: input.bodyHtml,
       text: input.bodyText,
     })),
-    { concurrency: 10, throttleMs: 100 },
   );
 
   const sent = results.filter((r) => r.success).length;
   const failed = results.length - sent;
-  const errors = results
-    .filter((r) => !r.success && r.error)
-    .slice(0, 5)
-    .map((r) => `${r.to}: ${r.error}`)
+  // Xatolarni GURUHLAB, insoniylashtirib beramiz (xom Resend matni UI'ga to'kilmasin).
+  const errorCounts = new Map<string, number>();
+  for (const r of results) {
+    if (!r.success && r.error) {
+      const friendly = friendlyEmailError(r.error);
+      errorCounts.set(friendly, (errorCounts.get(friendly) ?? 0) + 1);
+    }
+  }
+  const errors = Array.from(errorCounts.entries())
+    .map(([msg, count]) => (count > 1 ? `${msg} (${count})` : msg))
     .join('; ');
 
   const finalStatus = failed === 0 ? 'completed' : sent === 0 ? 'failed' : 'completed';

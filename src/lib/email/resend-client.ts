@@ -5,10 +5,29 @@
  *   RESEND_API_KEY — Bearer token
  *   RESEND_FROM    — 'Ustoz <no-reply@your-domain.com>' (yo'q bo'lsa sandbox)
  *
- * Batching: 10 ta concurrent + 100ms throttle (Resend rate limit ~2 req/s sandbox'da)
+ * Batching: Resend rate limit ~5 req/s. Standart: 3 concurrent + 700ms pauza
+ * (~4 req/s) — limitdan past turadi, "Too many requests" xatosini oldini oladi.
  */
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
+
+// Xom Resend xatolarini foydalanuvchiga tushunarli qisqa matnga o'giradi (UI'ga xom
+// provayder matni to'kilmasin). Noma'lum xatolar qisqartiriladi.
+export function friendlyEmailError(raw: string | undefined): string {
+  if (!raw) return 'Yuborilmadi';
+  const s = raw.toLowerCase();
+  if (s.includes('testing emails') || s.includes('verify a domain')) {
+    return 'Domen tasdiqlanmagan — faqat egalik qilingan pochtaga yuborish mumkin (RESEND_FROM sozlang)';
+  }
+  if (s.includes('too many requests') || s.includes('rate')) {
+    return 'So‘rovlar ko‘p — biroz keyin qayta urinib ko‘ring';
+  }
+  if (s.includes('not configured') || s.includes('api_key') || s.includes('api key')) {
+    return 'Email xizmati sozlanmagan (RESEND_API_KEY yo‘q)';
+  }
+  if (s.includes('invalid') && s.includes('email')) return 'Email manzili noto‘g‘ri';
+  return raw.length > 80 ? raw.slice(0, 77) + '…' : raw;
+}
 
 export interface SendEmailInput {
   to: string;
@@ -84,7 +103,8 @@ export async function sendBatch(
   inputs: SendEmailInput[],
   options: BatchOptions = {},
 ): Promise<SendResult[]> {
-  const { concurrency = 10, throttleMs = 100, onProgress } = options;
+  // Standart 3 concurrent + 700ms pauza (~4 req/s) — Resend ~5 req/s limitidan past
+  const { concurrency = 3, throttleMs = 700, onProgress } = options;
   const results: SendResult[] = [];
   let done = 0;
 

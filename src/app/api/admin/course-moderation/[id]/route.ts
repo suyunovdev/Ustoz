@@ -13,6 +13,7 @@ import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import type { ModerationStatus } from '@/generated/prisma/client';
+import { log, AUDIT_ACTIONS } from '@/lib/services/audit-log.service';
 
 export async function PATCH(
   req: NextRequest,
@@ -80,6 +81,27 @@ export async function PATCH(
         reviewedAt: now,
       },
     });
+
+    // Audit log — moderatsiya qarori izsiz qolmasin (best-effort). Ilgari bu endpoint
+    // audit yozmasdan prisma bilan to'g'ridan-to'g'ri ishlardi.
+    try {
+      const auditAction =
+        action === 'approve'
+          ? AUDIT_ACTIONS.COURSE_APPROVE
+          : action === 'reject'
+            ? AUDIT_ACTIONS.COURSE_REJECT
+            : AUDIT_ACTIONS.COURSE_REVISION_REQUESTED;
+      await log({
+        adminId: session.sub,
+        action: auditAction,
+        targetType: 'course',
+        targetId: id,
+        metadata: { title: course.title, teacherId: course.teacherId, feedback: feedback || null },
+        request: req,
+      });
+    } catch (e) {
+      console.error('[course-moderation] audit log failed:', e);
+    }
 
     // O'qituvchiga notifikatsiya (best-effort — muvaffaqiyatsizlik qarorni buzmaydi)
     try {

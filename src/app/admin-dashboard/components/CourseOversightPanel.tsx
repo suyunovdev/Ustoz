@@ -13,6 +13,7 @@ import { useCourseActionMutation } from '@/hooks/mutations/useCourseActionMutati
 import { useI18n } from '@/contexts/I18nContext';
 import { type Locale } from '@/lib/i18n';
 import { formatDate } from '@/lib/i18n/format';
+import { getSubjectLabel } from '@/lib/data/subject-labels';
 
 type StatusFilter = ModerationStatusDTO | 'all';
 
@@ -52,9 +53,10 @@ function fmtDate(iso: string | null, locale: Locale): string {
   return formatDate(iso, locale);
 }
 
+// Narxni ixcham formatlaydi; 0/yaroqsiz → '' (bepul yorlig'i chaqiruv joyida i18n bilan)
 function formatUzs(uzs: string): string {
   const n = Number(uzs);
-  if (!Number.isFinite(n) || n === 0) return 'Free';
+  if (!Number.isFinite(n) || n === 0) return '';
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M so'm`;
   return `${(n / 1_000).toFixed(0)}K so'm`;
 }
@@ -75,11 +77,19 @@ const CourseOversightPanel = () => {
     return () => clearTimeout(t);
   }, [searchInput]);
 
+  // Sahifalash — server 100 tagacha beradi; 20 tadan boshlab "Ko'proq" bilan oshiramiz
+  const [limit, setLimit] = useState(20);
   const { data, isLoading, isFetching, error, refetch } = useAdminCourses({
     status,
     search: search || undefined,
     featuredOnly,
+    limit,
   });
+
+  // Filtr/qidiruv o'zgarsa — sahifani boshiga qaytaramiz
+  useEffect(() => {
+    setLimit(20);
+  }, [status, search, featuredOnly]);
 
   const actionMutation = useCourseActionMutation();
 
@@ -350,13 +360,19 @@ const CourseOversightPanel = () => {
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground truncate">
-                        {course.teacher.fullName} · {course.categoryRel?.name ?? t('admin.noCategory')}
+                        {course.teacher.fullName} ·{' '}
+                        {course.categoryRel?.name
+                          ?? (course.subjectCategory ? getSubjectLabel(course.subjectCategory) : null)
+                          ?? t('admin.noCategory')}
                       </p>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-muted-foreground">
                         <span>📚 {course._count.topics} {t('admin.topicUnit')}</span>
                         <span>👥 {course._count.enrollments} {t('admin.studentUnit')}</span>
                         <span>⭐ {Number(course.rating).toFixed(1)} ({course._count.reviews})</span>
-                        <span>💰 {formatUzs(course.priceUzs)}</span>
+                        <span className="flex items-center gap-1">
+                          <Icon name="CurrencyDollarIcon" size={14} className="text-success" />
+                          {Number(course.priceUzs) > 0 ? formatUzs(course.priceUzs) : t('courses.free')}
+                        </span>
                         <span>📅 {fmtDate(course.createdAt, locale)}</span>
                       </div>
                       {course.adminFeedback && (
@@ -464,6 +480,21 @@ const CourseOversightPanel = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Ko'proq yuklash — 100 tagacha (server chegarasi); ilgari faqat dastlabki
+            20 tasi ko'rinardi, qolgani yashirin edi */}
+        {!isLoading && data?.nextCursor && limit < 100 && (
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={() => setLimit((n) => Math.min(100, n + 20))}
+              disabled={isFetching}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-md bg-muted text-foreground text-sm font-medium hover:bg-muted/80 transition-smooth disabled:opacity-50"
+            >
+              <Icon name="ArrowDownIcon" size={16} />
+              {t('admin.loadMore')}
+            </button>
           </div>
         )}
       </div>

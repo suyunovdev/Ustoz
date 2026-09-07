@@ -8,6 +8,7 @@ import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { isUuid } from '@/lib/validation';
+import { log, AUDIT_ACTIONS } from '@/lib/services/audit-log.service';
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -51,10 +52,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    await requireAdmin(req);
+    const session = await requireAdmin(req);
     const { id } = await params;
     if (!isUuid(id)) throw new ValidationError("Noto'g'ri ID");
-    await prisma.liveSession.delete({ where: { id } });
+    const removed = await prisma.liveSession.delete({ where: { id } });
+    try {
+      await log({
+        adminId: session.sub,
+        action: AUDIT_ACTIONS.LIVE_SESSION_DELETE,
+        targetType: 'live_session',
+        targetId: id,
+        metadata: { title: removed.title },
+        request: req,
+      });
+    } catch (e) {
+      console.error('[live-sessions] delete audit log failed:', e);
+    }
     return jsonResponse({ ok: true });
   } catch (err) {
     return errorResponse(err);

@@ -91,10 +91,12 @@ const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
             <Icon name="UserGroupIcon" size={16} />
             <span className="font-data">{formatNumber(course.enrollmentCount, locale)}</span>
           </div>
-          <div className="flex items-center space-x-1">
-            <Icon name={metaIcon} size={16} />
-            <span>{metaLabel}</span>
-          </div>
+          {metaLabel && (
+            <div className="flex items-center space-x-1">
+              <Icon name={metaIcon} size={16} />
+              <span>{metaLabel}</span>
+            </div>
+          )}
         </div>
 
         {/* Category */}

@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { signToken, createSessionCookie } from '@/lib/auth';
 import { createSession } from '@/lib/services/session.service';
+import { userRepo } from '@/lib/repositories';
 import { verifyTwoFactorCode } from '@/lib/services/twofa.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 
@@ -90,6 +91,17 @@ export async function POST(req: NextRequest) {
     }
 
     const jti = await createSession(user.id, req);
+
+    // Oxirgi kirish vaqtini yozamiz (best-effort — xatolik login'ni buzmasin).
+    // Ilgari `touchLastLogin` yozilgan-u, hech qayerda chaqirilmasdi ("Oxirgi kirish: —").
+    if (user.profile) {
+      try {
+        await userRepo.touchLastLogin(user.id);
+      } catch (e) {
+        console.error('[login] touchLastLogin failed:', e);
+      }
+    }
+
     const token = await signToken({
       sub: user.id,
       email: user.email,

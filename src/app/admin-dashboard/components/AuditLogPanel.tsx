@@ -21,6 +21,7 @@ const ACTION_COLOR: Record<string, string> = {
   material: 'text-secondary',
   ticket: 'text-primary',
   teacher_application: 'text-success',
+  live_session: 'text-accent',
 };
 
 // Action prefiks bo'yicha icon
@@ -33,6 +34,7 @@ const ACTION_ICON: Record<string, string> = {
   material: 'DocumentTextIcon',
   ticket: 'LifebuoyIcon',
   teacher_application: 'AcademicCapIcon',
+  live_session: 'VideoCameraIcon',
 };
 
 function getActionInfo(action: string) {

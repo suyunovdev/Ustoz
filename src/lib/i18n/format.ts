@@ -98,6 +98,12 @@ export function formatDateTime(
 ): string {
   if (value === null || value === undefined || value === '') return '';
   try {
+    // O'zbekcha oy NOMI (short/long) so'ralsa — formatDate ishlatamiz: u oy nomini
+    // o'zi beradi va vaqtni ham qo'shadi. Aks holda Intl "M09" fallback berardi
+    // ("2026 M09 8" kabi). Boshqa lokal/formatlar Intl orqali.
+    if (locale === 'uz' && (opts.month === 'long' || opts.month === 'short') && !opts.weekday) {
+      return formatDate(value, locale, opts);
+    }
     return new Date(value).toLocaleString(tag(locale), withTz(opts));
   } catch {
     return '';

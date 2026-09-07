@@ -2036,7 +2036,14 @@
     "subError": "Error",
     "subDurationDays": "Duration (days)",
     "navLiveSessions": "Live sessions",
-    "liveSessionsSubtitle": "Manage live sessions and webinars"
+    "liveSessionsSubtitle": "Manage live sessions and webinars",
+    "pendingCoursesTitle": "Course moderation queue",
+    "pendingCoursesCount": "{count} pending",
+    "courseQueueEmpty": "Queue empty — all courses reviewed",
+    "reviewQueueBtn": "Review the queue",
+    "degraded": "Degraded",
+    "offline": "Offline",
+    "loadMore": "Load more"
   },
   "courseCreation": {
     "loadingTools": "Loading course creation tools...",
@@ -2439,7 +2446,16 @@
     "courseRevisionRequested": "Revision requested",
     "confirmAction": "Confirm",
     "cancel": "Cancel",
-    "courseModerationTitle": "Course moderation"
+    "courseModerationTitle": "Course moderation",
+    "filterSubmitted": "Pending",
+    "filterRevision": "Revision requested",
+    "filterApproved": "Approved",
+    "filterRejected": "Rejected",
+    "filterAll": "All",
+    "previewAction": "Preview",
+    "approveTitle": "Approve course",
+    "approveAndPublish": "Approve & publish",
+    "approveConfirmMessage": "\"{title}\" ({teacher}) — {topics} topics, price: {price}. Approving makes the course live on the marketplace."
   },
   "learning": {
     "noLessonsYet": "No lessons added yet",

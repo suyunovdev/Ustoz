@@ -88,10 +88,12 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
           />
         </button>
 
-        {/* Difficulty Badge */}
-        <div className="absolute bottom-3 left-3 px-3 py-1 bg-card rounded-full text-xs font-medium shadow-warm">
-          {getDifficultyLabel(course.difficulty)}
-        </div>
+        {/* Difficulty Badge — faqat daraja mavjud bo'lsa (yo'q bo'lsa to'qib emas) */}
+        {getDifficultyLabel(course.difficulty) && (
+          <div className="absolute bottom-3 left-3 px-3 py-1 bg-card rounded-full text-xs font-medium shadow-warm">
+            {getDifficultyLabel(course.difficulty)}
+          </div>
+        )}
       </div>
 
       {/* Course Info */}

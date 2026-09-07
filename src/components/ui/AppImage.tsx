@@ -36,7 +36,10 @@ function AppImage({
     fallbackSrc = '/assets/images/no_image.png',
     ...props
 }: AppImageProps) {
-    const [imageSrc, setImageSrc] = useState(src);
+    // Bo'sh/yaroqsiz src → darhol fallback. Ilgari bo'sh string `<img src="">` yoki
+    // Next `<Image src="">` bo'lib React "empty string passed to src" ogohlantirishi
+    // chiqarardi (brauzer sahifani qayta yuklashi mumkin).
+    const [imageSrc, setImageSrc] = useState(src && src.trim() ? src : fallbackSrc);
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
 

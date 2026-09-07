@@ -21,6 +21,7 @@ import SubscriptionsPanel from './SubscriptionsPanel';
 import LiveSessionsAdminPanel from './LiveSessionsAdminPanel';
 import CampaignsPanel from './CampaignsPanel';
 import ModerationQueuePanel from './ModerationQueuePanel';
+import PendingCoursesWidget from './PendingCoursesWidget';
 import CourseModerationPanel from '@/app/content-moderation-dashboard/components/CourseModerationPanel';
 import SupportTicketsPanel from './SupportTicketsPanel';
 import AuditLogPanel from './AuditLogPanel';
@@ -177,9 +178,12 @@ const AdminDashboardInteractive = () => {
             <div className="space-y-6">
               <PlatformMetrics />
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ModerationQueuePanel />
+                {/* Kutayotgan KURSLAR navbati (asosiy ish) — ilgari bo'sh material
+                    navbati ko'rsatilardi, admin ishini ko'rmasdi */}
+                <PendingCoursesWidget onOpenModeration={() => handleTabChange('moderation')} />
                 <SystemHealthPanel />
               </div>
+              <ModerationQueuePanel />
               <AnalyticsCharts />
             </div>
           )}

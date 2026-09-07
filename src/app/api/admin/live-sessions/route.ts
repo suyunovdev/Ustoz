@@ -7,6 +7,7 @@ import { requireAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
+import { log, AUDIT_ACTIONS } from '@/lib/services/audit-log.service';
 
 function serialize(s: {
   id: string; title: string; description: string | null; subject: string | null;
@@ -70,6 +71,19 @@ export async function POST(req: NextRequest) {
         createdById: session.sub,
       },
     });
+    // Audit — jonli dars yaratish moliyaviy/kontent qarori, izsiz qolmasin
+    try {
+      await log({
+        adminId: session.sub,
+        action: AUDIT_ACTIONS.LIVE_SESSION_CREATE,
+        targetType: 'live_session',
+        targetId: created.id,
+        metadata: { title: created.title, startsAt: created.startsAt.toISOString(), hostName: created.hostName },
+        request: req,
+      });
+    } catch (e) {
+      console.error('[live-sessions] audit log failed:', e);
+    }
     return jsonResponse({ session: serialize(created) }, { status: 201 });
   } catch (err) {
     return errorResponse(err);

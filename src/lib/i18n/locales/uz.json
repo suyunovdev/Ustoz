@@ -2036,7 +2036,14 @@
     "subError": "Xatolik",
     "subDurationDays": "Muddat (kun)",
     "navLiveSessions": "Jonli darslar",
-    "liveSessionsSubtitle": "Jonli darslar va vebinarlarni boshqarish"
+    "liveSessionsSubtitle": "Jonli darslar va vebinarlarni boshqarish",
+    "pendingCoursesTitle": "Kurs moderatsiya navbati",
+    "pendingCoursesCount": "{count} ta kutmoqda",
+    "courseQueueEmpty": "Navbat bo‘sh — barcha kurslar ko‘rib chiqilgan",
+    "reviewQueueBtn": "Navbatni ko‘rib chiqish",
+    "degraded": "Cheklangan",
+    "offline": "Oflayn",
+    "loadMore": "Ko‘proq yuklash"
   },
   "courseCreation": {
     "loadingTools": "Kurs yaratish vositlari yuklanmoqda...",
@@ -2439,7 +2446,16 @@
     "courseRevisionRequested": "Tuzatish so'raldi",
     "confirmAction": "Tasdiqlash",
     "cancel": "Bekor qilish",
-    "courseModerationTitle": "Kurslar moderatsiyasi"
+    "courseModerationTitle": "Kurslar moderatsiyasi",
+    "filterSubmitted": "Kutmoqda",
+    "filterRevision": "Tuzatish so‘ralgan",
+    "filterApproved": "Tasdiqlangan",
+    "filterRejected": "Rad etilgan",
+    "filterAll": "Barchasi",
+    "previewAction": "Ko‘rib chiqish",
+    "approveTitle": "Kursni tasdiqlash",
+    "approveAndPublish": "Tasdiqlash va nashr qilish",
+    "approveConfirmMessage": "\"{title}\" ({teacher}) — {topics} ta mavzu, narx: {price}. Tasdiqlansa kurs bozorda jonli bo‘ladi."
   },
   "learning": {
     "noLessonsYet": "Darslar hali qo'shilmagan",

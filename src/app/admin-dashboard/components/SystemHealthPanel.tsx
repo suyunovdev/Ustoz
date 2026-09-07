@@ -146,9 +146,32 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
         <h3 className="text-xl font-heading font-semibold text-foreground">
           {t('admin.systemStatus')}
         </h3>
+        {/* Real serverStatus'ga bog'liq — ilgari doim "Onlayn"/yashil hardcode edi */}
         <div className="flex items-center space-x-2">
-          <div className="w-3 h-3 bg-success rounded-full animate-pulse" />
-          <span className="text-sm font-medium text-success">{t('admin.online')}</span>
+          <div
+            className={`w-3 h-3 rounded-full ${
+              healthMetrics.serverStatus === 'online'
+                ? 'bg-success animate-pulse'
+                : healthMetrics.serverStatus === 'degraded'
+                  ? 'bg-warning'
+                  : 'bg-destructive'
+            }`}
+          />
+          <span
+            className={`text-sm font-medium ${
+              healthMetrics.serverStatus === 'online'
+                ? 'text-success'
+                : healthMetrics.serverStatus === 'degraded'
+                  ? 'text-warning'
+                  : 'text-destructive'
+            }`}
+          >
+            {healthMetrics.serverStatus === 'online'
+              ? t('admin.online')
+              : healthMetrics.serverStatus === 'degraded'
+                ? t('admin.degraded')
+                : t('admin.offline')}
+          </span>
         </div>
       </div>
 
@@ -162,11 +185,19 @@ const SystemHealthPanel = ({ systemHealth: initialHealth = 98 }: SystemHealthPan
           <h3 className={`text-4xl font-heading font-bold ${getHealthColor(systemHealth)}`}>
             {systemHealth}%
           </h3>
-          <p className="text-sm text-muted-foreground mb-1">{t('admin.healthy')}</p>
+          <p className="text-sm text-muted-foreground mb-1">
+            {healthMetrics.serverStatus === 'online'
+              ? t('admin.healthy')
+              : healthMetrics.serverStatus === 'degraded'
+                ? t('admin.degraded')
+                : t('admin.offline')}
+          </p>
         </div>
         <div className="mt-3 w-full bg-muted rounded-full h-2">
           <div
-            className="bg-success h-2 rounded-full transition-all duration-500"
+            className={`h-2 rounded-full transition-all duration-500 ${
+              systemHealth >= 80 ? 'bg-success' : systemHealth >= 50 ? 'bg-warning' : 'bg-destructive'
+            }`}
             style={{ width: `${systemHealth}%` }}
           />
         </div>

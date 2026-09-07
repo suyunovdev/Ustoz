@@ -30,6 +30,7 @@ export interface AdminCourseDTO {
   createdAt: string;
   publishedAt: string | null;
   categoryRel: { id: string; name: string; slug: string } | null;
+  subjectCategory: string | null;
   teacher: {
     id: string;
     fullName: string;
