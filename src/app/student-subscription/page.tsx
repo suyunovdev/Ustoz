@@ -1,15 +1,7 @@
-import type { Metadata } from 'next';
-import SubscriptionInteractive from './components/SubscriptionInteractive';
-import { getServerT } from '@/lib/i18n/server';
+import { redirect } from 'next/navigation';
 
-export async function generateMetadata(): Promise<Metadata> {
-  const t = await getServerT();
-  return {
-    title: t('subscription.title'),
-    description: t('subscription.subtitle'),
-  };
-}
-
+// Obuna bo'limi student tomonidan olib tashlandi (pay-per-course modeli). Eski havolalar
+// 404 bermasin — dashboardga yo'naltiramiz. Backend/komponent dormant qoladi.
 export default function SubscriptionPage() {
-  return <SubscriptionInteractive />;
+  redirect('/student-dashboard');
 }

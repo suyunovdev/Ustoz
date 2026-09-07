@@ -6,19 +6,14 @@ import type { NextRequest } from 'next/server';
 import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { certificateRepo } from '@/lib/repositories';
-import { hasCapability } from '@/lib/services/subscription.service';
 
 export async function GET(req: NextRequest) {
   try {
     const session = await requireStudent(req);
-    const [certs, subscribed] = await Promise.all([
-      certificateRepo.findByStudent(session.sub),
-      hasCapability(session.sub, 'certificate'),
-    ]);
-    // `subscribed` — rasmiy sertifikatni ko'rish/yuklash/ulashish obuna bilan
-    // ochiladi. Yozuvning o'zi (tugatish) hammaga ko'rinadi.
+    const certs = await certificateRepo.findByStudent(session.sub);
+    // Sertifikat egasiga har doim ochiq — obuna talab qilinmaydi.
     return jsonResponse({
-      subscribed,
+      subscribed: true,
       certificates: certs.map((c) => ({
         id: c.id,
         courseId: c.courseId,

@@ -6,7 +6,6 @@ import type { NextRequest } from 'next/server';
 import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { certificateRepo } from '@/lib/repositories';
-import { hasCapability } from '@/lib/services/subscription.service';
 
 export async function GET(
   req: NextRequest,
@@ -29,31 +28,7 @@ export async function GET(
       return jsonResponse({ error: 'Ruxsat yo\'q' }, { status: 403 });
     }
 
-    // Obuna gate: rasmiy sertifikat (to'liq ko'rinish/yuklash/ulashish) faqat
-    // faol obunachi uchun. Admin bundan mustasno. Yozuvning o'zi bo'lgani uchun,
-    // obuna qilinsa sertifikat darhol ochiladi. Public tekshiruv (/verify/[raqam])
-    // bundan mustasno — u ochiq qoladi.
-    if (isOwner && !isAdmin) {
-      const subscribed = await hasCapability(session.sub, 'certificate');
-      if (!subscribed) {
-        const c = cert as {
-          courseTitleSnapshot?: string | null;
-          course?: { title?: string };
-          issuedAt: Date;
-          certificateNumber: string;
-        };
-        return jsonResponse({
-          locked: true,
-          code: 'SUBSCRIPTION_REQUIRED',
-          preview: {
-            courseTitle: c.course?.title ?? c.courseTitleSnapshot ?? '',
-            issuedAt: c.issuedAt,
-            certificateNumber: c.certificateNumber,
-          },
-        });
-      }
-    }
-
+    // Sertifikat egasiga (va adminga) har doim ochiq — obuna talab qilinmaydi.
     return jsonResponse({ certificate: cert });
   } catch (err) {
     return errorResponse(err);

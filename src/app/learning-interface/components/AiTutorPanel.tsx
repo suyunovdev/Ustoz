@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -20,31 +19,12 @@ type Mode = 'ask' | 'explain' | 'practice' | 'hint';
 
 const AiTutorPanel = ({ topicTitle, topicContent, courseTitle }: AiTutorPanelProps) => {
   const { t } = useI18n();
-  const router = useRouter();
-
-  const [subActive, setSubActive] = useState<boolean | null>(null); // null = tekshirilyapti
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [remaining, setRemaining] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Obuna holatini tekshirish
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/subscriptions/my', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { subscription: null }))
-      .then((d) => {
-        if (!cancelled) setSubActive(Boolean(d?.subscription));
-      })
-      .catch(() => {
-        if (!cancelled) setSubActive(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -90,10 +70,6 @@ const AiTutorPanel = ({ topicTitle, topicContent, courseTitle }: AiTutorPanelPro
       });
       const data = await res.json().catch(() => ({}));
 
-      if (res.status === 403 && data.code === 'SUBSCRIPTION_REQUIRED') {
-        setSubActive(false);
-        return;
-      }
       if (res.status === 429) {
         setError(t('aiTutor.limitReached'));
         setRemaining(0);
@@ -117,44 +93,7 @@ const AiTutorPanel = ({ topicTitle, topicContent, courseTitle }: AiTutorPanelPro
     }
   };
 
-  // ── Yuklanmoqda ──────────────────────────────────────────────
-  if (subActive === null) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // ── Obuna yo'q → upsell ──────────────────────────────────────
-  if (!subActive) {
-    return (
-      <div className="text-center py-8 px-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-4">
-          <Icon name="SparklesIcon" size={30} variant="solid" className="text-primary-foreground" />
-        </div>
-        <h3 className="text-lg font-heading font-bold text-foreground mb-2">{t('aiTutor.upsellTitle')}</h3>
-        <p className="text-sm text-muted-foreground max-w-sm mx-auto mb-5">{t('aiTutor.upsellDesc')}</p>
-        <ul className="text-sm text-foreground max-w-xs mx-auto mb-6 space-y-2 text-left">
-          {[t('aiTutor.perkExplain'), t('aiTutor.perkPractice'), t('aiTutor.perkHint')].map((p) => (
-            <li key={p} className="flex items-start gap-2">
-              <Icon name="CheckCircleIcon" size={18} variant="solid" className="text-success flex-shrink-0 mt-0.5" />
-              <span>{p}</span>
-            </li>
-          ))}
-        </ul>
-        <button
-          onClick={() => router.push('/student-subscription')}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors shadow-warm"
-        >
-          <Icon name="SparklesIcon" size={18} />
-          {t('aiTutor.upsellCta')}
-        </button>
-      </div>
-    );
-  }
-
-  // ── Obunachi → chat ──────────────────────────────────────────
+  // ── Chat ─────────────────────────────────────────────────────
   return (
     <div className="flex flex-col h-[28rem]">
       {/* Xabarlar */}

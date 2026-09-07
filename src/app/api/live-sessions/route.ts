@@ -8,19 +8,17 @@ import type { NextRequest } from 'next/server';
 import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
-import { hasCapability } from '@/lib/services/subscription.service';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireAuth(req);
-    const [sessions, subscribed] = await Promise.all([
-      prisma.liveSession.findMany({
-        where: { isPublished: true },
-        orderBy: { startsAt: 'asc' },
-        take: 60,
-      }),
-      hasCapability(session.sub, 'live_sessions'),
-    ]);
+    await requireAuth(req);
+    // Jonli darslar barcha kirgan foydalanuvchi uchun ochiq — obuna talab qilinmaydi.
+    const subscribed = true;
+    const sessions = await prisma.liveSession.findMany({
+      where: { isPublished: true },
+      orderBy: { startsAt: 'asc' },
+      take: 60,
+    });
 
     const now = Date.now();
     const items = sessions.map((s) => {

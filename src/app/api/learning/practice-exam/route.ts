@@ -13,7 +13,6 @@ import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { ValidationError } from '@/lib/errors';
 import { complete, isAnthropicConfigured } from '@/lib/ai/anthropic-client';
-import { hasCapability } from '@/lib/services/subscription.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { getSubjectLabel } from '@/lib/data/subject-labels';
 import { platformDayLabel, platformDayIso } from '@/lib/date/platform-day';
@@ -45,12 +44,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await requireStudent(req);
 
-    if (!(await hasCapability(session.sub, 'practice_exam'))) {
-      return jsonResponse(
-        { error: "Amaliy imtihon Standart va Premium tariflarida ishlaydi.", code: 'SUBSCRIPTION_REQUIRED' },
-        { status: 403 },
-      );
-    }
+    // Amaliy imtihon barcha student uchun bepul — obuna talab qilinmaydi.
     if (!isAnthropicConfigured()) {
       return jsonResponse(
         { error: "AI hozircha sozlanmagan. Keyinroq urinib ko'ring.", code: 'AI_NOT_CONFIGURED' },

@@ -38,21 +38,22 @@ export async function POST(
   });
   if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
 
-  // Pullik kurslar uchun to'lov talab qilinadi — LEKIN faol all-access obunachi
-  // istalgan kursga bepul yozila oladi (obuna kurs narxini qoplaydi).
+  // Pullik kurslar alohida sotib olish orqali ochiladi (course-purchase-request →
+  // admin tasdig'i). Bu bepul-yozilish endpoint'i faqat bepul kurslar uchun.
+  // (Mavjud all-access obunachilar muddati tugaguncha ham yozila oladi — grandfather.)
   const isPaid = Number(course.priceUzs) > 0;
   if (isPaid) {
     const subscribed = await hasAllCoursesAccess(session.sub);
     if (!subscribed) {
       return jsonResponse(
-        { error: 'Bu kurs pullik. Avval to\'lov qiling yoki obuna bo\'ling.', code: 'PAYMENT_REQUIRED' },
+        { error: 'Bu kurs pullik. Avval sotib oling.', code: 'PAYMENT_REQUIRED' },
         { status: 400 }
       );
     }
-    // obunachi → bepul davom etadi
+    // grandfather obunachi → bepul davom etadi
   }
-  // Manba: pullik kurs bu yerda faqat obuna orqali ochiladi (obuna tugasa kirish
-  // to'xtaydi); bepul kurs — doimiy (direct).
+  // Manba: pullik kurs faqat (grandfather) obuna orqali ochiladi (obuna tugasa
+  // kirish to'xtaydi); bepul kurs — doimiy (direct).
   const enrollmentSource = isPaid ? 'subscription' : 'direct';
 
   // Enrollment yaratish + counter inkrementi — atomik.

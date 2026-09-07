@@ -28,7 +28,6 @@ const LiveSessionsInteractive = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [sessions, setSessions] = useState<LiveSession[]>([]);
-  const [subscribed, setSubscribed] = useState(false);
 
   useEffect(() => {
     load();
@@ -46,7 +45,6 @@ const LiveSessionsInteractive = () => {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setSessions(data.sessions || []);
-      setSubscribed(Boolean(data.subscribed));
     } catch (err) {
       console.error('Jonli darslar yuklanmadi:', err);
       setLoadError(true);
@@ -61,8 +59,6 @@ const LiveSessionsInteractive = () => {
   const handleJoin = (s: LiveSession) => {
     if (s.meetingUrl) {
       window.open(s.meetingUrl, '_blank', 'noopener,noreferrer');
-    } else {
-      router.push('/student-subscription');
     }
   };
 
@@ -132,25 +128,6 @@ const LiveSessionsInteractive = () => {
             <p className="text-sm text-muted-foreground">{t('live.subtitle')}</p>
           </div>
         </div>
-
-        {/* Upsell */}
-        {!isLoading && !subscribed && sessions.length > 0 && (
-          <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4">
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              <Icon name="SparklesIcon" size={22} className="text-primary flex-shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <p className="font-medium text-foreground">{t('live.upsellTitle')}</p>
-                <p className="text-sm text-muted-foreground">{t('live.upsellDesc')}</p>
-              </div>
-            </div>
-            <button
-              onClick={() => router.push('/student-subscription')}
-              className="flex-shrink-0 inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
-            >
-              <Icon name="SparklesIcon" size={16} /> {t('live.subscribe')}
-            </button>
-          </div>
-        )}
 
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

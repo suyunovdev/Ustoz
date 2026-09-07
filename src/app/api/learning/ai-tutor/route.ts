@@ -15,7 +15,7 @@
  *
  * Response: { answer: string, remaining: number }
  *
- * Gate: faol obuna (hasActiveSubscription). Kunlik limit: 30 xabar/foydalanuvchi.
+ * Barcha student uchun bepul (obuna talab qilinmaydi). Kunlik limit bilan cheklangan.
  */
 
 import type { NextRequest } from 'next/server';
@@ -23,11 +23,11 @@ import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { ValidationError } from '@/lib/errors';
 import { complete, isAnthropicConfigured } from '@/lib/ai/anthropic-client';
-import { hasCapability, getAiTutorDailyLimit } from '@/lib/services/subscription.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { platformDayLabel, platformDayIso } from '@/lib/date/platform-day';
 
-const DAILY_LIMIT = 30;
+// AI-tutor barcha student uchun bepul — kunlik tekis limit (AI xarajatini nazorat qilish).
+const AI_TUTOR_FREE_DAILY_LIMIT = Number(process.env.AI_TUTOR_DAILY_LIMIT) || 20;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MAX_QUESTION = 1000;
 const MAX_CONTEXT_CHARS = 4000;
@@ -75,19 +75,7 @@ export async function POST(req: NextRequest) {
   try {
     const session = await requireStudent(req);
 
-    // 1) Obuna gate — AI-tutor Standart va Premium tariflarida (tier ≥ 2)
-    const subscribed = await hasCapability(session.sub, 'ai_tutor');
-    if (!subscribed) {
-      return jsonResponse(
-        {
-          error: "AI o'quv yordamchisi Standart va Premium tariflarida ishlaydi. Tarifni yangilang.",
-          code: 'SUBSCRIPTION_REQUIRED',
-        },
-        { status: 403 },
-      );
-    }
-
-    // 2) AI sozlanganmi
+    // 1) AI sozlanganmi
     if (!isAnthropicConfigured()) {
       return jsonResponse(
         { error: "AI hozircha sozlanmagan. Iltimos keyinroq urinib ko'ring.", code: 'AI_NOT_CONFIGURED' },
@@ -95,11 +83,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3) Kunlik limit (O'zbekiston kalendar kuni bo'yicha — UTC EMAS).
+    // 2) Kunlik limit (O'zbekiston kalendar kuni bo'yicha — UTC EMAS).
     // Aks holda limit 05:00 (mahalliy)da yangilanadi va 00:00–05:00 oraliq
-    // oldingi kunga hisoblanadi.
+    // oldingi kunga hisoblanadi. AI barcha student uchun bepul — tekis kunlik limit
+    // (xarajatni nazorat qilish richagi; kerak bo'lsa env orqali sozlash mumkin).
     const day = platformDayIso(platformDayLabel());
-    const dailyLimit = await getAiTutorDailyLimit(session.sub); // tier: 20 yoki 50
+    const dailyLimit = AI_TUTOR_FREE_DAILY_LIMIT;
     const rl = await checkRateLimit(`ai-tutor:${session.sub}:${day}`, dailyLimit, DAY_MS);
     if (!rl.allowed) {
       return jsonResponse(

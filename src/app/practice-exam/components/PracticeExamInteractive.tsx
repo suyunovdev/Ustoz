@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { SUBJECT_LABELS } from '@/lib/data/subject-labels';
@@ -23,9 +22,6 @@ const COUNTS = [10, 20, 30];
 
 const PracticeExamInteractive = () => {
   const { t } = useI18n();
-  const router = useRouter();
-
-  const [subActive, setSubActive] = useState<boolean | null>(null);
   const [phase, setPhase] = useState<Phase>('setup');
   const [subject, setSubject] = useState('mathematics');
   const [difficulty, setDifficulty] = useState<(typeof DIFFICULTIES)[number]>('intermediate');
@@ -33,15 +29,6 @@ const PracticeExamInteractive = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch('/api/subscriptions/my', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : { subscription: null }))
-      .then((d) => { if (!cancelled) setSubActive(Boolean(d?.subscription)); })
-      .catch(() => { if (!cancelled) setSubActive(false); });
-    return () => { cancelled = true; };
-  }, []);
 
   const start = async () => {
     setError(null);
@@ -54,7 +41,6 @@ const PracticeExamInteractive = () => {
         body: JSON.stringify({ subject, difficulty, count }),
       });
       const data = await res.json().catch(() => ({}));
-      if (res.status === 403) { setSubActive(false); setPhase('setup'); return; }
       if (res.status === 429) { setError(t('exam.limitReached')); setPhase('setup'); return; }
       if (res.status === 503) { setError(t('exam.notConfigured')); setPhase('setup'); return; }
       if (!res.ok || !Array.isArray(data.questions) || data.questions.length === 0) {
@@ -72,30 +58,6 @@ const PracticeExamInteractive = () => {
   const submit = () => setPhase('results');
   const reset = () => { setPhase('setup'); setQuestions([]); setAnswers({}); setError(null); };
 
-  // ── Yuklanmoqda (obuna tekshiruvi) ──
-  if (subActive === null) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // ── Obuna yo'q → upsell ──
-  if (!subActive) {
-    return (
-      <div className="max-w-lg mx-auto text-center py-16 px-4">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mx-auto mb-5">
-          <Icon name="ClipboardDocumentCheckIcon" size={30} variant="solid" className="text-primary-foreground" />
-        </div>
-        <h2 className="text-2xl font-heading font-bold text-foreground mb-2">{t('exam.title')}</h2>
-        <p className="text-muted-foreground mb-6">{t('exam.upsellDesc')}</p>
-        <button onClick={() => router.push('/student-subscription')} className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-colors">
-          <Icon name="SparklesIcon" size={18} /> {t('exam.subscribe')}
-        </button>
-      </div>
-    );
-  }
 
   const answeredCount = Object.keys(answers).length;
   const correctCount = questions.filter((q) => answers[q.id] === q.correctIndex).length;
