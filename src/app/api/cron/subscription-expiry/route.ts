@@ -12,8 +12,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createNotification } from '@/lib/repositories/notification.repository';
 
 export async function GET(req: NextRequest) {
+  // Bu endpoint ma'lumot O'ZGARTIRADI (obuna statusi) va email yuboradi — fail-closed.
+  // Prod'da CRON_SECRET MAJBURIY: o'rnatilmagan yoki mos kelmasa — rad etamiz.
   const secret = process.env.CRON_SECRET;
-  if (secret && req.headers.get('authorization') !== `Bearer ${secret}`) {
+  const authorized = secret
+    ? req.headers.get('authorization') === `Bearer ${secret}`
+    : process.env.NODE_ENV !== 'production';
+  if (!authorized) {
     return NextResponse.json({ status: 'unauthorized' }, { status: 401 });
   }
 
