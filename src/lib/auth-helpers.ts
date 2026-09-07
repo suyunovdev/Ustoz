@@ -54,7 +54,13 @@ export async function getVerifiedSession(): Promise<JWTPayload | null> {
   const session = await getSession();
   if (!session) return null;
   const status = await validateSessionInDb(session);
-  return status === 'ok' ? session : null;
+  if (status !== 'ok') return null;
+  // requireAuth bilan IZCHIL: bekor qilingan qurilma sessiyasi (jti) ham null.
+  // Aks holda `/` dashboard'ga redirect qiladi, API'lar requireAuth orqali 401
+  // beradi va client /login'ga qaytadi — aynan oldini olinmoqchi bo'lgan sikl.
+  // Legacy (jti'siz) tokenlar bu tekshiruvdan mustasno (requireAuth bilan bir xil).
+  if (session.jti && !(await isSessionValid(session.jti))) return null;
+  return session;
 }
 
 /**
