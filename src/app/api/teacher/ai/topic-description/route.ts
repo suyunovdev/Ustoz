@@ -16,13 +16,13 @@ import type { NextRequest } from 'next/server';
 import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { ValidationError } from '@/lib/errors';
-import { complete, isAnthropicConfigured } from '@/lib/ai/anthropic-client';
+import { complete, isAiConfigured } from '@/lib/ai/llm-client';
 
 export async function POST(req: NextRequest) {
   try {
     await requireTeacherOrAdmin(req);
 
-    if (!isAnthropicConfigured()) {
+    if (!isAiConfigured()) {
       return jsonResponse(
         {
           error: "AI sozlanmagan — ANTHROPIC_API_KEY environment'ga qo'shilishi kerak",

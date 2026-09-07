@@ -12,7 +12,7 @@ import type { NextRequest } from 'next/server';
 import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { ValidationError } from '@/lib/errors';
-import { complete, isAnthropicConfigured } from '@/lib/ai/anthropic-client';
+import { complete, isAiConfigured } from '@/lib/ai/llm-client';
 import { checkRateLimit } from '@/lib/rateLimit';
 import { getSubjectLabel } from '@/lib/data/subject-labels';
 import { platformDayLabel, platformDayIso } from '@/lib/date/platform-day';
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const session = await requireStudent(req);
 
     // Amaliy imtihon barcha student uchun bepul — obuna talab qilinmaydi.
-    if (!isAnthropicConfigured()) {
+    if (!isAiConfigured()) {
       return jsonResponse(
         { error: "AI hozircha sozlanmagan. Keyinroq urinib ko'ring.", code: 'AI_NOT_CONFIGURED' },
         { status: 503 },
