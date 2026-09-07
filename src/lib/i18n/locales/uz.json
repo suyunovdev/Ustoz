@@ -2278,7 +2278,20 @@
     "variantAnswerHint": "variant javobini kiriting...",
     "adminFeedbackTitle": "Admin izohi",
     "resubmit": "Qayta yuborish",
-    "awaitingReview": "Admin tekshiruvi kutilmoqda"
+    "awaitingReview": "Admin tekshiruvi kutilmoqda",
+    "quizAutoSaveNote": "Savollar kurs saqlanganda avtomatik saqlanadi",
+    "publishBlockedHint": "Nashr uchun: nom, tavsif, muqova rasmi, har mavzuda dars matni va kamida bitta 5+ savolli test kerak",
+    "draftRestored": "Saqlangan qoralama tiklandi",
+    "selectDifficulty": "Darajani tanlang",
+    "errTitleRequired": "Kurs nomini kiriting",
+    "errDescRequired": "Kurs tavsifini kiriting",
+    "errNoTopics": "Kamida bitta mavzu qo‘shing",
+    "topicDurationLabel": "Dars davomiyligi",
+    "minutesUnit": "daqiqa",
+    "videoOptionalLabel": "Dars videosi (ixtiyoriy)",
+    "guideStartBtn": "Tushundim, boshlash",
+    "freeHint": "Bepul kurs uchun 0 kiriting.",
+    "topicsWithCount": "Mavzular ({count})"
   },
   "content": {
     "uploadCenterTitle": "Kontent yuklash markazi",
@@ -3197,7 +3210,15 @@
     "transactionsTitle": "To'lov tarixi",
     "transactionsDesc": "To'lovlar tarixi va kurs sotib olishlar haqida to'liq ma'lumot.",
     "termsTitle": "Foydalanish shartlari",
-    "privacyTitle": "Maxfiylik siyosati"
+    "privacyTitle": "Maxfiylik siyosati",
+    "teacherStudents": "O‘quvchilar",
+    "teacherGroups": "Guruhlar",
+    "teacherAssignments": "Topshiriqlar",
+    "teacherTests": "Testlar",
+    "teacherAnalytics": "Tahlil",
+    "teacherEarnings": "Daromad",
+    "teacherCertificates": "Sertifikatlar",
+    "teacherReviews": "Sharhlar"
   },
   "subscription": {
     "title": "Obuna",

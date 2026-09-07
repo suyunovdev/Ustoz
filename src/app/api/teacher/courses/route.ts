@@ -3,6 +3,7 @@ import { getSessionFromRequest } from '@/lib/auth';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { TargetAudience, SubjectCategory } from '@/generated/prisma/enums';
+import { syncTopicQuizzes, type RawQuizQuestion } from '@/lib/services/course-quiz-sync';
 
 // Enum qiymatlari Prisma schema'dan avtomatik (drift yo'q).
 const VALID_AUDIENCES = Object.values(TargetAudience) as string[];
@@ -66,7 +67,7 @@ export async function POST(req: NextRequest) {
   }
   const {
     title, description, category, targetAudience, subjectCategory,
-    gradeLevel, priceUzs, coverImage, language, difficultyLevel, topics,
+    gradeLevel, priceUzs, coverImage, language, difficultyLevel, totalDuration, topics,
   } = body as Record<string, any>;
 
   if (!title || !category || !targetAudience || !subjectCategory || !language) {
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
       coverImage,
       language,
       difficultyLevel,
+      totalDuration: Number.isFinite(Number(totalDuration)) ? Math.max(0, Math.trunc(Number(totalDuration))) : 0,
       topics: Array.isArray(topics) && topics.length
         ? {
             createMany: {
@@ -140,5 +142,23 @@ export async function POST(req: NextRequest) {
     return jsonResponse({ error: "Kursni yaratib bo'lmadi (ma'lumotlar noto'g'ri)" }, { status: 400 });
   }
 
-  return jsonResponse({ course }, { status: 201 });
+  // Mavzu testlarini (quiz) saqlash — savollar kurs bilan bitta amalda. Pozitsiya
+  // bo'yicha bog'laymiz (createMany kiritish tartibida yozadi; ehtiyot uchun saralaymiz).
+  let warnings: string[] = [];
+  if (Array.isArray(topics) && topics.length) {
+    const orderedTopics = [...course.topics].sort((a, b) => a.orderIndex - b.orderIndex);
+    const quizInputs = orderedTopics
+      .map((row, i) => ({
+        topicId: row.id,
+        topicTitle: row.title,
+        questions: (topics[i]?.questions ?? []) as RawQuizQuestion[],
+      }))
+      .filter((q) => Array.isArray(q.questions) && q.questions.length > 0);
+    if (quizInputs.length) {
+      const sync = await syncTopicQuizzes(session.sub, course.id, quizInputs);
+      warnings = sync.warnings;
+    }
+  }
+
+  return jsonResponse({ course, warnings }, { status: 201 });
 }

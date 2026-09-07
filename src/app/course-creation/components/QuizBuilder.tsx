@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
-import { toast } from '@/components/common/Toaster';
 
 interface QuizQuestion {
   id: string;
@@ -17,16 +16,14 @@ interface QuizBuilderProps {
   questions: QuizQuestion[];
   onQuestionsChange: (questions: QuizQuestion[]) => void;
   topicTitle: string;
-  courseId?: string;
-  topicId?: string;
-  testId?: string;
 }
 
-const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, courseId, topicId, testId }: QuizBuilderProps) => {
+// Eslatma: savollar endi ALOHIDA saqlanmaydi — kurs (yoki qoralama) saqlanganda
+// avtomatik yoziladi (course-quiz-sync). Ilgari qo'lda "Testni saqlash" tugmasi bor
+// edi, u courseId/topicId talab qilib ko'pincha jimgina ishlamasdi.
+const QuizBuilder = ({ questions, onQuestionsChange, topicTitle }: QuizBuilderProps) => {
   const { t } = useI18n();
   const [expandedQuestion, setExpandedQuestion] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [currentTestId, setCurrentTestId] = useState<string | undefined>(testId);
 
   const addQuestion = () => {
     const newQuestion: QuizQuestion = {
@@ -63,60 +60,6 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, courseId, topic
     onQuestionsChange(questions.filter((q) => q.id !== id));
   };
 
-  const saveTest = useCallback(async () => {
-    if (questions.length < 5 || questions.length > 15 || isSaving) return;
-    if (!courseId) {
-      toast.error(t('courseCreation.courseSaveFirst'));
-      return;
-    }
-    // Takroriy saqlashda dublikat test yaratilmasin (route'da update yo'q)
-    if (currentTestId) {
-      toast.error(t('courseCreation.testAlreadySaved'));
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      // Backend AddQuestionInput shakli: {questionText, questionType, options:[{text,isCorrect}], ...}
-      const payloadQuestions = questions.map((q) => ({
-        questionText: q.question,
-        questionType: 'single',
-        options: q.options.map((text, i) => ({ text, isCorrect: i === q.correctAnswer })),
-        explanation: q.explanation,
-        points: 10,
-      }));
-
-      const res = await fetch('/api/teacher/tests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          courseId,
-          topicId: topicId || undefined,
-          title: topicTitle || 'Untitled Test',
-          description: `Test for ${topicTitle}`,
-          passingScore: 80,
-          questions: payloadQuestions,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `Save failed (${res.status})`);
-      }
-
-      const data = await res.json();
-      if (data.test?.id) setCurrentTestId(data.test.id);
-
-      toast.success(t('courseCreation.testSaved'));
-    } catch (error: any) {
-      console.error('Error saving test:', error);
-      toast.error(error.message || t('courseCreation.testSaveError'));
-    } finally {
-      setIsSaving(false);
-    }
-  }, [questions, topicTitle, courseId, topicId, isSaving, currentTestId]);
-
   const canAddMore = questions.length < 15;
   const meetsMinimum = questions.length >= 5;
 
@@ -131,18 +74,6 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, courseId, topic
           </p>
         </div>
         <div className="flex items-center space-x-2">
-          <button
-            onClick={saveTest}
-            disabled={!meetsMinimum || isSaving}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-smooth ${
-              meetsMinimum && !isSaving
-                ? 'bg-success text-success-foreground hover:opacity-90'
-                : 'bg-muted text-muted-foreground cursor-not-allowed'
-            }`}
-          >
-            <Icon name="CheckCircleIcon" size={20} />
-            <span className="font-medium">{isSaving ? t('courseCreation.savingQuiz') : t('courseCreation.saveQuiz')}</span>
-          </button>
           <button
             onClick={addQuestion}
             disabled={!canAddMore}
@@ -215,6 +146,12 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle, courseId, topic
           {questions.length} / 5-15 {t('courseCreation.questionsCount')}
         </span>
       </div>
+
+      {/* Savollar kurs saqlanganda avtomatik yoziladi — alohida tugma yo'q */}
+      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        <Icon name="InformationCircleIcon" size={14} />
+        {t('courseCreation.quizAutoSaveNote')}
+      </p>
 
       {/* Questions List */}
       <div className="space-y-4">

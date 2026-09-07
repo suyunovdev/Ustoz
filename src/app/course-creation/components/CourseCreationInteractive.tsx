@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import CourseOutlinePanel from './CourseOutlinePanel';
 import RichTextEditor from './RichTextEditor';
 import CourseMetadataForm from './CourseMetadataForm';
@@ -11,6 +11,10 @@ import { Skeleton, SkeletonForm } from '@/components/ui/Skeleton';
 import ContentUploadManager from './ContentUploadManager';
 import { useI18n } from '@/contexts/I18nContext';
 import { parseVideoSource } from '@/lib/video';
+import { toast } from '@/components/common/Toaster';
+
+// Sehrgar qoralamasini brauzerda saqlash — sahifa yangilansa/yopilsa ish yo'qolmaydi.
+const DRAFT_KEY = 'ustoz_course_draft_v1';
 
 // Kiritilgan video havolasi qanday aniqlanganini ko'rsatuvchi belgi
 function VideoSourceBadge({ url }: { url: string }) {
@@ -74,6 +78,7 @@ interface CourseMetadata {
   targetAudience: string;
   subjectCategory: string;
   gradeLevel: string;
+  difficultyLevel: string;
 }
 
 interface TestQuestion {
@@ -110,6 +115,7 @@ const CourseCreationInteractive = () => {
     targetAudience: '',
     subjectCategory: '',
     gradeLevel: '',
+    difficultyLevel: '',
   });
 
   // Start with empty topics - no default fake topics
@@ -117,9 +123,63 @@ const CourseCreationInteractive = () => {
 
   const [publishStatus, setPublishStatus] = useState<'draft' | 'preview' | 'submitted' | 'approved' | 'rejected'>('draft');
 
+  // Saqlanmagan o'zgarish bormi — beforeunload ogohlantirishi uchun.
+  const dirtyRef = useRef(false);
+  // Kurs moderatsiyaga yuborildi — avtosaqlash to'xtaydi, qoralama tozalanadi.
+  const submittedRef = useRef(false);
+
+  // Mount: hidratsiya + brauzerdagi qoralamani tiklash (bo'lsa).
   useEffect(() => {
     setIsHydrated(true);
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const d = JSON.parse(raw);
+      if (d.metadata) setMetadata(d.metadata);
+      if (Array.isArray(d.topics)) setTopics(d.topics);
+      if (d.courseDbId) setCourseDbId(d.courseDbId);
+      if (d.activeSection) setActiveSection(d.activeSection);
+      if (d.selectedTopicId) setSelectedTopicId(d.selectedTopicId);
+      if (d.publishStatus) setPublishStatus(d.publishStatus);
+      // Mazmunli qoralama tiklandi — yo'riqnoma modalini yopib, xabar beramiz.
+      if (d.metadata?.title || (Array.isArray(d.topics) && d.topics.length)) {
+        setShowGuideModal(false);
+        toast.info(t('courseCreation.draftRestored'));
+      }
+    } catch {
+      /* buzilgan qoralama — e'tiborsiz */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Avtosaqlash — o'zgarishdan 800ms keyin brauzerga yozamiz (har bosishda emas).
+  useEffect(() => {
+    if (!isHydrated || submittedRef.current) return;
+    dirtyRef.current = true;
+    const id = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({ metadata, topics, courseDbId, activeSection, selectedTopicId, publishStatus }),
+        );
+      } catch {
+        /* kvota to'lgan bo'lishi mumkin — e'tiborsiz */
+      }
+    }, 800);
+    return () => clearTimeout(id);
+  }, [metadata, topics, courseDbId, activeSection, selectedTopicId, publishStatus, isHydrated]);
+
+  // Sahifani yopish/yangilashda saqlanmagan o'zgarish bo'lsa ogohlantiramiz.
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (dirtyRef.current && !submittedRef.current && (metadata.title || topics.length > 0)) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [metadata.title, topics.length]);
 
   if (!isHydrated) {
     return (
@@ -194,6 +254,16 @@ const CourseCreationInteractive = () => {
     ));
   };
 
+  // Mavzu davomiyligi (daqiqa) — bozorda jami vaqt shundan hisoblanadi (ilgari doim
+  // "0 min" edi, natijada kurs "0 daqiqa" ko'rinardi).
+  const handleDurationChange = (minutes: string) => {
+    if (!selectedTopicId) return;
+    const n = Math.max(0, parseInt(minutes) || 0);
+    setTopics(prev => prev.map(t =>
+      t.id === selectedTopicId ? { ...t, duration: `${n} min` } : t
+    ));
+  };
+
   const handleQuestionsChange = (questions: QuizQuestion[]) => {
     if (!selectedTopicId) return;
     setTopics(prev => prev.map(t =>
@@ -227,6 +297,14 @@ const CourseCreationInteractive = () => {
         content: t.content,
         videoUrl: t.videoUrl?.trim() || null,
         hasQuiz: t.hasQuiz,
+        // Savollar kurs bilan bitta amalda saqlanadi (server test.service orqali
+        // yozadi) — ilgari umuman yuborilmasdi va jimgina yo'qolardi.
+        questions: t.questions.map((q) => ({
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+        })),
       }));
 
       const coursePayload: Record<string, string | number | boolean | null> = {
@@ -239,11 +317,15 @@ const CourseCreationInteractive = () => {
         priceUzs: String(parseInt(metadata.priceUZS) || 0),
         coverImage: metadata.coverImage || null,
         language: metadata.language || 'uz',
+        difficultyLevel: metadata.difficultyLevel || null,
+        // Jami davomiylik — mavzu daqiqalari yig'indisi (bozor kartasi shuni ko'rsatadi)
+        totalDuration: topics.reduce((sum, tp) => sum + (parseInt(tp.duration) || 0), 0),
         // Eslatma: `isPublished`ni o'qituvchi qo'ymaydi — kurs faqat admin
         // tasdig'idan keyin jonli bo'ladi (moderatsiya oqimi).
       };
 
       let savedCourseId = courseDbId;
+      let warnings: string[] = [];
 
       if (courseDbId) {
         // PATCH existing course
@@ -257,6 +339,8 @@ const CourseCreationInteractive = () => {
           const err = await res.json().catch(() => ({}));
           throw new Error(err?.error || `Update failed (${res.status})`);
         }
+        const data = await res.json().catch(() => ({}));
+        warnings = Array.isArray(data?.warnings) ? data.warnings : [];
       } else {
         // POST new course
         const res = await fetch('/api/teacher/courses', {
@@ -272,8 +356,22 @@ const CourseCreationInteractive = () => {
         const data = await res.json();
         savedCourseId = data.course.id;
         setCourseDbId(savedCourseId);
+        warnings = Array.isArray(data?.warnings) ? data.warnings : [];
+        // Server yaratgan mavzu ID'larini (tartib bo'yicha) lokal mavzularga bog'laymiz —
+        // keyingi PATCH va test-tahrirlash to'g'ri topicId bilan ishlashi uchun.
+        const serverTopics: Array<{ id: string }> = Array.isArray(data.course?.topics)
+          ? data.course.topics
+          : [];
+        if (serverTopics.length) {
+          setTopics((prev) => prev.map((tp, i) => (serverTopics[i] ? { ...tp, dbId: serverTopics[i].id } : tp)));
+        }
       }
 
+      // Test bilan bog'liq ogohlantirishlar (masalan mavzuda 5 tadan kam savol)
+      warnings.forEach((w) => toast.error(w));
+
+      // Server bilan sinxron — saqlanmagan o'zgarish yo'q.
+      dirtyRef.current = false;
       return savedCourseId;
     } catch (err: unknown) {
       setSaveError(err instanceof Error ? err.message : t('courseCreation.saveError'));
@@ -311,6 +409,11 @@ const CourseCreationInteractive = () => {
         const err = await res.json().catch(() => ({}));
         throw new Error(err?.error || t('courseCreation.saveError'));
       }
+      // Muvaffaqiyatli yuborildi — avtosaqlashni to'xtatib qoralamani tozalaymiz
+      // (aks holda sahifa yopilishida "saqlanmagan" ogohlantirishi chiqardi).
+      submittedRef.current = true;
+      dirtyRef.current = false;
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
       setPublishStatus('submitted');
       setShowSuccessModal(true);
       setTimeout(() => setShowSuccessModal(false), 3000);
@@ -329,6 +432,16 @@ const CourseCreationInteractive = () => {
   };
 
   const isValid = topics.length > 0 && topics.every(t => t.hasQuiz && t.questions.length >= 5);
+
+  // Nashrga yuborish sharti — server (submit route) bilan bir xil. Ilgari faqat
+  // `title` yetardi (checklist dekorativ edi). Endi tugma shu shartga bog'lanadi.
+  const canPublish =
+    !!metadata.title &&
+    !!metadata.description &&
+    !!metadata.coverImage &&
+    topics.length > 0 &&
+    topics.every((t) => t.content && t.content.trim().length > 0) &&
+    topics.some((t) => t.questions.length >= 5);
 
   const sections = [
     { 
@@ -381,33 +494,36 @@ const CourseCreationInteractive = () => {
     }
   };
 
+  // Joriy bosqichni tugatish uchun nima yetishmayotganini qaytaradi (yo'q bo'lsa null).
+  // Ilgari "Keyingi" jimgina o'chib turardi — foydalanuvchi tugma buzilgan deb o'ylardi.
+  const getStepError = (): string | null => {
+    switch (activeSection) {
+      case 'metadata':
+        if (!metadata.title.trim()) return t('courseCreation.errTitleRequired');
+        if (!metadata.description.trim()) return t('courseCreation.errDescRequired');
+        return null;
+      case 'content':
+        if (topics.length === 0) return t('courseCreation.errNoTopics');
+        return null;
+      case 'quiz':
+        if (topics.length === 0) return t('courseCreation.errNoTopics');
+        return null;
+      default:
+        return null;
+    }
+  };
+
   const handleNext = () => {
+    const err = getStepError();
+    if (err) {
+      // Xatoni ko'rsatamiz (toast) — o'tkazib yubormaymiz.
+      toast.error(err);
+      return;
+    }
     const currentIndex = sections.findIndex(s => s.id === activeSection);
     if (currentIndex < sections.length - 1) {
       const nextSection = sections[currentIndex + 1];
       handleSectionChange(nextSection.id as 'metadata' | 'content' | 'materials' | 'quiz' | 'publish');
-    }
-  };
-
-  const canProceed = () => {
-    switch (activeSection) {
-      case 'metadata':
-        // Only require title and description to proceed
-        return !!(metadata.title && metadata.description);
-      case 'content':
-        // Allow proceeding if at least one topic exists (content can be added later)
-        return topics.length > 0;
-      case 'materials':
-        // Materials are always optional
-        return true;
-      case 'quiz':
-        // Allow proceeding even without quizzes — validation happens at publish
-        return topics.length > 0;
-      case 'publish':
-        // For publish, require at minimum a title
-        return !!(metadata.title);
-      default:
-        return false;
     }
   };
 
@@ -473,7 +589,7 @@ const CourseCreationInteractive = () => {
                 onClick={() => setShowGuideModal(false)}
                 className="w-full mt-6 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth font-medium"
               >
-                Tushundim, boshlash
+                {t('courseCreation.guideStartBtn')}
               </button>
             </div>
           </div>
@@ -696,7 +812,7 @@ const CourseCreationInteractive = () => {
                     <div className="bg-card rounded-md shadow-warm p-4 space-y-2">
                       <label htmlFor="topic-video-url" className="flex items-center gap-2 text-sm font-medium text-foreground">
                         <Icon name="VideoCameraIcon" size={18} className="text-primary" />
-                        Dars videosi (ixtiyoriy)
+                        {t('courseCreation.videoOptionalLabel')}
                       </label>
                       <input
                         id="topic-video-url"
@@ -711,6 +827,29 @@ const CourseCreationInteractive = () => {
                       <p className="text-xs text-muted-foreground">
                         {t('courseCreation.videoUrlHelp')}
                       </p>
+                    </div>
+
+                    {/* Mavzu davomiyligi (daqiqa) — jami kurs vaqti shundan hisoblanadi */}
+                    <div className="bg-card rounded-md shadow-warm p-4 space-y-2">
+                      <label htmlFor="topic-duration" className="flex items-center gap-2 text-sm font-medium text-foreground">
+                        <Icon name="ClockIcon" size={18} className="text-primary" />
+                        {t('courseCreation.topicDurationLabel')}
+                      </label>
+                      <div className="relative w-40">
+                        <input
+                          id="topic-duration"
+                          type="number"
+                          inputMode="numeric"
+                          min="0"
+                          step="5"
+                          value={parseInt(selectedTopic.duration) || 0}
+                          onChange={(e) => handleDurationChange(e.target.value)}
+                          className="w-full px-3 py-2 pr-16 bg-background border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          {t('courseCreation.minutesUnit')}
+                        </span>
+                      </div>
                     </div>
 
                     <RichTextEditor
@@ -792,8 +931,6 @@ const CourseCreationInteractive = () => {
                       questions={selectedTopic.questions}
                       onQuestionsChange={handleQuestionsChange}
                       topicTitle={selectedTopic.title}
-                      courseId={courseDbId ?? undefined}
-                      topicId={selectedTopic.dbId}
                     />
                   </>
                 ) : (
@@ -824,6 +961,7 @@ const CourseCreationInteractive = () => {
                   onPreview={handlePreview}
                   onSubmit={handleSubmit}
                   isValid={isValid}
+                  canPublish={canPublish}
                   metadata={metadata}
                   topics={topics}
                   isSaving={isSaving}
@@ -918,7 +1056,7 @@ const CourseCreationInteractive = () => {
           {getCurrentStepNumber() < sections.length ? (
             <button
               onClick={handleNext}
-              disabled={!canProceed()}
+              disabled={isSaving}
               className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <span className="font-medium">{t('courseCreation.next')}</span>
@@ -927,7 +1065,8 @@ const CourseCreationInteractive = () => {
           ) : (
             <button
               onClick={handleSubmit}
-              disabled={!canProceed() || isSaving}
+              disabled={!canPublish || isSaving}
+              title={!canPublish ? t('courseCreation.publishBlockedHint') : undefined}
               className="flex items-center space-x-2 px-6 py-3 bg-success text-white rounded-md hover:bg-success/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? (

@@ -14,6 +14,7 @@ interface CourseMetadata {
   targetAudience: string;
   subjectCategory: string;
   gradeLevel: string;
+  difficultyLevel: string;
 }
 
 interface Topic {
@@ -32,6 +33,7 @@ interface PublishingControlsProps {
   onPreview: () => void;
   onSubmit: () => void;
   isValid: boolean;
+  canPublish: boolean;
   metadata: CourseMetadata;
   topics: Topic[];
   isSaving?: boolean;
@@ -44,6 +46,7 @@ const PublishingControls = ({
   onPreview,
   onSubmit,
   isValid,
+  canPublish,
   metadata,
   topics,
   isSaving = false,
@@ -145,7 +148,7 @@ const PublishingControls = ({
 
         {/* Topics Summary */}
         <div className="pt-4 border-t border-border">
-          <h4 className="font-medium text-foreground mb-3">Mavzular ({topics.length})</h4>
+          <h4 className="font-medium text-foreground mb-3">{t('courseCreation.topicsWithCount', { count: topics.length })}</h4>
           <div className="space-y-2">
             {topics.map((topic) => (
               <div key={topic.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-md">
@@ -247,7 +250,8 @@ const PublishingControls = ({
 
           <button
             onClick={onSubmit}
-            disabled={isSaving || status === 'submitted'}
+            disabled={isSaving || status === 'submitted' || !canPublish}
+            title={!canPublish ? t('courseCreation.publishBlockedHint') : undefined}
             className="w-full flex items-center justify-center space-x-2 px-4 py-3 bg-primary text-primary-foreground rounded-md hover:opacity-90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSaving ? (
@@ -260,7 +264,7 @@ const PublishingControls = ({
             </span>
           </button>
 
-          {!isValid && (
+          {!canPublish && (
             <div className="bg-warning/10 border border-warning/20 rounded-md p-4">
               <div className="flex items-start space-x-3">
                 <Icon name="ExclamationTriangleIcon" size={20} className="text-warning flex-shrink-0" />

@@ -22,25 +22,35 @@ export async function POST(
     });
     if (!course) throw new CourseNotFoundError(id);
 
-    // To'liqlik tekshiruvi — bo'sh metadatali kurs moderatsiyaga tushmasin.
+    // To'liqlik tekshiruvi — chala kurs moderatsiyaga tushmasin. Bu tekshiruv
+    // SERVER tomonida majburlanadi (ilgari faqat client checklist edi — dekorativ:
+    // muqovasiz/testsiz kurs 200 olardi). Client tugmasi ham shu shartlarga bog'landi.
     const missing: string[] = [];
     if (!course.title || course.title.trim().length < 3) missing.push('nom (kamida 3 belgi)');
     if (!course.description || course.description.trim().length < 10) missing.push('tavsif (kamida 10 belgi)');
+    if (!course.coverImage || !course.coverImage.trim()) missing.push('muqova rasmi');
+
+    // Mavzular — kamida bitta, har birida dars matni, va kamida bitta mavzuda test.
+    const topics = await prisma.courseTopic.findMany({
+      where: { courseId: id },
+      select: { content: true, hasQuiz: true },
+    });
+    if (topics.length === 0) {
+      return jsonResponse(
+        { error: 'Tekshiruvga yuborishdan oldin kamida bitta mavzu qo\'shing', code: 'NO_TOPICS' },
+        { status: 400 },
+      );
+    }
+    const emptyContentCount = topics.filter((tp) => !tp.content || !tp.content.trim()).length;
+    if (emptyContentCount > 0) missing.push(`${emptyContentCount} ta mavzuda dars matni yo'q`);
+    if (!topics.some((tp) => tp.hasQuiz)) missing.push('kamida bitta mavzuda 5+ savolli test');
+
     if (missing.length > 0) {
       return jsonResponse(
         {
           error: `Tekshiruvga yuborishdan oldin to'ldiring: ${missing.join(', ')}`,
           code: 'INCOMPLETE_COURSE',
         },
-        { status: 400 },
-      );
-    }
-
-    // Kamida bitta mavzu bo'lishi shart
-    const topicCount = await prisma.courseTopic.count({ where: { courseId: id } });
-    if (topicCount === 0) {
-      return jsonResponse(
-        { error: 'Tekshiruvga yuborishdan oldin kamida bitta mavzu qo\'shing', code: 'NO_TOPICS' },
         { status: 400 },
       );
     }

@@ -16,6 +16,7 @@ import {
 } from '@/lib/services/teacher-course.service';
 import { CourseNotFoundError, ValidationError } from '@/lib/errors';
 import { recomputeEnrollmentsForCourse } from '@/lib/services/progress.service';
+import { syncTopicQuizzes, type RawQuizQuestion } from '@/lib/services/course-quiz-sync';
 
 /** Reconcile'da bitta mavzu qatoriga yoziladigan maydonlar (create ham, update ham). */
 function buildTopicWrite(tp: Record<string, unknown>, order: number) {
@@ -157,6 +158,9 @@ export async function PATCH(
           ...(b.coverImage !== undefined && { coverImage: b.coverImage }),
           ...(b.language && { language: b.language }),
           ...(b.difficultyLevel !== undefined && { difficultyLevel: b.difficultyLevel }),
+          ...(b.totalDuration !== undefined && Number.isFinite(Number(b.totalDuration)) && {
+            totalDuration: Math.max(0, Math.trunc(Number(b.totalDuration))),
+          }),
           ...(needsReReview && {
             moderationStatus: 'submitted',
             isPublished: false,
@@ -198,8 +202,31 @@ export async function PATCH(
       await recomputeEnrollmentsForCourse(id);
     }
 
+    // Mavzu testlarini sinxronlash — reconcile'dan keyin joriy mavzu ID'larini
+    // pozitsiya bo'yicha kiruvchi savollar bilan bog'laymiz (replace semantikasi).
+    let warnings: string[] = [];
+    if (incomingTopics) {
+      const persisted = await prisma.courseTopic.findMany({
+        where: { courseId: id },
+        orderBy: { orderIndex: 'asc' },
+        select: { id: true, title: true },
+      });
+      const quizInputs = persisted
+        .map((row, i) => ({
+          topicId: row.id,
+          topicTitle: row.title,
+          questions: ((incomingTopics[i]?.questions ?? []) as RawQuizQuestion[]),
+        }))
+        .filter((q) => Array.isArray(q.questions) && q.questions.length > 0);
+      if (quizInputs.length) {
+        const sync = await syncTopicQuizzes(session.sub, id, quizInputs);
+        warnings = sync.warnings;
+      }
+    }
+
     return jsonResponse({
       course: { ...updated, priceUzs: updated.priceUzs.toString() },
+      warnings,
     });
   } catch (err) {
     if (err instanceof CourseNotFoundError) {

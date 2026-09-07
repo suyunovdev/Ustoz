@@ -477,9 +477,10 @@ function CoursesTab({
             return (
               <div
                 key={course.id}
-                className="bg-card rounded-md shadow-warm overflow-hidden border border-border hover:shadow-warm-md transition-smooth"
+                className="bg-card rounded-md shadow-warm border border-border hover:shadow-warm-md transition-smooth"
               >
-                <div className="relative h-32 bg-muted">
+                {/* overflow-hidden faqat rasmda — kartada bo'lsa amallar menyusini qirqardi */}
+                <div className="relative h-32 bg-muted overflow-hidden rounded-t-md">
                   {course.coverImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -510,10 +511,22 @@ function CoursesTab({
                   )}
 
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground mb-3">
-                    <div>👥 {course.enrollmentCount} {t('teacher.coursesStudentLabel')}</div>
-                    <div>⭐ {course.rating.toFixed(1)} ({course.reviewCount})</div>
-                    <div>📚 {course.topicCount} {t('teacher.coursesTopicLabel')}</div>
-                    <div>📅 {formatDate(course.createdAt, locale)}</div>
+                    <div className="flex items-center gap-1.5">
+                      <Icon name="UserGroupIcon" size={14} />
+                      {course.enrollmentCount} {t('teacher.coursesStudentLabel')}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Icon name="StarIcon" size={14} className="text-accent" variant="solid" />
+                      {course.rating.toFixed(1)} ({course.reviewCount})
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Icon name="BookOpenIcon" size={14} />
+                      {course.topicCount} {t('teacher.coursesTopicLabel')}
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Icon name="CalendarIcon" size={14} />
+                      {formatDate(course.createdAt, locale)}
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between pt-3 border-t border-border">
@@ -531,7 +544,8 @@ function CoursesTab({
                       {menuOpen && (
                         <>
                           <div className="fixed inset-0 z-10" onClick={() => setOpenMenuFor(null)} />
-                          <div className="absolute right-0 mt-1 w-48 bg-card border border-border rounded-md shadow-warm-lg z-20 py-1">
+                          {/* Yuqoriga ochamiz (bottom-full) — karta pastida qirqilmasin */}
+                          <div className="absolute right-0 bottom-full mb-1 w-48 bg-card border border-border rounded-md shadow-warm-lg z-20 py-1">
                             <MenuItem
                               icon="ListBulletIcon"
                               label={t('teacher.menuTopics')}

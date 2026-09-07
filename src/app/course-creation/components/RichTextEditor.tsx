@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { sanitizeHtml } from '@/lib/sanitize-html';
@@ -21,11 +21,32 @@ const RichTextEditor = ({
   const [showVideoModal, setShowVideoModal] = useState(false);
   const [videoUrl, setVideoUrl] = useState('');
   const editorRef = useRef<HTMLDivElement>(null);
+  // Oxirgi biz chiqargan HTML — tashqi o'zgarish (mavzu almashuvi) bilan o'zimiz
+  // yozganni farqlash uchun. null = hali render qilinmagan (mount'da innerHTML
+  // majburan o'rnatiladi). Uncontrolled: DOM'ni React emas, ref boshqaradi.
+  const lastEmittedRef = useRef<string | null>(null);
+
+  // Faqat TASHQARIDAN kelgan o'zgarishda DOM'ni yangilaymiz (mavzu almashganda).
+  // Yozayotganda content === lastEmitted, shuning uchun innerHTML tegilmaydi va
+  // kursor joyida qoladi (ilgari har inputda dangerouslySetInnerHTML DOM'ni qayta
+  // qurib kursorni 0 ga tashlab, matnni teskari yozardi).
+  useEffect(() => {
+    if (!editorRef.current) return;
+    if (content !== lastEmittedRef.current) {
+      editorRef.current.innerHTML = sanitizeHtml(content);
+      lastEmittedRef.current = content;
+    }
+  }, [content]);
+
+  const emit = (html: string) => {
+    lastEmittedRef.current = html;
+    onContentChange(html);
+  };
 
   const formatText = (command: string, value?: string) => {
     document.execCommand(command, false, value);
     if (editorRef.current) {
-      onContentChange(editorRef.current.innerHTML);
+      emit(editorRef.current.innerHTML);
     }
   };
 
@@ -77,7 +98,7 @@ const RichTextEditor = ({
       } else {
         editorRef.current.appendChild(wrapper);
       }
-      onContentChange(editorRef.current.innerHTML);
+      emit(editorRef.current.innerHTML);
     }
 
     setVideoUrl('');
@@ -136,12 +157,14 @@ const RichTextEditor = ({
         </div>
 
         {/* Editor */}
+        {/* Uncontrolled: boshlang'ich HTML yuqoridagi useEffect orqali ref bilan
+            o'rnatiladi; React bu yerda innerHTML'ni boshqarmaydi (kursor saqlanadi). */}
         <div
           ref={editorRef}
           contentEditable
-          onInput={(e) => onContentChange(e.currentTarget.innerHTML)}
+          suppressContentEditableWarning
+          onInput={(e) => emit(e.currentTarget.innerHTML)}
           className="min-h-[400px] p-4 text-foreground focus:outline-none"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(content) }}
           data-placeholder={editorPlaceholder}
           style={{
             wordWrap: 'break-word',

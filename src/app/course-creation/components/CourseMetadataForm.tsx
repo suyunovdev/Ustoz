@@ -1,10 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { buildSubjectGroups, buildTargetAudiences, buildGradeLevels } from '@/lib/data/subject-groups';
 import AppImage from '@/components/ui/AppImage';
+
+interface CategoryOption {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 interface CourseMetadata {
   title: string;
@@ -16,6 +22,7 @@ interface CourseMetadata {
   targetAudience: string;
   subjectCategory: string;
   gradeLevel: string;
+  difficultyLevel: string;
 }
 
 interface CourseMetadataFormProps {
@@ -26,6 +33,23 @@ interface CourseMetadataFormProps {
 const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormProps) => {
   const { t } = useI18n();
   const [imagePreview, setImagePreview] = useState(metadata.coverImage);
+  // Kategoriyalar bozor bilan YAGONA manba — Category jadvalidan (ilgari sehrgarda
+  // 8 ta qattiq kodlangan inglizcha qiymat edi; ular Category slug/nomiga mos kelmay
+  // categoryId=null qolardi — kurs hech qaysi bozor kategoriyasiga bog'lanmasdi).
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    fetch('/api/categories', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (alive && data?.categories) {
+          setCategories(data.categories.map((c: CategoryOption) => ({ id: c.id, name: c.name, slug: c.slug })));
+        }
+      })
+      .catch(() => { /* tarmoq xatosi — bo'sh ro'yxat, placeholder ko'rinadi */ });
+    return () => { alive = false; };
+  }, []);
 
   const languages = [
     { code: 'uz', name: "O\'zbek" },
@@ -201,14 +225,11 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
             required
           >
             <option value="">{t('courseCreation.selectCategory')}</option>
-            <option value="Programming">{t('categories.programming')}</option>
-            <option value="Design">{t('categories.design')}</option>
-            <option value="Business">{t('categories.business')}</option>
-            <option value="Marketing">{t('categories.marketing')}</option>
-            <option value="Science">{t('categories.science')}</option>
-            <option value="Mathematics">{t('categories.mathematics')}</option>
-            <option value="Languages">{t('categories.languages')}</option>
-            <option value="Other">{t('categories.other')}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.slug}>
+                {c.name}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -230,6 +251,23 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
         </div>
       </div>
 
+      {/* Difficulty level — bozorda daraja filtriga tushishi uchun (ilgari yo'q edi,
+          natijada kurs har doim "Boshlang'ich" bo'lib ko'rinardi) */}
+      <div>
+        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.difficultyLevel')}</label>
+        <select
+          value={metadata.difficultyLevel}
+          onChange={(e) => handleChange('difficultyLevel', e.target.value)}
+          className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          required
+        >
+          <option value="">{t('courseCreation.selectDifficulty')}</option>
+          <option value="Beginner">{t('misc.beginner')}</option>
+          <option value="Intermediate">{t('misc.intermediate')}</option>
+          <option value="Advanced">{t('misc.advanced')}</option>
+        </select>
+      </div>
+
       {/* Pricing — faqat so'mda (platforma to'liq so'mda) */}
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.priceUZS')}</label>
@@ -246,7 +284,7 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground caption">so'm</span>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">Bepul kurs uchun 0 kiriting.</p>
+        <p className="text-xs text-muted-foreground mt-1">{t('courseCreation.freeHint')}</p>
       </div>
     </div>
   );

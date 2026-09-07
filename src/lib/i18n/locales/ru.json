@@ -2278,7 +2278,20 @@
     "variantAnswerHint": "введите ответ варианта...",
     "adminFeedbackTitle": "Комментарий администратора",
     "resubmit": "Отправить снова",
-    "awaitingReview": "Ожидает проверки администратором"
+    "awaitingReview": "Ожидает проверки администратором",
+    "quizAutoSaveNote": "Вопросы сохраняются автоматически при сохранении курса",
+    "publishBlockedHint": "Для публикации нужны: название, описание, обложка, текст в каждой теме и хотя бы один тест из 5+ вопросов",
+    "draftRestored": "Восстановлен сохранённый черновик",
+    "selectDifficulty": "Выберите уровень",
+    "errTitleRequired": "Введите название курса",
+    "errDescRequired": "Введите описание курса",
+    "errNoTopics": "Добавьте хотя бы одну тему",
+    "topicDurationLabel": "Длительность урока",
+    "minutesUnit": "мин",
+    "videoOptionalLabel": "Видео урока (необязательно)",
+    "guideStartBtn": "Понятно, начать",
+    "freeHint": "Для бесплатного курса введите 0.",
+    "topicsWithCount": "Темы ({count})"
   },
   "content": {
     "uploadCenterTitle": "Центр загрузки контента",
@@ -3197,7 +3210,15 @@
     "transactionsTitle": "История платежей",
     "transactionsDesc": "Полная информация об истории платежей и покупках курсов.",
     "termsTitle": "Условия использования",
-    "privacyTitle": "Политика конфиденциальности"
+    "privacyTitle": "Политика конфиденциальности",
+    "teacherStudents": "Ученики",
+    "teacherGroups": "Группы",
+    "teacherAssignments": "Задания",
+    "teacherTests": "Тесты",
+    "teacherAnalytics": "Аналитика",
+    "teacherEarnings": "Доход",
+    "teacherCertificates": "Сертификаты",
+    "teacherReviews": "Отзывы"
   },
   "subscription": {
     "title": "Подписка",

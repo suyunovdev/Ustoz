@@ -2278,7 +2278,20 @@
     "variantAnswerHint": "enter the answer for this option...",
     "adminFeedbackTitle": "Admin feedback",
     "resubmit": "Resubmit",
-    "awaitingReview": "Awaiting admin review"
+    "awaitingReview": "Awaiting admin review",
+    "quizAutoSaveNote": "Questions are saved automatically when you save the course",
+    "publishBlockedHint": "To publish: title, description, cover image, lesson text in every topic, and at least one 5+ question test",
+    "draftRestored": "Restored your saved draft",
+    "selectDifficulty": "Select level",
+    "errTitleRequired": "Enter the course title",
+    "errDescRequired": "Enter the course description",
+    "errNoTopics": "Add at least one topic",
+    "topicDurationLabel": "Lesson duration",
+    "minutesUnit": "min",
+    "videoOptionalLabel": "Lesson video (optional)",
+    "guideStartBtn": "Got it, start",
+    "freeHint": "Enter 0 for a free course.",
+    "topicsWithCount": "Topics ({count})"
   },
   "content": {
     "uploadCenterTitle": "Content Upload Center",
@@ -3197,7 +3210,15 @@
     "transactionsTitle": "Transaction History",
     "transactionsDesc": "Full information about payment history and course purchases.",
     "termsTitle": "Terms of Service",
-    "privacyTitle": "Privacy Policy"
+    "privacyTitle": "Privacy Policy",
+    "teacherStudents": "Students",
+    "teacherGroups": "Groups",
+    "teacherAssignments": "Assignments",
+    "teacherTests": "Tests",
+    "teacherAnalytics": "Analytics",
+    "teacherEarnings": "Earnings",
+    "teacherCertificates": "Certificates",
+    "teacherReviews": "Reviews"
   },
   "subscription": {
     "title": "Subscription",
