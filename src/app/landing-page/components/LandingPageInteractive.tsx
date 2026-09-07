@@ -53,23 +53,40 @@ interface Teacher {
   studentCount: number;
 }
 
+interface FeaturedCert {
+  id: string;
+  certificateNumber: string;
+  issuedAt: string;
+  finalGrade: number | null;
+  completionPercent: number;
+  verificationUrl: string | null;
+  studentName: string;
+  avatarUrl: string | null;
+  courseTitle: string;
+}
+
 function fmt(n: number): string {
   return n.toLocaleString('en-US').replace(/,/g, ' ');
 }
 
 // ─── In-view trigger (counter/progress uchun) ───
+// Callback ref — element DOM'ga qo'shilgan zahoti observer ulanadi. Bu muhim:
+// shartli render bo'lgan bo'limlar (masalan featuredCerts kelgach paydo bo'ladi)
+// mount paytida DOM'da bo'lmaydi; oddiy useRef+useEffect ularni "ko'rmasdan"
+// qolib, reveal/counter hech ishga tushmasdi.
 function useInView(threshold = 0.2) {
-  const ref = useRef<HTMLDivElement>(null);
   const [seen, setSeen] = useState(false);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || seen) return;
-    const obs = new IntersectionObserver(
-      ([e]) => { if (e.isIntersecting) setSeen(true); },
-      { threshold },
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
+  const obsRef = useRef<IntersectionObserver | null>(null);
+  const ref = useCallback((node: HTMLElement | null) => {
+    if (obsRef.current) { obsRef.current.disconnect(); obsRef.current = null; }
+    if (node && !seen) {
+      const obs = new IntersectionObserver(
+        ([e]) => { if (e.isIntersecting) setSeen(true); },
+        { threshold },
+      );
+      obs.observe(node);
+      obsRef.current = obs;
+    }
   }, [seen, threshold]);
   return { ref, seen };
 }
@@ -256,6 +273,7 @@ const LandingPageInteractive = () => {
   const [stats, setStats] = useState({ totalCourses: 0, activeStudents: 0, successfulTeachers: 0, certificatesAwarded: 0 });
   const [popularCourses, setPopularCourses] = useState<PopularCourse[]>([]);
   const [featuredTeachers, setFeaturedTeachers] = useState<Teacher[]>([]);
+  const [featuredCerts, setFeaturedCerts] = useState<FeaturedCert[]>([]);
   const [loading, setLoading] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
@@ -290,10 +308,11 @@ const LandingPageInteractive = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [coursesRes, statsRes, teachersRes] = await Promise.all([
+        const [coursesRes, statsRes, teachersRes, certsRes] = await Promise.all([
           fetch('/api/courses?limit=6&sortBy=enrollments', { credentials: 'include' }),
           fetch('/api/stats'),
           fetch('/api/teachers/featured?limit=4'),
+          fetch('/api/certificates/featured?limit=4'),
         ]);
         if (coursesRes.ok) {
           const { courses } = await coursesRes.json();
@@ -322,6 +341,11 @@ const LandingPageInteractive = () => {
         if (teachersRes.ok) {
           const { teachers } = await teachersRes.json();
           setFeaturedTeachers(Array.isArray(teachers) ? teachers : []);
+        }
+        // Haqiqiy sertifikatlar (soxta emas) — bo'lmasa "natijalar" bloki yashiriladi.
+        if (certsRes.ok) {
+          const { certificates } = await certsRes.json();
+          setFeaturedCerts(Array.isArray(certificates) ? certificates : []);
         }
       } catch (error) {
         console.error('Error fetching landing page data:', error);
@@ -653,39 +677,89 @@ const LandingPageInteractive = () => {
         </section>
         )}
 
-        {/* ═══ TALABALAR NATIJALARI ═══ */}
+        {/* ═══ O'QUVCHILAR NATIJALARI ═══ (haqiqiy sertifikatlar — bo'lmasa yashiriladi) */}
+        {featuredCerts.length > 0 && (
         <section ref={worksView.ref} className="py-16 md:py-24">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <SectionHead eyebrow={t('landing.studentWorksTitle')} title={t('landing.studentWorksDesc')} />
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-              {[
-                { name: 'Dilshod Nazarov', course: 'Python Dasturlash', progress: 100, cert: true },
-                { name: 'Madina Umarova', course: 'Web Development', progress: 100, cert: true },
-                { name: 'Bekzod Tursunov', course: 'Data Science', progress: 85, cert: false },
-                { name: 'Zarina Karimova', course: 'UI/UX Dizayn', progress: 100, cert: true },
-              ].map((s, i) => (
-                <div key={i} className="rounded-2xl p-6" style={{ background: PAPER_CARD, border: `1px solid ${LINE}` }}>
-                  <h4 className="font-semibold" style={{ color: INK_TEXT }}>{s.name}</h4>
-                  <p className="text-sm mb-5" style={{ color: MUTE }}>{s.course}</p>
-                  <div className="flex justify-between text-xs mb-1.5" style={{ color: MUTE }}>
-                    <span>{t('landing.workProgress')}</span>
-                    <span className="font-semibold" style={{ color: INK_TEXT }}>{s.progress}%</span>
+              {featuredCerts.map((c, i) => {
+                const initials = c.studentName.split(' ').map((w) => w[0]).slice(0, 2).join('');
+                const d = new Date(c.issuedAt);
+                const issued = Number.isNaN(d.getTime())
+                  ? ''
+                  : `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
+                return (
+                  <div
+                    key={c.id}
+                    className="rounded-2xl p-6 flex flex-col transition-all ease-out"
+                    style={{
+                      background: PAPER_CARD,
+                      border: `1px solid ${LINE}`,
+                      opacity: worksView.seen ? 1 : 0,
+                      transform: worksView.seen ? 'translateY(0)' : 'translateY(16px)',
+                      transitionDuration: '700ms',
+                      transitionDelay: `${i * 90}ms`,
+                    }}
+                  >
+                    <div className="flex items-start justify-between mb-5">
+                      <div
+                        className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: 'color-mix(in srgb, var(--brand-malachite) 12%, transparent)' }}
+                      >
+                        <Icon name="AcademicCapIcon" size={22} style={{ color: MALACHITE }} />
+                      </div>
+                      {c.finalGrade != null && (
+                        <div className="text-right leading-none">
+                          <div className="text-2xl font-medium" style={{ ...DISPLAY, color: INK_TEXT }}>
+                            {c.finalGrade}
+                            <span className="text-sm" style={{ color: MUTE }}>%</span>
+                          </div>
+                          <div className="text-[11px] mt-1" style={{ color: MUTE }}>{t('landing.certGrade')}</div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div
+                        className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden"
+                        style={{ background: INK }}
+                      >
+                        {c.avatarUrl ? (
+                          <AppImage src={optimizeImageUrl(c.avatarUrl, 100) || c.avatarUrl} alt={c.studentName} className="w-full h-full rounded-full object-cover" />
+                        ) : (
+                          <span className="text-sm font-semibold" style={{ ...DISPLAY, color: GOLD }}>{initials}</span>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-semibold truncate" style={{ color: INK_TEXT }}>{c.studentName}</h4>
+                        {issued && <p className="text-xs" style={{ color: MUTE }}>{issued}</p>}
+                      </div>
+                    </div>
+                    <p className="text-sm leading-snug flex-1 line-clamp-2" style={{ color: MUTE }}>{c.courseTitle}</p>
+                    <div className="mt-5 pt-4 flex items-center justify-between gap-2" style={{ borderTop: `1px solid ${LINE}` }}>
+                      <span className="flex items-center gap-1.5 text-xs font-medium" style={{ color: MALACHITE }}>
+                        <Icon name="CheckBadgeIcon" size={16} variant="solid" /> {t('landing.workCertEarned')}
+                      </span>
+                      {c.verificationUrl && (
+                        <a
+                          href={c.verificationUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 text-xs font-medium transition-colors"
+                          style={{ color: BLUE }}
+                        >
+                          {t('landing.certVerify')}
+                          <Icon name="ArrowTopRightOnSquareIcon" size={13} />
+                        </a>
+                      )}
+                    </div>
                   </div>
-                  <div className="w-full rounded-full h-1.5 mb-4" style={{ background: TRACK }}>
-                    <div
-                      className="h-1.5 rounded-full transition-all ease-out"
-                      style={{ width: worksView.seen ? `${s.progress}%` : '0%', transitionDuration: '1200ms', background: s.cert ? MALACHITE : GOLD }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 text-xs font-medium" style={{ color: s.cert ? MALACHITE : GOLD_ICON }}>
-                    <Icon name={s.cert ? 'CheckBadgeIcon' : 'ArrowTrendingUpIcon'} size={16} variant={s.cert ? 'solid' : 'outline'} />
-                    {s.cert ? t('landing.workCertEarned') : `${s.progress}% ${t('landing.workProgress')}`}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
+        )}
 
         {/* ═══ FIKRLAR ═══ */}
         <section className="py-16 md:py-24" style={{ background: PAPER_CARD }}>
