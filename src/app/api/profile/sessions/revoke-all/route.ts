@@ -8,6 +8,7 @@ import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { clearSessionCookie } from '@/lib/auth';
+import { revokeAllSessions } from '@/lib/services/session.service';
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,6 +17,7 @@ export async function POST(req: NextRequest) {
       where: { id: session.sub },
       data: { tokenVersion: { increment: 1 } },
     });
+    await revokeAllSessions(session.sub);
     return jsonResponse({ success: true }, { headers: { 'Set-Cookie': clearSessionCookie() } });
   } catch (err) {
     return errorResponse(err);

@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/hooks/queries/queryKeys';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
 import LocaleToggle from '@/components/common/LocaleToggle';
@@ -176,17 +178,17 @@ function ProfileOverview({ profile }: { profile: ProfileDTO }) {
   if (s) {
     if (overview!.role === 'student') {
       stats = [
-        { icon: 'BookOpenIcon', value: formatNumber(s.enrolled ?? 0, locale), label: 'Kurslar' },
-        { icon: 'CheckBadgeIcon', value: formatNumber(s.completed ?? 0, locale), label: 'Tugatilgan' },
-        { icon: 'TrophyIcon', value: formatNumber(s.certificates ?? 0, locale), label: 'Sertifikat' },
-        { icon: 'FireIcon', value: formatNumber(s.streak ?? 0, locale), label: 'Kun ketma-ket' },
+        { icon: 'BookOpenIcon', value: formatNumber(s.enrolled ?? 0, locale), label: t('profile.statCourses') },
+        { icon: 'CheckBadgeIcon', value: formatNumber(s.completed ?? 0, locale), label: t('profile.statCompleted') },
+        { icon: 'TrophyIcon', value: formatNumber(s.certificates ?? 0, locale), label: t('profile.statCertificates') },
+        { icon: 'FireIcon', value: formatNumber(s.streak ?? 0, locale), label: t('profile.statStreak') },
       ];
     } else if (overview!.role === 'teacher') {
       stats = [
-        { icon: 'BookOpenIcon', value: formatNumber(s.courses ?? 0, locale), label: 'Kurslar' },
-        { icon: 'UserGroupIcon', value: formatNumber(s.students ?? 0, locale), label: "O'quvchilar" },
-        { icon: 'StarIcon', value: (s.avgRating ?? 0).toFixed(1), label: 'Reyting' },
-        { icon: 'BanknotesIcon', value: formatCurrency(Number(s.revenueUzs ?? 0), locale, 'UZS'), label: 'Daromad' },
+        { icon: 'BookOpenIcon', value: formatNumber(s.courses ?? 0, locale), label: t('profile.statCourses') },
+        { icon: 'UserGroupIcon', value: formatNumber(s.students ?? 0, locale), label: t('profile.statStudents') },
+        { icon: 'StarIcon', value: (s.avgRating ?? 0).toFixed(1), label: t('profile.statRating') },
+        { icon: 'BanknotesIcon', value: formatCurrency(Number(s.revenueUzs ?? 0), locale, 'UZS'), label: t('profile.statRevenue') },
       ];
     }
   }
@@ -241,7 +243,7 @@ function ProfileOverview({ profile }: { profile: ProfileDTO }) {
       {completeness < 100 && (
         <div className="px-6 py-3 border-t border-border bg-muted/30">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-xs font-medium text-foreground">Profil to'liqligi</span>
+            <span className="text-xs font-medium text-foreground">{t('profile.completeness')}</span>
             <span className="text-xs font-semibold text-primary">{completeness}%</span>
           </div>
           <div className="h-1.5 rounded-full bg-border overflow-hidden">
@@ -260,9 +262,9 @@ export default function ProfileClient() {
 
   const TABS: { id: TabId; label: string; icon: string }[] = [
     { id: 'personal', label: t('profile.profileTab'), icon: 'UserIcon' },
-    { id: 'security', label: 'Xavfsizlik', icon: 'ShieldCheckIcon' },
+    { id: 'security', label: t('profile.securityTab'), icon: 'ShieldCheckIcon' },
     { id: 'notifications', label: t('profile.notificationsTab'), icon: 'BellIcon' },
-    { id: 'preferences', label: 'Sozlamalar', icon: 'Cog6ToothIcon' },
+    { id: 'preferences', label: t('profile.preferencesTab'), icon: 'Cog6ToothIcon' },
   ];
 
   if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
@@ -354,7 +356,7 @@ function PersonalTab({ profile }: { profile: ProfileDTO }) {
           <input id="pf-name" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required className={inputCls} />
         </div>
         <div>
-          <label htmlFor="pf-phone" className="block text-sm font-medium mb-1">Telefon</label>
+          <label htmlFor="pf-phone" className="block text-sm font-medium mb-1">{t('profile.phone')}</label>
           <input id="pf-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+998 90 123 45 67" className={inputCls} />
         </div>
       </div>
@@ -367,9 +369,9 @@ function PersonalTab({ profile }: { profile: ProfileDTO }) {
 
       {!isTeacher && (
         <div>
-          <label htmlFor="pf-interests" className="block text-sm font-medium mb-1">Qiziqishlar</label>
+          <label htmlFor="pf-interests" className="block text-sm font-medium mb-1">{t('profile.interests')}</label>
           <input id="pf-interests" type="text" value={interestsStr} onChange={(e) => setInterestsStr(e.target.value)} placeholder="Dasturlash, Matematika, Dizayn" className={inputCls} />
-          <p className="text-xs text-muted-foreground mt-1">Vergul bilan ajrating — sizga mos kurslarni topishga yordam beradi</p>
+          <p className="text-xs text-muted-foreground mt-1">{t('profile.interestsHint')}</p>
         </div>
       )}
 
@@ -435,7 +437,6 @@ function SecurityTab({ profile }: { profile: ProfileDTO }) {
   // Delete
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [reason, setReason] = useState('');
-  const [revokeBusy, setRevokeBusy] = useState(false);
   const hasRequested = !!profile.deletionRequestedAt;
   const inputCls = 'w-full px-3 py-2 border border-border rounded-lg text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary/40';
 
@@ -462,12 +463,12 @@ function SecurityTab({ profile }: { profile: ProfileDTO }) {
         body: JSON.stringify({ newEmail: newEmail.trim() }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || 'Xatolik');
-      toast.success('Tasdiqlash kodi yangi emailingizga yuborildi');
+      if (!res.ok) throw new Error(d.error || t('profile.errorGeneric'));
+      toast.success(t('profile.codeSent'));
       if (d.devOtp) setEmailOtp(String(d.devOtp));
       setEmailStep('otp');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xatolik');
+      toast.error(err instanceof Error ? err.message : t('profile.errorGeneric'));
     } finally { setEmailBusy(false); }
   };
 
@@ -479,50 +480,43 @@ function SecurityTab({ profile }: { profile: ProfileDTO }) {
         body: JSON.stringify({ newEmail: newEmail.trim(), otp: emailOtp.trim() }),
       });
       const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error || 'Xatolik');
-      toast.success('Email yangilandi. Qaytadan kiring.');
+      if (!res.ok) throw new Error(d.error || t('profile.errorGeneric'));
+      toast.success(t('profile.emailChanged'));
       setTimeout(() => router.push('/login'), 1200);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xatolik');
+      toast.error(err instanceof Error ? err.message : t('profile.errorGeneric'));
     } finally { setEmailBusy(false); }
-  };
-
-  const revokeAll = async () => {
-    setRevokeBusy(true);
-    try {
-      const res = await fetch('/api/profile/sessions/revoke-all', { method: 'POST', credentials: 'include' });
-      if (!res.ok) throw new Error('Xatolik');
-      toast.success('Barcha qurilmalardan chiqildi');
-      setTimeout(() => router.push('/login'), 800);
-    } catch { toast.error('Xatolik'); setRevokeBusy(false); }
   };
 
   return (
     <div className="space-y-4">
       {/* Email */}
       <div className="bg-card border border-border rounded-xl p-6">
-        <h2 className="font-heading font-semibold mb-1">Email manzil</h2>
-        <p className="text-xs text-muted-foreground mb-3">Joriy: <span className="font-mono text-foreground">{profile.email}</span></p>
+        <h2 className="font-heading font-semibold mb-1">{t('profile.emailSection')}</h2>
+        <p className="text-xs text-muted-foreground mb-3">{t('profile.emailCurrent')}: <span className="font-mono text-foreground">{profile.email}</span></p>
         {emailStep === 'idle' ? (
           <div className="flex flex-col sm:flex-row gap-2">
             <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="yangi@email.uz" className={inputCls} />
             <button onClick={requestEmail} disabled={emailBusy || !newEmail.trim()} className="shrink-0 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted disabled:opacity-50 transition-smooth">
-              Kod yuborish
+              {t('profile.sendCode')}
             </button>
           </div>
         ) : (
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground"><span className="text-foreground font-medium">{newEmail}</span> ga yuborilgan kodni kiriting:</p>
+            <p className="text-sm text-muted-foreground">{t('profile.enterCodeSentTo', { email: newEmail })}</p>
             <div className="flex flex-col sm:flex-row gap-2">
-              <input inputMode="numeric" maxLength={6} value={emailOtp} onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))} placeholder="6 xonali kod" className={`${inputCls} tracking-widest font-mono`} />
+              <input inputMode="numeric" maxLength={6} value={emailOtp} onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))} placeholder={t('profile.otpPlaceholder')} className={`${inputCls} tracking-widest font-mono`} />
               <button onClick={verifyEmail} disabled={emailBusy || emailOtp.length !== 6} className="shrink-0 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-primary/90 transition-smooth">
-                Tasdiqlash
+                {t('profile.confirmBtn')}
               </button>
             </div>
-            <button onClick={() => { setEmailStep('idle'); setEmailOtp(''); }} className="text-xs text-muted-foreground hover:text-foreground">Bekor qilish</button>
+            <button onClick={() => { setEmailStep('idle'); setEmailOtp(''); }} className="text-xs text-muted-foreground hover:text-foreground">{t('profile.cancelBtn')}</button>
           </div>
         )}
       </div>
+
+      {/* 2FA */}
+      <TwoFactorSection enabled={profile.twoFactorEnabled} />
 
       {/* Parol */}
       <form onSubmit={submitPassword} className="bg-card border border-border rounded-xl p-6 space-y-3 max-w-md">
@@ -530,7 +524,7 @@ function SecurityTab({ profile }: { profile: ProfileDTO }) {
         <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} required placeholder={t('profile.oldPassword')} className={inputCls} />
         <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required placeholder={t('profile.newPasswordLabel')} className={inputCls} />
         <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required placeholder={t('profile.confirmNewPasswordLabel')} className={inputCls} />
-        <p className="text-xs text-muted-foreground">Kamida 8 belgi, katta/kichik harf va raqam</p>
+        <p className="text-xs text-muted-foreground">{t('profile.passwordHint')}</p>
         <button type="submit" disabled={pwMut.isPending} className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-primary/90 transition-smooth">
           {pwMut.isPending && <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
           {t('profile.savePassword')}
@@ -538,16 +532,7 @@ function SecurityTab({ profile }: { profile: ProfileDTO }) {
       </form>
 
       {/* Qurilmalar */}
-      <div className="bg-card border border-border rounded-xl p-6 flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex-1">
-          <h2 className="font-heading font-semibold">Faol qurilmalar</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Barcha qurilmalardan chiqish — hamma joyda qayta kirish talab qilinadi.</p>
-          {profile.lastLoginAt && <p className="text-xs text-muted-foreground mt-1">Oxirgi kirish: {formatDateTime(profile.lastLoginAt, locale)}</p>}
-        </div>
-        <button onClick={revokeAll} disabled={revokeBusy} className="shrink-0 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted disabled:opacity-50 transition-smooth">
-          Barcha qurilmalardan chiqish
-        </button>
-      </div>
+      <DevicesSection />
 
       {/* Hisobni o'chirish */}
       <div className="bg-destructive/5 border border-destructive/30 rounded-xl p-6">
@@ -642,23 +627,214 @@ function NotificationsTab({ profile }: { profile: ProfileDTO }) {
 }
 
 function PreferencesTab() {
+  const { t } = useI18n();
   return (
     <div className="bg-card border border-border rounded-xl p-6 space-y-5">
-      <h2 className="font-heading font-semibold">Sozlamalar</h2>
+      <h2 className="font-heading font-semibold">{t('profile.preferencesTab')}</h2>
       <div className="flex items-center justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-foreground">Til</p>
-          <p className="text-xs text-muted-foreground">Interfeys tili</p>
+          <p className="text-sm font-medium text-foreground">{t('profile.prefsLanguage')}</p>
+          <p className="text-xs text-muted-foreground">{t('profile.prefsLanguageDesc')}</p>
         </div>
         <LocaleToggle />
       </div>
       <div className="flex items-center justify-between gap-4 pt-4 border-t border-border">
         <div>
-          <p className="text-sm font-medium text-foreground">Mavzu</p>
-          <p className="text-xs text-muted-foreground">Yorug' yoki qorong'i rejim</p>
+          <p className="text-sm font-medium text-foreground">{t('profile.prefsTheme')}</p>
+          <p className="text-xs text-muted-foreground">{t('profile.prefsThemeDesc')}</p>
         </div>
         <ThemeToggle />
       </div>
+    </div>
+  );
+}
+
+// ── Faol qurilmalar ──
+interface DeviceRow { id: string; device: string; ip: string | null; createdAt: string; current: boolean }
+
+function DevicesSection() {
+  const { t, locale } = useI18n();
+  const router = useRouter();
+  const [rows, setRows] = useState<DeviceRow[] | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = async () => {
+    try {
+      const res = await fetch('/api/profile/sessions', { credentials: 'include' });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) setRows(d.sessions ?? []);
+      else setRows([]);
+    } catch { setRows([]); }
+  };
+  useEffect(() => { load(); }, []);
+
+  const revokeOne = async (id: string) => {
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/profile/sessions/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error();
+      toast.success(t('profile.deviceRevoked'));
+      setRows((prev) => (prev ? prev.filter((r) => r.id !== id) : prev));
+    } catch { toast.error(t('profile.errorGeneric')); } finally { setBusyId(null); }
+  };
+
+  const revokeAll = async () => {
+    try {
+      const res = await fetch('/api/profile/sessions/revoke-all', { method: 'POST', credentials: 'include' });
+      if (!res.ok) throw new Error();
+      toast.success(t('profile.signedOutAll'));
+      setTimeout(() => router.push('/login'), 800);
+    } catch { toast.error(t('profile.errorGeneric')); }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-6">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-heading font-semibold">{t('profile.devicesSection')}</h2>
+        <button onClick={revokeAll} className="text-xs text-destructive hover:underline">{t('profile.signOutAll')}</button>
+      </div>
+      {rows === null ? (
+        <div className="py-4 flex justify-center"><span className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">{t('profile.noOtherDevices')}</p>
+      ) : (
+        <ul className="divide-y divide-border">
+          {rows.map((r) => (
+            <li key={r.id} className="flex items-center gap-3 py-3">
+              <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                <Icon name="ComputerDesktopIcon" size={18} className="text-muted-foreground" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                  {r.device}
+                  {r.current && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-primary/15 text-primary">{t('profile.thisDevice')}</span>}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">{r.ip ?? '—'} · {formatDateTime(r.createdAt, locale)}</p>
+              </div>
+              {!r.current && (
+                <button onClick={() => revokeOne(r.id)} disabled={busyId === r.id} className="shrink-0 text-xs text-destructive hover:underline disabled:opacity-50">
+                  {t('profile.revokeDevice')}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="text-xs text-muted-foreground mt-3">{t('profile.signOutAllDesc')}</p>
+    </div>
+  );
+}
+
+// ── 2FA (TOTP) ──
+function TwoFactorSection({ enabled }: { enabled: boolean }) {
+  const { t } = useI18n();
+  const qc = useQueryClient();
+  const [step, setStep] = useState<'idle' | 'setup' | 'disable'>('idle');
+  const [setupData, setSetupData] = useState<{ secret: string; qrDataUrl: string } | null>(null);
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  const inputCls = 'w-full px-3 py-2 border border-border rounded-lg text-sm bg-card tracking-widest font-mono focus:outline-none focus:ring-2 focus:ring-primary/40';
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: queryKeys.myProfile });
+
+  const startSetup = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch('/api/profile/2fa/setup', { method: 'POST', credentials: 'include' });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || t('profile.errorGeneric'));
+      setSetupData({ secret: d.secret, qrDataUrl: d.qrDataUrl });
+      setStep('setup');
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('profile.errorGeneric')); } finally { setBusy(false); }
+  };
+
+  const confirmEnable = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch('/api/profile/2fa/enable', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ token: code.trim() }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || t('profile.errorGeneric'));
+      toast.success(t('profile.twoFactorEnabled'));
+      setBackupCodes(d.backupCodes ?? []);
+      setStep('idle'); setSetupData(null); setCode('');
+      invalidate();
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('profile.errorGeneric')); } finally { setBusy(false); }
+  };
+
+  const confirmDisable = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch('/api/profile/2fa/disable', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ code: code.trim() }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || t('profile.errorGeneric'));
+      toast.success(t('profile.twoFactorDisabled'));
+      setStep('idle'); setCode('');
+      invalidate();
+    } catch (e) { toast.error(e instanceof Error ? e.message : t('profile.errorGeneric')); } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="bg-card border border-border rounded-xl p-6 space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h2 className="font-heading font-semibold flex items-center gap-2">
+            {t('profile.twoFactor')}
+            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${enabled ? 'bg-success/15 text-success' : 'bg-muted text-muted-foreground'}`}>
+              {enabled ? t('profile.twoFactorOn') : t('profile.twoFactorOff')}
+            </span>
+          </h2>
+          <p className="text-xs text-muted-foreground mt-0.5">{t('profile.twoFactorDesc')}</p>
+        </div>
+        {step === 'idle' && !enabled && (
+          <button onClick={startSetup} disabled={busy} className="shrink-0 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-primary/90 transition-smooth">{t('profile.enable2fa')}</button>
+        )}
+        {step === 'idle' && enabled && (
+          <button onClick={() => setStep('disable')} className="shrink-0 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted transition-smooth">{t('profile.disable2fa')}</button>
+        )}
+      </div>
+
+      {step === 'setup' && setupData && (
+        <div className="space-y-3 pt-2 border-t border-border">
+          <p className="text-sm text-muted-foreground">{t('profile.scan2fa')}</p>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <img src={setupData.qrDataUrl} alt="2FA QR" className="w-40 h-40 rounded-lg border border-border" />
+            <code className="text-xs font-mono break-all bg-muted px-3 py-2 rounded-lg">{setupData.secret}</code>
+          </div>
+          <input inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} placeholder={t('profile.enter2faCode')} className={inputCls} />
+          <div className="flex gap-2">
+            <button onClick={confirmEnable} disabled={busy || code.length !== 6} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-primary/90 transition-smooth">{t('profile.confirmBtn')}</button>
+            <button onClick={() => { setStep('idle'); setSetupData(null); setCode(''); }} className="px-4 py-2 text-muted-foreground hover:text-foreground text-sm">{t('profile.cancelBtn')}</button>
+          </div>
+        </div>
+      )}
+
+      {step === 'disable' && (
+        <div className="space-y-2 pt-2 border-t border-border">
+          <p className="text-sm text-muted-foreground">{t('profile.enter2faCode')}</p>
+          <input inputMode="text" value={code} onChange={(e) => setCode(e.target.value)} placeholder={t('profile.enter2faCode')} className={inputCls} />
+          <div className="flex gap-2">
+            <button onClick={confirmDisable} disabled={busy || !code.trim()} className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm font-medium disabled:opacity-50">{t('profile.disable2fa')}</button>
+            <button onClick={() => { setStep('idle'); setCode(''); }} className="px-4 py-2 text-muted-foreground hover:text-foreground text-sm">{t('profile.cancelBtn')}</button>
+          </div>
+        </div>
+      )}
+
+      {backupCodes && (
+        <div className="pt-2 border-t border-border">
+          <p className="text-sm font-medium text-foreground mb-2">{t('profile.backupCodes')}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {backupCodes.map((c) => <code key={c} className="text-xs font-mono bg-muted px-2 py-1.5 rounded text-center">{c}</code>)}
+          </div>
+          <button onClick={() => setBackupCodes(null)} className="mt-3 text-xs text-primary hover:underline">{t('profile.confirmBtn')}</button>
+        </div>
+      )}
     </div>
   );
 }

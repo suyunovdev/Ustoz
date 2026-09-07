@@ -10,6 +10,7 @@ import { getSession, getSessionFromRequest, type JWTPayload } from './auth';
 import { ForbiddenError, UnauthorizedError, isServiceError } from './errors';
 import { jsonResponse } from './json';
 import { prisma } from './prisma';
+import { isSessionValid } from './services/session.service';
 
 /**
  * JWT dekod qilingandan so'ng sessiya DB holatini tekshiradi:
@@ -74,6 +75,13 @@ export async function requireAuth(req: NextRequest): Promise<JWTPayload> {
   const status = await validateSessionInDb(session);
   if (status === 'forbidden') throw new ForbiddenError('Akkaunt bloklangan');
   if (status !== 'ok') throw new UnauthorizedError();
+
+  // Sessiya (qurilma) tekshiruvi — token jti bo'lsa, tegishli UserSession yaroqli
+  // bo'lishi shart (bekor qilingan qurilma darhol 401 oladi). Legacy (jti'siz)
+  // tokenlar bu tekshiruvdan mustasno — deploy'da mavjud sessiyalar buzilmaydi.
+  if (session.jti && !(await isSessionValid(session.jti))) {
+    throw new UnauthorizedError();
+  }
 
   return session;
 }

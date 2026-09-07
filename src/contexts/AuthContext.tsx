@@ -32,7 +32,7 @@ interface AuthContextValue {
   session: AuthSession | null;
   loading: boolean;
   signUp: (email: string, password: string, metadata?: Record<string, unknown>) => Promise<SignUpResult>;
-  signIn: (identifier: string, password: string, isPhone?: boolean) => Promise<{ user: AuthUser }>;
+  signIn: (identifier: string, password: string, isPhone?: boolean, totpCode?: string) => Promise<{ user?: AuthUser; twoFactorRequired?: boolean }>;
   signOut: () => Promise<void>;
   getCurrentUser: () => Promise<AuthUser | null>;
   isEmailVerified: () => boolean;
@@ -137,11 +137,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   // Email/Password Sign In via JWT API
-  const signIn = async (identifier: string, password: string, _isPhone: boolean = false) => {
-    const data = await apiPost('/api/auth/login', { email: identifier, password });
+  const signIn = async (
+    identifier: string,
+    password: string,
+    _isPhone: boolean = false,
+    totpCode?: string,
+  ): Promise<{ user?: AuthUser; twoFactorRequired?: boolean }> => {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email: identifier, password, ...(totpCode ? { totpCode } : {}) }),
+    });
+    const data = await res.json().catch(() => ({}));
+    // 2FA talab qilinadi (200, sessiya yo'q) — client TOTP so'raydi.
+    if (res.ok && data.twoFactorRequired) return { twoFactorRequired: true };
+    if (!res.ok) {
+      const err = new Error(data?.error || `Request failed (${res.status})`);
+      (err as Error & { twoFactorRequired?: boolean }).twoFactorRequired = data?.twoFactorRequired;
+      throw err;
+    }
     setUser(data.user);
     setSession({ user: data.user });
-    return data;
+    return { user: data.user };
   };
 
   // Sign Out

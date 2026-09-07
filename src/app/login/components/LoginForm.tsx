@@ -56,6 +56,8 @@ const LoginForm = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [twoFactorRequired, setTwoFactorRequired] = useState(false);
+  const [totpCode, setTotpCode] = useState('');
 
   useEffect(() => {
     setIsHydrated(true);
@@ -125,7 +127,19 @@ const LoginForm = () => {
 
     try {
       const identifier = authMethod === 'email' ? formData.email : formData.phone;
-      const result = await signIn(identifier, formData.password, authMethod === 'phone');
+      const result = await signIn(
+        identifier,
+        formData.password,
+        authMethod === 'phone',
+        twoFactorRequired ? totpCode : undefined,
+      );
+
+      // 2FA yoqilgan — TOTP kodini so'raymiz (parol to'g'ri, lekin kod kerak).
+      if (result?.twoFactorRequired) {
+        setTwoFactorRequired(true);
+        setIsLoading(false);
+        return;
+      }
 
       // signIn returns { user: { id, email, fullName, role, avatarUrl } } from JWT API
       const role = result?.user?.role;
@@ -338,6 +352,26 @@ const LoginForm = () => {
               </p>
             )}
           </div>
+
+          {/* 2FA kodi (yoqilgan bo'lsa) */}
+          {twoFactorRequired && (
+            <div>
+              <label htmlFor="login-totp" className="block text-sm font-medium mb-1">
+                {t('profile.twoFactorCodeLabel')}
+              </label>
+              <input
+                id="login-totp"
+                type="text"
+                inputMode="numeric"
+                autoFocus
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.trim())}
+                placeholder={t('profile.enter2faCode')}
+                disabled={isLoading}
+                className="w-full px-3 py-3 border border-border rounded-md text-sm tracking-widest font-mono bg-card focus:outline-none focus:ring-2 focus:ring-primary/40"
+              />
+            </div>
+          )}
 
           {/* Submit Button */}
           <button

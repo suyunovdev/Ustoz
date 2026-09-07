@@ -20,6 +20,7 @@ export interface ProfileDTO {
   deletionReason: string | null;
   createdAt: string;
   lastLoginAt: string | null;
+  twoFactorEnabled: boolean;
 }
 
 export interface ProfileOverviewDTO {

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { signToken, createSessionCookie } from '@/lib/auth';
+import { createSession } from '@/lib/services/session.service';
+import { verifyTwoFactorCode } from '@/lib/services/twofa.service';
 import { checkRateLimit } from '@/lib/rateLimit';
 
 // Brute force: har (ip+email) uchun 5 muvaffaqiyatsiz urinish / 15 daqiqa.
@@ -69,11 +71,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 2FA — yoqilgan bo'lsa TOTP yoki zaxira kod talab qilinadi (parol to'g'ri bo'lsa ham).
+    if (user.totpEnabled) {
+      const totpCode = typeof body.totpCode === 'string' ? body.totpCode : '';
+      if (!totpCode) {
+        return NextResponse.json({ twoFactorRequired: true }, { status: 200 });
+      }
+      const ok = await verifyTwoFactorCode(
+        { id: user.id, totpSecret: user.totpSecret, totpBackupCodes: user.totpBackupCodes },
+        totpCode,
+      );
+      if (!ok) {
+        return NextResponse.json(
+          { error: "Noto'g'ri 2FA kodi", twoFactorRequired: true },
+          { status: 401 },
+        );
+      }
+    }
+
+    const jti = await createSession(user.id, req);
     const token = await signToken({
       sub: user.id,
       email: user.email,
       role: user.role,
       tokenVersion: user.tokenVersion,
+      jti,
     });
 
     const response = NextResponse.json({

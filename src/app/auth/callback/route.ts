@@ -13,6 +13,7 @@ import { prisma } from '@/lib/prisma';
 import { signToken, COOKIE_NAME } from '@/lib/auth';
 import { normalizeEmail } from '@/lib/validation';
 import { attributeOnSignup } from '@/lib/services/referral.service';
+import { createSession } from '@/lib/services/session.service';
 import {
   isGoogleOAuthConfigured,
   exchangeCodeForToken,
@@ -101,11 +102,13 @@ export async function GET(req: NextRequest) {
         .catch(() => {});
     }
 
+    const jti = await createSession(user.id, req);
     const token = await signToken({
       sub: user.id,
       email: user.email,
       role: user.role,
       tokenVersion: user.tokenVersion,
+      jti,
     });
 
     // MUHIM: sessiya VA state cookie'larni BITTA API (res.cookies) orqali qo'yamiz.

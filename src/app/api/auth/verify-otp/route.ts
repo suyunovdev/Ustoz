@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { signToken, createSessionCookie } from '@/lib/auth';
 import bcrypt from 'bcryptjs';
 import { attributeOnSignup } from '@/lib/services/referral.service';
+import { createSession } from '@/lib/services/session.service';
 import { isEmail, validatePassword } from '@/lib/validation';
 
 export async function POST(req: NextRequest) {
@@ -113,7 +114,8 @@ export async function POST(req: NextRequest) {
       // OTP iste'mol qilindi — o'chiramiz (qayta ishlatib bo'lmaydi).
       await prisma.otpCode.delete({ where: { email: normalizedEmail } }).catch(() => {});
 
-      const token = await signToken({ sub: user.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion });
+      const jti = await createSession(user.id, req);
+      const token = await signToken({ sub: user.id, email: user.email, role: user.role, tokenVersion: user.tokenVersion, jti });
       const response = NextResponse.json({
         success: true,
         user: {

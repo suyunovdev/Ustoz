@@ -68,9 +68,12 @@ function validateUrl(value: string): string {
 // ==================== READ ====================
 
 export async function getMyProfile(userId: string) {
-  const profile = await userProfileRepo.getFullProfile(userId);
+  const [profile, user] = await Promise.all([
+    userProfileRepo.getFullProfile(userId),
+    prisma.user.findUnique({ where: { id: userId }, select: { totpEnabled: true } }),
+  ]);
   if (!profile) throw new ProfileNotFoundError();
-  return profile;
+  return { ...profile, twoFactorEnabled: user?.totpEnabled ?? false };
 }
 
 // ==================== UPDATE ====================
