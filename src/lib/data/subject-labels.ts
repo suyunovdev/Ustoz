@@ -108,11 +108,6 @@ export const SUBJECT_LABELS: Record<string, string> = {
   early_development: 'Erta rivojlanish',
   parenting: 'Ota-onalik',
   child_psychology: 'Bola psixologiyasi',
-  // Din
-  religion_islam: 'Islom asoslari',
-  quran_studies: "Qur'on ilmlari",
-  arabic_studies: 'Arab tili (diniy)',
-  religion_general: 'Din',
   // Biznes
   business_management: 'Biznes boshqaruvi',
   entrepreneurship: 'Tadbirkorlik',

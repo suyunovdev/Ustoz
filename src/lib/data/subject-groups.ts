@@ -38,7 +38,6 @@ const GROUP_DEFS: ReadonlyArray<{ key: string; values: readonly string[] }> = [
   { key: 'marketplace.groupBusinessManagement', values: ['business_management', 'entrepreneurship', 'marketing', 'finance', 'accounting', 'logistics', 'project_management', 'hr_management'] },
   { key: 'marketplace.groupPersonalDevelopment', values: ['leadership', 'public_speaking', 'time_management', 'sales', 'negotiation', 'personal_development'] },
   { key: 'marketplace.groupChildrenParents', values: ['early_development', 'parenting', 'child_psychology'] },
-  { key: 'marketplace.groupReligionSpirituality', values: ['religion_islam', 'quran_studies', 'arabic_studies', 'religion_general'] },
   { key: 'marketplace.groupOther', values: ['other'] },
 ];
 

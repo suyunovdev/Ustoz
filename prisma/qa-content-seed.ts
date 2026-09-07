@@ -139,12 +139,6 @@ const COURSES: Spec[] = [
   { slug: 'bolalar', title: 'Bola psixologiyasi', desc: 'Bola xulqi, his-tuyg\'ulari va rivojlanish bosqichlari.', subject: 'child_psychology', label: 'bola psixologiyasi', price: 129000, level: 'beginner' },
   { slug: 'bolalar', title: 'Ijobiy tarbiya usullari', desc: 'Jazolamasdan chegara qo\'yish va sog\'lom munosabat.', subject: 'parenting', label: 'ijobiy tarbiya', price: 99000, level: 'beginner' },
 
-  // ── Din va Ma'naviyat ──
-  { slug: 'din-manaviyat', title: 'Ma\'naviyat asoslari va axloq', desc: 'Umuminsoniy qadriyatlar, axloq va ma\'naviy kamolot asoslari.', subject: 'religion_general', label: 'ma\'naviyat', price: 0, level: 'beginner' },
-  { slug: 'din-manaviyat', title: 'Islom asoslari', desc: 'Iymon, ibodat va axloq — islom dinining asoslari.', subject: 'religion_islam', label: 'islom asoslari', price: 0, level: 'beginner' },
-  { slug: 'din-manaviyat', title: 'Qur\'on tajvidi asoslari', desc: 'To\'g\'ri o\'qish qoidalari va harflar makhraji.', subject: 'quran_studies', label: 'tajvid', price: 0, level: 'beginner' },
-  { slug: 'din-manaviyat', title: 'Arab tili (diniy matnlar)', desc: 'Diniy matnlarni tushunish uchun arab tili asoslari.', subject: 'arabic_studies', label: 'diniy arab tili', price: 99000, level: 'beginner' },
-
   // ── Gumanitar fanlar ──
   { slug: 'gumanitar', title: 'O\'zbekiston tarixi va gumanitar fanlar', desc: 'Tarix, geografiya va adabiyot — vatanimiz va dunyo merosi bilan tanishuv.', subject: 'history', label: 'tarix', price: 129000, level: 'beginner' },
   { slug: 'gumanitar', title: 'Jahon geografiyasi', desc: 'Materiklar, iqlim va davlatlar — geografiya asoslari.', subject: 'geography', label: 'geografiya', price: 99000, level: 'beginner' },

@@ -139,13 +139,6 @@ const categories: Array<{
     orderIndex: 17,
   },
   {
-    name: 'Din va Ma\'naviyat',
-    slug: 'din-manaviyat',
-    iconName: 'BookOpenIcon',
-    description: 'Islom asoslari, Qur\'on, arab tili (diniy), umumiy ma\'naviyat',
-    orderIndex: 18,
-  },
-  {
     name: 'Gumanitar fanlar',
     slug: 'gumanitar',
     iconName: 'AcademicCapIcon',
