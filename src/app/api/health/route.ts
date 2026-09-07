@@ -13,12 +13,22 @@ export async function GET() {
     environment: process.env.NODE_ENV || 'development',
   };
 
-  // Database ulanishini tekshirish
-  try {
-    await prisma.$queryRaw`SELECT 1`;
+  // Database ulanishini tekshirish — cold-start'da birinchi ulanish transient
+  // muvaffaqiyatsiz bo'lishi mumkin, shuning uchun bir marta qayta urinamiz
+  // (aks holda bitta transient xato → 503 va noto'g'ri "degraded" ko'rsatardi).
+  let dbOk = false;
+  for (let attempt = 0; attempt < 2 && !dbOk; attempt++) {
+    try {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, 250));
+      await prisma.$queryRaw`SELECT 1`;
+      dbOk = true;
+    } catch (err) {
+      checks.database = { status: 'error', message: String(err) };
+    }
+  }
+  if (dbOk) {
     checks.database = { status: 'ok' };
-  } catch (err) {
-    checks.database = { status: 'error', message: String(err) };
+  } else {
     checks.status = 'degraded';
   }
 

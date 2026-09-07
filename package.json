@@ -56,7 +56,8 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "analyze": "ANALYZE=true next build",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "seed:e2e": "tsx prisma/e2e-seed.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

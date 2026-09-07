@@ -43,6 +43,7 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
     statusFilter === 'all' ? undefined : statusFilter,
   );
   const [grading, setGrading] = useState<SubmissionDTO | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (error)
     return (
@@ -113,20 +114,56 @@ export default function AssignmentDetailClient({ assignmentId }: Props) {
             )}
           </div>
         </div>
-        <button
-          type="button"
-          onClick={handlePublishToggle}
-          disabled={updateMut.isPending}
-          className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50 ${
-            isPublished
-              ? 'bg-warning text-warning-foreground'
-              : 'bg-success text-success-foreground'
-          }`}
-        >
-          <Icon name={isPublished ? 'EyeSlashIcon' : 'EyeIcon'} size={14} />
-          {isPublished ? t('teacher.assignmentDetailUnpublish') : t('teacher.assignmentDetailPublish')}
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setEditOpen(true)}
+            className="px-3 py-2 border border-border rounded-md hover:bg-muted text-sm font-medium flex items-center gap-2"
+          >
+            <Icon name="PencilSquareIcon" size={14} />
+            {t('teacher.assignmentDetailEdit')}
+          </button>
+          <button
+            type="button"
+            onClick={handlePublishToggle}
+            disabled={updateMut.isPending}
+            className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 disabled:opacity-50 ${
+              isPublished
+                ? 'bg-warning text-warning-foreground'
+                : 'bg-success text-success-foreground'
+            }`}
+          >
+            <Icon name={isPublished ? 'EyeSlashIcon' : 'EyeIcon'} size={14} />
+            {isPublished ? t('teacher.assignmentDetailUnpublish') : t('teacher.assignmentDetailPublish')}
+          </button>
+        </div>
       </div>
+
+      {editOpen && (
+        <EditAssignmentModal
+          initial={{
+            title: a.title,
+            description: a.description ?? '',
+            instructions: a.instructions ?? '',
+            dueDate: a.dueDate,
+            maxScore: a.maxScore,
+            submissionType: a.submissionType,
+            allowLateSubmission: a.allowLateSubmission,
+            latePenaltyPercent: a.latePenaltyPercent,
+          }}
+          isLoading={updateMut.isPending}
+          onClose={() => setEditOpen(false)}
+          onSubmit={(patch) =>
+            updateMut.mutate(patch, {
+              onSuccess: () => {
+                toast.success(t('teacher.assignmentDetailSaved'));
+                setEditOpen(false);
+              },
+              onError: (err) => toast.error(err.message),
+            })
+          }
+        />
+      )}
 
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-lg font-medium">{t('teacher.assignmentDetailSubmissions')} ({submissions.length})</h2>
@@ -402,6 +439,165 @@ function GradeModal({
             className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
           />
         </div>
+      </div>
+    </Modal>
+  );
+}
+
+// Topshiriq metadatasini tahrirlash — updateAssignment API bor edi, faqat UI yo'q edi.
+// ISO <-> datetime-local o'giruvlari (brauzer mahalliy vaqti; o'qituvchi Toshkent TZ).
+function isoToLocalInput(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+interface EditAssignmentInitial {
+  title: string;
+  description: string;
+  instructions: string;
+  dueDate: string;
+  maxScore: number;
+  submissionType: string;
+  allowLateSubmission: boolean;
+  latePenaltyPercent: number;
+}
+
+function EditAssignmentModal({
+  initial,
+  isLoading,
+  onSubmit,
+  onClose,
+}: {
+  initial: EditAssignmentInitial;
+  isLoading: boolean;
+  onSubmit: (patch: Record<string, unknown>) => void;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const [form, setForm] = useState({
+    ...initial,
+    dueLocal: isoToLocalInput(initial.dueDate),
+  });
+
+  const handleSubmit = () => {
+    if (form.title.trim().length < 2) return toast.error(t('teacher.assignmentTitleMin'));
+    if (!form.dueLocal) return toast.error(t('teacher.assignmentDueRequired'));
+    const dueIso = new Date(form.dueLocal).toISOString();
+    if (Number.isNaN(new Date(dueIso).getTime())) return toast.error(t('teacher.assignmentDueInvalid'));
+    if (!Number.isInteger(form.maxScore) || form.maxScore < 1) return toast.error(t('teacher.assignmentMaxInvalid'));
+    onSubmit({
+      title: form.title.trim(),
+      description: form.description.trim() || null,
+      instructions: form.instructions.trim() || null,
+      dueDate: dueIso,
+      maxScore: form.maxScore,
+      submissionType: form.submissionType,
+      allowLateSubmission: form.allowLateSubmission,
+      latePenaltyPercent: form.allowLateSubmission ? form.latePenaltyPercent : 0,
+    });
+  };
+
+  return (
+    <Modal
+      open
+      onClose={() => !isLoading && onClose()}
+      title={t('teacher.assignmentDetailEdit')}
+      footer={
+        <div className="flex w-full items-center justify-end gap-2">
+          <Button variant="ghost" size="sm" onClick={onClose} disabled={isLoading}>
+            {t('teacher.gradeModalCancel')}
+          </Button>
+          <Button variant="primary" size="sm" loading={isLoading} onClick={handleSubmit}>
+            {t('teacher.assignmentDetailSave')}
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('teacher.assignmentTitleLabel')}</label>
+          <input
+            type="text"
+            value={form.title}
+            onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
+            className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('teacher.assignmentDescLabel')}</label>
+          <textarea
+            value={form.description}
+            onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+            rows={2}
+            className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background resize-none"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('teacher.assignmentInstructionsLabel')}</label>
+          <textarea
+            value={form.instructions}
+            onChange={(e) => setForm((f) => ({ ...f, instructions: e.target.value }))}
+            rows={3}
+            className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background resize-none"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('teacher.assignmentDueLabel')}</label>
+            <input
+              type="datetime-local"
+              value={form.dueLocal}
+              onChange={(e) => setForm((f) => ({ ...f, dueLocal: e.target.value }))}
+              className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('teacher.assignmentMaxLabel')}</label>
+            <input
+              type="number"
+              min={1}
+              value={form.maxScore}
+              onChange={(e) => setForm((f) => ({ ...f, maxScore: Number(e.target.value) || 0 }))}
+              className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+            />
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">{t('teacher.assignmentTypeLabel')}</label>
+          <select
+            value={form.submissionType}
+            onChange={(e) => setForm((f) => ({ ...f, submissionType: e.target.value }))}
+            className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+          >
+            <option value="any">{t('teacher.assignmentDetailAnyType')}</option>
+            <option value="text">text</option>
+            <option value="file">file</option>
+            <option value="url">url</option>
+          </select>
+        </div>
+        <label className="flex items-center gap-2 text-sm cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.allowLateSubmission}
+            onChange={(e) => setForm((f) => ({ ...f, allowLateSubmission: e.target.checked }))}
+          />
+          {t('teacher.assignmentLateLabel')}
+        </label>
+        {form.allowLateSubmission && (
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('teacher.assignmentPenaltyLabel')}</label>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={form.latePenaltyPercent}
+              onChange={(e) => setForm((f) => ({ ...f, latePenaltyPercent: Number(e.target.value) || 0 }))}
+              className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
+            />
+          </div>
+        )}
       </div>
     </Modal>
   );

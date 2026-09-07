@@ -36,6 +36,7 @@ export default function GroupDetailClient({ groupId }: Props) {
   const broadcastMut = useBroadcastToGroupMutation(groupId);
 
   const [addOpen, setAddOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [broadcastOpen, setBroadcastOpen] = useState(false);
   const [pendingRemove, setPendingRemove] = useState<GroupMemberDTO | null>(null);
 
@@ -114,6 +115,13 @@ export default function GroupDetailClient({ groupId }: Props) {
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setEditOpen(true)}
+              className="px-3 py-2 border border-border rounded-md hover:bg-muted text-sm flex items-center gap-2"
+            >
+              <Icon name="PencilSquareIcon" size={14} />
+              {t('teacher.groupDetailEdit')}
+            </button>
             <button
               onClick={() => setBroadcastOpen(true)}
               disabled={memberList.length === 0}
@@ -207,6 +215,31 @@ export default function GroupDetailClient({ groupId }: Props) {
           existingMemberIds={memberList.map((m) => m.studentId)}
           maxSlots={g.maxMembers - g.memberCount}
           onClose={() => setAddOpen(false)}
+        />
+      )}
+
+      {editOpen && (
+        <EditGroupModal
+          initial={{
+            name: g.name,
+            description: g.description ?? '',
+            maxMembers: g.maxMembers,
+            meetingUrl: g.meetingUrl ?? '',
+            scheduleNote: g.scheduleNote ?? '',
+            color: g.color,
+          }}
+          minMembers={g.memberCount}
+          isLoading={updateMut.isPending}
+          onClose={() => setEditOpen(false)}
+          onSubmit={(patch) =>
+            updateMut.mutate(patch, {
+              onSuccess: () => {
+                toast.success(t('teacher.groupDetailSaved'));
+                setEditOpen(false);
+              },
+              onError: (err) => toast.error(err.message),
+            })
+          }
         />
       )}
 
@@ -480,6 +513,162 @@ function BroadcastModal({
               <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             )}
             {t('teacher.groupBroadcastSend')}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+// Guruh metadatasini tahrirlash — updateGroup API allaqachon bor edi, faqat UI yo'q edi
+const EDIT_COLORS = ['blue', 'green', 'red', 'yellow', 'purple', 'orange', 'pink'] as const;
+
+interface EditGroupInitial {
+  name: string;
+  description: string;
+  maxMembers: number;
+  meetingUrl: string;
+  scheduleNote: string;
+  color: string;
+}
+
+function EditGroupModal({
+  initial,
+  minMembers,
+  isLoading,
+  onSubmit,
+  onClose,
+}: {
+  initial: EditGroupInitial;
+  minMembers: number;
+  isLoading: boolean;
+  onSubmit: (patch: Record<string, unknown>) => void;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const [form, setForm] = useState<EditGroupInitial>(initial);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.name.trim().length < 2) return toast.error(t('teacher.groupNameMin'));
+    if (form.maxMembers < Math.max(1, minMembers)) {
+      return toast.error(t('teacher.groupMaxBelowMembers', { count: minMembers }));
+    }
+    if (form.meetingUrl.trim() && !/^https?:\/\//.test(form.meetingUrl.trim())) {
+      return toast.error(t('teacher.groupMeetingUrlInvalid'));
+    }
+    onSubmit({
+      name: form.name.trim(),
+      description: form.description.trim() || null,
+      maxMembers: form.maxMembers,
+      meetingUrl: form.meetingUrl.trim() || null,
+      scheduleNote: form.scheduleNote.trim() || null,
+      color: form.color,
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      onClick={() => !isLoading && onClose()}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="bg-card rounded-md shadow-warm-lg max-w-md w-full p-6 max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-heading font-semibold">{t('teacher.groupDetailEdit')}</h3>
+          <button type="button" onClick={onClose} className="p-1 hover:bg-muted rounded">
+            <Icon name="XMarkIcon" size={20} />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('teacher.groupNameLabel')}</label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+              required
+              className="w-full px-3 py-2 border border-border rounded-md text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('teacher.groupDescLabel')}</label>
+            <textarea
+              value={form.description}
+              onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+              rows={2}
+              className="w-full px-3 py-2 border border-border rounded-md text-sm resize-none"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('teacher.groupMaxLabel')}</label>
+              <input
+                type="number"
+                min={Math.max(1, minMembers)}
+                value={form.maxMembers}
+                onChange={(e) => setForm((f) => ({ ...f, maxMembers: Number(e.target.value) || 0 }))}
+                className="w-full px-3 py-2 border border-border rounded-md text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">{t('teacher.groupColorLabel')}</label>
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {EDIT_COLORS.map((col) => {
+                  const cls = COLOR_CLASS[col];
+                  return (
+                    <button
+                      key={col}
+                      type="button"
+                      onClick={() => setForm((f) => ({ ...f, color: col }))}
+                      aria-label={col}
+                      className={`w-6 h-6 rounded-full ${cls.bg} ${
+                        form.color === col ? 'ring-2 ring-offset-1 ring-foreground' : ''
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('teacher.groupMeetingLabel')}</label>
+            <input
+              type="url"
+              value={form.meetingUrl}
+              onChange={(e) => setForm((f) => ({ ...f, meetingUrl: e.target.value }))}
+              placeholder="https://..."
+              className="w-full px-3 py-2 border border-border rounded-md text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">{t('teacher.groupScheduleLabel')}</label>
+            <input
+              type="text"
+              value={form.scheduleNote}
+              onChange={(e) => setForm((f) => ({ ...f, scheduleNote: e.target.value }))}
+              className="w-full px-3 py-2 border border-border rounded-md text-sm"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-5">
+          <button type="button" onClick={onClose} className="px-4 py-2 border border-border rounded-md text-sm">
+            {t('teacher.groupBroadcastCancel')}
+          </button>
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm flex items-center gap-2 disabled:opacity-50"
+          >
+            {isLoading && (
+              <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            )}
+            {t('teacher.groupDetailSave')}
           </button>
         </div>
       </form>

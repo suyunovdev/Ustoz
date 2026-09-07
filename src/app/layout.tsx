@@ -32,6 +32,7 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 import { Toaster } from '@/components/common/Toaster';
 import CookieConsent from '@/components/common/CookieConsent';
 import Analytics from '@/components/common/Analytics';
+import ErrorReporter from '@/components/common/ErrorReporter';
 import { CookieConsentProvider } from '@/contexts/CookieConsentContext';
 import { getServerLocale } from '@/lib/i18n/server';
 
@@ -128,6 +129,7 @@ export default async function RootLayout({
                 <Toaster />
                 <CookieConsent />
                 <Analytics />
+                <ErrorReporter />
               </QueryProvider>
             </CookieConsentProvider>
           </I18nProvider>

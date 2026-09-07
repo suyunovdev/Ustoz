@@ -45,3 +45,7 @@ jest-test-results.json
 turbo/
 /src/generated/prisma
 .vercel
+
+# Playwright test artefaktlari
+test-results/
+playwright-report/

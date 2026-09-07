@@ -85,8 +85,15 @@ test.describe('Auth flow', () => {
     const logoutRes = await request.post('/api/auth/logout');
     expect(logoutRes.ok()).toBeTruthy();
 
-    // Me — endi 401 bo'lishi kerak
+    // Me — chiqilgandan keyin foydalanuvchi null bo'lishi kerak. /me kontrakti:
+    // autentifikatsiyasiz 200 {user:null} qaytaradi (401 emas) — sessiya yo'qligini
+    // klient try/catchsiz tekshira olishi uchun.
     const meRes = await request.get('/api/auth/me');
-    expect(meRes.status()).toBe(401);
+    if (meRes.ok()) {
+      const data = await meRes.json();
+      expect(data.user).toBeNull();
+    } else {
+      expect(meRes.status()).toBe(401);
+    }
   });
 });

@@ -85,8 +85,30 @@ async function syncOneTopic(
     .filter((q): q is AddQuestionInput => q !== null);
   const droppedInvalid = (input.questions?.length || 0) - valid.length;
 
-  // Replace: shu mavzuning eski testlarini o'chiramiz (cascade savollarni ham).
-  await prisma.courseTest.deleteMany({ where: { topicId: input.topicId, teacherId } });
+  // XAVFSIZLIK: shu mavzuning mavjud testlarini tekshiramiz. Agar testda TALABA
+  // URINISHLARI bo'lsa — uni O'CHIRMAYMIZ (deleteMany cascade urinish tarixini ham
+  // yo'q qilardi). Bunday holatda sehrgardan qayta yozishni o'tkazib yuboramiz va
+  // ogohlantiramiz. Faqat urinishsiz testlar almashtiriladi.
+  const existing = await prisma.courseTest.findMany({
+    where: { topicId: input.topicId, teacherId },
+    select: { id: true, _count: { select: { attempts: true } } },
+  });
+  const hasAttempts = existing.some((e) => e._count.attempts > 0);
+  if (hasAttempts) {
+    await prisma.courseTopic.update({ where: { id: input.topicId }, data: { hasQuiz: true } });
+    return {
+      topicId: input.topicId,
+      savedCount: 0,
+      hasQuiz: true,
+      warning: `"${input.topicTitle}" — mavjud testda talaba urinishlari bor, saqlab qolindi (sehrgardan qayta yozilmadi)`,
+    };
+  }
+  // Urinishsiz eski testlarni almashtiramiz (cascade savollar ham)
+  if (existing.length > 0) {
+    await prisma.courseTest.deleteMany({
+      where: { id: { in: existing.map((e) => e.id) } },
+    });
+  }
 
   const hasQuiz = valid.length >= MIN_PUBLISHABLE;
 
