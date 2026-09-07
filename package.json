@@ -84,6 +84,7 @@
     "isomorphic-dompurify": "^3.19.0",
     "jose": "^6.2.3",
     "jszip": "^3.10.1",
+    "marked": "^18.0.11",
     "next": "^15.1.11",
     "nodemailer": "^9.0.3",
     "pg": "^8.21.0",

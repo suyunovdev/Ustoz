@@ -88,7 +88,9 @@ const StudentDashboardInteractive = () => {
   };
 
   // Activity heatmap — responsive days
-  const [heatmapDays, setHeatmapDays] = useState(90);
+  const [heatmapDays, setHeatmapDays] = useState(() =>
+    typeof window === 'undefined' ? 90 : window.innerWidth < 640 ? 30 : window.innerWidth < 1024 ? 60 : 90,
+  );
   const activityQuery = useActivityCalendar(heatmapDays, stats.enrolledCount > 0);
   const activities = activityQuery.data?.activities ?? [];
   const activityLoading = activityQuery.isLoading;
@@ -134,17 +136,22 @@ const StudentDashboardInteractive = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // Heatmap responsive: mobile 30 / tablet 60 / desktop 90 kun
+  // Heatmap responsive: mobile 30 / tablet 60 / desktop 90 kun.
+  // Debounce + faqat qiymat o'zgarganda set — aks holda har resize'da qayta so'rov
+  // va sarlavha "flicker" bo'lardi (initial 90 → tuzatish 60/30). Boshlang'ich qiymat
+  // useState lazy init'da to'g'ri olinadi (pastda), shuning uchun ortiqcha refetch yo'q.
   useEffect(() => {
-    const updateDays = () => {
-      const w = window.innerWidth;
-      if (w < 640) setHeatmapDays(30);
-      else if (w < 1024) setHeatmapDays(60);
-      else setHeatmapDays(90);
+    let timer: ReturnType<typeof setTimeout>;
+    const compute = (w: number) => (w < 640 ? 30 : w < 1024 ? 60 : 90);
+    const onResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setHeatmapDays((prev) => {
+        const next = compute(window.innerWidth);
+        return next === prev ? prev : next;
+      }), 250);
     };
-    updateDays();
-    window.addEventListener('resize', updateDays);
-    return () => window.removeEventListener('resize', updateDays);
+    window.addEventListener('resize', onResize);
+    return () => { clearTimeout(timer); window.removeEventListener('resize', onResize); };
   }, []);
 
   const handleCertificateDownload = (certificateId: string) => {

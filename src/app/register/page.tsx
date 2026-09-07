@@ -66,9 +66,9 @@ export default async function RegisterPage() {
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground mb-3">
             <Link href="/help" className="hover:text-primary transition-smooth">{t('auth.helpCenter')}</Link>
             <span className="opacity-40">·</span>
-            <Link href="/help" className="hover:text-primary transition-smooth">{t('auth.termsModalTitle')}</Link>
+            <Link href="/terms" className="hover:text-primary transition-smooth">{t('auth.termsModalTitle')}</Link>
             <span className="opacity-40">·</span>
-            <Link href="/help" className="hover:text-primary transition-smooth">{t('auth.privacyModalTitle')}</Link>
+            <Link href="/privacy" className="hover:text-primary transition-smooth">{t('auth.privacyModalTitle')}</Link>
           </div>
           <p className="text-center text-sm text-muted-foreground">
             &copy; {new Date().getFullYear()} {t('auth.copyright')}

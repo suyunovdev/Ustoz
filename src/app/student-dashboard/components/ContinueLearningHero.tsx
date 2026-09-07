@@ -4,6 +4,7 @@ import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatMinutes } from '@/lib/i18n/duration';
 import type { DashboardEnrollment } from '@/types/dashboard.types';
 
 interface ContinueLearningHeroProps {
@@ -14,11 +15,11 @@ const ContinueLearningHero = ({ enrollment }: ContinueLearningHeroProps) => {
   const { t } = useI18n();
   const { course, progress, nextTopic, completedTopicsCount, totalTopics } = enrollment;
 
-  // Qolgan vaqt taxmini: har topic = totalDuration (soat) * 60 / totalTopics → daqiqa
+  // Qolgan vaqt taxmini: totalDuration DAQIQADA saqlanadi (soat emas!). Ilgari *60
+  // qilib xato "55 soat" ko'rsatilardi. Endi to'g'ri: daqiqa/topic × qolgan topiclar.
   const remainingTopics = Math.max(0, totalTopics - completedTopicsCount);
-  const minutesPerTopic =
-    totalTopics > 0 ? Math.round((course.totalDuration * 60) / totalTopics) : 0;
-  const remainingMinutes = remainingTopics * minutesPerTopic;
+  const minutesPerTopic = totalTopics > 0 ? course.totalDuration / totalTopics : 0;
+  const remainingMinutes = Math.round(remainingTopics * minutesPerTopic);
 
   const isNotStarted = progress === 0;
   const href = nextTopic
@@ -100,9 +101,7 @@ const ContinueLearningHero = ({ enrollment }: ContinueLearningHeroProps) => {
                     <span className="text-muted-foreground/40">·</span>
                     <span className="flex items-center gap-1">
                       <Icon name="ClockIcon" size={14} />
-                      {remainingMinutes < 60
-                        ? `${remainingMinutes} ${t('student.minLeft')}`
-                        : `${Math.round(remainingMinutes / 60)} ${t('student.hoursLeft')}`}
+                      {t('student.timeLeft', { time: formatMinutes(remainingMinutes, t) })}
                     </span>
                   </>
                 )}

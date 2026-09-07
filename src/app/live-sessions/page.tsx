@@ -6,7 +6,7 @@ import { getServerT } from '@/lib/i18n/server';
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getServerT();
   return {
-    title: `${t('live.title')} | Ustoz`,
+    title: t('live.title'),
     description: t('live.subtitle'),
     robots: { index: false, follow: false },
   };

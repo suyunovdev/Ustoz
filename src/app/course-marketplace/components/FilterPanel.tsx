@@ -88,6 +88,9 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
       gradeLevel: ''
     };
     setLocalFilters(resetFilters);
+    // Tozalash darhol qo'llansin — foydalanuvchi yana "Qo'llash" bosishi shart emas
+    // (aks holda tugma bosilgach hech narsa o'zgarmagandek tuyuladi).
+    onFilterChange(resetFilters);
   };
 
   return (
@@ -135,6 +138,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
                   <span className="text-sm text-muted-foreground w-12">{t('marketplace.min')}:</span>
                   <input
                     type="number"
+                    aria-label={`${t('marketplace.min')} ${t('marketplace.price')}`}
                     value={localFilters.priceRange[0]}
                     onChange={(e) => handlePriceChange(0, Number(e.target.value))}
                     className="flex-1 px-3 py-1 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -145,6 +149,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
                   <span className="text-sm text-muted-foreground w-12">{t('marketplace.max')}:</span>
                   <input
                     type="number"
+                    aria-label={`${t('marketplace.max')} ${t('marketplace.price')}`}
                     value={localFilters.priceRange[1]}
                     onChange={(e) => handlePriceChange(1, Number(e.target.value))}
                     className="flex-1 px-3 py-1 bg-background border border-input rounded-md text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
@@ -156,6 +161,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
                   filtrlab tashlardi). 0–5 mln so'm, 50 ming qadam. */}
               <input
                 type="range"
+                aria-label={t('marketplace.priceRange')}
                 min="0"
                 max="5000000"
                 step="50000"
@@ -282,6 +288,7 @@ const FilterPanel = ({ filters, onFilterChange, isOpen, onClose }: FilterPanelPr
             <div className="flex items-center space-x-2">
               <input
                 type="range"
+                aria-label={t('misc.minimumRating')}
                 min="0"
                 max="5"
                 step="0.5"

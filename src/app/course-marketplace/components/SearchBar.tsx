@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 
@@ -15,9 +15,18 @@ const SearchBar = ({ onSearch, placeholder, defaultValue = '' }: SearchBarProps)
   const resolvedPlaceholder = placeholder || t('marketplace.searchCourses');
   const [query, setQuery] = useState(defaultValue);
 
+  // Jonli qidiruv — yozishdan 300ms keyin filtrlaydi (har harfda emas). Enter bilan
+  // darhol ham ishlaydi. onSearch ref orqali — effekt qaramligiga tushmaydi.
+  const onSearchRef = useRef(onSearch);
+  onSearchRef.current = onSearch;
+  useEffect(() => {
+    const id = setTimeout(() => onSearchRef.current(query.trim()), 300);
+    return () => clearTimeout(id);
+  }, [query]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch(query);
+    onSearch(query.trim());
   };
 
   const handleClear = () => {

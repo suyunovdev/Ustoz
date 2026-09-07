@@ -363,7 +363,7 @@ function PersonalTab({ profile }: { profile: ProfileDTO }) {
 
       <div>
         <label htmlFor="pf-bio" className="block text-sm font-medium mb-1">{t('profile.bio')}</label>
-        <textarea id="pf-bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={1000} placeholder={t('profile.bioPlaceholder')} className={`${inputCls} resize-y`} />
+        <textarea id="pf-bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={1000} placeholder={isTeacher ? t('profile.bioPlaceholder') : t('profile.bioPlaceholderStudent')} className={`${inputCls} resize-y`} />
         <p className="text-xs text-muted-foreground mt-1">{bio.length} / 1000</p>
       </div>
 

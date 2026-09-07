@@ -16,6 +16,9 @@ import { AUTH_FORM_REMAP, AUTH_INK, AUTH_PAPER, AUTH_GOLD, AUTH_INK_TEXT } from 
 import { useI18n } from '@/contexts/I18nContext';
 
 const WISHLIST_KEY = 'ustoz_marketplace_wishlist';
+// Bir sahifada ko'rsatiladigan kurslar soni — qolganini "Ko'proq" bilan yuklaymiz
+// (barcha 120 kursni bir vaqtda render qilish sekin va uzun skroll).
+const PAGE_SIZE = 12;
 
 interface Course {
   id: string;
@@ -72,6 +75,7 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
   const [wishlistedCourses, setWishlistedCourses] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<Category[]>([
     { id: 'all', name: t('courses.allCourses'), count: 0 },
@@ -268,6 +272,13 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
   };
 
   const filteredCourses = isHydrated ? filterCourses() : courses;
+  const visibleCourses = filteredCourses.slice(0, visibleCount);
+  const hasMore = filteredCourses.length > visibleCount;
+
+  // Filtr/qidiruv/saralash/kategoriya o'zgarsa — sahifani boshiga qaytaramiz
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [activeCategory, searchQuery, currentSort, filters]);
 
   if (!isHydrated) {
     return (
@@ -399,12 +410,29 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
                 </div>
               ) : (
                 <CourseGrid
-                  courses={filteredCourses}
+                  courses={visibleCourses}
                   onWishlistToggle={handleWishlistToggle}
                   wishlistedCourses={wishlistedCourses}
                 />
               )}
             </div>
+            )}
+
+            {!loadError && !isLoading && hasMore && (
+              <div className="flex justify-center pt-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((n) => n + PAGE_SIZE)}
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-primary text-primary-foreground font-medium hover:opacity-90 transition-smooth"
+                >
+                  <Icon name="ArrowDownIcon" size={18} />
+                  <span>
+                    {t('courses.loadMore', {
+                      count: Math.min(PAGE_SIZE, filteredCourses.length - visibleCount),
+                    })}
+                  </span>
+                </button>
+              </div>
             )}
           </div>
         </div>

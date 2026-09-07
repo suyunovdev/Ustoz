@@ -263,7 +263,8 @@
     "noCoursesFound": "No courses found",
     "tryOtherFilter": "Try different keywords or filters",
     "savedCount": "saved",
-    "allCourses": "All courses"
+    "allCourses": "All courses",
+    "loadMore": "Show {count} more"
   },
   "dashboard": {
     "welcome": "Welcome",
@@ -719,7 +720,9 @@
     "view": "View",
     "errorTitle": "An error occurred",
     "errorDesc": "The dashboard failed to load. Please try again.",
-    "retry": "Try again"
+    "retry": "Try again",
+    "durationMinutes": "{count} min",
+    "timeLeft": "{time} left"
   },
   "teacher": {
     "myCourses": "My Courses",
@@ -1446,7 +1449,8 @@
     "groupPersonalDevelopment": "Personal Development",
     "groupChildrenParents": "Children & Parents",
     "groupReligionSpirituality": "Religion & Spirituality",
-    "groupOther": "Other"
+    "groupOther": "Other",
+    "price": "Price"
   },
   "profile": {
     "editProfile": "Edit Profile",
@@ -1579,7 +1583,8 @@
     "twoFactorEnabled": "Two-factor auth enabled",
     "twoFactorDisabled": "Two-factor auth disabled",
     "backupCodes": "Backup codes — save these (if you lose your phone):",
-    "twoFactorCodeLabel": "Verification code"
+    "twoFactorCodeLabel": "Verification code",
+    "bioPlaceholderStudent": "A bit about yourself — interests, goals…"
   },
   "ui": {
     "profileSettings": "Profile Settings",
@@ -3190,7 +3195,9 @@
     "quizTitle": "Quiz",
     "quizDesc": "Interactive quiz-taking interface. Answer questions, track time and view your results.",
     "transactionsTitle": "Transaction History",
-    "transactionsDesc": "Full information about payment history and course purchases."
+    "transactionsDesc": "Full information about payment history and course purchases.",
+    "termsTitle": "Terms of Service",
+    "privacyTitle": "Privacy Policy"
   },
   "subscription": {
     "title": "Subscription",
@@ -3299,5 +3306,8 @@
     "minutesAgo": "{n} min ago",
     "hoursAgo": "{n} h ago",
     "daysAgo": "{n} d ago"
+  },
+  "legal": {
+    "lastUpdated": "Last updated: September 2026"
   }
 }

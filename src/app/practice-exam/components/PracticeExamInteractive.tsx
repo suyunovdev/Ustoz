@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
-import { SUBJECT_LABELS } from '@/lib/data/subject-labels';
+import { buildSubjectGroups } from '@/lib/data/subject-groups';
 
 interface Question {
   id: string;
@@ -16,12 +16,14 @@ interface Question {
 
 type Phase = 'setup' | 'loading' | 'taking' | 'results';
 
-const SUBJECT_OPTIONS = Object.entries(SUBJECT_LABELS).map(([value, label]) => ({ value, label }));
 const DIFFICULTIES = ['beginner', 'intermediate', 'advanced'] as const;
 const COUNTS = [10, 20, 30];
 
 const PracticeExamInteractive = () => {
   const { t } = useI18n();
+  // Fanlar guruhlangan (marketplace filtri bilan yagona manba) — 130+ fanni tekis
+  // ro'yxatdan tanlash noqulay; optgroup'lar bilan navigatsiya osonlashadi.
+  const subjectGroups = buildSubjectGroups(t);
   const [phase, setPhase] = useState<Phase>('setup');
   const [subject, setSubject] = useState('mathematics');
   const [difficulty, setDifficulty] = useState<(typeof DIFFICULTIES)[number]>('intermediate');
@@ -87,7 +89,13 @@ const PracticeExamInteractive = () => {
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">{t('exam.subject')}</label>
               <select value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full px-3 py-2.5 bg-background border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40">
-                {SUBJECT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                {subjectGroups.map((g) => (
+                  <optgroup key={g.group} label={g.group}>
+                    {g.options.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </optgroup>
+                ))}
               </select>
             </div>
             <div>

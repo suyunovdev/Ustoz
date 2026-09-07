@@ -263,7 +263,8 @@
     "noCoursesFound": "Курсы не найдены",
     "tryOtherFilter": "Попробуйте другие ключевые слова или фильтры",
     "savedCount": "сохранено",
-    "allCourses": "Все курсы"
+    "allCourses": "Все курсы",
+    "loadMore": "Показать ещё {count}"
   },
   "dashboard": {
     "welcome": "Добро пожаловать",
@@ -719,7 +720,9 @@
     "view": "Посмотреть",
     "errorTitle": "Произошла ошибка",
     "errorDesc": "Не удалось загрузить панель. Пожалуйста, попробуйте снова.",
-    "retry": "Повторить попытку"
+    "retry": "Повторить попытку",
+    "durationMinutes": "{count} минут",
+    "timeLeft": "Осталось {time}"
   },
   "teacher": {
     "myCourses": "Мои курсы",
@@ -1446,7 +1449,8 @@
     "groupPersonalDevelopment": "Личностное развитие",
     "groupChildrenParents": "Дети и родители",
     "groupReligionSpirituality": "Религия и духовность",
-    "groupOther": "Другое"
+    "groupOther": "Другое",
+    "price": "Цена"
   },
   "profile": {
     "editProfile": "Редактировать профиль",
@@ -1579,7 +1583,8 @@
     "twoFactorEnabled": "Двухфакторная защита включена",
     "twoFactorDisabled": "Двухфакторная защита выключена",
     "backupCodes": "Резервные коды — сохраните (если потеряете телефон):",
-    "twoFactorCodeLabel": "Код подтверждения"
+    "twoFactorCodeLabel": "Код подтверждения",
+    "bioPlaceholderStudent": "Немного о себе — интересы, цели…"
   },
   "ui": {
     "profileSettings": "Настройки профиля",
@@ -3190,7 +3195,9 @@
     "quizTitle": "Тест",
     "quizDesc": "Интерактивный интерфейс прохождения теста. Отвечайте на вопросы, следите за временем и просматривайте результаты.",
     "transactionsTitle": "История платежей",
-    "transactionsDesc": "Полная информация об истории платежей и покупках курсов."
+    "transactionsDesc": "Полная информация об истории платежей и покупках курсов.",
+    "termsTitle": "Условия использования",
+    "privacyTitle": "Политика конфиденциальности"
   },
   "subscription": {
     "title": "Подписка",
@@ -3299,5 +3306,8 @@
     "minutesAgo": "{n} мин. назад",
     "hoursAgo": "{n} ч. назад",
     "daysAgo": "{n} дн. назад"
+  },
+  "legal": {
+    "lastUpdated": "Последнее обновление: сентябрь 2026"
   }
 }

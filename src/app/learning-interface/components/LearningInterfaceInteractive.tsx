@@ -10,7 +10,7 @@ import ResourceDownloads from './ResourceDownloads';
 import AiTutorPanel from './AiTutorPanel';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
-import { sanitizeHtml } from '@/lib/sanitize-html';
+import { renderMarkdown } from '@/lib/markdown';
 import type { CourseProgressResponse } from '@/types/dashboard.types';
 import { useCompleteTopicMutation } from '@/hooks/mutations/useCompleteTopicMutation';
 import { useI18n } from '@/contexts/I18nContext';
@@ -61,6 +61,17 @@ const LearningInterfaceInteractive = () => {
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   const completeMutation = useCompleteTopicMutation();
   const isMarkingComplete = completeMutation.isPending;
+
+  // Escape bilan mobil kurikulum panelini yopish (overlay bosishga qo'shimcha).
+  // Faqat kichik ekranda — desktopda panel doimiy yon ustun bo'lib turadi.
+  useEffect(() => {
+    if (!isSidebarOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && window.innerWidth < 1024) setIsSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isSidebarOpen]);
 
   useEffect(() => {
     setIsHydrated(true);
@@ -423,7 +434,7 @@ const LearningInterfaceInteractive = () => {
             {currentTopic?.content ? (
               <article
                 className="prose prose-neutral dark:prose-invert max-w-none prose-headings:font-heading prose-a:text-primary prose-img:rounded-lg"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentTopic.content) }}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(currentTopic.content) }}
               />
             ) : !currentTopic?.videoUrl ? (
               <div className="rounded-xl border border-dashed border-border bg-muted/30 p-10 text-center">

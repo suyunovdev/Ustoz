@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import { renderMarkdown } from '@/lib/markdown';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface AiTutorPanelProps {
@@ -108,15 +109,16 @@ const AiTutorPanel = ({ topicTitle, topicContent, courseTitle }: AiTutorPanelPro
         ) : (
           messages.map((m, i) => (
             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div
-                className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm whitespace-pre-wrap leading-relaxed ${
-                  m.role === 'user'
-                    ? 'bg-primary text-primary-foreground rounded-br-sm'
-                    : 'bg-muted text-foreground rounded-bl-sm'
-                }`}
-              >
-                {m.content}
-              </div>
+              {m.role === 'user' ? (
+                <div className="max-w-[85%] rounded-2xl rounded-br-sm px-4 py-2.5 text-sm whitespace-pre-wrap leading-relaxed bg-primary text-primary-foreground">
+                  {m.content}
+                </div>
+              ) : (
+                <div
+                  className="max-w-[85%] rounded-2xl rounded-bl-sm px-4 py-2.5 text-sm leading-relaxed bg-muted text-foreground prose prose-sm dark:prose-invert prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-pre:my-2 max-w-none"
+                  dangerouslySetInnerHTML={{ __html: renderMarkdown(m.content) }}
+                />
+              )}
             </div>
           ))
         )}

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
+import { formatMinutes } from '@/lib/i18n/duration';
 import { formatCurrency, formatNumber } from '@/lib/i18n/format';
 import { getDifficultyLabel } from '@/lib/data/subject-labels';
 import type { RecommendedCourse, RecommendReason } from '@/types/recommendation.types';
@@ -40,11 +41,11 @@ const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
   const { locale, t } = useI18n();
   const badge = REASON_BADGES[course.recommendReason];
   const badgeLabel = t(badge.labelKey);
-  // Davomiylik bo'lsa soat, aks holda qiyinlik darajasi (mos ikonka bilan)
+  // Davomiylik (daqiqada saqlanadi) bo'lsa vaqt, aks holda qiyinlik darajasi
   const hasDuration = course.totalDuration > 0;
   const metaIcon = hasDuration ? 'ClockIcon' : 'ChartBarIcon';
   const metaLabel = hasDuration
-    ? t('student.durationHours', { count: course.totalDuration })
+    ? formatMinutes(course.totalDuration, t)
     : getDifficultyLabel(course.difficultyLevel);
 
   return (

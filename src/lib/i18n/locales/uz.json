@@ -263,7 +263,8 @@
     "noCoursesFound": "Kurs topilmadi",
     "tryOtherFilter": "Boshqa kalit so'z yoki filtr bilan qidirib ko'ring",
     "savedCount": "ta saqlangan",
-    "allCourses": "Barcha kurslar"
+    "allCourses": "Barcha kurslar",
+    "loadMore": "Yana {count} ta ko‘rsatish"
   },
   "dashboard": {
     "welcome": "Xush kelibsiz",
@@ -719,7 +720,9 @@
     "view": "Ko'rish",
     "errorTitle": "Xato yuz berdi",
     "errorDesc": "Dashboard yuklanmadi. Iltimos, qayta urinib ko'ring.",
-    "retry": "Qayta urinish"
+    "retry": "Qayta urinish",
+    "durationMinutes": "{count} daqiqa",
+    "timeLeft": "{time} qoldi"
   },
   "teacher": {
     "myCourses": "Mening kurslarim",
@@ -1446,7 +1449,8 @@
     "groupPersonalDevelopment": "Shaxsiy rivojlanish",
     "groupChildrenParents": "Bolalar va ota-onalar",
     "groupReligionSpirituality": "Din va ma'naviyat",
-    "groupOther": "Boshqa"
+    "groupOther": "Boshqa",
+    "price": "Narx"
   },
   "profile": {
     "editProfile": "Profilni tahrirlash",
@@ -1579,7 +1583,8 @@
     "twoFactorEnabled": "Ikki bosqichli himoya yoqildi",
     "twoFactorDisabled": "Ikki bosqichli himoya o'chirildi",
     "backupCodes": "Zaxira kodlar — saqlab qo'ying (telefoningiz yo'qolsa):",
-    "twoFactorCodeLabel": "Tasdiqlash kodi"
+    "twoFactorCodeLabel": "Tasdiqlash kodi",
+    "bioPlaceholderStudent": "O’zingiz haqingizda qisqacha — qiziqishlar, maqsadlar…"
   },
   "ui": {
     "profileSettings": "Profil sozlamalari",
@@ -3190,7 +3195,9 @@
     "quizTitle": "Test",
     "quizDesc": "Interaktiv test topshirish interfeysi. Savollarni javoblang, vaqtni kuzating va natijalaringizni ko'ring.",
     "transactionsTitle": "To'lov tarixi",
-    "transactionsDesc": "To'lovlar tarixi va kurs sotib olishlar haqida to'liq ma'lumot."
+    "transactionsDesc": "To'lovlar tarixi va kurs sotib olishlar haqida to'liq ma'lumot.",
+    "termsTitle": "Foydalanish shartlari",
+    "privacyTitle": "Maxfiylik siyosati"
   },
   "subscription": {
     "title": "Obuna",
@@ -3299,5 +3306,8 @@
     "minutesAgo": "{n} daqiqa oldin",
     "hoursAgo": "{n} soat oldin",
     "daysAgo": "{n} kun oldin"
+  },
+  "legal": {
+    "lastUpdated": "Oxirgi yangilanish: 2026-yil sentabr"
   }
 }

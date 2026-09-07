@@ -186,6 +186,15 @@ const UserMenu = ({ user }: UserMenuProps) => {
                 <span>{t('ui.paymentHistory')}</span>
               </Link>
             )}
+
+            <Link
+              href="/help"
+              onClick={() => setIsOpen(false)}
+              className="w-full flex items-center space-x-3 px-4 py-2.5 text-sm text-foreground hover:bg-muted transition-smooth"
+            >
+              <Icon name="QuestionMarkCircleIcon" size={18} className="text-muted-foreground" />
+              <span>{t('nav.help')}</span>
+            </Link>
           </div>
 
           {/* Language */}

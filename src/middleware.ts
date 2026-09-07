@@ -18,6 +18,8 @@ const PUBLIC_ROUTES = [
   '/verify',
   '/teachers',
   '/help',
+  '/terms',
+  '/privacy',
   '/unauthorized',
   '/r',
   '/auth/callback',
