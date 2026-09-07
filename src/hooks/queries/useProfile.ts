@@ -10,6 +10,8 @@ export interface ProfileDTO {
   role: string;
   avatarUrl: string | null;
   bio: string | null;
+  phone: string | null;
+  interests: string[];
   headline: string | null;
   expertise: string[];
   socialLinks: Record<string, string>;
@@ -18,6 +20,34 @@ export interface ProfileDTO {
   deletionReason: string | null;
   createdAt: string;
   lastLoginAt: string | null;
+}
+
+export interface ProfileOverviewDTO {
+  role: string;
+  stats: {
+    // student
+    enrolled?: number;
+    completed?: number;
+    certificates?: number;
+    streak?: number;
+    // teacher
+    courses?: number;
+    students?: number;
+    avgRating?: number;
+    revenueUzs?: string;
+  };
+}
+
+export function useProfileOverview() {
+  return useQuery({
+    queryKey: ['profile', 'overview'] as const,
+    queryFn: async () => {
+      const res = await fetch('/api/profile/overview', { credentials: 'include' });
+      if (!res.ok) throw new Error(`Statistika yuklanmadi (${res.status})`);
+      return res.json() as Promise<ProfileOverviewDTO>;
+    },
+    staleTime: 60_000,
+  });
 }
 
 export interface PublicTeacherDTO {

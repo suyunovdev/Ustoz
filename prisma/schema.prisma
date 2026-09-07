@@ -221,6 +221,9 @@ model UserProfile {
   role                UserRole  @default(student)
   avatarUrl           String?   @map("avatar_url")
   bio                 String?
+  phone               String?
+  // Student qiziqishlari (o'quv yo'nalishlari)
+  interests           String[]  @default([])
   isActive            Boolean   @default(true) @map("is_active")
   deletedAt           DateTime? @map("deleted_at")
   lastLoginAt         DateTime? @map("last_login_at")

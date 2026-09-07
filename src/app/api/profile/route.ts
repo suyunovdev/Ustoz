@@ -42,6 +42,9 @@ export async function PATCH(req: NextRequest) {
     const expertise = Array.isArray(b.expertise)
       ? (b.expertise as unknown[]).filter((x): x is string => typeof x === 'string')
       : undefined;
+    const interests = Array.isArray(b.interests)
+      ? (b.interests as unknown[]).filter((x): x is string => typeof x === 'string')
+      : undefined;
     const socialLinks =
       b.socialLinks && typeof b.socialLinks === 'object'
         ? (b.socialLinks as Record<string, string>)
@@ -56,6 +59,9 @@ export async function PATCH(req: NextRequest) {
           ? b.avatarUrl
           : undefined,
       bio: typeof b.bio === 'string' ? b.bio : undefined,
+      phone:
+        b.phone === null ? null : typeof b.phone === 'string' ? b.phone : undefined,
+      interests,
       headline: typeof b.headline === 'string' ? b.headline : undefined,
       expertise,
       socialLinks,

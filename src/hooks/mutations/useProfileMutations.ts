@@ -18,6 +18,8 @@ export interface UpdateProfileInput {
   fullName?: string;
   avatarUrl?: string | null;
   bio?: string;
+  phone?: string | null;
+  interests?: string[];
   headline?: string;
   expertise?: string[];
   socialLinks?: Record<string, string>;

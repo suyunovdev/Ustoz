@@ -79,6 +79,8 @@ export interface UpdateProfileInput {
   fullName?: string;
   avatarUrl?: string | null;
   bio?: string;
+  phone?: string | null;
+  interests?: string[];
   headline?: string;
   expertise?: string[];
   socialLinks?: Record<string, string>;
@@ -106,6 +108,26 @@ export async function updateMyProfile(userId: string, input: UpdateProfileInput)
       throw new ValidationError(`Bio ${MAX_BIO_LENGTH} belgidan oshmasin`);
     }
     patch.bio = bio || null;
+  }
+  if (input.phone !== undefined) {
+    if (input.phone === null || input.phone.trim() === '') {
+      patch.phone = null;
+    } else {
+      // Faqat raqam, +, bo'sh joy, tire, qavs — normallashtirilib saqlanadi.
+      const raw = input.phone.trim();
+      if (!/^[+\d][\d\s()-]{6,19}$/.test(raw)) {
+        throw new ValidationError("Telefon raqami noto'g'ri formatda");
+      }
+      patch.phone = raw.replace(/[\s()-]/g, '');
+    }
+  }
+  if (input.interests !== undefined) {
+    if (input.interests.length > 10) {
+      throw new ValidationError("Maksimum 10 ta qiziqish");
+    }
+    patch.interests = input.interests
+      .map((e) => e.trim())
+      .filter((e) => e.length > 0 && e.length <= 40);
   }
   if (input.headline !== undefined) {
     const h = input.headline.trim();

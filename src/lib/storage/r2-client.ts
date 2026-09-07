@@ -116,6 +116,41 @@ export async function createPresignedUpload(
   return { uploadUrl, publicUrl, r2Key, expiresInSec };
 }
 
+const AVATAR_MAX_SIZE = 2 * 1024 * 1024; // 2MB
+const AVATAR_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+/**
+ * Avatar uchun presigned upload — `avatars/{userId}/...` kaliti. Faqat rasm, kichik limit.
+ * Client to'g'ridan-to'g'ri R2'ga yuklaydi, so'ng publicUrl'ni avatarUrl sifatida saqlaydi.
+ */
+export async function createAvatarUpload(
+  userId: string,
+  input: { fileName: string; contentType: string; fileSize: number },
+): Promise<PresignedUploadResult> {
+  if (!isR2Configured()) throw new Error('R2_NOT_CONFIGURED');
+  if (input.fileSize <= 0 || input.fileSize > AVATAR_MAX_SIZE) {
+    throw new R2ValidationError(`Avatar hajmi 0–${AVATAR_MAX_SIZE / 1024 / 1024}MB orasida bo'lishi kerak`);
+  }
+  if (!AVATAR_MIME.has(input.contentType)) {
+    throw new R2ValidationError("Avatar faqat JPEG/PNG/WEBP bo'lishi mumkin");
+  }
+  const ext = input.contentType === 'image/png' ? 'png' : input.contentType === 'image/webp' ? 'webp' : 'jpg';
+  const r2Key = `avatars/${userId}/${Date.now()}-${randomBytes(4).toString('hex')}.${ext}`;
+
+  const cmd = new PutObjectCommand({
+    Bucket: BUCKET,
+    Key: r2Key,
+    ContentType: input.contentType,
+    ContentLength: input.fileSize,
+  });
+  const expiresInSec = 600;
+  const uploadUrl = await getSignedUrl(getClient(), cmd, { expiresIn: expiresInSec });
+  const publicUrl = PUBLIC_URL
+    ? `${PUBLIC_URL.replace(/\/$/, '')}/${r2Key}`
+    : `https://${BUCKET}.${ACCOUNT_ID}.r2.cloudflarestorage.com/${r2Key}`;
+  return { uploadUrl, publicUrl, r2Key, expiresInSec };
+}
+
 export async function deleteR2Object(r2Key: string): Promise<void> {
   if (!isR2Configured()) return;
   await getClient().send(new DeleteObjectCommand({ Bucket: BUCKET, Key: r2Key }));

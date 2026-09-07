@@ -2,9 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
-import { useMyProfile, type ProfileDTO } from '@/hooks/queries/useProfile';
+import LocaleToggle from '@/components/common/LocaleToggle';
+import ThemeToggle from '@/components/common/ThemeToggle';
+import { useMyProfile, useProfileOverview, type ProfileDTO } from '@/hooks/queries/useProfile';
 import {
   useUpdateProfileMutation,
   useChangePasswordMutation,
@@ -13,9 +16,9 @@ import {
   useCancelDeletionMutation,
 } from '@/hooks/mutations/useProfileMutations';
 import { useI18n } from '@/contexts/I18nContext';
-import { formatDate, formatDateTime } from '@/lib/i18n/format';
+import { formatDate, formatDateTime, formatCurrency, formatNumber } from '@/lib/i18n/format';
 
-type TabId = 'profile' | 'password' | 'notifications' | 'account';
+type TabId = 'personal' | 'security' | 'notifications' | 'preferences';
 
 // ── Rol yorlig'i ──
 function roleLabel(role: string, t: (k: string) => string): string {
@@ -34,8 +37,7 @@ function dashboardHref(role: string): string {
   return '/student-dashboard';
 }
 
-// Rasmni brauzerda 256px kvadratga kesib/kichraytiradi (JPEG data URL, ~20-40KB).
-// Server-yuki YO'Q, R2 kerak emas, barcha rol uchun ishlaydi.
+// Rasmni brauzerda 256px kvadratga kesib/kichraytiradi (JPEG data URL fallback uchun).
 function resizeToDataUrl(file: File, size = 256, quality = 0.85): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -61,8 +63,8 @@ function resizeToDataUrl(file: File, size = 256, quality = 0.85): Promise<string
   });
 }
 
-// ── Avatar (yuklash tugmasi bilan) ──
-function AvatarUpload({ profile }: { profile: ProfileDTO }) {
+// ── Avatar (R2-tayyor + data-URL fallback) ──
+function AvatarUpload({ profile, size = 96 }: { profile: ProfileDTO; size?: number }) {
   const { t } = useI18n();
   const mut = useUpdateProfileMutation();
   const [preview, setPreview] = useState(profile.avatarUrl ?? '');
@@ -70,45 +72,67 @@ function AvatarUpload({ profile }: { profile: ProfileDTO }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const initial = (profile.fullName || profile.email || '?').charAt(0).toUpperCase();
 
+  const saveAvatar = (url: string) =>
+    new Promise<void>((resolve, reject) => {
+      mut.mutate(
+        { avatarUrl: url },
+        { onSuccess: () => resolve(), onError: (e) => reject(e) },
+      );
+    });
+
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error(t('profile.avatarImageOnly'));
-      return;
-    }
-    if (file.size > 8 * 1024 * 1024) {
-      toast.error(t('profile.avatarTooLarge'));
-      return;
-    }
+    if (!file.type.startsWith('image/')) return toast.error(t('profile.avatarImageOnly'));
+    if (file.size > 8 * 1024 * 1024) return toast.error(t('profile.avatarTooLarge'));
+
     setBusy(true);
     try {
-      const dataUrl = await resizeToDataUrl(file, 256, 0.85);
-      mut.mutate(
-        { avatarUrl: dataUrl },
-        {
-          onSuccess: () => {
-            setPreview(dataUrl);
-            toast.success(t('profile.avatarUpdated'));
-          },
-          onError: (err) => toast.error(err.message),
-          onSettled: () => setBusy(false),
-        },
-      );
-    } catch {
-      toast.error(t('profile.avatarError'));
+      // 1) R2 sozlanganmi — presigned upload so'raymiz
+      const presignRes = await fetch('/api/profile/avatar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ fileName: file.name, contentType: file.type, fileSize: file.size }),
+      });
+      const presign = await presignRes.json().catch(() => ({}));
+
+      let finalUrl: string;
+      if (presignRes.ok && presign.configured && presign.uploadUrl) {
+        // R2'ga to'g'ridan-to'g'ri PUT (rasm asl holida)
+        const put = await fetch(presign.uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type },
+          body: file,
+        });
+        if (!put.ok) throw new Error('R2 upload failed');
+        finalUrl = presign.publicUrl;
+      } else {
+        // Fallback: resized data URL
+        finalUrl = await resizeToDataUrl(file, 256, 0.85);
+      }
+
+      await saveAvatar(finalUrl);
+      setPreview(finalUrl);
+      toast.success(t('profile.avatarUpdated'));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('profile.avatarError'));
+    } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div className="relative w-24 h-24 shrink-0">
-      <div className="w-24 h-24 rounded-full border-4 border-card bg-primary/10 overflow-hidden shadow-warm-lg flex items-center justify-center">
+    <div className="relative shrink-0" style={{ width: size, height: size }}>
+      <div
+        className="rounded-full border-4 border-card bg-primary/10 overflow-hidden shadow-warm-lg flex items-center justify-center"
+        style={{ width: size, height: size }}
+      >
         {preview ? (
           <img src={preview} alt={profile.fullName} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-3xl font-heading font-bold text-primary">{initial}</span>
+          <span className="font-heading font-bold text-primary" style={{ fontSize: size / 2.6 }}>{initial}</span>
         )}
       </div>
       <button
@@ -130,15 +154,53 @@ function AvatarUpload({ profile }: { profile: ProfileDTO }) {
   );
 }
 
-// ── Profil header (identifikatsiya) ──
-function ProfileHeader({ profile }: { profile: ProfileDTO }) {
+// ── Profil to'liqligi hisobi ──
+function computeCompleteness(p: ProfileDTO): number {
+  const items =
+    p.role === 'teacher'
+      ? [!!p.avatarUrl, !!p.phone, !!p.bio, !!p.headline, p.expertise.length > 0, Object.keys(p.socialLinks).length > 0]
+      : [!!p.avatarUrl, !!p.phone, !!p.bio, p.interests.length > 0];
+  const filled = items.filter(Boolean).length;
+  return Math.round((filled / items.length) * 100);
+}
+
+// ── Overview (sarlavha + statistika + to'liqlik) ──
+function ProfileOverview({ profile }: { profile: ProfileDTO }) {
   const { t, locale } = useI18n();
+  const { data: overview } = useProfileOverview();
+  const completeness = computeCompleteness(profile);
+
+  type Stat = { icon: string; value: string; label: string };
+  let stats: Stat[] = [];
+  const s = overview?.stats;
+  if (s) {
+    if (overview!.role === 'student') {
+      stats = [
+        { icon: 'BookOpenIcon', value: formatNumber(s.enrolled ?? 0, locale), label: 'Kurslar' },
+        { icon: 'CheckBadgeIcon', value: formatNumber(s.completed ?? 0, locale), label: 'Tugatilgan' },
+        { icon: 'TrophyIcon', value: formatNumber(s.certificates ?? 0, locale), label: 'Sertifikat' },
+        { icon: 'FireIcon', value: formatNumber(s.streak ?? 0, locale), label: 'Kun ketma-ket' },
+      ];
+    } else if (overview!.role === 'teacher') {
+      stats = [
+        { icon: 'BookOpenIcon', value: formatNumber(s.courses ?? 0, locale), label: 'Kurslar' },
+        { icon: 'UserGroupIcon', value: formatNumber(s.students ?? 0, locale), label: "O'quvchilar" },
+        { icon: 'StarIcon', value: (s.avgRating ?? 0).toFixed(1), label: 'Reyting' },
+        { icon: 'BanknotesIcon', value: formatCurrency(Number(s.revenueUzs ?? 0), locale, 'UZS'), label: 'Daromad' },
+      ];
+    }
+  }
+
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden mb-6 shadow-warm">
-      <div className="h-24 bg-gradient-to-r from-primary to-secondary" />
-      <div className="px-6 pb-5 -mt-12 flex flex-col sm:flex-row sm:items-end gap-4">
-        <AvatarUpload profile={profile} />
-        <div className="flex-1 sm:pb-2 min-w-0">
+    <div className="bg-card border border-border rounded-2xl overflow-hidden mb-6 shadow-warm">
+      <div className="h-24 bg-gradient-to-r from-primary to-secondary relative">
+        <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, #fff 1px, transparent 0)', backgroundSize: '16px 16px' }} />
+      </div>
+      <div className="px-6 pb-5 flex flex-col sm:flex-row gap-4">
+        <div className="-mt-14 shrink-0">
+          <AvatarUpload profile={profile} />
+        </div>
+        <div className="flex-1 min-w-0 pt-1">
           <h1 className="text-2xl font-heading font-bold text-foreground truncate">{profile.fullName}</h1>
           <div className="flex flex-wrap items-center gap-2 mt-1">
             <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${roleBadgeClass(profile.role)}`}>
@@ -154,13 +216,39 @@ function ProfileHeader({ profile }: { profile: ProfileDTO }) {
           <Link
             href={`/teachers/${profile.id}`}
             target="_blank"
-            className="shrink-0 self-start sm:self-end px-3 py-2 border border-border rounded-md text-sm text-primary hover:bg-muted transition-smooth inline-flex items-center gap-1.5"
+            className="shrink-0 self-start sm:self-end px-3 py-2 border border-border rounded-lg text-sm text-primary hover:bg-muted transition-smooth inline-flex items-center gap-1.5"
           >
             <Icon name="EyeIcon" size={14} />
             {t('profile.publicProfile')}
           </Link>
         )}
       </div>
+
+      {/* Statistika kartalari */}
+      {stats.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-border border-t border-border">
+          {stats.map((st) => (
+            <div key={st.label} className="bg-card px-4 py-4 flex flex-col items-center text-center">
+              <Icon name={st.icon} size={20} className="text-primary mb-1.5" />
+              <span className="text-lg font-heading font-bold text-foreground leading-tight">{st.value}</span>
+              <span className="text-xs text-muted-foreground mt-0.5">{st.label}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Profil to'liqligi */}
+      {completeness < 100 && (
+        <div className="px-6 py-3 border-t border-border bg-muted/30">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-xs font-medium text-foreground">Profil to'liqligi</span>
+            <span className="text-xs font-semibold text-primary">{completeness}%</span>
+          </div>
+          <div className="h-1.5 rounded-full bg-border overflow-hidden">
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${completeness}%` }} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -168,18 +256,17 @@ function ProfileHeader({ profile }: { profile: ProfileDTO }) {
 export default function ProfileClient() {
   const { data, isLoading, error } = useMyProfile();
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<TabId>('profile');
+  const [activeTab, setActiveTab] = useState<TabId>('personal');
 
   const TABS: { id: TabId; label: string; icon: string }[] = [
-    { id: 'profile', label: t('profile.profileTab'), icon: 'UserIcon' },
-    { id: 'password', label: t('profile.passwordTab'), icon: 'KeyIcon' },
+    { id: 'personal', label: t('profile.profileTab'), icon: 'UserIcon' },
+    { id: 'security', label: 'Xavfsizlik', icon: 'ShieldCheckIcon' },
     { id: 'notifications', label: t('profile.notificationsTab'), icon: 'BellIcon' },
-    { id: 'account', label: t('profile.accountTab'), icon: 'Cog6ToothIcon' },
+    { id: 'preferences', label: 'Sozlamalar', icon: 'Cog6ToothIcon' },
   ];
 
   if (isLoading || !data) return <div className="p-8">{t('common.loading')}</div>;
-  if (error)
-    return <div className="p-8 text-destructive">{(error as Error).message}</div>;
+  if (error) return <div className="p-8 text-destructive">{(error as Error).message}</div>;
 
   const profile = data.profile;
 
@@ -193,59 +280,59 @@ export default function ProfileClient() {
         {t('profile.profileSettings')}
       </Link>
 
-      <ProfileHeader profile={profile} />
+      <ProfileOverview profile={profile} />
 
       <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6">
-        <nav className="space-y-1">
-          {TABS.map((t) => (
+        <nav className="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible">
+          {TABS.map((tab) => (
             <button
-              key={t.id}
-              onClick={() => setActiveTab(t.id)}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm flex items-center gap-2 ${
-                activeTab === t.id
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground hover:bg-muted'
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`shrink-0 md:w-full text-left px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-smooth ${
+                activeTab === tab.id ? 'bg-primary text-primary-foreground' : 'text-foreground hover:bg-muted'
               }`}
             >
-              <Icon name={t.icon} size={16} />
-              {t.label}
+              <Icon name={tab.icon} size={16} />
+              {tab.label}
             </button>
           ))}
         </nav>
 
         <div>
-          {activeTab === 'profile' && <ProfileTab profile={profile} />}
-          {activeTab === 'password' && <PasswordTab />}
+          {activeTab === 'personal' && <PersonalTab profile={profile} />}
+          {activeTab === 'security' && <SecurityTab profile={profile} />}
           {activeTab === 'notifications' && <NotificationsTab profile={profile} />}
-          {activeTab === 'account' && <AccountTab profile={profile} />}
+          {activeTab === 'preferences' && <PreferencesTab />}
         </div>
       </div>
     </div>
   );
 }
 
-function ProfileTab({ profile }: { profile: ProfileDTO }) {
+function PersonalTab({ profile }: { profile: ProfileDTO }) {
   const { t } = useI18n();
   const mut = useUpdateProfileMutation();
+  const isTeacher = profile.role === 'teacher';
   const [fullName, setFullName] = useState(profile.fullName);
-  const [headline, setHeadline] = useState(profile.headline ?? '');
+  const [phone, setPhone] = useState(profile.phone ?? '');
   const [bio, setBio] = useState(profile.bio ?? '');
+  const [interestsStr, setInterestsStr] = useState(profile.interests.join(', '));
+  const [headline, setHeadline] = useState(profile.headline ?? '');
   const [expertiseStr, setExpertiseStr] = useState(profile.expertise.join(', '));
   const [social, setSocial] = useState<Record<string, string>>(profile.socialLinks);
 
+  const splitList = (s: string) => s.split(',').map((x) => x.trim()).filter((x) => x.length > 0);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const expertise = expertiseStr
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
     mut.mutate(
       {
         fullName,
-        headline,
+        phone: phone.trim() || null,
         bio,
-        expertise,
-        socialLinks: social,
+        ...(isTeacher
+          ? { headline, expertise: splitList(expertiseStr), socialLinks: social }
+          : { interests: splitList(interestsStr) }),
       },
       {
         onSuccess: () => toast.success(t('profile.profileUpdated2')),
@@ -254,93 +341,62 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
     );
   };
 
-  const setSocialField = (key: string, value: string) =>
-    setSocial((s) => ({ ...s, [key]: value }));
+  const setSocialField = (key: string, value: string) => setSocial((s) => ({ ...s, [key]: value }));
+  const inputCls = 'w-full px-3 py-2 border border-border rounded-lg text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary/40';
 
   return (
-    <form onSubmit={handleSubmit} className="bg-card border border-border rounded-md p-6 space-y-4">
-      <h2 className="font-medium mb-3">{t('profile.profileInfo')}</h2>
+    <form onSubmit={handleSubmit} className="bg-card border border-border rounded-xl p-6 space-y-4">
+      <h2 className="font-heading font-semibold mb-1">{t('profile.profileInfo')}</h2>
 
-      <div>
-        <label htmlFor="profile-fullname" className="block text-sm font-medium mb-1">{t('profile.fullName')}</label>
-        <input
-          id="profile-fullname"
-          type="text"
-          value={fullName}
-          onChange={(e) => setFullName(e.target.value)}
-          required
-          className="w-full px-3 py-2 border border-border rounded-md text-sm"
-        />
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="pf-name" className="block text-sm font-medium mb-1">{t('profile.fullName')}</label>
+          <input id="pf-name" type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} required className={inputCls} />
+        </div>
+        <div>
+          <label htmlFor="pf-phone" className="block text-sm font-medium mb-1">Telefon</label>
+          <input id="pf-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+998 90 123 45 67" className={inputCls} />
+        </div>
       </div>
 
-      {profile.role === 'teacher' && (
+      <div>
+        <label htmlFor="pf-bio" className="block text-sm font-medium mb-1">{t('profile.bio')}</label>
+        <textarea id="pf-bio" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} maxLength={1000} placeholder={t('profile.bioPlaceholder')} className={`${inputCls} resize-y`} />
+        <p className="text-xs text-muted-foreground mt-1">{bio.length} / 1000</p>
+      </div>
+
+      {!isTeacher && (
+        <div>
+          <label htmlFor="pf-interests" className="block text-sm font-medium mb-1">Qiziqishlar</label>
+          <input id="pf-interests" type="text" value={interestsStr} onChange={(e) => setInterestsStr(e.target.value)} placeholder="Dasturlash, Matematika, Dizayn" className={inputCls} />
+          <p className="text-xs text-muted-foreground mt-1">Vergul bilan ajrating — sizga mos kurslarni topishga yordam beradi</p>
+        </div>
+      )}
+
+      {isTeacher && (
         <>
           <div>
-            <label htmlFor="profile-headline" className="block text-sm font-medium mb-1">
-              {t('profile.tagline')}
-            </label>
-            <input
-              id="profile-headline"
-              type="text"
-              value={headline}
-              onChange={(e) => setHeadline(e.target.value)}
-              maxLength={150}
-              placeholder={t('profile.taglinePlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-md text-sm"
-            />
+            <label htmlFor="pf-headline" className="block text-sm font-medium mb-1">{t('profile.tagline')}</label>
+            <input id="pf-headline" type="text" value={headline} onChange={(e) => setHeadline(e.target.value)} maxLength={150} placeholder={t('profile.taglinePlaceholder')} className={inputCls} />
           </div>
-
           <div>
-            <label htmlFor="profile-bio" className="block text-sm font-medium mb-1">{t('profile.bio')}</label>
-            <textarea
-              id="profile-bio"
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              rows={4}
-              maxLength={1000}
-              placeholder={t('profile.bioPlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              {bio.length} / 1000
-            </p>
+            <label htmlFor="pf-expertise" className="block text-sm font-medium mb-1">{t('profile.topics')}</label>
+            <input id="pf-expertise" type="text" value={expertiseStr} onChange={(e) => setExpertiseStr(e.target.value)} placeholder="React, TypeScript, Node.js" className={inputCls} />
           </div>
-
-          <div>
-            <label htmlFor="profile-expertise" className="block text-sm font-medium mb-1">
-              {t('profile.topics')}
-            </label>
-            <input
-              id="profile-expertise"
-              type="text"
-              value={expertiseStr}
-              onChange={(e) => setExpertiseStr(e.target.value)}
-              placeholder="React, TypeScript, Node.js"
-              className="w-full px-3 py-2 border border-border rounded-md text-sm"
-            />
-          </div>
-
           <div>
             <label className="block text-sm font-medium mb-2">{t('profile.socialNetworks')}</label>
             <div className="space-y-2">
               {[
                 { key: 'website', label: 'Website', placeholder: 'https://…' },
                 { key: 'github', label: 'GitHub', placeholder: 'https://github.com/…' },
-                { key: 'twitter', label: 'Twitter', placeholder: 'https://twitter.com/…' },
                 { key: 'linkedin', label: 'LinkedIn', placeholder: 'https://linkedin.com/…' },
                 { key: 'telegram', label: 'Telegram', placeholder: 'https://t.me/…' },
+                { key: 'instagram', label: 'Instagram', placeholder: 'https://instagram.com/…' },
                 { key: 'youtube', label: 'YouTube', placeholder: 'https://youtube.com/…' },
               ].map((f) => (
                 <div key={f.key} className="grid grid-cols-[100px_1fr] gap-2 items-center">
-                  <label htmlFor={`profile-social-${f.key}`} className="text-xs text-muted-foreground">{f.label}</label>
-                  <input
-                    id={`profile-social-${f.key}`}
-                    type="url"
-                    value={social[f.key] ?? ''}
-                    onChange={(e) => setSocialField(f.key, e.target.value)}
-                    placeholder={f.placeholder}
-                    className="px-3 py-1.5 border border-border rounded-md text-sm"
-                  />
+                  <label htmlFor={`pf-soc-${f.key}`} className="text-xs text-muted-foreground">{f.label}</label>
+                  <input id={`pf-soc-${f.key}`} type="url" value={social[f.key] ?? ''} onChange={(e) => setSocialField(f.key, e.target.value)} placeholder={f.placeholder} className="px-3 py-1.5 border border-border rounded-lg text-sm bg-card" />
                 </div>
               ))}
             </div>
@@ -348,25 +404,9 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
         </>
       )}
 
-      <div className="flex items-center justify-between pt-3 border-t border-border">
-        {profile.role === 'teacher' && (
-          <Link
-            href={`/teachers/${profile.id}`}
-            target="_blank"
-            className="text-sm text-primary hover:underline inline-flex items-center gap-1"
-          >
-            <Icon name="EyeIcon" size={12} />
-            {t('profile.publicProfile')}
-          </Link>
-        )}
-        <button
-          type="submit"
-          disabled={mut.isPending}
-          className="ml-auto px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm flex items-center gap-2 disabled:opacity-50"
-        >
-          {mut.isPending && (
-            <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-          )}
+      <div className="flex items-center justify-end pt-3 border-t border-border">
+        <button type="submit" disabled={mut.isPending} className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium flex items-center gap-2 disabled:opacity-50 hover:bg-primary/90 transition-smooth">
+          {mut.isPending && <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
           {t('profile.save')}
         </button>
       </div>
@@ -374,86 +414,179 @@ function ProfileTab({ profile }: { profile: ProfileDTO }) {
   );
 }
 
-function PasswordTab() {
-  const { t } = useI18n();
-  const mut = useChangePasswordMutation();
+function SecurityTab({ profile }: { profile: ProfileDTO }) {
+  const { t, locale } = useI18n();
+  const router = useRouter();
+  const pwMut = useChangePasswordMutation();
+  const requestMut = useRequestDeletionMutation();
+  const cancelMut = useCancelDeletionMutation();
+
+  // Parol
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Email o'zgartirish
+  const [emailStep, setEmailStep] = useState<'idle' | 'otp'>('idle');
+  const [newEmail, setNewEmail] = useState('');
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailBusy, setEmailBusy] = useState(false);
+
+  // Delete
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [reason, setReason] = useState('');
+  const [revokeBusy, setRevokeBusy] = useState(false);
+  const hasRequested = !!profile.deletionRequestedAt;
+  const inputCls = 'w-full px-3 py-2 border border-border rounded-lg text-sm bg-card focus:outline-none focus:ring-2 focus:ring-primary/40';
+
+  const submitPassword = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newPassword !== confirm) {
-      toast.error(t('profile.passwordMismatch'));
-      return;
-    }
-    if (newPassword.length < 6) {
-      toast.error(t('profile.passwordTooShort'));
-      return;
-    }
-    mut.mutate(
+    if (newPassword !== confirm) return toast.error(t('profile.passwordMismatch'));
+    pwMut.mutate(
       { oldPassword, newPassword },
       {
         onSuccess: () => {
           toast.success(t('profile.passwordChangedMsg'));
-          setOldPassword('');
-          setNewPassword('');
-          setConfirm('');
+          setOldPassword(''); setNewPassword(''); setConfirm('');
         },
         onError: (err) => toast.error(err.message),
       },
     );
   };
 
+  const requestEmail = async () => {
+    setEmailBusy(true);
+    try {
+      const res = await fetch('/api/profile/email/request', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ newEmail: newEmail.trim() }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Xatolik');
+      toast.success('Tasdiqlash kodi yangi emailingizga yuborildi');
+      if (d.devOtp) setEmailOtp(String(d.devOtp));
+      setEmailStep('otp');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Xatolik');
+    } finally { setEmailBusy(false); }
+  };
+
+  const verifyEmail = async () => {
+    setEmailBusy(true);
+    try {
+      const res = await fetch('/api/profile/email/verify', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ newEmail: newEmail.trim(), otp: emailOtp.trim() }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Xatolik');
+      toast.success('Email yangilandi. Qaytadan kiring.');
+      setTimeout(() => router.push('/login'), 1200);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Xatolik');
+    } finally { setEmailBusy(false); }
+  };
+
+  const revokeAll = async () => {
+    setRevokeBusy(true);
+    try {
+      const res = await fetch('/api/profile/sessions/revoke-all', { method: 'POST', credentials: 'include' });
+      if (!res.ok) throw new Error('Xatolik');
+      toast.success('Barcha qurilmalardan chiqildi');
+      setTimeout(() => router.push('/login'), 800);
+    } catch { toast.error('Xatolik'); setRevokeBusy(false); }
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="bg-card border border-border rounded-md p-6 space-y-4 max-w-md">
-      <h2 className="font-medium mb-3">{t('profile.changePassword2')}</h2>
-      <div>
-        <label htmlFor="profile-old-password" className="block text-sm font-medium mb-1">{t('profile.oldPassword')}</label>
-        <input
-          id="profile-old-password"
-          type="password"
-          value={oldPassword}
-          onChange={(e) => setOldPassword(e.target.value)}
-          required
-          className="w-full px-3 py-2 border border-border rounded-md text-sm"
-        />
-      </div>
-      <div>
-        <label htmlFor="profile-new-password" className="block text-sm font-medium mb-1">{t('profile.newPasswordLabel')}</label>
-        <input
-          id="profile-new-password"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          required
-          minLength={6}
-          className="w-full px-3 py-2 border border-border rounded-md text-sm"
-        />
-        <p className="text-xs text-muted-foreground mt-1">{t('profile.minChars')}</p>
-      </div>
-      <div>
-        <label htmlFor="profile-confirm-password" className="block text-sm font-medium mb-1">{t('profile.confirmNewPasswordLabel')}</label>
-        <input
-          id="profile-confirm-password"
-          type="password"
-          value={confirm}
-          onChange={(e) => setConfirm(e.target.value)}
-          required
-          className="w-full px-3 py-2 border border-border rounded-md text-sm"
-        />
-      </div>
-      <button
-        type="submit"
-        disabled={mut.isPending}
-        className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-      >
-        {mut.isPending && (
-          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+    <div className="space-y-4">
+      {/* Email */}
+      <div className="bg-card border border-border rounded-xl p-6">
+        <h2 className="font-heading font-semibold mb-1">Email manzil</h2>
+        <p className="text-xs text-muted-foreground mb-3">Joriy: <span className="font-mono text-foreground">{profile.email}</span></p>
+        {emailStep === 'idle' ? (
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="yangi@email.uz" className={inputCls} />
+            <button onClick={requestEmail} disabled={emailBusy || !newEmail.trim()} className="shrink-0 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted disabled:opacity-50 transition-smooth">
+              Kod yuborish
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground"><span className="text-foreground font-medium">{newEmail}</span> ga yuborilgan kodni kiriting:</p>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <input inputMode="numeric" maxLength={6} value={emailOtp} onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, ''))} placeholder="6 xonali kod" className={`${inputCls} tracking-widest font-mono`} />
+              <button onClick={verifyEmail} disabled={emailBusy || emailOtp.length !== 6} className="shrink-0 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium disabled:opacity-50 hover:bg-primary/90 transition-smooth">
+                Tasdiqlash
+              </button>
+            </div>
+            <button onClick={() => { setEmailStep('idle'); setEmailOtp(''); }} className="text-xs text-muted-foreground hover:text-foreground">Bekor qilish</button>
+          </div>
         )}
-        {t('profile.savePassword')}
-      </button>
-    </form>
+      </div>
+
+      {/* Parol */}
+      <form onSubmit={submitPassword} className="bg-card border border-border rounded-xl p-6 space-y-3 max-w-md">
+        <h2 className="font-heading font-semibold">{t('profile.changePassword2')}</h2>
+        <input type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} required placeholder={t('profile.oldPassword')} className={inputCls} />
+        <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required placeholder={t('profile.newPasswordLabel')} className={inputCls} />
+        <input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} required placeholder={t('profile.confirmNewPasswordLabel')} className={inputCls} />
+        <p className="text-xs text-muted-foreground">Kamida 8 belgi, katta/kichik harf va raqam</p>
+        <button type="submit" disabled={pwMut.isPending} className="w-full px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-primary/90 transition-smooth">
+          {pwMut.isPending && <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+          {t('profile.savePassword')}
+        </button>
+      </form>
+
+      {/* Qurilmalar */}
+      <div className="bg-card border border-border rounded-xl p-6 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1">
+          <h2 className="font-heading font-semibold">Faol qurilmalar</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">Barcha qurilmalardan chiqish — hamma joyda qayta kirish talab qilinadi.</p>
+          {profile.lastLoginAt && <p className="text-xs text-muted-foreground mt-1">Oxirgi kirish: {formatDateTime(profile.lastLoginAt, locale)}</p>}
+        </div>
+        <button onClick={revokeAll} disabled={revokeBusy} className="shrink-0 px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-muted disabled:opacity-50 transition-smooth">
+          Barcha qurilmalardan chiqish
+        </button>
+      </div>
+
+      {/* Hisobni o'chirish */}
+      <div className="bg-destructive/5 border border-destructive/30 rounded-xl p-6">
+        <h2 className="font-heading font-semibold text-destructive mb-1">{t('profile.deleteAccountLabel')}</h2>
+        <p className="text-xs text-muted-foreground mb-4">{t('profile.deleteAccountDesc')}</p>
+        {hasRequested ? (
+          <>
+            <div className="bg-warning/10 text-warning p-3 rounded-lg text-sm mb-3">
+              {t('profile.requestSubmitted')}: {formatDateTime(profile.deletionRequestedAt!, locale)}
+              {profile.deletionReason && <p className="text-xs mt-1 opacity-80">{t('profile.reasonLabel')}: {profile.deletionReason}</p>}
+            </div>
+            <button onClick={() => cancelMut.mutate(undefined, { onSuccess: () => toast.success(t('profile.requestCancelled')), onError: (e) => toast.error(e.message) })} disabled={cancelMut.isPending} className="px-4 py-2 bg-warning text-warning-foreground rounded-lg text-sm disabled:opacity-50">
+              {t('profile.cancelRequestLabel')}
+            </button>
+          </>
+        ) : (
+          <button onClick={() => setDeleteOpen(true)} className="px-4 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm">
+            {t('profile.requestDeletion')}
+          </button>
+        )}
+      </div>
+
+      {deleteOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => !requestMut.isPending && setDeleteOpen(false)}>
+          <div className="bg-card rounded-2xl shadow-warm-lg max-w-md w-full p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-lg font-heading font-semibold text-destructive mb-2">{t('profile.deletionRequestTitle')}</h3>
+            <p className="text-sm text-muted-foreground mb-3">{t('profile.deletionRequestDesc')}</p>
+            <textarea value={reason} onChange={(e) => setReason(e.target.value)} rows={3} maxLength={500} className={`${inputCls} resize-y mb-4`} placeholder={t('profile.reasonPlaceholder')} />
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setDeleteOpen(false)} disabled={requestMut.isPending} className="px-3 py-2 text-foreground hover:bg-muted rounded-lg text-sm disabled:opacity-50">{t('profile.cancel')}</button>
+              <button onClick={() => requestMut.mutate(reason || null, { onSuccess: () => { toast.success(t('profile.requestSubmitted')); setDeleteOpen(false); }, onError: (e) => toast.error(e.message) })} disabled={requestMut.isPending} className="px-3 py-2 bg-destructive text-destructive-foreground rounded-lg text-sm flex items-center gap-2 disabled:opacity-50">
+                {requestMut.isPending && <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+                {t('profile.sendRequestLabel')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -461,30 +594,17 @@ function NotificationsTab({ profile }: { profile: ProfileDTO }) {
   const { t } = useI18n();
   const mut = useUpdateNotificationPrefsMutation();
   const [prefs, setPrefs] = useState<Record<string, boolean>>(profile.notificationPrefs);
-
   useEffect(() => setPrefs(profile.notificationPrefs), [profile.notificationPrefs]);
 
   const toggle = (key: string) => {
     const newPrefs = { ...prefs, [key]: !prefs[key] };
     setPrefs(newPrefs);
-    mut.mutate(
-      { [key]: newPrefs[key] },
-      {
-        onError: (err) => {
-          toast.error(err.message);
-          setPrefs(prefs); // rollback
-        },
-      },
-    );
+    mut.mutate({ [key]: newPrefs[key] }, { onError: (err) => { toast.error(err.message); setPrefs(prefs); } });
   };
 
   const items = [
     { key: 'email_enrollment', label: t('profile.newEnrollments'), desc: t('profile.newEnrollmentsDesc') },
-    {
-      key: 'email_assignment_submission',
-      label: t('profile.assignmentSubmitted'),
-      desc: t('profile.assignmentSubmittedDesc'),
-    },
+    { key: 'email_assignment_submission', label: t('profile.assignmentSubmitted'), desc: t('profile.assignmentSubmittedDesc') },
     { key: 'email_quiz_completion', label: t('profile.testSubmitted'), desc: t('profile.testSubmittedDesc') },
     { key: 'email_course_update', label: t('profile.courseUpdates'), desc: t('profile.courseUpdatesDesc') },
     { key: 'email_achievement', label: t('profile.achievementsLabel'), desc: t('profile.achievementsDesc') },
@@ -494,24 +614,13 @@ function NotificationsTab({ profile }: { profile: ProfileDTO }) {
   ];
 
   return (
-    <div className="bg-card border border-border rounded-md p-6">
-      <h2 className="font-medium mb-1">{t('profile.emailNotifications')}</h2>
-      <p className="text-xs text-muted-foreground mb-4">
-        {t('profile.whichEmails')}
-      </p>
-
-      <div className="space-y-2">
+    <div className="bg-card border border-border rounded-xl p-6">
+      <h2 className="font-heading font-semibold mb-1">{t('profile.emailNotifications')}</h2>
+      <p className="text-xs text-muted-foreground mb-4">{t('profile.whichEmails')}</p>
+      <div className="space-y-1">
         {items.map((it) => (
-          <label
-            key={it.key}
-            className="flex items-start gap-3 p-3 hover:bg-muted/50 rounded-md cursor-pointer"
-          >
-            <input
-              type="checkbox"
-              checked={!!prefs[it.key]}
-              onChange={() => toggle(it.key)}
-              className="mt-1"
-            />
+          <label key={it.key} className="flex items-start gap-3 p-3 hover:bg-muted/50 rounded-lg cursor-pointer">
+            <input type="checkbox" checked={!!prefs[it.key]} onChange={() => toggle(it.key)} className="mt-1 accent-primary" />
             <div className="flex-1">
               <p className="text-sm font-medium">{it.label}</p>
               <p className="text-xs text-muted-foreground">{it.desc}</p>
@@ -519,20 +628,12 @@ function NotificationsTab({ profile }: { profile: ProfileDTO }) {
           </label>
         ))}
       </div>
-
-      <div className="mt-4 pt-4 border-t border-border">
-        <label className="flex items-start gap-3 p-3 hover:bg-muted/50 rounded-md cursor-pointer">
-          <input
-            type="checkbox"
-            checked={!!prefs.in_app_enabled}
-            onChange={() => toggle('in_app_enabled')}
-            className="mt-1"
-          />
+      <div className="mt-3 pt-3 border-t border-border">
+        <label className="flex items-start gap-3 p-3 hover:bg-muted/50 rounded-lg cursor-pointer">
+          <input type="checkbox" checked={!!prefs.in_app_enabled} onChange={() => toggle('in_app_enabled')} className="mt-1 accent-primary" />
           <div className="flex-1">
             <p className="text-sm font-medium">{t('profile.inAppNotifications')}</p>
-            <p className="text-xs text-muted-foreground">
-              {t('profile.inAppNotificationsDesc')}
-            </p>
+            <p className="text-xs text-muted-foreground">{t('profile.inAppNotificationsDesc')}</p>
           </div>
         </label>
       </div>
@@ -540,144 +641,24 @@ function NotificationsTab({ profile }: { profile: ProfileDTO }) {
   );
 }
 
-function AccountTab({ profile }: { profile: ProfileDTO }) {
-  const { t, locale } = useI18n();
-  const requestMut = useRequestDeletionMutation();
-  const cancelMut = useCancelDeletionMutation();
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [reason, setReason] = useState('');
-
-  const hasRequested = !!profile.deletionRequestedAt;
-
+function PreferencesTab() {
   return (
-    <div className="space-y-4">
-      <div className="bg-card border border-border rounded-md p-6">
-        <h2 className="font-medium mb-1">{t('profile.accountInfo')}</h2>
-        <p className="text-xs text-muted-foreground mb-4">{t('profile.accountInfoDesc')}</p>
-
-        <dl className="space-y-2 text-sm">
-          <div className="grid grid-cols-[100px_1fr]">
-            <dt className="text-muted-foreground">{t('profile.emailLabel')}</dt>
-            <dd className="text-foreground font-mono">{profile.email}</dd>
-          </div>
-          <div className="grid grid-cols-[100px_1fr]">
-            <dt className="text-muted-foreground">{t('profile.role')}</dt>
-            <dd className="text-foreground capitalize">{profile.role}</dd>
-          </div>
-          <div className="grid grid-cols-[100px_1fr]">
-            <dt className="text-muted-foreground">{t('profile.registrationDate')}</dt>
-            <dd className="text-foreground">
-              {formatDate(profile.createdAt, locale)}
-            </dd>
-          </div>
-          <div className="grid grid-cols-[100px_1fr]">
-            <dt className="text-muted-foreground">{t('profile.lastLoginLabel')}</dt>
-            <dd className="text-foreground">
-              {profile.lastLoginAt
-                ? formatDateTime(profile.lastLoginAt, locale)
-                : '—'}
-            </dd>
-          </div>
-        </dl>
-      </div>
-
-      <div className="bg-destructive/5 border border-destructive/30 rounded-md p-6">
-        <h2 className="font-medium text-destructive mb-1">
-          ⚠ {t('profile.deleteAccountLabel')}
-        </h2>
-        <p className="text-xs text-muted-foreground mb-4">
-          {t('profile.deleteAccountDesc')}
-        </p>
-
-        {hasRequested ? (
-          <>
-            <div className="bg-warning/10 text-warning p-3 rounded-md text-sm mb-3">
-              ⏳ {t('profile.requestSubmitted')}:{' '}
-              {formatDateTime(profile.deletionRequestedAt!, locale)}
-              {profile.deletionReason && (
-                <p className="text-xs mt-1 opacity-80">
-                  {t('profile.reasonLabel')}: {profile.deletionReason}
-                </p>
-              )}
-            </div>
-            <button
-              onClick={() =>
-                cancelMut.mutate(undefined, {
-                  onSuccess: () => toast.success(t('profile.requestCancelled')),
-                  onError: (err) => toast.error(err.message),
-                })
-              }
-              disabled={cancelMut.isPending}
-              className="px-4 py-2 bg-warning text-warning-foreground rounded-md text-sm disabled:opacity-50"
-            >
-              {t('profile.cancelRequestLabel')}
-            </button>
-          </>
-        ) : (
-          <button
-            onClick={() => setDeleteOpen(true)}
-            className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md text-sm"
-          >
-            {t('profile.requestDeletion')}
-          </button>
-        )}
-      </div>
-
-      {deleteOpen && (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-          onClick={() => !requestMut.isPending && setDeleteOpen(false)}
-        >
-          <div
-            className="bg-card rounded-md shadow-warm-lg max-w-md w-full p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-heading font-semibold text-destructive mb-2">
-              {t('profile.deletionRequestTitle')}
-            </h3>
-            <p className="text-sm text-muted-foreground mb-3">
-              {t('profile.deletionRequestDesc')}
-            </p>
-            <label htmlFor="profile-deletion-reason" className="block text-xs font-medium mb-1">{t('profile.reasonOptional')}</label>
-            <textarea
-              id="profile-deletion-reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={3}
-              maxLength={500}
-              className="w-full px-3 py-2 border border-border rounded-md text-sm resize-y mb-4"
-              placeholder={t('profile.reasonPlaceholder')}
-            />
-            <div className="flex items-center justify-end gap-2">
-              <button
-                onClick={() => setDeleteOpen(false)}
-                disabled={requestMut.isPending}
-                className="px-3 py-2 text-foreground hover:bg-muted rounded-md text-sm disabled:opacity-50"
-              >
-                {t('profile.cancel')}
-              </button>
-              <button
-                onClick={() =>
-                  requestMut.mutate(reason || null, {
-                    onSuccess: () => {
-                      toast.success(t('profile.requestSubmitted'));
-                      setDeleteOpen(false);
-                    },
-                    onError: (err) => toast.error(err.message),
-                  })
-                }
-                disabled={requestMut.isPending}
-                className="px-3 py-2 bg-destructive text-destructive-foreground rounded-md text-sm flex items-center gap-2 disabled:opacity-50"
-              >
-                {requestMut.isPending && (
-                  <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                )}
-                {t('profile.sendRequestLabel')}
-              </button>
-            </div>
-          </div>
+    <div className="bg-card border border-border rounded-xl p-6 space-y-5">
+      <h2 className="font-heading font-semibold">Sozlamalar</h2>
+      <div className="flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-foreground">Til</p>
+          <p className="text-xs text-muted-foreground">Interfeys tili</p>
         </div>
-      )}
+        <LocaleToggle />
+      </div>
+      <div className="flex items-center justify-between gap-4 pt-4 border-t border-border">
+        <div>
+          <p className="text-sm font-medium text-foreground">Mavzu</p>
+          <p className="text-xs text-muted-foreground">Yorug' yoki qorong'i rejim</p>
+        </div>
+        <ThemeToggle />
+      </div>
     </div>
   );
 }

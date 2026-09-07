@@ -19,6 +19,8 @@ export interface ProfileFullRow {
   role: string;
   avatarUrl: string | null;
   bio: string | null;
+  phone: string | null;
+  interests: string[];
   headline: string | null;
   expertise: string[];
   socialLinks: Record<string, string>;
@@ -85,6 +87,8 @@ export async function getFullProfile(userId: string): Promise<ProfileFullRow | n
     role: p.role,
     avatarUrl: p.avatarUrl,
     bio: p.bio,
+    phone: p.phone,
+    interests: p.interests,
     headline: p.headline,
     expertise: p.expertise,
     socialLinks: toSocial(p.socialLinks),
@@ -100,6 +104,8 @@ export interface UpdateProfileInput {
   fullName?: string;
   avatarUrl?: string | null;
   bio?: string | null;
+  phone?: string | null;
+  interests?: string[];
   headline?: string | null;
   expertise?: string[];
   socialLinks?: Record<string, string>;
@@ -115,6 +121,8 @@ export async function updateProfile(
       ...(input.fullName !== undefined && { fullName: input.fullName }),
       ...(input.avatarUrl !== undefined && { avatarUrl: input.avatarUrl }),
       ...(input.bio !== undefined && { bio: input.bio }),
+      ...(input.phone !== undefined && { phone: input.phone }),
+      ...(input.interests !== undefined && { interests: input.interests }),
       ...(input.headline !== undefined && { headline: input.headline }),
       ...(input.expertise !== undefined && { expertise: input.expertise }),
       ...(input.socialLinks !== undefined && {
@@ -129,6 +137,8 @@ export async function updateProfile(
     role: updated.role,
     avatarUrl: updated.avatarUrl,
     bio: updated.bio,
+    phone: updated.phone,
+    interests: updated.interests,
     headline: updated.headline,
     expertise: updated.expertise,
     socialLinks: toSocial(updated.socialLinks),
