@@ -71,15 +71,38 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const result = reader.result as string;
-        setImagePreview(result);
-        onMetadataChange({ ...metadata, coverImage: result });
+    if (!file || !file.type.startsWith('image/')) return;
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const src = reader.result as string;
+      // Muqova base64 (data URL) sifatida saqlanadi — katta rasm DB limitidan
+      // oshib ketmasligi va sahifa tez yuklanishi uchun canvas bilan ixchamlaymiz
+      // (max 1280px, JPEG). Natijada base64 ~10x kichrayadi.
+      const img = new window.Image();
+      img.onload = () => {
+        const MAX_W = 1280;
+        const scale = Math.min(1, MAX_W / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        let out = src;
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h);
+          out = canvas.toDataURL('image/jpeg', 0.82);
+        }
+        setImagePreview(out);
+        onMetadataChange({ ...metadata, coverImage: out });
       };
-      reader.readAsDataURL(file);
-    }
+      img.onerror = () => {
+        setImagePreview(src);
+        onMetadataChange({ ...metadata, coverImage: src });
+      };
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleChange = (field: keyof CourseMetadata, value: string) => {

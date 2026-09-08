@@ -98,7 +98,10 @@ export async function PATCH(
     if (b.description !== undefined && b.description !== null) assertStr(b.description, 'description', 5000);
     if (b.category !== undefined && b.category !== null) assertStr(b.category, 'category', 100);
     if (b.language !== undefined && b.language !== null) assertStr(b.language, 'language', 50);
-    if (b.coverImage !== undefined && b.coverImage !== null) assertStr(b.coverImage, 'coverImage', 2000);
+    // Muqova rasmi base64 data URL bo'lishi mumkin (R2/CDN sozlanmagan holat) —
+    // shu sabab katta cap (~5MB). Client rasmni resize qiladi (yangi yuklamalar
+    // kichik), bu esa himoya chegarasi + mavjud katta muqovalarni ham o'tkazadi.
+    if (b.coverImage !== undefined && b.coverImage !== null) assertStr(b.coverImage, 'coverImage', 5_000_000);
     if (b.difficultyLevel !== undefined && b.difficultyLevel !== null) assertStr(b.difficultyLevel, 'difficultyLevel', 50);
 
     // gradeLevel — musbat butun yoki bo'sh (NaN yozilmasin)
