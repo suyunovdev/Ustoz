@@ -9,34 +9,12 @@ import PublishingControls from './PublishingControls';
 import Icon from '@/components/ui/AppIcon';
 import { Skeleton, SkeletonForm } from '@/components/ui/Skeleton';
 import ContentUploadManager from './ContentUploadManager';
+import LessonVideoInput from './LessonVideoInput';
 import { useI18n } from '@/contexts/I18nContext';
-import { parseVideoSource } from '@/lib/video';
 import { toast } from '@/components/common/Toaster';
 
 // Sehrgar qoralamasini brauzerda saqlash — sahifa yangilansa/yopilsa ish yo'qolmaydi.
 const DRAFT_KEY = 'ustoz_course_draft_v1';
-
-// Kiritilgan video havolasi qanday aniqlanganini ko'rsatuvchi belgi
-function VideoSourceBadge({ url }: { url: string }) {
-  const { t } = useI18n();
-  const src = parseVideoSource(url);
-  const label: Record<string, string> = {
-    youtube: t('courseCreation.videoYoutube'),
-    vimeo: t('courseCreation.videoVimeo'),
-    cloudflare: t('courseCreation.videoCloudflare'),
-    file: t('courseCreation.videoFile'),
-    unknown: t('courseCreation.videoUnknown'),
-    none: '',
-  };
-  if (src.kind === 'none') return null;
-  const ok = src.kind !== 'unknown';
-  return (
-    <p className={`flex items-center gap-1.5 text-xs ${ok ? 'text-success' : 'text-warning'}`}>
-      <Icon name={ok ? 'CheckCircleIcon' : 'ExclamationTriangleIcon'} size={14} />
-      {label[src.kind]}
-    </p>
-  );
-}
 
 interface Topic {
   id: string;
@@ -47,6 +25,8 @@ interface Topic {
   isExpanded: boolean;
   content: string;
   videoUrl: string;
+  videoProvider?: 'bunny' | null; // 'bunny' = Bunny Stream (himoyalangan)
+  streamUid?: string | null;       // Bunny Stream video GUID
   questions: QuizQuestion[];
   files: FileAttachment[];
   dbId?: string; // Supabase UUID
@@ -247,12 +227,6 @@ const CourseCreationInteractive = () => {
     ));
   };
 
-  const handleVideoUrlChange = (videoUrl: string) => {
-    if (!selectedTopicId) return;
-    setTopics(prev => prev.map(t =>
-      t.id === selectedTopicId ? { ...t, videoUrl } : t
-    ));
-  };
 
   // Mavzu davomiyligi (daqiqa) — bozorda jami vaqt shundan hisoblanadi (ilgari doim
   // "0 min" edi, natijada kurs "0 daqiqa" ko'rinardi).
@@ -296,6 +270,8 @@ const CourseCreationInteractive = () => {
         duration: t.duration,
         content: t.content,
         videoUrl: t.videoUrl?.trim() || null,
+        videoProvider: t.videoProvider === 'bunny' ? 'bunny' : null,
+        streamUid: t.videoProvider === 'bunny' ? (t.streamUid || null) : null,
         hasQuiz: t.hasQuiz,
         // Savollar kurs bilan bitta amalda saqlanadi (server test.service orqali
         // yozadi) — ilgari umuman yuborilmasdi va jimgina yo'qolardi.
@@ -808,26 +784,16 @@ const CourseCreationInteractive = () => {
                       </p>
                     </div>
 
-                    {/* Dars videosi — asosiy video pleyer uchun */}
-                    <div className="bg-card rounded-md shadow-warm p-4 space-y-2">
-                      <label htmlFor="topic-video-url" className="flex items-center gap-2 text-sm font-medium text-foreground">
-                        <Icon name="VideoCameraIcon" size={18} className="text-primary" />
-                        {t('courseCreation.videoOptionalLabel')}
-                      </label>
-                      <input
-                        id="topic-video-url"
-                        type="url"
-                        inputMode="url"
-                        value={selectedTopic.videoUrl}
-                        onChange={(e) => handleVideoUrlChange(e.target.value)}
-                        placeholder={t('courseCreation.videoUrlPlaceholder')}
-                        className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-                      />
-                      <VideoSourceBadge url={selectedTopic.videoUrl} />
-                      <p className="text-xs text-muted-foreground">
-                        {t('courseCreation.videoUrlHelp')}
-                      </p>
-                    </div>
+                    {/* Dars videosi — yagona uploader (Himoyalangan Bunny | Tashqi havola) */}
+                    <LessonVideoInput
+                      topicTitle={selectedTopic.title}
+                      videoUrl={selectedTopic.videoUrl}
+                      videoProvider={selectedTopic.videoProvider ?? null}
+                      streamUid={selectedTopic.streamUid ?? null}
+                      onChange={(patch) =>
+                        setTopics((prev) => prev.map((tp) => (tp.id === selectedTopicId ? { ...tp, ...patch } : tp)))
+                      }
+                    />
 
                     {/* Mavzu davomiyligi (daqiqa) — jami kurs vaqti shundan hisoblanadi */}
                     <div className="bg-card rounded-md shadow-warm p-4 space-y-2">
