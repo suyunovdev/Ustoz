@@ -24,7 +24,8 @@ export type AdminTabId =
   | 'tickets'
   | 'audit_log'
   | 'analytics'
-  | 'system';
+  | 'system'
+  | 'settings';
 
 interface NavItem {
   id: AdminTabId;
@@ -48,6 +49,7 @@ const NAV_ITEMS: NavItem[] = [
   { id: 'audit_log', labelKey: 'admin.navAuditLog', icon: 'ClipboardDocumentListIcon' },
   { id: 'analytics', labelKey: 'admin.navAnalytics', icon: 'ChartBarIcon' },
   { id: 'system', labelKey: 'admin.navSystem', icon: 'CogIcon' },
+  { id: 'settings', labelKey: 'admin.navSettings', icon: 'Cog6ToothIcon' },
 ];
 
 interface AdminSidebarProps {

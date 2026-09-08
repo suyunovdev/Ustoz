@@ -26,6 +26,7 @@ import CourseModerationPanel from '@/app/content-moderation-dashboard/components
 import SupportTicketsPanel from './SupportTicketsPanel';
 import AuditLogPanel from './AuditLogPanel';
 import SystemHealthPanel from './SystemHealthPanel';
+import SystemSettingsPanel from './SystemSettingsPanel';
 // Recharts og'ir (~150KB) — faqat kerak bo'lganda yuklanadi (boshlang'ich
 // admin bundle'ni kamaytiradi). ssr:false — chart faqat client'da.
 const AnalyticsCharts = dynamic(() => import('./AnalyticsCharts'), {
@@ -49,6 +50,7 @@ const VALID_TABS: ReadonlyArray<AdminTabId> = [
   'audit_log',
   'analytics',
   'system',
+  'settings',
 ];
 
 const TAB_TITLE_KEYS: Record<AdminTabId, { title: string; subtitle: string }> = {
@@ -111,6 +113,10 @@ const TAB_TITLE_KEYS: Record<AdminTabId, { title: string; subtitle: string }> = 
   system: {
     title: 'admin.tabSystemTitle',
     subtitle: 'admin.tabSystemSubtitle',
+  },
+  settings: {
+    title: 'admin.tabSettingsTitle',
+    subtitle: 'admin.tabSettingsSubtitle',
   },
 };
 
@@ -209,6 +215,7 @@ const AdminDashboardInteractive = () => {
           {activeTab === 'audit_log' && <AuditLogPanel />}
           {activeTab === 'analytics' && <AnalyticsCharts expanded />}
           {activeTab === 'system' && <SystemHealthPanel expanded />}
+          {activeTab === 'settings' && <SystemSettingsPanel />}
         </div>
       </main>
     </div>

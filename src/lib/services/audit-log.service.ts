@@ -28,6 +28,7 @@ export const AUDIT_ACTIONS = {
   MATERIAL_REJECT: 'material.reject',
   LIVE_SESSION_CREATE: 'live_session.create',
   LIVE_SESSION_DELETE: 'live_session.delete',
+  SETTINGS_UPDATE: 'settings.update',
 } as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS];
