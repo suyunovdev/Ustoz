@@ -12,6 +12,142 @@ interface VideoPlayerProps {
   playbackSpeed: number;
   onSpeedChange: (speed: number) => void;
   onToggleSidebar: () => void;
+  // Himoyalangan Cloudflare Stream video uchun
+  videoProvider?: string | null;
+  courseId?: string;
+  topicId?: string;
+  /** Suv belgisi matni — o'quvchi identifikatori (email • id • vaqt) */
+  watermarkLabel?: string;
+}
+
+/**
+ * Himoyalangan Cloudflare Stream video — signed token bilan.
+ * Token faqat enrollment tekshiruvidan keyin serverdan olinadi; UID hech qachon
+ * clientda ko'rinmaydi. Ustida o'quvchi identifikatori bilan suv belgisi (leak
+ * qilingan yozuvda kim sizdirgani ko'rinishi uchun; DRM bilan birga ishlaydi).
+ */
+function ProtectedStreamVideo({
+  courseId,
+  topicId,
+  title,
+  watermarkLabel,
+  onToggleSidebar,
+}: {
+  courseId?: string;
+  topicId?: string;
+  title: string;
+  watermarkLabel?: string;
+  onToggleSidebar: () => void;
+}) {
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [errMsg, setErrMsg] = useState('');
+  const [wmPos, setWmPos] = useState({ top: '12%', left: '10%' });
+  const refreshTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const fetchToken = useCallback(async () => {
+    if (!courseId || !topicId) {
+      setStatus('error');
+      setErrMsg('Video identifikatori topilmadi');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/courses/${courseId}/topics/${topicId}/stream-token`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setErrMsg(res.status === 403 ? 'Bu videoni ko\'rish uchun kursga yozilishingiz kerak' : (j?.error || 'Video ochib bo\'lmadi'));
+        setStatus('error');
+        return;
+      }
+      const j = await res.json();
+      setEmbedUrl(j.embedUrl);
+      setStatus('ready');
+      // Muddati tugashidan ~60s oldin imzolangan URL'ni yangilaymiz (uzoq darslar uchun).
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+      const ms = Math.max(30_000, Number(j.expiresAt) - Date.now() - 60_000);
+      refreshTimer.current = setTimeout(fetchToken, ms);
+    } catch {
+      setStatus('error');
+      setErrMsg('Tarmoq xatosi — qayta urinib ko\'ring');
+    }
+  }, [courseId, topicId]);
+
+  useEffect(() => {
+    fetchToken();
+    return () => {
+      if (refreshTimer.current) clearTimeout(refreshTimer.current);
+    };
+  }, [fetchToken]);
+
+  // Suv belgisini davriy ko'chirib turamiz — bitta kadrni kesib tashlashni qiyinlashtiradi.
+  useEffect(() => {
+    const positions = [
+      { top: '12%', left: '10%' },
+      { top: '70%', left: '62%' },
+      { top: '20%', left: '68%' },
+      { top: '64%', left: '12%' },
+      { top: '44%', left: '40%' },
+    ];
+    let i = 0;
+    const id = setInterval(() => {
+      i = (i + 1) % positions.length;
+      setWmPos(positions[i]);
+    }, 8000);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <div className="relative aspect-video bg-black w-full h-full">
+      {status === 'ready' && embedUrl && (
+        <iframe
+          src={embedUrl}
+          title={title}
+          className="absolute inset-0 w-full h-full"
+          allow="accelerometer; gyroscope; encrypted-media; picture-in-picture; fullscreen"
+          allowFullScreen
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      )}
+
+      {status === 'loading' && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+        </div>
+      )}
+
+      {status === 'error' && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="text-center space-y-3 px-4">
+            <Icon name="LockClosedIcon" size={48} className="text-white/40 mx-auto" />
+            <p className="text-white/70 text-sm">{errMsg}</p>
+            <p className="text-white/40 text-xs">{title}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Suv belgisi — o'quvchi identifikatori. Client-side deterrent (DRM bilan birga). */}
+      {status === 'ready' && watermarkLabel && (
+        <div
+          className="absolute z-10 select-none pointer-events-none whitespace-nowrap text-white/40 text-[11px] font-data tracking-wide transition-all duration-1000"
+          style={{ top: wmPos.top, left: wmPos.left, mixBlendMode: 'difference' }}
+        >
+          {watermarkLabel}
+        </div>
+      )}
+
+      {/* Sidebar toggle */}
+      <button
+        onClick={onToggleSidebar}
+        aria-label="Yon panelni ochish/yopish"
+        className="absolute top-3 left-3 z-20 p-2 rounded-md bg-black/60 hover:bg-black/80 transition-smooth"
+      >
+        <Icon name="Bars3Icon" size={20} className="text-white" />
+      </button>
+    </div>
+  );
 }
 
 function formatTime(sec: number): string {
@@ -32,6 +168,10 @@ const VideoPlayer = ({
   playbackSpeed,
   onSpeedChange,
   onToggleSidebar,
+  videoProvider,
+  courseId,
+  topicId,
+  watermarkLabel,
 }: VideoPlayerProps) => {
   const source = parseVideoSource(videoUrl);
 
@@ -116,7 +256,20 @@ const VideoPlayer = ({
     }
   }, []);
 
-  // ── iframe manbalar (YouTube / Vimeo / Cloudflare Stream) ──────────────
+  // ── Himoyalangan Bunny Stream (imzolangan embed + token himoya + suv belgisi) ──
+  if (videoProvider === 'bunny') {
+    return (
+      <ProtectedStreamVideo
+        courseId={courseId}
+        topicId={topicId}
+        title={title}
+        watermarkLabel={watermarkLabel}
+        onToggleSidebar={onToggleSidebar}
+      />
+    );
+  }
+
+  // ── iframe manbalar (YouTube / Vimeo / eski Cloudflare Stream embed) ────
   if (isEmbedKind(source.kind) && source.embedUrl) {
     return (
       <div ref={containerRef} className="relative aspect-video bg-black w-full h-full">

@@ -95,6 +95,7 @@
     "react-dom": "19.0.3",
     "recharts": "^2.15.2",
     "source-map-js": "^1.2.1",
+    "tus-js-client": "^4.3.1",
     "vite": "^8.0.16"
   },
   "devDependencies": {

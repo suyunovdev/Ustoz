@@ -23,6 +23,7 @@ interface Topic {
   isCompleted: boolean;
   isCurrent: boolean;
   videoUrl: string;
+  videoProvider?: string;
   content: string;
   moduleTitle: string;
 }
@@ -56,6 +57,7 @@ const LearningInterfaceInteractive = () => {
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [notes, setNotes] = useState<Note[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
   const [courseTitle, setCourseTitle] = useState('');
   const [enrollmentProgress, setEnrollmentProgress] = useState(0);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
@@ -118,6 +120,7 @@ const LearningInterfaceInteractive = () => {
       const me = await meRes.json();
       if (signal?.aborted) return;
       setUserId(me.user.id);
+      setUserEmail(me.user.email || '');
 
       // Load course details (includes topics + isEnrolled check)
       const courseRes = await fetch(`/api/courses/${id}`, { credentials: 'include', signal });
@@ -161,6 +164,7 @@ const LearningInterfaceInteractive = () => {
         isCompleted: completedIds.has(t.id),
         isCurrent: false,
         videoUrl: t.videoUrl || '',
+        videoProvider: t.videoProvider || '',
         content: t.content || '',
         moduleTitle: t.moduleTitle || '',
       }));
@@ -416,7 +420,7 @@ const LearningInterfaceInteractive = () => {
             </div>
 
             {/* Video (agar bor bo'lsa) — toza yaxlit konteyner */}
-            {currentTopic?.videoUrl && (
+            {(currentTopic?.videoUrl || currentTopic?.videoProvider === 'bunny') && (
               <div className="rounded-xl overflow-hidden shadow-warm-lg bg-black">
                 <VideoPlayer
                   videoUrl={currentTopic.videoUrl}
@@ -426,6 +430,14 @@ const LearningInterfaceInteractive = () => {
                   playbackSpeed={playbackSpeed}
                   onSpeedChange={setPlaybackSpeed}
                   onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+                  videoProvider={currentTopic.videoProvider}
+                  courseId={courseId ?? undefined}
+                  topicId={currentTopic.id}
+                  watermarkLabel={
+                    userEmail
+                      ? `${userEmail} • ${(userId ?? '').slice(0, 8)}`
+                      : undefined
+                  }
                 />
               </div>
             )}

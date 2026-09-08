@@ -14,6 +14,8 @@ export type CourseTopicRow = {
   title: string;
   description: string | null;
   videoUrl: string | null;
+  videoProvider: string | null;
+  streamUid: string | null;
   orderIndex: number;
   duration: string;
   content: string;
@@ -56,6 +58,8 @@ export interface CreateTopicInput {
   title: string;
   description?: string | null;
   videoUrl?: string | null;
+  videoProvider?: string | null;
+  streamUid?: string | null;
   duration?: string;
   content?: string;
   hasQuiz?: boolean;
@@ -83,6 +87,8 @@ export async function create(
       title: input.title,
       description: input.description ?? null,
       videoUrl: input.videoUrl ?? null,
+      videoProvider: input.videoProvider ?? null,
+      streamUid: input.streamUid ?? null,
       orderIndex: nextOrder,
       duration: input.duration ?? '0 min',
       content: input.content ?? '',
@@ -98,6 +104,8 @@ export interface UpdateTopicInput {
   title?: string;
   description?: string | null;
   videoUrl?: string | null;
+  videoProvider?: string | null;
+  streamUid?: string | null;
   duration?: string;
   content?: string;
   hasQuiz?: boolean;

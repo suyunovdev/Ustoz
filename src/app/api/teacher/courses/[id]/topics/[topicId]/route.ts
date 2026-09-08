@@ -44,6 +44,18 @@ export async function PATCH(
           : typeof b.videoUrl === 'string'
           ? b.videoUrl
           : undefined,
+      videoProvider:
+        b.videoProvider === null
+          ? null
+          : b.videoProvider === 'bunny'
+          ? 'bunny'
+          : undefined,
+      streamUid:
+        b.streamUid === null
+          ? null
+          : typeof b.streamUid === 'string'
+          ? b.streamUid
+          : undefined,
       duration: typeof b.duration === 'string' ? b.duration : undefined,
       content: typeof b.content === 'string' ? b.content : undefined,
       hasQuiz: typeof b.hasQuiz === 'boolean' ? b.hasQuiz : undefined,

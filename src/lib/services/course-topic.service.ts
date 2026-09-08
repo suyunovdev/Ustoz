@@ -65,6 +65,8 @@ export async function createTopic(
     title: validated.title,
     description: validated.description ?? null,
     videoUrl: validated.videoUrl ?? null,
+    videoProvider: validated.videoProvider ?? null,
+    streamUid: validated.streamUid ?? null,
     duration: validated.duration ?? '0 min',
     content: validated.content ?? '',
     hasQuiz: validated.hasQuiz ?? false,

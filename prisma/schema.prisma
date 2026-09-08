@@ -442,6 +442,10 @@ model CourseTopic {
   title         String
   description   String?
   videoUrl      String?  @map("video_url")
+  // Video manbasi: null (legacy → videoUrl orqali aniqlanadi) | 'stream' (Cloudflare Stream, himoyalangan)
+  videoProvider String?  @map("video_provider")
+  // Cloudflare Stream video UID — faqat videoProvider='stream' bo'lsa. Client API'ga OSHKOR QILINMAYDI.
+  streamUid     String?  @map("stream_uid")
   orderIndex    Int      @default(1) @map("order_index")
   duration      String   @default("0 min")
   content       String   @default("")

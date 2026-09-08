@@ -62,11 +62,15 @@ export async function GET(
   // `content`/`videoUrl` yashiriladi — `isFreePreview` mavzular bundan mustasno
   // (ular ataylab bepul namuna sifatida ochiq).
   const hasFullAccess = isEnrolled || isOwner || isAdmin;
-  const topics = course.topics.map((tp) =>
-    hasFullAccess || tp.isFreePreview
-      ? tp
-      : { ...tp, content: '', videoUrl: null },
-  );
+  const topics = course.topics.map((tp) => {
+    // streamUid HECH QACHON clientga oshkor qilinmaydi — himoyalangan video faqat
+    // signed-token endpoint orqali ochiladi. videoProvider ('stream') non-sensitive,
+    // uni qoldiramiz (client "bu himoyalangan video" deb biladi, lekin tokensiz ko'rolmaydi).
+    const { streamUid: _hidden, ...safe } = tp;
+    return hasFullAccess || tp.isFreePreview
+      ? safe
+      : { ...safe, content: '', videoUrl: null };
+  });
 
   // Qo'shimcha ma'lumotlar (kurs tafsiloti sahifasi uchun) — parallel:
   //  1) reyting taqsimoti (haqiqiy, groupBy) — soxta emas

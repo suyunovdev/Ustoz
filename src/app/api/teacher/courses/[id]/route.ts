@@ -21,12 +21,16 @@ import { syncTopicQuizzes, type RawQuizQuestion } from '@/lib/services/course-qu
 /** Reconcile'da bitta mavzu qatoriga yoziladigan maydonlar (create ham, update ham). */
 function buildTopicWrite(tp: Record<string, unknown>, order: number) {
   const videoUrl = typeof tp.videoUrl === 'string' && tp.videoUrl.trim() ? tp.videoUrl.trim() : null;
+  const isBunny = tp.videoProvider === 'bunny';
+  const streamUid = isBunny && typeof tp.streamUid === 'string' && tp.streamUid.trim() ? tp.streamUid.trim() : null;
   return {
     title: String(tp.title).trim(),
     orderIndex: order,
     duration: typeof tp.duration === 'string' && tp.duration ? tp.duration : '0 min',
     content: typeof tp.content === 'string' ? tp.content : '',
     videoUrl,
+    videoProvider: isBunny ? 'bunny' : null,
+    streamUid,
     hasQuiz: !!tp.hasQuiz,
   };
 }
