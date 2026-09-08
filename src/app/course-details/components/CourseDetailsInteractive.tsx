@@ -246,17 +246,10 @@ const CourseDetailsInteractive = () => {
       return;
     }
 
-    // Pullik kurs — sotib olish sahifasiga (alohida sotib olish oqimi)
-    const courseData = {
-      id: course.id,
-      title: course.title,
-      price_uzs: course.pricing.uzs,
-      price_usd: course.pricing.usd,
-      cover_image: course.coverImage,
-      instructor_name: course.instructor.name,
-      instructor_image: course.instructor.image,
-    };
-    router.push(`/payment-method-selection?courseId=${course.id}&courseData=${encodeURIComponent(JSON.stringify(courseData))}`);
+    // Pullik kurs — sotib olish sahifasiga. Faqat courseId yuboriladi; sahifa
+    // kurs ma'lumotini API'dan oladi. (Ilgari butun kurs obyekti — jumladan
+    // base64 muqova — URL'ga tiqilib, nginx ulanishni yopardi: ERR_CONNECTION_CLOSED.)
+    router.push(`/payment-method-selection?courseId=${course.id}`);
   };
 
   if (!isHydrated || isLoading) {

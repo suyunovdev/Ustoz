@@ -29,7 +29,6 @@ export default function PaymentMethodSelectionInteractive() {
   const [requestSent, setRequestSent] = useState(false);
 
   const courseId = searchParams.get('courseId');
-  const courseDataParam = searchParams.get('courseData');
 
   useEffect(() => {
     if (!user) {
@@ -42,20 +41,10 @@ export default function PaymentMethodSelectionInteractive() {
       return;
     }
 
-    // Try to parse course data from URL first for immediate display
-    if (courseDataParam) {
-      try {
-        const parsedCourse = JSON.parse(decodeURIComponent(courseDataParam));
-        setCourse(parsedCourse);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error parsing course data from URL:', err);
-      }
-    }
-
-    // Fetch fresh data from database in background
+    // Kurs ma'lumoti bazadan olinadi (URL'ga tiqilmaydi — base64 muqova URL'ni
+    // shishirib, nginx ulanishni yopardi).
     fetchCourse();
-  }, [user, courseId, courseDataParam]);
+  }, [user, courseId]);
 
   const fetchCourse = async () => {
     try {
