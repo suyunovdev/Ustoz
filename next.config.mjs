@@ -78,8 +78,9 @@ const nextConfig = {
       { source: '/landing-page', destination: '/', permanent: true },
       // Eski sertifikatlar route'i → yangi nom (xatcho'p/eski havolalar 404 bo'lmasligi uchun)
       { source: '/certificates', destination: '/student-certificates', permanent: true },
-      // Eski obuna route'i → yangi nom
-      { source: '/subscription', destination: '/student-subscription', permanent: true },
+      // Obuna bo'limi olib tashlandi — eski havolalar dashboard'ga yo'naltiriladi (404 bo'lmasin).
+      { source: '/subscription', destination: '/student-dashboard', permanent: true },
+      { source: '/student-subscription', destination: '/student-dashboard', permanent: true },
     ];
   },
 

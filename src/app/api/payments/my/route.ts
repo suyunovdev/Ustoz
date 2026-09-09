@@ -19,10 +19,10 @@ export async function GET(req: NextRequest) {
     // Cursor pagination: limit+1 o'qib, oxirgisini keyingi sahifa kaliti sifatida
     // ajratamiz (ilgari qattiq take:100 edi — og'ir tarixlar jimgina kesilardi).
     const rows = await prisma.paymentTransaction.findMany({
-      where: { studentId: session.sub },
+      // Obuna bo'limi olib tashlangan — student tarixida faqat kurs to'lovlari.
+      where: { studentId: session.sub, kind: { not: 'subscription' } },
       include: {
         course: { select: { title: true, teacherId: true } },
-        plan: { select: { name: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
         created_at: t.createdAt.toISOString(),
         completed_at: t.completedAt ? t.completedAt.toISOString() : null,
         kind: t.kind,
-        plan_name: t.plan?.name ?? null,
+        plan_name: null,
         courses: t.course
           ? { title: t.course.title, teacher_id: t.course.teacherId }
           : null,

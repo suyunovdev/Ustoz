@@ -90,13 +90,13 @@ export async function hasActiveSubscription(userId: string): Promise<boolean> {
  * Bu "1 oylik obuna bilan yozilib, obuna tugagach umrbod kirish" teshigini yopadi.
  */
 export async function hasActiveCourseAccess(userId: string, courseId: string): Promise<boolean> {
+  // Kirish faqat faol enrollment orqali (obuna bog'lanishi olib tashlangan —
+  // mavjud yozuvlar doimiy bo'lib qoladi).
   const enr = await prisma.enrollment.findUnique({
     where: { studentId_courseId: { studentId: userId, courseId } },
-    select: { isActive: true, source: true },
+    select: { isActive: true },
   });
-  if (!enr || !enr.isActive) return false;
-  if (enr.source === 'subscription') return hasAllCoursesAccess(userId);
-  return true;
+  return enr?.isActive === true;
 }
 
 // ─── Tier-asosli capability gating ───

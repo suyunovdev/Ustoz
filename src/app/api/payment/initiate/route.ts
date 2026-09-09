@@ -1,9 +1,7 @@
 /**
  * POST /api/payment/initiate
- * To'lovni boshlash — Click yoki Payme orqali.
- * Body: { paymentMethod: 'click'|'payme', courseId? , planId? }
- *   - courseId → kurs sotib olish
- *   - planId   → obuna (subscription)
+ * To'lovni boshlash — Click yoki Payme orqali (faqat kurs to'lovi).
+ * Body: { paymentMethod: 'click'|'payme', courseId }
  * Gateway sozlanmagan bo'lsa: dev'da mock URL; PRODUCTION'da 503 (soxta success YO'Q).
  */
 import type { NextRequest } from 'next/server';
@@ -28,63 +26,36 @@ export async function POST(req: NextRequest) {
       throw new ValidationError('JSON formatida xato');
     }
 
-    const { courseId, planId, paymentMethod } = body;
+    const { courseId, paymentMethod } = body;
     if (paymentMethod !== 'click' && paymentMethod !== 'payme') {
       throw new ValidationError('paymentMethod: click yoki payme bo\'lishi kerak');
     }
-    // courseId/planId — mavjud bo'lsa, to'g'ri UUID formatida bo'lishi shart
-    // (noto'g'ri format → 400, "topilmadi" 404 emas).
-    if (courseId !== undefined && !isUuid(courseId)) {
-      throw new ValidationError('courseId noto\'g\'ri formatda');
-    }
-    if (planId !== undefined && !isUuid(planId)) {
-      throw new ValidationError('planId noto\'g\'ri formatda');
-    }
-    if (courseId === undefined && planId === undefined) {
-      throw new ValidationError('courseId yoki planId majburiy');
+    // Faqat kurs to'lovi — obuna bo'limi olib tashlangan.
+    if (typeof courseId !== 'string' || !isUuid(courseId)) {
+      throw new ValidationError('courseId majburiy va to\'g\'ri formatda bo\'lishi kerak');
     }
 
-    // ── To'lov turini aniqlash (kurs yoki obuna) ──
-    let kind: 'course' | 'subscription';
-    let priceUzs: number;
-    let refId: string; // merchantTransId qismi uchun
-    let txnExtra: Record<string, unknown>;
-
-    if (typeof planId === 'string') {
-      const plan = await prisma.subscriptionPlan.findFirst({
-        where: { id: planId, isActive: true },
-        select: { id: true, priceUzs: true },
-      });
-      if (!plan) return jsonResponse({ error: 'Plan topilmadi' }, { status: 404 });
-      kind = 'subscription';
-      priceUzs = Number(plan.priceUzs);
-      refId = 'SUB';
-      txnExtra = { kind: 'subscription', planId: plan.id, courseId: null };
-    } else if (typeof courseId === 'string') {
-      const course = await prisma.course.findFirst({
-        where: { id: courseId, isPublished: true },
-        select: { id: true, priceUzs: true },
-      });
-      if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
-      priceUzs = Number(course.priceUzs);
-      if (priceUzs <= 0) {
-        return jsonResponse({ error: 'Bu kurs bepul — /api/courses/[id]/enroll ishlatiladi' }, { status: 400 });
-      }
-      const existing = await prisma.enrollment.findUnique({
-        where: { studentId_courseId: { studentId: session.sub, courseId } },
-        select: { isActive: true },
-      });
-      if (existing?.isActive) {
-        return jsonResponse({ error: 'Siz allaqachon bu kursga yozilgansiz' }, { status: 409 });
-      }
-      // Kurs to'liq narxda sotiladi — obuna chegirmasi olib tashlangan
-      // (student obuna rejimi mavjud emas; purchase-request oqimi bilan izchil).
-      kind = 'course';
-      refId = courseId.slice(0, 8);
-      txnExtra = { kind: 'course', courseId };
-    } else {
-      throw new ValidationError('courseId yoki planId majburiy');
+    // ── Kurs to'lovi (faqat kurs — obuna bo'limi olib tashlangan) ──
+    const kind = 'course' as const;
+    const course = await prisma.course.findFirst({
+      where: { id: courseId, isPublished: true },
+      select: { id: true, priceUzs: true },
+    });
+    if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
+    let priceUzs = Number(course.priceUzs);
+    if (priceUzs <= 0) {
+      return jsonResponse({ error: 'Bu kurs bepul — /api/courses/[id]/enroll ishlatiladi' }, { status: 400 });
     }
+    const existing = await prisma.enrollment.findUnique({
+      where: { studentId_courseId: { studentId: session.sub, courseId } },
+      select: { isActive: true },
+    });
+    if (existing?.isActive) {
+      return jsonResponse({ error: 'Siz allaqachon bu kursga yozilgansiz' }, { status: 409 });
+    }
+    // Kurs to'liq narxda sotiladi.
+    const refId = courseId.slice(0, 8);
+    const txnExtra: Record<string, unknown> = { kind: 'course', courseId };
 
     // ── Gateway sozlanganmi? ──
     const clickMerchantId = process.env.CLICK_MERCHANT_ID;

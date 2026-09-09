@@ -3,7 +3,6 @@ import { revalidateTag } from 'next/cache';
 import { requireStudent, errorResponse } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 import { jsonResponse } from '@/lib/json';
-import { hasAllCoursesAccess } from '@/lib/services/subscription.service';
 import { recommendationsCacheTag } from '@/lib/services/dashboard.service';
 import { createNotification } from '@/lib/repositories/notification.repository';
 
@@ -39,22 +38,16 @@ export async function POST(
   if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
 
   // Pullik kurslar alohida sotib olish orqali ochiladi (course-purchase-request →
-  // admin tasdig'i). Bu bepul-yozilish endpoint'i faqat bepul kurslar uchun.
-  // (Mavjud all-access obunachilar muddati tugaguncha ham yozila oladi — grandfather.)
+  // admin tasdig'i). Bu bepul-yozilish endpoint'i FAQAT bepul kurslar uchun.
   const isPaid = Number(course.priceUzs) > 0;
   if (isPaid) {
-    const subscribed = await hasAllCoursesAccess(session.sub);
-    if (!subscribed) {
-      return jsonResponse(
-        { error: 'Bu kurs pullik. Avval sotib oling.', code: 'PAYMENT_REQUIRED' },
-        { status: 400 }
-      );
-    }
-    // grandfather obunachi → bepul davom etadi
+    return jsonResponse(
+      { error: 'Bu kurs pullik. Avval sotib oling.', code: 'PAYMENT_REQUIRED' },
+      { status: 400 }
+    );
   }
-  // Manba: pullik kurs faqat (grandfather) obuna orqali ochiladi (obuna tugasa
-  // kirish to'xtaydi); bepul kurs — doimiy (direct).
-  const enrollmentSource = isPaid ? 'subscription' : 'direct';
+  // Bepul kurs — doimiy yozilish (direct). Obuna manbasi olib tashlangan.
+  const enrollmentSource = 'direct';
 
   // Enrollment yaratish + counter inkrementi — atomik.
   // Refund'dan keyin qayta enrollment qilingan holatda counter ikki marta oshmaydi.
