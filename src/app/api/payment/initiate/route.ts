@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       select: { id: true, priceUzs: true },
     });
     if (!course) return jsonResponse({ error: 'Kurs topilmadi' }, { status: 404 });
-    let priceUzs = Number(course.priceUzs);
+    const priceUzs = Number(course.priceUzs);
     if (priceUzs <= 0) {
       return jsonResponse({ error: 'Bu kurs bepul — /api/courses/[id]/enroll ishlatiladi' }, { status: 400 });
     }
