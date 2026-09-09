@@ -8,7 +8,6 @@ import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { createNotification } from '@/lib/repositories/notification.repository';
 import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
-import { getSubscriberDiscountPct, applyDiscount } from './subscription.service';
 
 /** Student kurs sotib olish so'rovi yaratadi. Kutilayotgan so'rov bo'lsa — dublikat qilmaydi. */
 export async function createCoursePurchaseRequest(
@@ -23,22 +22,16 @@ export async function createCoursePurchaseRequest(
   if (!course) throw new ValidationError('Kurs topilmadi');
   if (Number(course.priceUzs) <= 0) throw new ValidationError('Bu kurs bepul — sotib olish shart emas');
 
-  // All-access obunachi kursga bepul kiradi — sotib olish so'rovi mantiqsiz (UI enroll'ga
-  // yo'naltiradi, lekin API'ni to'g'ridan-to'g'ri chaqirishdan ham himoyalanamiz).
-  const discountPct = await getSubscriberDiscountPct(userId);
-  if (discountPct >= 100) {
-    throw new ValidationError('Obunangiz bu kursni bepul ochadi — sotib olish shart emas');
-  }
-
   const enrolled = await prisma.enrollment.findUnique({
     where: { studentId_courseId: { studentId: userId, courseId } },
     select: { isActive: true },
   });
   if (enrolled?.isActive) throw new ValidationError('Siz allaqachon bu kursga yozilgansiz');
 
-  // Narx snapshot'i: student rozi bo'lgan (chegirmali) summa so'rovga yoziladi —
-  // approve paytida narx o'zgarsa ham student ko'rgan summa ishlatiladi.
-  const priceSnapshot = BigInt(applyDiscount(Number(course.priceUzs), discountPct));
+  // Narx snapshot'i: student ko'rgan summa so'rovga yoziladi — approve paytida narx
+  // o'zgarsa ham student ko'rgan summa ishlatiladi. (Obuna chegirmasi olib tashlandi —
+  // student obuna rejimi mavjud emas, kurs to'liq narxda sotiladi.)
+  const priceSnapshot = BigInt(Number(course.priceUzs));
 
   const existing = await prisma.coursePurchaseRequest.findFirst({
     where: { userId, courseId, status: 'pending' },
