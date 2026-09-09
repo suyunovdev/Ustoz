@@ -1,11 +1,12 @@
-# 3-QATLAM — CI'da build, VPS'ga faqat standalone artifact (OOM imkonsiz).
+# CI'DA BUILD, VPS'ga faqat standalone artifact ship qilinadi → VPS'da build YO'Q → OOM imkonsiz.
 #
-# Bu workflow QO'LDA ishga tushiriladi (workflow_dispatch) — mavjud auto-deploy
-# (ci.yml) buzilmasin. VPS tomonini sozlaganingizdan keyin (pm2 standalone
-# entrypoint = `node server.js`, quyidagi TODO qiymatlar) buni sinovdan o'tkazing,
-# ishonch hosil qilgach ci.yml deploy job'ini shunga o'tkazishingiz mumkin.
+# Nega: VPS (Contabo 7.8G) allaqachon Elasticsearch(2G)+Docker+Grafana+6 boshqa Next-app
+# bilan to'la. Deploy'da `next build`ning "Collecting build traces" burst'i xotirani
+# tugatib OOM (.nft.json ENOENT) beradi. Build'ni Actions runnerga ko'chirsak — muammo
+# strukturaviy yo'qoladi. next.config.mjs'da `output: 'standalone'` bor.
 #
-# Talab: next.config.mjs'da `output: 'standalone'` (qo'shildi).
+# Hozircha QO'LDA ishga tushiriladi (workflow_dispatch) — mavjud ci.yml auto-deploy'ni
+# buzmasdan sinash uchun. Yashil bo'lgach ci.yml deploy job'i shunga o'tkaziladi.
 
 name: Deploy Standalone (manual)
 
@@ -22,9 +23,14 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NODE_OPTIONS: "--max-old-space-size=4096"
+      # Build vaqtida kerak bo'ladigan "fake" qiymatlar (Prisma generate / next build
+      # DATABASE_URL/JWT_SECRET talab qiladi; runtime .env VPS'da alohida).
       DATABASE_URL: "postgresql://fake:fake@localhost:5432/fake"
       JWT_SECRET: "ci-build-secret-at-least-32-chars-long"
-      NEXT_PUBLIC_APP_URL: "http://localhost:4028"
+      # KRITIK: NEXT_PUBLIC_* build vaqtida baked bo'ladi → PRODUCTION domen bo'lishi shart
+      # (appUrl()/OAuth redirect'lari shundan quriladi). localhost EMAS. ci.yml build job bilan bir xil.
+      NEXT_PUBLIC_APP_URL: "https://ustozedu.uz"
+      NEXT_PUBLIC_SITE_URL: "https://ustozedu.uz"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,6 +45,8 @@ jobs:
         run: npm run build
 
       - name: Standalone bundle yig'ish
+        # deploy-bundle/ = standalone ROOT (server.js top-level'da) + static + public + prisma.
+        # VPS'da bu to'g'ridan-to'g'ri /var/www/ustoz'ga ochiladi → server.js /var/www/ustoz/server.js.
         run: |
           set -e
           rm -rf deploy-bundle && mkdir -p deploy-bundle/.next
@@ -56,7 +64,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           source: deploy-bundle.tar.gz
-          target: /home/deploy/incoming        # TODO: VPS yo'lini tasdiqlang
+          target: /home/deploy/incoming
 
       - name: Extract + atomic swap + pm2 reload
         uses: appleboy/ssh-action@v1.2.0
@@ -65,26 +73,17 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           command_timeout: 5m
-          # ⚠️ DIQQAT: bu pm2 run-modelni O'ZGARTIRADI —
-          #   hozir: pm2 `ustoz` = `next start -p 4028` (to'liq node_modules + .next kerak)
-          #   standalone: `node server.js` (o'zining minimal node_modules'i bilan)
-          # Shuning uchun bu workflow'ni faqat sinovdan o'tkazib, ishonch hosil qilgach
-          # asosiy deploy sifatida qo'llang. /var/www uchun deploy user'da passwordless sudo bor.
-          script: |
-            set -euo pipefail
-            APP_BASE=/var/www/ustoz-standalone      # blue-green /var/www/ustoz'ga tegmaslik uchun alohida
-            PM2_APP=ustoz                            # mavjud pm2 app nomi
-            ENV_SRC=/home/deploy/.env                # TODO: runtime .env manzilini tasdiqlang
-            REL="$APP_BASE/releases/$(date +%Y%m%d%H%M%S)"
-            sudo mkdir -p "$REL"
-            sudo tar xzf /home/deploy/incoming/deploy-bundle.tar.gz -C "$REL"
-            sudo ln -sfn "$ENV_SRC" "$REL/.env"      # runtime .env (repo'da emas)
-            # Migration drift bor — migrate deploy ishlatilmaydi (tables qo'lda psql bilan).
-            sudo ln -sfn "$REL" "$APP_BASE/current"  # atomik almashish
-            cd "$APP_BASE/current"
-            # standalone entrypoint = server.js. Ecosystem fayl (bir marta yoziladi).
-            printf "module.exports={apps:[{name:'%s',script:'server.js',cwd:'%s/current',env:{PORT:4028}}]}\n" \
-              "$PM2_APP" "$APP_BASE" | sudo tee "$APP_BASE/ecosystem.config.js" >/dev/null
-            pm2 startOrReload "$APP_BASE/ecosystem.config.js" --update-env
-            pm2 save
-            sudo bash -c "ls -1dt '$APP_BASE'/releases/* | tail -n +6 | xargs -r rm -rf"
+          # VPS-side skript: live .env'ni saqlaydi, atomik mv swap qiladi, pm2 reload.
+          # Mavjud /var/www/ustoz + /home/deploy/_provisioner/ustoz.config.cjs qayta ishlatiladi.
+          script: bash /home/deploy/deploy-ustoz-artifact.sh
+
+      - name: Health check (deploy'dan keyin)
+        run: |
+          URL="${{ secrets.HEALTH_URL || 'https://ustozedu.uz/api/health' }}"
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$URL" || echo 000)
+            if [ "$code" = "200" ]; then echo "Sog'lom (urinish $i)"; exit 0; fi
+            echo "urinish $i: HTTP $code — kutilyapti..."; sleep 6
+          done
+          echo "::error::Health check muvaffaqiyatsiz — deploy tekshirilishi kerak"
+          exit 1

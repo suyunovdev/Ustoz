@@ -86,8 +86,31 @@ jobs:
       - name: Build
         run: npm run build
 
+      # ARTIFACT modeli: build shu yerda (Actions runner, RAM yetarli) qilinadi,
+      # standalone bundle yig'ilib artifact sifatida yuklanadi. VPS'da build YO'Q → OOM imkonsiz.
+      - name: Standalone bundle yig'ish
+        # deploy-bundle/ = standalone ROOT (server.js top-level) + static + public + prisma.
+        # VPS'da bu to'g'ridan-to'g'ri /var/www/ustoz'ga ochiladi (server.js /var/www/ustoz/server.js).
+        run: |
+          set -e
+          rm -rf deploy-bundle && mkdir -p deploy-bundle/.next
+          cp -r .next/standalone/. deploy-bundle/
+          cp -r .next/static deploy-bundle/.next/static
+          [ -d public ] && cp -r public deploy-bundle/public
+          cp -r prisma deploy-bundle/prisma
+          tar czf deploy-bundle.tar.gz -C deploy-bundle .
+          ls -lh deploy-bundle.tar.gz
+
+      - name: Artifact yuklash
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-bundle
+          path: deploy-bundle.tar.gz
+          retention-days: 3
+
   # CD — faqat main'ga push'da va lint/test/build o'tgach production VPS'ga deploy.
-  # SSH orqali serverdagi blue-green skript ishga tushadi (clone → build → atomik swap → pm2 reload).
+  # CI'da qurilgan standalone artifact SCP bilan VPS'ga tashlanadi, VPS faqat
+  # extract + atomik swap + pm2 reload qiladi (deploy-ustoz-artifact.sh). VPS'da build YO'Q.
   deploy:
     name: Deploy (production)
     runs-on: ubuntu-latest
@@ -100,34 +123,28 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: VPS'ga SSH deploy
-        uses: appleboy/ssh-action@v1.2.0
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Artifact yuklab olish
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-bundle
+
+      - name: SCP artifact -> VPS
+        uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          command_timeout: 20m
-          # GH_TOKEN'ni VPS'ga uzatamiz — deploy-ustoz.sh'dagi `git clone` endi
-          # AUTENTIFIKATSIYALI bo'ladi. Ilgari anonim clone edi → GitHub IP'ni
-          # rate-limit qilib "could not read Username" xatosi berardi.
-          envs: GH_TOKEN
-          script: |
-            # Token'ni git credential store'ga yozamiz (github.com uchun).
-            # GITHUB_TOKEN run oxirida tugaydi — qoldig'i zararsiz; har deploy'da yangilanadi.
-            git config --global credential.helper "store --file=$HOME/.gh-ci-creds"
-            printf 'https://x-access-token:%s@github.com\n' "$GH_TOKEN" > "$HOME/.gh-ci-creds"
-            chmod 600 "$HOME/.gh-ci-creds"
-            # Public URL'ni token bilan almashtiramiz — dastlabki so'rov ham
-            # anonim emas, autentifikatsiyali (rate-limitga tushmaydi).
-            git config --global url."https://x-access-token:${GH_TOKEN}@github.com/".insteadOf "https://github.com/"
-            bash /home/deploy/deploy-ustoz.sh main
-            EXIT=$?
-            # Tozalash — token'li insteadOf'ni va credential store faylini olib tashlaymiz.
-            git config --global --remove-section url."https://x-access-token:${GH_TOKEN}@github.com/" 2>/dev/null || true
-            rm -f "$HOME/.gh-ci-creds"
-            exit $EXIT
+          source: deploy-bundle.tar.gz
+          target: /home/deploy/incoming
+
+      - name: Extract + atomik swap + pm2 reload
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 5m
+          script: bash /home/deploy/deploy-ustoz-artifact.sh
 
       - name: Health check (deploy'dan keyin)
         run: |
