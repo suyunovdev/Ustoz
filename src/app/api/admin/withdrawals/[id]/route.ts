@@ -47,38 +47,45 @@ export async function PATCH(
       return jsonResponse({ error: 'So\'rov topilmadi', code: 'NOT_FOUND' }, { status: 404 });
     }
 
-    // Holat o'tishlari
+    // Holat o'tishlari — ATOMIK: updateMany WHERE status IN (kutilgan) bilan.
+    // Ikki parallel admin amali (yoki double-click) bir vaqtda o'tkaza olmaydi —
+    // faqat bittasi count>0 oladi, ikkinchisi 409 (INVALID_STATE).
     const now = new Date();
     let data: Record<string, unknown>;
+    let expected: string[];
     let title: string;
     let message: string;
     const amount = w.amountUzs.toString();
 
     if (action === 'approve') {
-      if (w.status !== 'pending') {
-        return jsonResponse({ error: "Faqat 'pending' so'rovni tasdiqlash mumkin", code: 'INVALID_STATE' }, { status: 400 });
-      }
+      expected = ['pending'];
       data = { status: 'processing', processedById: session.sub, processedAt: now, adminNote };
       title = 'Pul yechish so\'rovi tasdiqlandi';
       message = `${amount} so'm miqdoridagi so'rovingiz tasdiqlandi va to'lovga tayyorlanmoqda.`;
     } else if (action === 'complete') {
-      if (w.status !== 'pending' && w.status !== 'processing') {
-        return jsonResponse({ error: "Faqat pending/processing so'rovni yakunlash mumkin", code: 'INVALID_STATE' }, { status: 400 });
-      }
+      expected = ['pending', 'processing'];
       data = { status: 'completed', processedById: session.sub, processedAt: w.processedAt ?? now, completedAt: now, adminNote };
       title = 'Pul yechish yakunlandi ✅';
       message = `${amount} so'm hisobingizga o'tkazildi.`;
     } else {
-      if (w.status !== 'pending' && w.status !== 'processing') {
-        return jsonResponse({ error: "Faqat pending/processing so'rovni rad etish mumkin", code: 'INVALID_STATE' }, { status: 400 });
-      }
+      expected = ['pending', 'processing'];
       // rejected → mablag' balansga qaytadi (getBalance rejected'ni deduksiya qilmaydi)
       data = { status: 'rejected', processedById: session.sub, processedAt: now, rejectionReason, adminNote };
       title = 'Pul yechish so\'rovi rad etildi';
       message = `${amount} so'm so'rovingiz rad etildi. Sabab: ${rejectionReason}. Mablag' balansingizga qaytarildi.`;
     }
 
-    const updated = await prisma.teacherWithdrawal.update({ where: { id }, data });
+    const claimed = await prisma.teacherWithdrawal.updateMany({
+      where: { id, status: { in: expected } },
+      data,
+    });
+    if (claimed.count === 0) {
+      return jsonResponse(
+        { error: 'So\'rov holati mos emas yoki allaqachon o\'zgartirilgan', code: 'INVALID_STATE' },
+        { status: 409 },
+      );
+    }
+    const updated = await prisma.teacherWithdrawal.findUniqueOrThrow({ where: { id } });
 
     // O'qituvchiga notifikatsiya (best-effort)
     try {

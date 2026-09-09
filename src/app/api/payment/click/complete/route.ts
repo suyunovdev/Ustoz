@@ -146,6 +146,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Summa mosligini tekshirish — Click bergan summa kutilgan tranzaksiya
+    // summasidan farq qilsa rad etamiz (Payme oqimi bilan izchil, mudofaa).
+    if (Number(body.amount) !== Number(transaction.amountUzs)) {
+      return NextResponse.json(
+        {
+          click_trans_id: body.click_trans_id,
+          merchant_trans_id: body.merchant_trans_id,
+          merchant_confirm_id: 0,
+          error: -2,
+          error_note: 'Incorrect parameter amount',
+        } as ClickCompleteResponse,
+        { status: 200 }
+      );
+    }
+
     // If error from Click, mark as failed
     if (body.error < 0) {
       try {

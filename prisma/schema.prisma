@@ -573,6 +573,9 @@ model PaymentTransaction {
   refundedAt           DateTime?         @map("refunded_at")
   refundReason         String?           @map("refund_reason")
   refundedById         String?           @map("refunded_by_id") @db.Uuid
+  // Platforma komissiyasi foizi — TO'LOV YARATILGANDA muzlatiladi (snapshot).
+  // Balans/daromad shu foizdan hisoblanadi; env keyin o'zgarsa o'tmish o'zgarmaydi.
+  platformFeePct       Decimal?          @map("platform_fee_pct") @db.Decimal(5, 2)
 
   student         UserProfile       @relation(fields: [studentId], references: [id], onDelete: Cascade)
   // Kurs o'chirilsa ham moliyaviy yozuv saqlanadi (courseId null bo'ladi, tarix

@@ -7,7 +7,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { teacherRepo, type TeacherCourseWithRevenue } from '@/lib/repositories';
-import { PLATFORM_FEE_PCT, netFromGross } from '@/lib/repositories/earnings.repository';
+import { PLATFORM_FEE_PCT } from '@/lib/repositories/earnings.repository';
 
 export interface TeacherDashboardData {
   courses: Array<{
@@ -73,7 +73,7 @@ interface RecentTxRow {
   id: string;
   student_name: string;
   course_title: string;
-  amount_uzs: bigint;
+  net_uzs: bigint;
   created_at: Date;
 }
 
@@ -94,8 +94,9 @@ export async function getTeacherDashboard(
         ) AS month
       ),
       revenue AS (
+        -- Netto (o'qituvchi ulushi) — har txn snapshot komissiyasi ayrilgan.
         SELECT date_trunc('month', (pt.created_at AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Tashkent') AS month,
-               COALESCE(SUM(pt.amount_uzs), 0)::bigint AS revenue
+               COALESCE(SUM(pt.amount_uzs - floor(pt.amount_uzs * COALESCE(pt.platform_fee_pct, ${PLATFORM_FEE_PCT}) / 100.0)), 0)::bigint AS revenue
         FROM payment_transactions pt
         JOIN courses c ON c.id = pt.course_id
         WHERE c.teacher_id = ${teacherId}::uuid
@@ -125,7 +126,7 @@ export async function getTeacherDashboard(
       SELECT pt.id,
              up.full_name AS student_name,
              c.title AS course_title,
-             pt.amount_uzs,
+             (pt.amount_uzs - floor(pt.amount_uzs * COALESCE(pt.platform_fee_pct, ${PLATFORM_FEE_PCT}) / 100.0))::bigint AS net_uzs,
              pt.created_at
       FROM payment_transactions pt
       JOIN courses c ON c.id = pt.course_id
@@ -140,13 +141,12 @@ export async function getTeacherDashboard(
     }),
   ]);
 
-  // Stats hisoblash (courses ro'yxatidan). Daromad — NETTO (platforma komissiyasi
-  // ayrilgan), earnings sahifasi bilan bir xil manba (netFromGross) orqali.
-  const totalGross = coursesWithRevenue.reduce(
-    (sum, c) => sum + BigInt(c.revenueUzs),
+  // Stats hisoblash (courses ro'yxatidan). Daromad — NETTO (har txn snapshot
+  // komissiyasi ayrilgan), earnings balansi bilan bir xil manba (per-txn) orqali.
+  const totalNet = coursesWithRevenue.reduce(
+    (sum, c) => sum + BigInt(c.netRevenueUzs),
     BigInt(0),
   );
-  const totalNet = netFromGross(totalGross);
 
   // O'rtacha reyting — faqat reyting olgan kurslar bo'yicha (reviewsiz 0.0
   // kurslar o'rtachani sun'iy pasaytirmasligi uchun).
@@ -170,16 +170,15 @@ export async function getTeacherDashboard(
     avgRating: Math.round(avgRating * 100) / 100,
   };
 
-  // Top 5 kurslar (netto revenue bo'yicha). Komissiya monoton bo'lgani uchun
-  // saralash tartibi brutto bilan bir xil; faqat ko'rsatiladigan qiymat netto.
+  // Top 5 kurslar (netto revenue bo'yicha).
   const topCourses = [...coursesWithRevenue]
-    .sort((a, b) => Number(BigInt(b.revenueUzs) - BigInt(a.revenueUzs)))
+    .sort((a, b) => Number(BigInt(b.netRevenueUzs) - BigInt(a.netRevenueUzs)))
     .slice(0, 5)
     .map((c) => ({
       id: c.id,
       title: c.title,
       enrollmentCount: c._count.enrollments,
-      revenueUzs: netFromGross(BigInt(c.revenueUzs)).toString(),
+      revenueUzs: c.netRevenueUzs,
       rating: Number(c.rating),
     }));
 
@@ -203,17 +202,17 @@ export async function getTeacherDashboard(
     stats,
     monthlyRevenue: monthlyRows.map((m) => ({
       // Locale-agnostik 'YYYY-MM' — client o'z lokali bilan formatlaydi
-      // (server servisda request-scoped locale yo'q).
+      // (server servisda request-scoped locale yo'q). revenue allaqachon NETTO (SQL).
       month: m.month.toISOString().slice(0, 7),
-      revenue: netFromGross(m.revenue).toString(),
+      revenue: m.revenue.toString(),
       enrollments: Number(m.enrollments),
     })),
     recentTransactions: recentTxRows.map((tx) => ({
       id: tx.id,
       studentName: tx.student_name,
       courseTitle: tx.course_title,
-      // O'qituvchi bosh sahifada sof ulushini ko'radi (komissiya ayrilgan).
-      amountUzs: netFromGross(tx.amount_uzs).toString(),
+      // O'qituvchi bosh sahifada sof ulushini ko'radi (SQL'da komissiya ayrilgan).
+      amountUzs: tx.net_uzs.toString(),
       createdAt: tx.created_at.toISOString(),
     })),
     topCourses,
@@ -234,8 +233,8 @@ function courseToDTO(c: TeacherCourseWithRevenue) {
     rating: Number(c.rating),
     reviewCount: c._count.reviews,
     topicCount: c._count.topics,
-    // Netto daromad — platforma komissiyasi ayrilgan (earnings sahifasi bilan izchil).
-    revenueUzs: netFromGross(BigInt(c.revenueUzs)).toString(),
+    // Netto daromad — har txn snapshot komissiyasi ayrilgan (earnings balansi bilan izchil).
+    revenueUzs: c.netRevenueUzs,
     createdAt: c.createdAt.toISOString(),
   };
 }

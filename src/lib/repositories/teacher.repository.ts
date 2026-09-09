@@ -5,7 +5,8 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import type { Prisma } from '@/generated/prisma/client';
+import { Prisma } from '@/generated/prisma/client';
+import { PLATFORM_FEE_PCT } from './earnings.repository';
 
 type PrismaLike = Prisma.TransactionClient | typeof prisma;
 
@@ -19,7 +20,10 @@ export type TeacherCourseRow = Prisma.CourseGetPayload<{
 }>;
 
 export interface TeacherCourseWithRevenue extends TeacherCourseRow {
+  /** Brutto daromad (completed to'lovlar yig'indisi). */
   revenueUzs: string;
+  /** Netto daromad — har txn snapshot komissiyasi ayrilgan (balans bilan izchil). */
+  netRevenueUzs: string;
 }
 
 export interface TeacherCourseFilters {
@@ -61,21 +65,30 @@ export async function findCoursesWithRevenue(
 
   if (courses.length === 0) return [];
 
-  // Bitta query bilan barcha kurslar uchun revenue
+  // Bitta raw query bilan barcha kurslar uchun brutto + netto (per-txn snapshot fee).
   const courseIds = courses.map((c) => c.id);
-  const revenueRows = await prisma.paymentTransaction.groupBy({
-    by: ['courseId'],
-    where: { courseId: { in: courseIds }, status: 'completed' },
-    _sum: { amountUzs: true },
-  });
-  const revenueByCourse = new Map<string, bigint>();
+  const revenueRows = await prisma.$queryRaw<
+    Array<{ courseId: string; gross: bigint; net: bigint }>
+  >(Prisma.sql`
+    SELECT course_id AS "courseId",
+      COALESCE(SUM(amount_uzs), 0)::bigint AS gross,
+      COALESCE(SUM(amount_uzs - floor(amount_uzs * COALESCE(platform_fee_pct, ${PLATFORM_FEE_PCT}) / 100.0)), 0)::bigint AS net
+    FROM payment_transactions
+    WHERE status = 'completed'
+      AND course_id IN (${Prisma.join(courseIds.map((id) => Prisma.sql`${id}::uuid`))})
+    GROUP BY course_id
+  `);
+  const grossByCourse = new Map<string, bigint>();
+  const netByCourse = new Map<string, bigint>();
   for (const r of revenueRows) {
-    if (r.courseId) revenueByCourse.set(r.courseId, r._sum.amountUzs ?? BigInt(0));
+    grossByCourse.set(r.courseId, r.gross);
+    netByCourse.set(r.courseId, r.net);
   }
 
   return courses.map((c) => ({
     ...c,
-    revenueUzs: (revenueByCourse.get(c.id) ?? BigInt(0)).toString(),
+    revenueUzs: (grossByCourse.get(c.id) ?? BigInt(0)).toString(),
+    netRevenueUzs: (netByCourse.get(c.id) ?? BigInt(0)).toString(),
   }));
 }
 
@@ -89,13 +102,17 @@ export async function findCourseByIdForTeacher(
   });
   if (!course) return null;
 
-  const agg = await prisma.paymentTransaction.aggregate({
-    where: { courseId, status: 'completed' },
-    _sum: { amountUzs: true },
-  });
+  const rows = await prisma.$queryRaw<Array<{ gross: bigint; net: bigint }>>(Prisma.sql`
+    SELECT
+      COALESCE(SUM(amount_uzs), 0)::bigint AS gross,
+      COALESCE(SUM(amount_uzs - floor(amount_uzs * COALESCE(platform_fee_pct, ${PLATFORM_FEE_PCT}) / 100.0)), 0)::bigint AS net
+    FROM payment_transactions
+    WHERE status = 'completed' AND course_id = ${courseId}::uuid
+  `);
   return {
     ...course,
-    revenueUzs: (agg._sum.amountUzs ?? BigInt(0)).toString(),
+    revenueUzs: (rows[0]?.gross ?? BigInt(0)).toString(),
+    netRevenueUzs: (rows[0]?.net ?? BigInt(0)).toString(),
   };
 }
 

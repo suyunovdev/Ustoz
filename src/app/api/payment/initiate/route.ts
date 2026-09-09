@@ -12,7 +12,7 @@ import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { isUuid } from '@/lib/validation';
-import { getSubscriberDiscountPct, applyDiscount } from '@/lib/services/subscription.service';
+import { PLATFORM_FEE_PCT } from '@/lib/repositories/earnings.repository';
 import type { PaymentMethod } from '@/generated/prisma/client';
 
 const SITE_URL = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ?? 'http://localhost:4028';
@@ -77,24 +77,11 @@ export async function POST(req: NextRequest) {
       if (existing?.isActive) {
         return jsonResponse({ error: 'Siz allaqachon bu kursga yozilgansiz' }, { status: 409 });
       }
-      // Obuna chegirmasi — obunachi chegirmali narxda to'laydi (o'qituvchi chegirmali
-      // summadan ulush oladi). all-access (100%) bo'lsa — bepul enroll ishlatilsin.
-      const discountPct = await getSubscriberDiscountPct(session.sub);
-      if (discountPct >= 100) {
-        return jsonResponse(
-          { error: 'Obunangiz bu kursni to\'liq qoplaydi — bepul yozilish ishlatiladi.', code: 'FREE_VIA_SUBSCRIPTION' },
-          { status: 400 },
-        );
-      }
-      const originalUzs = priceUzs;
-      priceUzs = applyDiscount(priceUzs, discountPct);
+      // Kurs to'liq narxda sotiladi — obuna chegirmasi olib tashlangan
+      // (student obuna rejimi mavjud emas; purchase-request oqimi bilan izchil).
       kind = 'course';
       refId = courseId.slice(0, 8);
-      txnExtra = {
-        kind: 'course',
-        courseId,
-        ...(discountPct > 0 ? { metadata: { originalUzs, discountPct } } : {}),
-      };
+      txnExtra = { kind: 'course', courseId };
     } else {
       throw new ValidationError('courseId yoki planId majburiy');
     }
@@ -124,6 +111,8 @@ export async function POST(req: NextRequest) {
         paymentMethod: paymentMethod as PaymentMethod,
         status: 'pending',
         merchantTransId,
+        // Komissiya foizi to'lov boshlanganda muzlatiladi (keyin env o'zgarsa ta'sir qilmaydi).
+        platformFeePct: PLATFORM_FEE_PCT,
         ...txnExtra,
       },
     });

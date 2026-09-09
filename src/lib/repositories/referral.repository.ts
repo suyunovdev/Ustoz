@@ -285,6 +285,14 @@ export async function handlePaymentCompleted(transactionId: string): Promise<voi
   if (!tx.student.referredById) return;
 
   const commissionPct = Number(process.env.REFERRAL_COMMISSION_PCT ?? '10');
+  // Sog'liq tekshiruvi: referral komissiyasi platforma ulushidan oshmasligi kerak,
+  // aks holda platforma har sotuvda zarar ko'radi (referral platforma fee ichidan to'lanadi).
+  const platformFeePct = Number(process.env.PLATFORM_FEE_PCT ?? '15');
+  if (commissionPct > platformFeePct) {
+    console.warn(
+      `[referral] OGOHLANTIRISH: REFERRAL_COMMISSION_PCT (${commissionPct}%) > PLATFORM_FEE_PCT (${platformFeePct}%) — platforma har referral sotuvda zarar ko'radi.`,
+    );
+  }
   const amountUzs = (tx.amountUzs * BigInt(commissionPct)) / BigInt(100);
 
   await createEarning({

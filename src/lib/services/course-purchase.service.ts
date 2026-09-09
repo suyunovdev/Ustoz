@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { createNotification } from '@/lib/repositories/notification.repository';
 import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
+import { PLATFORM_FEE_PCT } from '@/lib/repositories/earnings.repository';
 
 /** Student kurs sotib olish so'rovi yaratadi. Kutilayotgan so'rov bo'lsa — dublikat qilmaydi. */
 export async function createCoursePurchaseRequest(
@@ -145,6 +146,7 @@ export async function approveCoursePurchaseRequest(
         paymentMethod: (reqRow.paymentMethod === 'payme' ? 'payme' : 'click') as never,
         status: 'completed',
         completedAt: new Date(),
+        platformFeePct: PLATFORM_FEE_PCT,
         metadata: { source: 'purchase_request_approved' },
       },
       select: { id: true },

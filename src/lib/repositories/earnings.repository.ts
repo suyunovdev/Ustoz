@@ -16,6 +16,10 @@
  */
 
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@/generated/prisma/client';
+
+/** Prisma client yoki transaction client — getBalance qulf ostida ham chaqirilsin. */
+type PrismaLike = Prisma.TransactionClient | typeof prisma;
 
 export const PLATFORM_FEE_PCT = Number(process.env.PLATFORM_FEE_PCT ?? '15');
 
@@ -49,10 +53,17 @@ export interface TeacherBalance {
   refundedPaymentCount: number;
 }
 
-export async function getBalance(teacherId: string): Promise<TeacherBalance> {
-  const rows = await prisma.$queryRaw<
+export async function getBalance(
+  teacherId: string,
+  client: PrismaLike = prisma,
+): Promise<TeacherBalance> {
+  // platformFee — HAR tranzaksiyaning O'Z snapshot foizidan (platform_fee_pct)
+  // hisoblanadi; snapshot yo'q (eski/null) bo'lsa joriy PLATFORM_FEE_PCT fallback.
+  // Shu tariqa env foizi keyin o'zgarsa ham o'tmishdagi balans o'zgarmaydi.
+  const rows = await client.$queryRaw<
     Array<{
       gross: bigint;
+      platformFee: bigint;
       refunded: bigint;
       completedCount: bigint;
       refundedCount: bigint;
@@ -64,6 +75,10 @@ export async function getBalance(teacherId: string): Promise<TeacherBalance> {
       COALESCE((SELECT SUM(pt.amount_uzs)::bigint FROM payment_transactions pt
         JOIN courses c ON c.id = pt.course_id
         WHERE c.teacher_id = ${teacherId}::uuid AND pt.status = 'completed'), 0) AS gross,
+      COALESCE((SELECT SUM(floor(pt.amount_uzs * COALESCE(pt.platform_fee_pct, ${PLATFORM_FEE_PCT}) / 100.0))::bigint
+        FROM payment_transactions pt
+        JOIN courses c ON c.id = pt.course_id
+        WHERE c.teacher_id = ${teacherId}::uuid AND pt.status = 'completed'), 0) AS "platformFee",
       COALESCE((SELECT SUM(pt.amount_uzs)::bigint FROM payment_transactions pt
         JOIN courses c ON c.id = pt.course_id
         WHERE c.teacher_id = ${teacherId}::uuid AND pt.status = 'refunded'), 0) AS refunded,
@@ -81,13 +96,14 @@ export async function getBalance(teacherId: string): Promise<TeacherBalance> {
   const r = rows[0];
 
   // gross allaqachon refund'larni hisobga olmaydi (status='completed' filtri)
-  const platformFeeUzs = platformFeeOf(r.gross);
+  const platformFeeUzs = r.platformFee;
   const netRevenueUzs = r.gross - platformFeeUzs;
   const available = netRevenueUzs - r.withdrawn - r.pending;
 
   return {
     grossRevenueUzs: r.gross,
     refundedUzs: r.refunded,
+    // Ko'rsatish uchun joriy amaldagi foiz (haqiqiy komissiya summasi snapshot'dan).
     platformFeePct: PLATFORM_FEE_PCT,
     platformFeeUzs,
     netRevenueUzs,

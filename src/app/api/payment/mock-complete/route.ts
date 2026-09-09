@@ -10,6 +10,7 @@ import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { activateSubscriptionFromPayment } from '@/lib/services/subscription.service';
+import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,24 +37,33 @@ export async function POST(req: NextRequest) {
       if (txn.kind === 'subscription' && txn.planId) {
         await activateSubscriptionFromPayment(txn.studentId, txn.planId, txn.id);
       } else if (txn.courseId) {
-        // Kurs enrollment + counter (race-safe)
+        const courseId = txn.courseId;
+        // Kurs enrollment + counter (race-safe). Reaktivatsiyada ham counter
+        // to'g'ri inkrement qilinadi (refund decrement qilgan bo'lsa qaytaramiz).
         await prisma.$transaction(async (tx) => {
-          const created = await tx.enrollment.createMany({
-            data: [{ studentId: txn.studentId, courseId: txn.courseId!, isActive: true }],
-            skipDuplicates: true,
+          const existing = await tx.enrollment.findUnique({
+            where: { studentId_courseId: { studentId: txn.studentId, courseId } },
+            select: { isActive: true },
           });
-          if (created.count > 0) {
+          const shouldIncrement = !existing || !existing.isActive;
+          await tx.enrollment.upsert({
+            where: { studentId_courseId: { studentId: txn.studentId, courseId } },
+            create: { studentId: txn.studentId, courseId, isActive: true },
+            update: { isActive: true },
+          });
+          if (shouldIncrement) {
             await tx.course.update({
-              where: { id: txn.courseId! },
+              where: { id: courseId },
               data: { enrollmentCount: { increment: 1 } },
-            });
-          } else {
-            await tx.enrollment.updateMany({
-              where: { studentId: txn.studentId, courseId: txn.courseId!, isActive: false },
-              data: { isActive: true },
             });
           }
         });
+        // Referral komissiyasi — click/payme callback'lari bilan izchil (best-effort).
+        try {
+          await handlePaymentCompleted(txn.id);
+        } catch (e) {
+          console.error('[mock-complete] referral hook error:', e);
+        }
       }
     }
 

@@ -10,6 +10,7 @@ import { ValidationError } from '@/lib/errors';
 import { getSubscriberCourseDiscountSetting } from './platform-settings.service';
 import { createNotification } from '@/lib/repositories/notification.repository';
 import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
+import { PLATFORM_FEE_PCT } from '@/lib/repositories/earnings.repository';
 
 export function serializePlan(p: {
   id: string; name: string; description: string | null; priceUzs: bigint;
@@ -281,6 +282,7 @@ export async function grantSubscriptionManually(
         paymentMethod,
         status: 'completed',
         completedAt: new Date(),
+        platformFeePct: PLATFORM_FEE_PCT,
         merchantTransId: `SUB-${crypto.randomUUID()}`,
         metadata: { source: 'manual_grant', planName: plan.name },
       },

@@ -14,7 +14,7 @@
 
 import type { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { paymentRepo, type AdminTransactionRow, type ListTransactionsFilters } from '@/lib/repositories';
+import { paymentRepo, earningsRepo, type AdminTransactionRow, type ListTransactionsFilters } from '@/lib/repositories';
 import { cancelEarningByTransaction } from '@/lib/repositories/referral.repository';
 import { ValidationError } from '@/lib/errors';
 import { log as auditLog } from './audit-log.service';
@@ -148,6 +148,61 @@ export async function processRefund(
     await cancelEarningByTransaction(txId);
   } catch (e) {
     console.error('[refund] cancelEarningByTransaction failed:', e);
+  }
+
+  // Clawback ko'rinuvchanligi (H2/M2) — avtomatik pul qaytarish mexanizmi (ledger)
+  // yo'q, shuning uchun qo'lda aralashuv kerak bo'lgan holatlarni audit log'ga yozamiz.
+  try {
+    // M2 — komissiya ALLAQACHON to'langan bo'lsa: cancelEarningByTransaction faqat
+    // 'pending'ni bekor qiladi; 'paid' referrer puli qo'lda clawback qilinishi kerak.
+    const earning = await prisma.referralEarning.findUnique({
+      where: { sourceTransactionId: txId },
+      select: { id: true, status: true, referrerId: true, amountUzs: true },
+    });
+    if (earning?.status === 'paid') {
+      await auditLog({
+        adminId,
+        action: 'referral.clawback_needed',
+        targetType: 'referral_earning',
+        targetId: earning.id,
+        metadata: {
+          reason: 'refund',
+          referrerId: earning.referrerId,
+          amountUzs: earning.amountUzs.toString(),
+          sourceTransactionId: txId,
+        },
+        request,
+      });
+    }
+
+    // H2 — refunddan keyin o'qituvchi allaqachon netto ulushidan ko'p yechib bo'lgan
+    // bo'lsa (yechilgan + kutilayotgan > net), ortiqcha to'lovni admin ko'rsin.
+    if (target.courseId) {
+      const course = await prisma.course.findUnique({
+        where: { id: target.courseId },
+        select: { teacherId: true },
+      });
+      if (course) {
+        const bal = await earningsRepo.getBalance(course.teacherId);
+        if (bal.withdrawnUzs + bal.pendingWithdrawalUzs > bal.netRevenueUzs) {
+          await auditLog({
+            adminId,
+            action: 'teacher.overdrawn_after_refund',
+            targetType: 'user',
+            targetId: course.teacherId,
+            metadata: {
+              netRevenueUzs: bal.netRevenueUzs.toString(),
+              withdrawnUzs: bal.withdrawnUzs.toString(),
+              pendingWithdrawalUzs: bal.pendingWithdrawalUzs.toString(),
+              sourceTransactionId: txId,
+            },
+            request,
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error('[refund] clawback visibility failed:', e);
   }
 
   return result;

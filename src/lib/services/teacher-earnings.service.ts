@@ -180,8 +180,9 @@ export async function requestWithdrawal(
       FOR UPDATE
     `;
 
-    // 2. Balance qulflangan tx ichida hisoblanadi (refundlar bilan birga)
-    const balance = await earningsRepo.getBalance(teacherId);
+    // 2. Balance qulflangan tx ICHIDA hisoblanadi (tx client uzatiladi — refundlar
+    //    bilan birga, qulf ostida izchil o'qish).
+    const balance = await earningsRepo.getBalance(teacherId, tx);
     if (amount > balance.availableUzs) {
       throw new InsufficientBalanceError();
     }
