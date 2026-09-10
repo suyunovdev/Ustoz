@@ -67,6 +67,10 @@ export const metadata: Metadata = {
     "video darslar",
   ],
   authors: [{ name: 'Ustoz Team' }],
+  // Google Search Console domen egaligini tasdiqlash (SEO + OAuth verification uchun).
+  verification: {
+    google: '_kD9ZLgMyJSbyN4x6xsn8-9xvuNQ2Sd98_hQ5w3VzGY',
+  },
   icons: {
     icon: [
       { url: '/icon.svg', type: 'image/svg+xml' },
