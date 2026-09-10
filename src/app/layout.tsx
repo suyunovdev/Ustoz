@@ -78,19 +78,32 @@ export const metadata: Metadata = {
     ],
     apple: [{ url: '/apple-icon.png', sizes: '180x180', type: 'image/png' }],
   },
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
     locale: 'uz_UZ',
-    siteName: 'Ustoz',
+    alternateLocale: ['ru_RU', 'en_US'],
+    siteName: 'UstozEdu',
     url: SITE_URL,
-    title: "Ustoz Ta'lim — O'zbek tilidagi onlayn o'quv platformasi",
+    title: "UstozEdu — O'zbek tilidagi onlayn o'quv platformasi",
     description:
       "Kurslarni o'rganing, sertifikat oling va kasbiy rivojlaning.",
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'UstozEdu — onlayn ta\'lim platformasi',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: "Ustoz Ta'lim",
+    title: "UstozEdu — O'zbek tilidagi onlayn o'quv platformasi",
     description: "O'zbek tilidagi onlayn o'quv platformasi",
+    images: ['/og.png'],
   },
 };
 
@@ -116,6 +129,32 @@ export default async function RootLayout({
     })();
   `;
 
+  // SEO: strukturaviy ma'lumot (schema.org JSON-LD) — Organization + WebSite.
+  // Google'ga brend, logo va sayt-ichi qidiruvni tushuntiradi (rich results / sitelinks).
+  const orgJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'EducationalOrganization',
+    name: 'UstozEdu',
+    alternateName: 'Ustoz',
+    url: SITE_URL,
+    logo: `${SITE_URL}/icon-512.png`,
+    email: 'ilyossuyunov416@gmail.com',
+    description:
+      "O'zbek o'quvchilar va o'qituvchilar uchun zamonaviy onlayn ta'lim platformasi.",
+  };
+  const siteJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'UstozEdu',
+    url: SITE_URL,
+    inLanguage: ['uz', 'ru', 'en'],
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${SITE_URL}/course-marketplace?search={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
   return (
     <html lang={serverLocale} className={`${nunitoSans.variable} ${jetbrainsMono.variable} ${sora.variable}`} suppressHydrationWarning>
       <head>
@@ -123,6 +162,8 @@ export default async function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }} />
       </head>
       <body>
         <AuthProvider>

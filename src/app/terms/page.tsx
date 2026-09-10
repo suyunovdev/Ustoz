@@ -1,30 +1,29 @@
 import type { Metadata } from 'next';
-import LegalPage, { type LegalSection } from '@/components/legal/LegalPage';
-import { getServerT } from '@/lib/i18n/server';
+import LegalPage from '@/components/legal/LegalPage';
+import { getServerLocale, getServerT } from '@/lib/i18n/server';
+import { getTermsContent } from '@/lib/legal/legalContent';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getServerT();
+  const locale = await getServerLocale();
+  const doc = getTermsContent(locale);
   return {
     title: t('meta.termsTitle'),
-    description: t('auth.termsModalIntro'),
+    description: doc.intro,
+    alternates: { canonical: '/terms' },
   };
 }
 
 export default async function TermsPage() {
-  const t = await getServerT();
-  const sections: LegalSection[] = [
-    { heading: t('auth.termsAccount'), body: t('auth.termsAccountDesc') },
-    { heading: t('auth.termsContent'), body: t('auth.termsContentDesc') },
-    { heading: t('auth.termsPayment'), body: t('auth.termsPaymentDesc') },
-    { heading: t('auth.termsRefund'), body: t('auth.termsRefundDesc') },
-  ];
+  const locale = await getServerLocale();
+  const doc = getTermsContent(locale);
   return (
     <LegalPage
       icon="DocumentTextIcon"
-      title={t('auth.termsModalTitle')}
-      intro={t('auth.termsModalIntro')}
-      sections={sections}
-      updatedLabel={t('legal.lastUpdated')}
+      title={doc.title}
+      intro={doc.intro}
+      sections={doc.sections}
+      updatedLabel={doc.effectiveDate}
     />
   );
 }

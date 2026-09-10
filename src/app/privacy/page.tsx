@@ -1,29 +1,29 @@
 import type { Metadata } from 'next';
-import LegalPage, { type LegalSection } from '@/components/legal/LegalPage';
-import { getServerT } from '@/lib/i18n/server';
+import LegalPage from '@/components/legal/LegalPage';
+import { getServerLocale, getServerT } from '@/lib/i18n/server';
+import { getPrivacyContent } from '@/lib/legal/legalContent';
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getServerT();
+  const locale = await getServerLocale();
+  const doc = getPrivacyContent(locale);
   return {
     title: t('meta.privacyTitle'),
-    description: t('auth.privacyModalIntro'),
+    description: doc.intro,
+    alternates: { canonical: '/privacy' },
   };
 }
 
 export default async function PrivacyPage() {
-  const t = await getServerT();
-  const sections: LegalSection[] = [
-    { heading: t('auth.privacyCollection'), body: t('auth.privacyCollectionDesc') },
-    { heading: t('auth.privacyUsage'), body: t('auth.privacyUsageDesc') },
-    { heading: t('auth.privacySecurity'), body: t('auth.privacySecurityDesc') },
-  ];
+  const locale = await getServerLocale();
+  const doc = getPrivacyContent(locale);
   return (
     <LegalPage
       icon="ShieldCheckIcon"
-      title={t('auth.privacyModalTitle')}
-      intro={t('auth.privacyModalIntro')}
-      sections={sections}
-      updatedLabel={t('legal.lastUpdated')}
+      title={doc.title}
+      intro={doc.intro}
+      sections={doc.sections}
+      updatedLabel={doc.effectiveDate}
     />
   );
 }

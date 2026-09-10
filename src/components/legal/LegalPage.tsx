@@ -24,6 +24,29 @@ interface LegalPageProps {
   updatedLabel: string;
 }
 
+/** Matnni bloklarga bo'ladi: `\n\n` — paragraf; `• ` bilan boshlangan qatorlar — ro'yxat. */
+function renderBody(body: string) {
+  const blocks = body.split('\n\n');
+  return blocks.map((block, bi) => {
+    const lines = block.split('\n');
+    const isList = lines.every((l) => l.trim().startsWith('• '));
+    if (isList) {
+      return (
+        <ul key={bi} className="list-disc pl-5 space-y-1.5 text-sm text-muted-foreground leading-relaxed">
+          {lines.map((l, li) => (
+            <li key={li}>{l.replace(/^\s*•\s*/, '')}</li>
+          ))}
+        </ul>
+      );
+    }
+    return (
+      <p key={bi} className="text-sm text-muted-foreground leading-relaxed">
+        {block}
+      </p>
+    );
+  });
+}
+
 export default function LegalPage({ icon, title, intro, sections, updatedLabel }: LegalPageProps) {
   const { t } = useI18n();
 
@@ -74,8 +97,8 @@ export default function LegalPage({ icon, title, intro, sections, updatedLabel }
               key={i}
               className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm"
             >
-              <h2 className="font-heading font-semibold text-foreground mb-2">{section.heading}</h2>
-              <p className="text-sm text-muted-foreground leading-relaxed">{section.body}</p>
+              <h2 className="font-heading font-semibold text-foreground mb-3">{section.heading}</h2>
+              <div className="space-y-3">{renderBody(section.body)}</div>
             </section>
           ))}
         </div>
