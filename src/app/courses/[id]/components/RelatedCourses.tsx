@@ -24,7 +24,7 @@ const RelatedCourses = ({ courses }: RelatedCoursesProps) => {
           return (
             <Link
               key={course.id}
-              href={`/course-details?courseId=${course.id}`}
+              href={`/courses/${course.id}`}
               className="bg-card rounded-md shadow-warm hover:shadow-warm-lg transition-smooth overflow-hidden group"
             >
               <div className="relative h-40 overflow-hidden bg-muted">

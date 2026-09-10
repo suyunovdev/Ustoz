@@ -49,7 +49,7 @@ const PaymentProcessingInteractive = () => {
     }
 
     if (!transactionId) {
-      router.push('/course-marketplace');
+      router.push('/courses');
       return;
     }
 
@@ -360,7 +360,7 @@ const PaymentProcessingInteractive = () => {
                   {t('payment.tryAgain')}
                 </button>
                 <button
-                  onClick={() => router.push('/course-marketplace')}
+                  onClick={() => router.push('/courses')}
                   className="w-full px-6 py-3 bg-muted text-foreground rounded-lg font-semibold hover:bg-muted/80 transition-smooth"
                 >
                   {t('payment.backToHome')}

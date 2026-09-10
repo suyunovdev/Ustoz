@@ -6,5 +6,5 @@ export default function Error(props: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  return <SegmentError {...props} scope="course-details" />;
+  return <SegmentError {...props} scope="course" />;
 }

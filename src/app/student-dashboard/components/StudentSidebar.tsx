@@ -18,7 +18,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.dashboard', icon: 'HomeIcon', href: '/student-dashboard' },
-  { labelKey: 'courses.marketplace', icon: 'ShoppingBagIcon', href: '/course-marketplace' },
+  { labelKey: 'courses.marketplace', icon: 'ShoppingBagIcon', href: '/courses' },
   { labelKey: 'dashboard.certificates', icon: 'TrophyIcon', href: '/student-certificates' },
   { labelKey: 'live.title', icon: 'VideoCameraIcon', href: '/live-sessions' },
   { labelKey: 'exam.title', icon: 'ClipboardDocumentCheckIcon', href: '/practice-exam' },

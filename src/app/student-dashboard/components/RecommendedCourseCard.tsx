@@ -116,7 +116,7 @@ const RecommendedCourseCard = ({ course }: RecommendedCourseCardProps) => {
               : formatCurrency(course.priceUzs, locale, 'UZS')}
           </span>
           <Link
-            href={`/course-details?courseId=${course.id}`}
+            href={`/courses/${course.id}`}
             className="flex items-center space-x-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth"
           >
             <span className="font-medium text-sm">{t('student.view')}</span>

@@ -359,7 +359,7 @@ const LandingPageInteractive = () => {
   const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      router.push(`/course-marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+      router.push(`/courses?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   }, [searchQuery, router]);
 
@@ -481,7 +481,7 @@ const LandingPageInteractive = () => {
                 {t('landing.categoriesTitle')}
               </h2>
               <Link
-                href="/course-marketplace"
+                href="/courses"
                 className="group inline-flex items-center gap-1.5 text-sm font-semibold rounded-full px-4 py-2 transition-all hover:text-white"
                 style={{ color: BLUE, border: `1.5px solid ${BLUE}` }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = BLUE; }}
@@ -495,7 +495,7 @@ const LandingPageInteractive = () => {
               {CATEGORIES.map((cat) => (
                 <Link
                   key={cat.key}
-                  href={`/course-marketplace?category=${cat.key}`}
+                  href={`/courses?category=${cat.key}`}
                   className="group flex items-center gap-3 px-4 py-4 rounded-xl transition-all"
                   style={{ background: PAPER_CARD, border: `1px solid ${LINE}` }}
                 >
@@ -536,7 +536,7 @@ const LandingPageInteractive = () => {
                 {popularCourses.map((course) => (
                   <Link
                     key={course.id}
-                    href={`/course-details?courseId=${course.id}`}
+                    href={`/courses/${course.id}`}
                     className="group rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-1"
                     style={{ background: PAPER_CARD, border: `1px solid ${LINE}` }}
                   >

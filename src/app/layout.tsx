@@ -150,7 +150,7 @@ export default async function RootLayout({
     inLanguage: ['uz', 'ru', 'en'],
     potentialAction: {
       '@type': 'SearchAction',
-      target: `${SITE_URL}/course-marketplace?search={search_term_string}`,
+      target: `${SITE_URL}/courses?search={search_term_string}`,
       'query-input': 'required name=search_term_string',
     },
   };

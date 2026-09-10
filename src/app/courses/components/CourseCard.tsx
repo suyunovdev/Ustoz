@@ -145,7 +145,7 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
             </div>
           </div>
           <Link
-            href={`/course-details?courseId=${course.id}`}
+            href={`/courses/${course.id}`}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-md font-medium hover:bg-secondary transition-smooth"
           >
             {t('courses.viewDetails')}

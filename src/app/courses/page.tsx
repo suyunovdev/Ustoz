@@ -20,11 +20,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: t('meta.marketplaceTitle'),
     description: t('meta.marketplaceDesc'),
-    alternates: { canonical: '/course-marketplace' },
+    alternates: { canonical: '/courses' },
     openGraph: {
       title: t('meta.marketplaceOgTitle'),
       description: t('meta.marketplaceOgDesc'),
-      url: '/course-marketplace',
+      url: '/courses',
       type: 'website',
     },
   };

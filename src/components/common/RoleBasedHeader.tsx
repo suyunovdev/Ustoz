@@ -28,7 +28,7 @@ const RoleBasedHeader = (props: RoleBasedHeaderProps) => {
   );
 };
 
-const PUBLIC_PAGES = ['/', '/landing-page', '/login', '/register', '/forgot-password', '/about', '/course-marketplace', '/course-details', '/help', '/terms', '/privacy', '/unauthorized'];
+const PUBLIC_PAGES = ['/', '/landing-page', '/login', '/register', '/forgot-password', '/about', '/courses', '/help', '/terms', '/privacy', '/unauthorized'];
 
 const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   const livePathname = usePathname();
@@ -65,7 +65,7 @@ const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   // Student navigation
   const studentNavItems = [
     { label: t('nav.dashboard'), path: '/student-dashboard', icon: 'HomeIcon' },
-    { label: t('courses.marketplace'), path: '/course-marketplace', icon: 'ShoppingBagIcon' },
+    { label: t('courses.marketplace'), path: '/courses', icon: 'ShoppingBagIcon' },
     { label: t('dashboard.certificates'), path: '/student-certificates', icon: 'TrophyIcon' },
   ];
 

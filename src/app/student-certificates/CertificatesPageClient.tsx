@@ -113,7 +113,7 @@ const CertificatesPageClient = () => {
                 {t('student.tabMyCourses')}
               </button>
               <button
-                onClick={() => router.push('/course-marketplace')}
+                onClick={() => router.push('/courses')}
                 className="px-6 py-3 bg-card border border-border text-foreground rounded-md hover:bg-muted transition-colors font-medium"
               >
                 {t('student.findNewCourse')}

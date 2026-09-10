@@ -456,7 +456,7 @@ const PaymentSuccessInteractive = () => {
             <span className="font-medium">{t('payment.myCourses')}</span>
           </button>
           <button
-            onClick={() => router.push('/course-marketplace')}
+            onClick={() => router.push('/courses')}
             className="flex items-center justify-center space-x-2 px-4 py-3 bg-card text-foreground rounded-md hover:bg-muted transition-smooth border border-border"
           >
             <Icon name="ShoppingBagIcon" size={20} />

@@ -200,7 +200,7 @@ export default function CourseModerationPanel() {
               <div className="flex flex-wrap items-center gap-2 shrink-0">
                 {/* Ko'rib chiqish — kursni yangi tabda ochadi (ilgari admin ko'rmasdan tasdiqlardi) */}
                 <a
-                  href={`/course-details?courseId=${c.id}`}
+                  href={`/courses/${c.id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-border text-sm font-medium text-foreground hover:bg-muted transition-smooth"

@@ -64,7 +64,7 @@ const InstructorBio = ({ instructor, otherCourses }: InstructorBioProps) => {
             {otherCourses.map((course) => (
               <Link
                 key={course.id}
-                href={`/course-details?courseId=${course.id}`}
+                href={`/courses/${course.id}`}
                 className="block p-3 bg-muted rounded-md hover:bg-muted/80 transition-smooth"
               >
                 <h5 className="font-medium text-foreground mb-1 line-clamp-1">{course.title}</h5>

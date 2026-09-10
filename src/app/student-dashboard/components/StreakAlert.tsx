@@ -45,7 +45,7 @@ const StreakAlert = ({ streak, mostRecentEnrollment }: StreakAlertProps) => {
     ? mostRecentEnrollment.nextTopicId
       ? `/learning-interface?courseId=${mostRecentEnrollment.courseId}&topicId=${mostRecentEnrollment.nextTopicId}`
       : `/learning-interface?courseId=${mostRecentEnrollment.courseId}`
-    : '/course-marketplace';
+    : '/courses';
 
   return (
     <div className="bg-warning/10 dark:bg-warning/15 border-l-4 border-warning rounded-md p-4 flex items-center gap-3">

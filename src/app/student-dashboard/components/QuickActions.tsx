@@ -15,7 +15,7 @@ const QuickActions = () => {
   const { t } = useI18n();
   const actions: QuickAction[] = [
     { id: 'history', label: t('student.history'), icon: 'ClockIcon', href: '/transaction-history' },
-    { id: 'courses', label: t('nav.courses'), icon: 'BookOpenIcon', href: '/course-marketplace' },
+    { id: 'courses', label: t('nav.courses'), icon: 'BookOpenIcon', href: '/courses' },
     { id: 'learning', label: t('student.tabMyCourses'), icon: 'AcademicCapIcon', href: '/student-dashboard?tab=my-courses' },
   ];
 

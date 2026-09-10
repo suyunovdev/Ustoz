@@ -74,11 +74,12 @@ interface Review {
   helpful: number;
 }
 
-const CourseDetailsInteractive = () => {
+const CourseDetailsInteractive = ({ courseId: courseIdProp }: { courseId?: string } = {}) => {
   const { t, locale } = useI18n();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const courseId = searchParams.get('courseId');
+  // Yangi route: /courses/[id] (prop). Eski ?courseId= ham qo'llab-quvvatlanadi (fallback).
+  const courseId = courseIdProp ?? searchParams.get('courseId');
 
   const [isHydrated, setIsHydrated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -102,7 +103,7 @@ const CourseDetailsInteractive = () => {
       return () => controller.abort();
     }
     // No courseId — redirect to marketplace
-    router.push('/course-marketplace');
+    router.push('/courses');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
@@ -112,13 +113,13 @@ const CourseDetailsInteractive = () => {
     try {
       const res = await fetch(`/api/courses/${id}`, { credentials: 'include', signal });
       if (!res.ok) {
-        router.push('/course-marketplace');
+        router.push('/courses');
         return;
       }
       const { course: c } = await res.json();
       if (signal?.aborted) return; // kurs almashdi/unmount — eskirgan javobni tashlaymiz
       if (!c) {
-        router.push('/course-marketplace');
+        router.push('/courses');
         return;
       }
 
@@ -231,7 +232,7 @@ const CourseDetailsInteractive = () => {
           credentials: 'include',
         });
         if (res.status === 401) {
-          router.push(`/login?redirect=${encodeURIComponent(`/course-details?courseId=${course.id}`)}`);
+          router.push(`/login?redirect=${encodeURIComponent(`/courses/${course.id}`)}`);
           return;
         }
         if (res.ok) {
@@ -277,7 +278,7 @@ const CourseDetailsInteractive = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground mb-4">
-          <Link href="/course-marketplace" className="hover:text-primary transition-smooth">
+          <Link href="/courses" className="hover:text-primary transition-smooth">
             {t('courseDetails.breadcrumbCourses')}
           </Link>
           <Icon name="ChevronRightIcon" size={14} />

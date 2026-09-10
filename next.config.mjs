@@ -83,6 +83,15 @@ const nextConfig = {
       { source: '/student-subscription', destination: '/student-dashboard', permanent: true },
       // Eski "Biz haqimizda" URL'i → toza /about (xatcho'p/indeks 404 bo'lmasin)
       { source: '/about-page', destination: '/about', permanent: true },
+      // Eski kurs URL'lari → toza /courses struktura (havolalar/indeks 404 bo'lmasin)
+      { source: '/course-marketplace', destination: '/courses', permanent: true },
+      {
+        source: '/course-details',
+        has: [{ type: 'query', key: 'courseId' }],
+        destination: '/courses/:courseId',
+        permanent: true,
+      },
+      { source: '/course-details', destination: '/courses', permanent: true },
     ];
   },
 
@@ -148,7 +157,7 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }],
       },
       {
-        source: '/course-marketplace',
+        source: '/courses',
         headers: [{ key: 'Cache-Control', value: 'public, s-maxage=30, stale-while-revalidate=60' }],
       },
     ];

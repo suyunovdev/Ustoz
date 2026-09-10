@@ -233,7 +233,7 @@ const StudentDashboardInteractive = () => {
 
             <SearchBar
               onSearch={(q) =>
-                router.push(`/course-marketplace?search=${encodeURIComponent(q)}`)
+                router.push(`/courses?search=${encodeURIComponent(q)}`)
               }
             />
 
@@ -282,7 +282,7 @@ const StudentDashboardInteractive = () => {
                       onClick={() =>
                         enrollments.length > 0
                           ? setActiveView('my-courses')
-                          : router.push('/course-marketplace')
+                          : router.push('/courses')
                       }
                       className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
@@ -321,7 +321,7 @@ const StudentDashboardInteractive = () => {
                     <h3 className="text-xl font-semibold text-foreground mb-2">{t('student.noCourses')}</h3>
                     <p className="text-muted-foreground mb-6">{t('student.buyFirstCourseAndStart')}</p>
                     <button
-                      onClick={() => router.push('/course-marketplace')}
+                      onClick={() => router.push('/courses')}
                       className="px-6 py-3 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                     >
                       {t('student.viewCourses')}

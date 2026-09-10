@@ -37,7 +37,7 @@ export default function PaymentMethodSelectionInteractive() {
     }
 
     if (!courseId) {
-      router.push('/course-marketplace');
+      router.push('/courses');
       return;
     }
 
@@ -134,7 +134,7 @@ export default function PaymentMethodSelectionInteractive() {
           <h2 className="text-2xl font-bold text-foreground mb-4">{t('payment.error')}</h2>
           <p className="text-muted-foreground mb-6">{error}</p>
           <button
-            onClick={() => router.push('/course-marketplace')}
+            onClick={() => router.push('/courses')}
             className="px-6 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
           >
             {t('payment.backToCourses')}
@@ -163,7 +163,7 @@ export default function PaymentMethodSelectionInteractive() {
               {t('payment.toDashboard')}
             </button>
             <button
-              onClick={() => router.push('/course-marketplace')}
+              onClick={() => router.push('/courses')}
               className="px-6 py-3 bg-card border border-border text-foreground rounded-lg font-medium hover:bg-muted transition-colors"
             >
               {t('payment.backToCourses')}

@@ -125,14 +125,14 @@ const LearningInterfaceInteractive = () => {
       // Load course details (includes topics + isEnrolled check)
       const courseRes = await fetch(`/api/courses/${id}`, { credentials: 'include', signal });
       if (!courseRes.ok) {
-        router.push('/course-marketplace');
+        router.push('/courses');
         return;
       }
       const { course } = await courseRes.json();
       if (signal?.aborted) return;
 
       if (!course.isEnrolled) {
-        router.push(`/course-details?courseId=${id}`);
+        router.push(`/courses/${id}`);
         return;
       }
 
