@@ -16,7 +16,7 @@ export default function CookieConsent() {
 
   useEffect(() => {
     if (!hasConsented) {
-      const timer = setTimeout(() => setVisible(true), 2000);
+      const timer = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(timer);
     }
   }, [hasConsented]);
@@ -44,146 +44,106 @@ export default function CookieConsent() {
 
   if (!visible) return null;
 
+  // Batafsil panelidagi bitta kategoriya qatori (toggle bilan yoki qulflangan).
+  const category = (
+    icon: string,
+    label: string,
+    desc: string,
+    opts: { locked?: boolean; on?: boolean; toggle?: () => void },
+  ) => (
+    <div className="flex items-start gap-2.5 p-3 rounded-xl border border-border bg-muted/40">
+      <Icon name={icon} size={18} className="text-primary shrink-0 mt-0.5" />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <span className="text-xs font-heading font-semibold text-foreground">{label}</span>
+          {opts.locked ? (
+            <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium shrink-0">
+              {t('landing.cookieRequired')}
+            </span>
+          ) : (
+            <button
+              onClick={opts.toggle}
+              className={`w-9 h-5 rounded-full relative transition-colors duration-200 shrink-0 ${opts.on ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+              role="switch"
+              aria-checked={!!opts.on}
+              aria-label={label}
+            >
+              <span className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm ${opts.on ? 'left-[18px]' : 'left-0.5'}`} />
+            </button>
+          )}
+        </div>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">{desc}</p>
+      </div>
+    </div>
+  );
+
   return (
-    <>
-      <div
-        className={`fixed inset-0 bg-black/20 backdrop-blur-[2px] z-[998] transition-opacity duration-300 ${closing ? 'opacity-0' : 'opacity-100'}`}
-        onClick={() => handleClose('decline')}
-      />
+    <div
+      role="dialog"
+      aria-label={t('landing.trustDataProtection')}
+      className={`fixed bottom-0 inset-x-0 z-[999] transition-all duration-500 ${closing ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}
+    >
+      {/* Ingichka pastki panel — backdrop YO'Q (sayt bloklanmaydi). Ustida yupqa brend chiziq. */}
+      <div className="border-t-2 border-primary bg-card/95 backdrop-blur-sm shadow-warm-lg">
+        <div className="max-w-6xl mx-auto px-4 py-3">
+          {/* Batafsil (kengaytiriladigan) */}
+          {showDetails && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pb-3 mb-3 border-b border-border">
+              {category('LockClosedIcon', t('landing.cookieEssential'), t('landing.cookieEssentialDesc'), { locked: true })}
+              {category('ChartBarIcon', t('landing.cookieAnalytics'), t('landing.cookieAnalyticsDesc'), {
+                on: analyticsEnabled,
+                toggle: () => setAnalyticsEnabled((v) => !v),
+              })}
+              {category('MegaphoneIcon', t('landing.cookieMarketing'), t('landing.cookieMarketingDesc'), {
+                on: marketingEnabled,
+                toggle: () => setMarketingEnabled((v) => !v),
+              })}
+            </div>
+          )}
 
-      <div className={`fixed bottom-0 left-0 right-0 z-[999] p-4 md:p-6 transition-all duration-500 ${closing ? 'translate-y-full opacity-0' : 'translate-y-0 opacity-100'}`}>
-        <div className="max-w-3xl mx-auto">
-          <div className="relative bg-card border border-border rounded-2xl shadow-warm-2xl overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-primary via-secondary to-accent" />
-
-            <div className="p-6 md:p-8">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-warm">
-                    <span className="text-2xl">🍪</span>
-                  </div>
-                  <div>
-                    <h3 className="font-heading font-bold text-lg text-foreground">Cookie</h3>
-                    <p className="text-xs text-muted-foreground">{t('landing.trustDataProtection')}</p>
-                  </div>
-                </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            {/* Chap: ikon + matn + Batafsil */}
+            <div className="flex items-start gap-2.5 min-w-0">
+              <Icon name="ShieldCheckIcon" size={20} className="text-primary shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground leading-snug line-clamp-2 sm:line-clamp-1">
+                  {t('landing.cookieText')}
+                </p>
                 <button
-                  onClick={() => handleClose('decline')}
-                  className="p-2 hover:bg-muted rounded-lg transition-smooth text-muted-foreground hover:text-foreground"
-                  aria-label={t('common.close')}
+                  onClick={() => setShowDetails((v) => !v)}
+                  className="mt-0.5 inline-flex items-center gap-1 text-xs text-primary font-medium hover:underline"
+                  aria-expanded={showDetails}
                 >
-                  <Icon name="XMarkIcon" size={18} />
+                  <Icon name={showDetails ? 'ChevronUpIcon' : 'ChevronDownIcon'} size={12} />
+                  {showDetails ? t('common.close') : t('landing.cookieDetails')}
                 </button>
               </div>
+            </div>
 
-              <p className="text-sm text-muted-foreground leading-relaxed mb-5">
-                {t('landing.cookieText')}
-              </p>
-
-              {/* Details toggle */}
+            {/* O'ng: tugmalar */}
+            <div className="flex items-center gap-2 sm:ml-auto shrink-0">
               <button
-                onClick={() => setShowDetails(!showDetails)}
-                className="flex items-center gap-2 text-xs text-primary font-medium mb-5 hover:underline"
-                aria-expanded={showDetails}
+                onClick={() => handleClose('accept')}
+                className="flex-1 sm:flex-none px-4 py-2 text-sm font-heading font-semibold bg-primary text-primary-foreground rounded-xl hover:bg-secondary transition-colors"
               >
-                <Icon name={showDetails ? 'ChevronUpIcon' : 'ChevronDownIcon'} size={14} />
-                {showDetails ? t('common.close') : t('landing.cookieDetails')}
+                {t('landing.cookieAccept')}
               </button>
-
-              {showDetails && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
-                  {/* Essential — always on */}
-                  <div className="p-3 bg-muted/50 rounded-xl border border-border/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">🔒</span>
-                        <span className="text-xs font-medium text-foreground">{t('landing.cookieEssential')}</span>
-                      </div>
-                      <span className="text-[10px] px-2 py-0.5 bg-primary/10 text-primary rounded-full font-medium">
-                        {t('landing.cookieRequired')}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">{t('landing.cookieEssentialDesc')}</p>
-                  </div>
-
-                  {/* Analytics — toggleable */}
-                  <div className="p-3 bg-muted/50 rounded-xl border border-border/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">📊</span>
-                        <span className="text-xs font-medium text-foreground">{t('landing.cookieAnalytics')}</span>
-                      </div>
-                      <button
-                        onClick={() => setAnalyticsEnabled(!analyticsEnabled)}
-                        className={`w-10 h-5 rounded-full relative transition-colors duration-200 ${analyticsEnabled ? 'bg-primary' : 'bg-muted-foreground/30'}`}
-                        role="switch"
-                        aria-checked={analyticsEnabled}
-                      >
-                        <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm ${analyticsEnabled ? 'left-[22px]' : 'left-0.5'}`} />
-                      </button>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">{t('landing.cookieAnalyticsDesc')}</p>
-                  </div>
-
-                  {/* Marketing — toggleable */}
-                  <div className="p-3 bg-muted/50 rounded-xl border border-border/50">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">🎯</span>
-                        <span className="text-xs font-medium text-foreground">{t('landing.cookieMarketing')}</span>
-                      </div>
-                      <button
-                        onClick={() => setMarketingEnabled(!marketingEnabled)}
-                        className={`w-10 h-5 rounded-full relative transition-colors duration-200 ${marketingEnabled ? 'bg-primary' : 'bg-muted-foreground/30'}`}
-                        role="switch"
-                        aria-checked={marketingEnabled}
-                      >
-                        <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-200 shadow-sm ${marketingEnabled ? 'left-[22px]' : 'left-0.5'}`} />
-                      </button>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground leading-relaxed">{t('landing.cookieMarketingDesc')}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Buttons */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-                <button
-                  onClick={() => handleClose('accept')}
-                  className="flex-1 sm:flex-none px-6 py-3 text-sm font-medium bg-gradient-to-r from-primary to-secondary text-primary-foreground rounded-xl hover:shadow-warm-lg hover:scale-[1.02] transition-all duration-200 shadow-warm flex items-center justify-center gap-2"
-                >
-                  <Icon name="CheckIcon" size={16} />
-                  {t('landing.cookieAccept')}
-                </button>
-                {showDetails ? (
-                  <button
-                    onClick={() => handleClose('custom')}
-                    className="flex-1 sm:flex-none px-6 py-3 text-sm font-medium bg-muted text-foreground rounded-xl hover:bg-muted/80 transition-smooth flex items-center justify-center gap-2"
-                  >
-                    <Icon name="AdjustmentsHorizontalIcon" size={16} />
-                    {t('landing.cookieSavePreferences')}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleClose('essential')}
-                    className="flex-1 sm:flex-none px-6 py-3 text-sm font-medium bg-muted text-foreground rounded-xl hover:bg-muted/80 transition-smooth flex items-center justify-center gap-2"
-                  >
-                    <Icon name="ShieldCheckIcon" size={16} />
-                    {t('landing.cookieEssentialOnly')}
-                  </button>
-                )}
-                <button
-                  onClick={() => handleClose('decline')}
-                  className="flex-1 sm:flex-none px-6 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-smooth"
-                >
-                  {t('landing.cookieDecline')}
-                </button>
-              </div>
+              <button
+                onClick={() => handleClose(showDetails ? 'custom' : 'essential')}
+                className="flex-1 sm:flex-none px-4 py-2 text-sm font-medium bg-muted text-foreground rounded-xl hover:bg-muted/70 transition-colors whitespace-nowrap"
+              >
+                {showDetails ? t('landing.cookieSavePreferences') : t('landing.cookieEssentialOnly')}
+              </button>
+              <button
+                onClick={() => handleClose('decline')}
+                className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
+              >
+                {t('landing.cookieDecline')}
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
