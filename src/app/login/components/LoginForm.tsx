@@ -73,6 +73,7 @@ const LoginForm = () => {
       oauth_failed: t('auth.oauthFailed'),
       oauth_cancelled: t('auth.oauthCancelled'),
       oauth_email_unverified: t('auth.oauthEmailUnverified'),
+      oauth_not_registered: t('auth.oauthNotRegistered'),
     };
     setErrors({ general: map[err] || t('auth.oauthFailed') });
   }, [searchParams, t]);

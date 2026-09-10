@@ -8,11 +8,9 @@
  * Xatoliklar /login?error=... ga yo'naltiradi (foydalanuvchiga tushunarli xabar).
  */
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { signToken, COOKIE_NAME } from '@/lib/auth';
 import { normalizeEmail } from '@/lib/validation';
-import { attributeOnSignup } from '@/lib/services/referral.service';
 import { createSession } from '@/lib/services/session.service';
 import {
   isGoogleOAuthConfigured,
@@ -58,42 +56,18 @@ export async function GET(req: NextRequest) {
 
     const email = normalizeEmail(info.email);
 
-    // Foydalanuvchini topish yoki yaratish (yangi → rol student).
-    let user = await prisma.user.findUnique({
+    // FAQAT mavjud foydalanuvchi Google orqali kira oladi. Ro'yxatdan o'tmagan
+    // (DB'da yo'q) email uchun avtomatik account YARATILMAYDI — foydalanuvchi avval
+    // oddiy ro'yxatdan o'tishi kerak. Aks holda tushunarli xabar ko'rsatamiz.
+    const user = await prisma.user.findUnique({
       where: { email },
       select: { id: true, email: true, role: true, tokenVersion: true },
     });
 
-    if (!user) {
-      // OAuth foydalanuvchisi uchun parol yo'q — tasodifiy, foydalanib bo'lmaydigan
-      // hash qo'yamiz (email+parol login imkonsiz; ular Google orqali kiradi).
-      const randomHash = await bcrypt.hash(crypto.randomUUID() + crypto.randomUUID(), 12);
-      const created = await prisma.user.create({
-        data: {
-          email,
-          passwordHash: randomHash,
-          role: 'student',
-          profile: {
-            create: {
-              email,
-              fullName: info.name || email.split('@')[0],
-              role: 'student',
-              avatarUrl: info.picture,
-            },
-          },
-        },
-        select: { id: true, email: true, role: true, tokenVersion: true },
-      });
-      user = created;
+    if (!user) return loginError('oauth_not_registered');
 
-      // Referral attribution — ro'yxatdan o'tish (email/OTP) oqimidagi kabi OAuth'da ham
-      // ref_code cookie bo'lsa referrerni biriktiramiz (best-effort).
-      const refCode = req.cookies.get('ref_code')?.value;
-      if (refCode) {
-        try { await attributeOnSignup(created.id, refCode); } catch { /* silent */ }
-      }
-    } else if (info.picture) {
-      // Mavjud foydalanuvchi — avatar bo'sh bo'lsa Google rasmini qo'yamiz (best-effort).
+    // Mavjud foydalanuvchi — avatar bo'sh bo'lsa Google rasmini qo'yamiz (best-effort).
+    if (info.picture) {
       await prisma.userProfile
         .updateMany({
           where: { id: user.id, avatarUrl: null },

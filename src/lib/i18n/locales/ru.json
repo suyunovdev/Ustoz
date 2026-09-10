@@ -70,6 +70,7 @@
     "oauthFailed": "Ошибка входа через Google. Попробуйте снова.",
     "oauthCancelled": "Вход через Google отменён.",
     "oauthEmailUnverified": "Email вашего Google-аккаунта не подтверждён.",
+    "oauthNotRegistered": "Этот Google-аккаунт не зарегистрирован. Сначала зарегистрируйтесь.",
     "createAccount": "Создать аккаунт",
     "invalidEmail": "Введите действительный адрес электронной почты",
     "invalidPassword": "Пароль должен содержать не менее 6 символов",

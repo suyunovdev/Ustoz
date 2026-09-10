@@ -70,6 +70,7 @@
     "oauthFailed": "Google orqali kirishda xatolik. Qayta urinib ko'ring.",
     "oauthCancelled": "Google orqali kirish bekor qilindi.",
     "oauthEmailUnverified": "Google akkauntingiz emaili tasdiqlanmagan.",
+    "oauthNotRegistered": "Bu Google akkaunti ro'yxatdan o'tmagan. Avval ro'yxatdan o'ting.",
     "createAccount": "Hisob yaratish",
     "invalidEmail": "Yaroqli elektron pochta manzilini kiriting",
     "invalidPassword": "Parol kamida 6 ta belgidan iborat bo'lishi kerak",

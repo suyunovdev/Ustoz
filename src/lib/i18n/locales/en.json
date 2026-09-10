@@ -70,6 +70,7 @@
     "oauthFailed": "Google sign-in failed. Please try again.",
     "oauthCancelled": "Google sign-in was cancelled.",
     "oauthEmailUnverified": "Your Google account email is not verified.",
+    "oauthNotRegistered": "This Google account is not registered. Please sign up first.",
     "createAccount": "Create account",
     "invalidEmail": "Please enter a valid email address",
     "invalidPassword": "Password must be at least 6 characters",
