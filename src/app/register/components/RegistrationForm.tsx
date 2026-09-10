@@ -148,6 +148,14 @@ const RegistrationForm = () => {
       newErrors.password = t('auth.passwordRequired');
     } else if (formData.password.length < 8) {
       newErrors.password = t('auth.passwordMinLength');
+    } else if (
+      // Server (validation.ts) talabi bilan bir xil: katta+kichik harf+raqam.
+      // Aks holda xato faqat OTP bosqichida (account yaratilishida) chiqib, chalkash edi.
+      !/[A-Z]/.test(formData.password) ||
+      !/[a-z]/.test(formData.password) ||
+      !/[0-9]/.test(formData.password)
+    ) {
+      newErrors.password = t('auth.passwordRequirements');
     }
 
     if (!formData.confirmPassword) {
