@@ -9,7 +9,7 @@ const SITE_URL =
 
 /**
  * Sitemap — faqat public sahifalar (auth talab qilmaydigan):
- *   /  /course-marketplace  /about-page  /landing-page  /certificate
+ *   /  /course-marketplace  /about  /terms  /privacy
  *   + har bir published kurs uchun /course-details/[id]
  *
  * Database o'qiymiz, lekin xato bo'lsa ham asosiy sahifalarni qaytaramiz.
@@ -31,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
-      url: `${SITE_URL}/about-page`,
+      url: `${SITE_URL}/about`,
       lastModified: now,
       changeFrequency: 'monthly',
       priority: 0.5,

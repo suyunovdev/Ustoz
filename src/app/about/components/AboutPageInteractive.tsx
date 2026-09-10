@@ -88,7 +88,7 @@ const AboutPageInteractive = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <RoleBasedHeader userRole={null} currentPath="/about-page" />
+      <RoleBasedHeader userRole={null} currentPath="/about" />
 
       <main className="pt-16">
         {/* Hero Section */}
@@ -333,7 +333,7 @@ const AboutPageInteractive = () => {
                 <ul className="space-y-2 text-sm">
                   <li><Link href="/" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerHome')}</Link></li>
                   <li><Link href="/course-marketplace" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerCourses')}</Link></li>
-                  <li><Link href="/about-page" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerAbout')}</Link></li>
+                  <li><Link href="/about" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerAbout')}</Link></li>
                   <li><Link href="/login" className="text-muted-foreground hover:text-primary transition-smooth">{t('about.footerLogin')}</Link></li>
                 </ul>
               </div>

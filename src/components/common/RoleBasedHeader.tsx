@@ -28,7 +28,7 @@ const RoleBasedHeader = (props: RoleBasedHeaderProps) => {
   );
 };
 
-const PUBLIC_PAGES = ['/', '/landing-page', '/login', '/register', '/forgot-password', '/about-page', '/course-marketplace', '/course-details', '/help', '/terms', '/privacy', '/unauthorized'];
+const PUBLIC_PAGES = ['/', '/landing-page', '/login', '/register', '/forgot-password', '/about', '/course-marketplace', '/course-details', '/help', '/terms', '/privacy', '/unauthorized'];
 
 const RoleBasedHeaderInner = ({ currentPath = '/' }: RoleBasedHeaderProps) => {
   const livePathname = usePathname();

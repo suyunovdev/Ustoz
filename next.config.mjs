@@ -81,6 +81,8 @@ const nextConfig = {
       // Obuna bo'limi olib tashlandi — eski havolalar dashboard'ga yo'naltiriladi (404 bo'lmasin).
       { source: '/subscription', destination: '/student-dashboard', permanent: true },
       { source: '/student-subscription', destination: '/student-dashboard', permanent: true },
+      // Eski "Biz haqimizda" URL'i → toza /about (xatcho'p/indeks 404 bo'lmasin)
+      { source: '/about-page', destination: '/about', permanent: true },
     ];
   },
 
@@ -134,7 +136,7 @@ const nextConfig = {
         headers: [{ key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=120' }],
       },
       {
-        source: '/about-page',
+        source: '/about',
         headers: [{ key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=600' }],
       },
       {

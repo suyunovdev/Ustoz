@@ -11,7 +11,7 @@ const PUBLIC_ROUTES = [
   '/login',
   '/register',
   '/forgot-password',
-  '/about-page',
+  '/about',
   '/course-marketplace',
   '/course-details',
   '/certificate',
