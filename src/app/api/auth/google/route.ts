@@ -20,7 +20,9 @@ export async function GET() {
     sameSite: 'lax', // Google'dan qaytishda (top-level GET) cookie yuborilishi uchun
     secure: useSecure,
     path: '/',
-    maxAge: 10 * 60, // 10 daqiqa
+    // 30 daqiqa — birinchi marta consent ekrani (yangi account) sekinroq bo'lishi
+    // mumkin; 10 daqiqa ba'zan yetmay `oauth_state` (state muddati tugashi) berardi.
+    maxAge: 30 * 60,
   });
   return res;
 }

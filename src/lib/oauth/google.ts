@@ -61,7 +61,12 @@ interface GoogleTokenResponse {
 export async function exchangeCodeForToken(code: string): Promise<string> {
   const res = await fetch(GOOGLE_TOKEN_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    // Accept-Encoding: identity — Node 20 undici siqilgan javobni ba'zan
+    // "transformAlgorithm is not a function" bilan buzadi; siqilmagan javob so'raymiz.
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      'Accept-Encoding': 'identity',
+    },
     body: new URLSearchParams({
       code,
       client_id: process.env.GOOGLE_CLIENT_ID as string,
@@ -88,7 +93,10 @@ export interface GoogleUserInfo {
 /** Access token bilan foydalanuvchi ma'lumotini oladi. */
 export async function fetchGoogleUserInfo(accessToken: string): Promise<GoogleUserInfo> {
   const res = await fetch(GOOGLE_USERINFO_URL, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Accept-Encoding': 'identity',
+    },
   });
   if (!res.ok) throw new Error(`Google userinfo xatosi: ${res.status}`);
   const d = (await res.json()) as Record<string, unknown>;
