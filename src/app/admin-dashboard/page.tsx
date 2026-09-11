@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-query';
 
 import AdminDashboardInteractive from './components/AdminDashboardInteractive';
-import { getSession } from '@/lib/auth';
+import { getVerifiedSession } from '@/lib/auth-helpers';
 import { getDashboardStats } from '@/lib/services/admin-stats.service';
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -25,7 +25,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminDashboardPage() {
   // 1) Server-side auth tekshirish (RSC'da darrov, no flicker)
-  const session = await getSession();
+  const session = await getVerifiedSession();
   if (!session) {
     redirect('/login?redirect=/admin-dashboard');
   }

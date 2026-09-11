@@ -80,7 +80,9 @@ export function createSessionCookie(token: string): string {
   return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${useSecure ? '; Secure' : ''}`;
 }
 
-// Session cookie o'chirish
+// Session cookie o'chirish — createSessionCookie bilan BIR XIL atributlar (Secure ham),
+// aks holda ba'zi brauzerlar HTTPS'dagi Secure cookie'ni o'chirmaydi → self-heal ishlamaydi.
 export function clearSessionCookie(): string {
-  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+  const useSecure = (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
+  return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${useSecure ? '; Secure' : ''}`;
 }

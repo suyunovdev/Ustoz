@@ -8,7 +8,7 @@ import {
 } from '@tanstack/react-query';
 
 import TeacherDashboardInteractive from './components/TeacherDashboardInteractive';
-import { getSession } from '@/lib/auth';
+import { getVerifiedSession } from '@/lib/auth-helpers';
 import { getTeacherDashboard } from '@/lib/services/teacher-stats.service';
 import { queryKeys } from '@/hooks/queries/queryKeys';
 
@@ -24,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export const dynamic = 'force-dynamic';
 
 export default async function TeacherDashboardPage() {
-  const session = await getSession();
+  const session = await getVerifiedSession();
   if (!session) {
     redirect('/login?redirect=/teacher-dashboard');
   }

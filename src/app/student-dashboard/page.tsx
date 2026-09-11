@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 
 import StudentDashboardInteractive from './components/StudentDashboardInteractive';
-import { getSession } from '@/lib/auth';
+import { getVerifiedSession } from '@/lib/auth-helpers';
 import { loadDashboardData } from '@/lib/services/dashboard.service';
 import { queryKeys } from '@/hooks/queries/queryKeys';
 import { getServerT } from '@/lib/i18n/server';
@@ -26,7 +26,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function StudentDashboardPage() {
   // 1) Server-side auth tekshirish
-  const session = await getSession();
+  const session = await getVerifiedSession();
   if (!session) {
     redirect('/login?redirect=/student-dashboard');
   }
