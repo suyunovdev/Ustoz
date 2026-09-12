@@ -11,6 +11,8 @@ import {
   verifyTotp,
   otpauthUrl,
   generateBackupCodes,
+  encryptSecret,
+  decryptSecret,
 } from '@/lib/auth/totp';
 
 /** 1) Sozlash — maxfiy kalit yaratadi (hali yoqilmaydi), QR + otpauth qaytaradi. */
@@ -23,7 +25,11 @@ export async function setupTwoFactor(userId: string) {
   if (user.totpEnabled) throw new ValidationError('2FA allaqachon yoqilgan');
 
   const secret = generateTotpSecret();
-  await prisma.user.update({ where: { id: userId }, data: { totpSecret: secret } });
+  // At-rest shifrlash: TOTP_ENC_KEY bo'lsa AEAD, aks holda plaintext (lazy).
+  await prisma.user.update({
+    where: { id: userId },
+    data: { totpSecret: encryptSecret(secret) },
+  });
 
   const url = otpauthUrl(secret, user.email);
   const qrDataUrl = await QRCode.toDataURL(url, { margin: 1, width: 220 });
@@ -39,7 +45,8 @@ export async function enableTwoFactor(userId: string, token: string): Promise<st
   if (!user) throw new ValidationError('Foydalanuvchi topilmadi');
   if (user.totpEnabled) throw new ValidationError('2FA allaqachon yoqilgan');
   if (!user.totpSecret) throw new ValidationError('Avval sozlashni boshlang');
-  if (!verifyTotp(user.totpSecret, token)) throw new ValidationError("Noto'g'ri kod");
+  if (!verifyTotp(decryptSecret(user.totpSecret), token))
+    throw new ValidationError("Noto'g'ri kod");
 
   const backupCodes = generateBackupCodes();
   const hashes = await Promise.all(backupCodes.map((c) => bcrypt.hash(c, 10)));
@@ -78,7 +85,14 @@ export async function verifyTwoFactorCode(
 ): Promise<boolean> {
   const clean = (code || '').trim();
   if (!clean) return false;
-  if (user.totpSecret && verifyTotp(user.totpSecret, clean)) return true;
+  if (user.totpSecret && verifyTotp(decryptSecret(user.totpSecret), clean)) {
+    // TODO(replay): bir marta ishlatilgan TOTP qadamini (step) qayta
+    // qabul qilmaslik uchun User modelida `lastTotpStep` (Int?) maydoni
+    // kerak. Maydon qo'shilgach: verifyTotp o'rniga mos qadamni qaytaruvchi
+    // variant ishlatib, agar step <= lastTotpStep bo'lsa rad etish va
+    // muvaffaqiyatda lastTotpStep qiymatini yangilash lozim.
+    return true;
+  }
 
   // Zaxira kodlar (bir martalik)
   for (const hash of user.totpBackupCodes) {
