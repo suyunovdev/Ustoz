@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { prisma } from '@/lib/prisma';
 import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
 import { activateSubscriptionFromPayment } from '@/lib/services/subscription.service';
+import { reverseCompletedTransaction } from '@/lib/services/refund.service';
 
 // Constant-time string taqqoslash — timing side-channel'ni oldini oladi
 function safeEqual(a: string, b: string): boolean {
@@ -322,7 +323,7 @@ export async function POST(request: NextRequest) {
 
         const transaction = await prisma.paymentTransaction.findFirst({
           where: { paymeTransactionId: transactionId },
-          select: { id: true, status: true, cancelledAt: true },
+          select: { id: true, status: true, cancelledAt: true, completedAt: true },
         });
 
         if (!transaction) {
@@ -330,27 +331,47 @@ export async function POST(request: NextRequest) {
         }
 
         if (transaction.status === 'cancelled') {
+          // Idempotent: qayta reversal QILMAYMIZ. state — oldingi holatga qarab:
+          // yakunlangan (completedAt bor) bo'lsa -2, aks holda -1.
           return NextResponse.json({
             result: {
               transaction: transaction.id,
               cancel_time: transaction.cancelledAt
                 ? transaction.cancelledAt.getTime()
                 : Date.now(),
-              state: -1,
+              state: transaction.completedAt ? -2 : -1,
             },
             id: body.id,
           } as PaymeResponse);
         }
 
+        // Oldingi status 'completed' bo'lsa — bekor qilingandan keyin kurs/obuna
+        // ochiq qolmasligi uchun reversal kerak (H3). state ham shunga qarab -2/-1.
         const cancelTime = Date.now();
+        let wasCompleted = false;
         try {
-          await prisma.paymentTransaction.update({
-            where: { id: transaction.id },
-            data: {
-              status: 'cancelled',
-              cancelledAt: new Date(cancelTime),
-              errorMessage: `Cancelled by Payme. Reason: ${reason}`,
-            },
+          await prisma.$transaction(async (txc) => {
+            // Status'ni tx ICHIDA qayta o'qiymiz — Perform/Cancel poygasida
+            // eskirgan tashqi o'qishga tayanib reversal'ni o'tkazib yubormaslik uchun.
+            const cur = await txc.paymentTransaction.findUnique({
+              where: { id: transaction.id },
+              select: { status: true },
+            });
+            wasCompleted = cur?.status === 'completed';
+            await txc.paymentTransaction.update({
+              where: { id: transaction.id },
+              data: {
+                status: 'cancelled',
+                cancelledAt: new Date(cancelTime),
+                errorMessage: `Cancelled by Payme. Reason: ${reason}`,
+              },
+            });
+            // Faqat yakunlangan to'lov bekor qilinganda orqaga qaytarish:
+            // enrollment deaktiv + enrollmentCount decrement + obuna bekor +
+            // referral pending komissiya bekor — hammasi atomik shu tx ichida.
+            if (wasCompleted) {
+              await reverseCompletedTransaction(txc, transaction.id);
+            }
           });
         } catch (updateError) {
           console.error('Payme CancelTransaction update error:', updateError);
@@ -361,7 +382,7 @@ export async function POST(request: NextRequest) {
           result: {
             transaction: transaction.id,
             cancel_time: cancelTime,
-            state: -1,
+            state: wasCompleted ? -2 : -1,
           },
           id: body.id,
         } as PaymeResponse);
@@ -391,7 +412,11 @@ export async function POST(request: NextRequest) {
 
         let state = 1; // processing
         if (transaction.status === 'completed') state = 2;
-        if (transaction.status === 'cancelled') state = -1;
+        // Bekor qilingan: perform (completedAt) qilingan bo'lsa -2, aks holda -1 —
+        // CancelTransaction bilan izchil (Payme protokoli talabi).
+        if (transaction.status === 'cancelled') {
+          state = transaction.completedAt ? -2 : -1;
+        }
 
         return NextResponse.json({
           result: {

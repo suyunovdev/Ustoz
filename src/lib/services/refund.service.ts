@@ -13,9 +13,9 @@
  */
 
 import type { NextRequest } from 'next/server';
+import type { Prisma } from '@/generated/prisma/client';
 import { prisma } from '@/lib/prisma';
 import { paymentRepo, earningsRepo, type AdminTransactionRow, type ListTransactionsFilters } from '@/lib/repositories';
-import { cancelEarningByTransaction } from '@/lib/repositories/referral.repository';
 import { ValidationError } from '@/lib/errors';
 import { log as auditLog } from './audit-log.service';
 
@@ -72,6 +72,59 @@ export async function listTransactions(
   };
 }
 
+/**
+ * Yakunlangan (completed) tranzaksiyani orqaga qaytaradi (reversal):
+ *   - kurs enrollment'ini deaktivatsiya + course.enrollmentCount decrement
+ *   - shu tranzaksiya bilan faollashgan obunani bekor qilish (sourceTransactionId)
+ *   - referral kutilayotgan (pending) komissiyani bekor qilish
+ *
+ * Prisma tranzaksiya client'ini parametr sifatida oladi — refund (admin) ham,
+ * Payme CancelTransaction ham buni atomik ravishda bir tranzaksiya ichida chaqiradi,
+ * shunda "to'lov bekor bo'ldi-yu, kurs/obuna ochiq qoldi" holati bo'lmaydi.
+ */
+export async function reverseCompletedTransaction(
+  tx: Prisma.TransactionClient,
+  transactionId: string,
+): Promise<void> {
+  const txn = await tx.paymentTransaction.findUnique({
+    where: { id: transactionId },
+    select: { studentId: true, courseId: true, kind: true, planId: true },
+  });
+  if (!txn) return;
+
+  // 1) Kurs to'lovi → enrollment'ni deaktivatsiya qilish + hisobni kamaytirish.
+  if (txn.courseId) {
+    const courseId = txn.courseId;
+    const deactivated = await tx.enrollment.updateMany({
+      where: { studentId: txn.studentId, courseId, isActive: true },
+      data: { isActive: false },
+    });
+    if (deactivated.count > 0) {
+      await tx.course.update({
+        where: { id: courseId },
+        data: { enrollmentCount: { decrement: deactivated.count } },
+      });
+    }
+  }
+
+  // 2) Obuna to'lovi → shu tranzaksiyaga bog'langan obunani bekor qilish
+  // (sourceTransactionId orqali). expiresAt'ni hozirgi vaqtga tortamiz — gating
+  // darhol to'xtaydi, all-access/AI/sertifikat imtiyozlari o'chadi.
+  if (txn.kind === 'subscription' || txn.planId) {
+    await tx.subscription.updateMany({
+      where: { sourceTransactionId: transactionId, status: 'active' },
+      data: { status: 'cancelled', expiresAt: new Date() },
+    });
+  }
+
+  // 3) Referral komissiyani bekor qilish — faqat 'pending' (hali to'lanmagan).
+  // 'paid' komissiya qo'lda clawback qilinadi (M2 ko'rinuvchanligi processRefund'da).
+  await tx.referralEarning.updateMany({
+    where: { sourceTransactionId: transactionId, status: 'pending' },
+    data: { status: 'cancelled' },
+  });
+}
+
 export async function processRefund(
   adminId: string,
   txId: string,
@@ -96,30 +149,9 @@ export async function processRefund(
       tx,
     );
 
-    // 2a) Kurs to'lovi refund'i → enrollment'ni deaktivatsiya qilish.
-    if (target.courseId) {
-      const courseId = target.courseId;
-      const deactivated = await tx.enrollment.updateMany({
-        where: { studentId: target.studentId, courseId, isActive: true },
-        data: { isActive: false },
-      });
-      if (deactivated.count > 0) {
-        await tx.course.update({
-          where: { id: courseId },
-          data: { enrollmentCount: { decrement: deactivated.count } },
-        });
-      }
-    }
-
-    // 2b) Obuna to'lovi refund'i → shu tranzaksiyaga bog'langan obunani bekor qilish
-    // (sourceTransactionId orqali). expiresAt'ni ham hozirgi vaqtga tortamiz —
-    // gating darhol to'xtaydi, all-access/AI/sertifikat imtiyozlari o'chadi.
-    if (target.kind === 'subscription' || target.planId) {
-      await tx.subscription.updateMany({
-        where: { sourceTransactionId: txId, status: 'active' },
-        data: { status: 'cancelled', expiresAt: new Date() },
-      });
-    }
+    // 2) Reversal — enrollment deaktiv + enrollmentCount decrement + obunani bekor
+    // qilish + referral pending komissiyani bekor qilish (hammasi shu tx ichida atomik).
+    await reverseCompletedTransaction(tx, txId);
 
     // 3) Audit log
     await auditLog(
@@ -142,13 +174,8 @@ export async function processRefund(
     return updated;
   });
 
-  // Referral komissiyani bekor qilish — refund qilingan sotuv bo'yicha
-  // referrerga to'lov qolmasin (best-effort, transaction'dan tashqarida).
-  try {
-    await cancelEarningByTransaction(txId);
-  } catch (e) {
-    console.error('[refund] cancelEarningByTransaction failed:', e);
-  }
+  // Referral pending komissiya reverseCompletedTransaction ichida (atomik) bekor
+  // qilindi. Bu yerda faqat qo'lda aralashuv kerak holatlar audit log'ga yoziladi.
 
   // Clawback ko'rinuvchanligi (H2/M2) — avtomatik pul qaytarish mexanizmi (ledger)
   // yo'q, shuning uchun qo'lda aralashuv kerak bo'lgan holatlarni audit log'ga yozamiz.
