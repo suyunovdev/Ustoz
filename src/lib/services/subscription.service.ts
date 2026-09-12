@@ -9,7 +9,6 @@ import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
 import { getSubscriberCourseDiscountSetting } from './platform-settings.service';
 import { createNotification } from '@/lib/repositories/notification.repository';
-import { handlePaymentCompleted } from '@/lib/repositories/referral.repository';
 import { PLATFORM_FEE_PCT } from '@/lib/repositories/earnings.repository';
 
 export function serializePlan(p: {
@@ -260,7 +259,7 @@ export async function grantSubscriptionManually(
   const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
   if (!plan) throw new ValidationError('Plan topilmadi');
 
-  const { result, txnId } = await prisma.$transaction(async (tx) => {
+  const { result } = await prisma.$transaction(async (tx) => {
     const current = await tx.subscription.findFirst({
       where: { userId, status: 'active', expiresAt: { gt: new Date() } },
       orderBy: { expiresAt: 'desc' },
@@ -300,11 +299,12 @@ export async function grantSubscriptionManually(
           select: { id: true, expiresAt: true },
         });
 
-    return { result: sub, txnId: txn.id };
+    return { result: sub };
   });
 
-  // Referral komissiyasi (best-effort) — admin-tasdiq oqimida ham referrer bonus olsin.
-  try { await handlePaymentCompleted(txnId); } catch (e) { console.error('[subscription] referral hook:', e); }
+  // M5: bu tranzaksiya metadata.source === 'manual_grant' (bepul admin-grant),
+  // shuning uchun handlePaymentCompleted CHAQIRILMAYDI — bepul grant uchun referral
+  // komissiya (10%) to'lanmaydi (aks holda haqiqiy pul kirmasa ham bonus hisoblanardi).
 
   // Bildirishnoma (best-effort, $tx'dan keyin — asosiy oqimni buzmaydi)
   await createNotification({
