@@ -91,10 +91,27 @@ function publicRedirect(request: NextRequest, path: string): URL {
   return new URL(path, `${proto}://${host}`);
 }
 
+// ─── CSP direktivalari (script-src'dan tashqari — barchasi statik) ───
+// script-src middleware'da nonce bilan quriladi (pastda). style-src'da
+// 'unsafe-inline' ataylab qoldirilgan: Next/Tailwind runtime inline style
+// ishlatadi va ular uchun nonce mexanizmi yo'q.
+const CSP_STATIC_DIRECTIVES = [
+  "default-src 'self'",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
+  "img-src 'self' data: blob: https:",
+  "connect-src 'self' https://api.resend.com https://my.click.uz https://checkout.paycom.uz https://*.r2.cloudflarestorage.com https://video.bunnycdn.com https://*.b-cdn.net https://*.mediadelivery.net",
+  "media-src 'self' blob: https://*.b-cdn.net https://*.mediadelivery.net https://*.r2.cloudflarestorage.com https://*.r2.dev",
+  "frame-src 'self' https://iframe.mediadelivery.net https://www.youtube.com https://player.vimeo.com",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self' https://my.click.uz https://checkout.paycom.uz",
+];
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Statik fayllar va API — o'tkazib yuborish
+  // Statik fayllar va API — o'tkazib yuborish (HTML emas, CSP/nonce kerak emas)
   if (
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/favicon') ||
@@ -107,9 +124,38 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // ─── CSP + NONCE (Next 15 nonce-based, script-src'da 'unsafe-inline' YO'Q) ───
+  // Har bir request uchun yangi nonce. Next o'z framework skriptlariga uni
+  // avtomatik qo'yadi (request header'dagi CSP'ni o'qib), 'strict-dynamic' esa
+  // shu skriptlar yuklagan qolgan zanjirni ishonchli qiladi. layout.tsx'dagi
+  // inline skriptlar (theme + JSON-LD) headers()'dan x-nonce'ni oladi.
+  // Dev'da CSP o'rnatilmaydi — Next dev eval/inline skript ishlatadi.
+  const isDev = process.env.NODE_ENV === 'development';
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
+  const requestHeaders = new Headers(request.headers);
+  let csp: string | null = null;
+  if (!isDev) {
+    csp = [
+      `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+      ...CSP_STATIC_DIRECTIVES,
+    ].join('; ');
+    requestHeaders.set('x-nonce', nonce);
+    // Next shu request header'dan nonce'ni o'qib, o'z skriptlariga qo'yadi.
+    requestHeaders.set('Content-Security-Policy', csp);
+  }
+
+  // Har qanday javobga CSP response header'ini qo'shadi.
+  const withCsp = (response: NextResponse): NextResponse => {
+    if (csp) response.headers.set('Content-Security-Policy', csp);
+    return response;
+  };
+  // Nonce'li request header'lar bilan "davom et" javobi.
+  const nextWithCsp = (): NextResponse =>
+    withCsp(NextResponse.next({ request: { headers: requestHeaders } }));
+
   // ─── PUBLIC ───
   if (matchesRoutes(pathname, PUBLIC_ROUTES)) {
-    return NextResponse.next();
+    return nextWithCsp();
   }
 
   // ─── HIMOYALANGAN ROUTE'MI? ───
@@ -125,7 +171,7 @@ export async function middleware(request: NextRequest) {
     matchesRoutes(pathname, AUTHENTICATED_ROUTES);
 
   if (!isProtected) {
-    return NextResponse.next();
+    return nextWithCsp();
   }
 
   // ─── SESSION TEKSHIRUVI (faqat himoyalangan route'lar uchun) ───
@@ -134,7 +180,7 @@ export async function middleware(request: NextRequest) {
 
   if (!session) {
     // Toza /login — bormoqchi bo'lgan sahifa redirect param sifatida saqlanmaydi
-    return NextResponse.redirect(publicRedirect(request, '/login'));
+    return withCsp(NextResponse.redirect(publicRedirect(request, '/login')));
   }
 
   const role = session.role;
@@ -142,43 +188,43 @@ export async function middleware(request: NextRequest) {
   // ─── ADMIN ONLY ───
   if (matchesRoutes(pathname, ADMIN_ONLY_ROUTES)) {
     if (role !== 'admin') {
-      return NextResponse.redirect(publicRedirect(request, '/unauthorized'));
+      return withCsp(NextResponse.redirect(publicRedirect(request, '/unauthorized')));
     }
-    return NextResponse.next();
+    return nextWithCsp();
   }
 
   // ─── TEACHER ONLY (admin ham kira oladi) ───
   if (matchesRoutes(pathname, TEACHER_ONLY_ROUTES)) {
     if (role !== 'teacher' && role !== 'admin') {
-      return NextResponse.redirect(publicRedirect(request, '/unauthorized'));
+      return withCsp(NextResponse.redirect(publicRedirect(request, '/unauthorized')));
     }
-    return NextResponse.next();
+    return nextWithCsp();
   }
 
   // ─── TEACHER OR ADMIN ───
   if (matchesRoutes(pathname, TEACHER_OR_ADMIN_ROUTES)) {
     if (role !== 'teacher' && role !== 'admin') {
-      return NextResponse.redirect(publicRedirect(request, '/unauthorized'));
+      return withCsp(NextResponse.redirect(publicRedirect(request, '/unauthorized')));
     }
-    return NextResponse.next();
+    return nextWithCsp();
   }
 
   // ─── STUDENT ONLY ───
   if (matchesRoutes(pathname, STUDENT_ONLY_ROUTES)) {
     if (role !== 'student') {
-      return NextResponse.redirect(publicRedirect(request, '/unauthorized'));
+      return withCsp(NextResponse.redirect(publicRedirect(request, '/unauthorized')));
     }
-    return NextResponse.next();
+    return nextWithCsp();
   }
 
   // ─── AUTHENTICATED (any role) ───
   if (matchesRoutes(pathname, AUTHENTICATED_ROUTES)) {
-    return NextResponse.next();
+    return nextWithCsp();
   }
 
   // Himoyalangan va authenticated — ruxsat (isProtected true bo'lgani uchun
   // yuqoridagi bloklardan biri odatda javob beradi; bu xavfsiz default)
-  return NextResponse.next();
+  return nextWithCsp();
 }
 
 export const config = {
