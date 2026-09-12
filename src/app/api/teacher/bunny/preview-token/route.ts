@@ -10,11 +10,12 @@
 import type { NextRequest } from 'next/server';
 import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
+import { prisma } from '@/lib/prisma';
 import { isBunnySigningConfigured, signEmbedUrl, BunnyError } from '@/lib/storage/bunny-stream';
 
 export async function POST(req: NextRequest) {
   try {
-    await requireTeacherOrAdmin(req);
+    const session = await requireTeacherOrAdmin(req);
 
     let guid = '';
     try {
@@ -25,6 +26,19 @@ export async function POST(req: NextRequest) {
     }
     if (!/^[a-zA-Z0-9-]{8,}$/.test(guid)) {
       return jsonResponse({ error: "Noto'g'ri video ID" }, { status: 400 });
+    }
+
+    // Egalik tekshiruvi: admin bo'lmasa, faqat o'zi yuklagan (kursi tegishli)
+    // videoGuid uchun imzolangan URL bera olishi kerak. Aks holda begona
+    // o'qituvchi boshqa birovning maxfiy stream UID'i uchun preview olardi.
+    if (session.role !== 'admin') {
+      const owned = await prisma.courseTopic.findFirst({
+        where: { streamUid: guid, course: { teacherId: session.sub } },
+        select: { id: true },
+      });
+      if (!owned) {
+        return jsonResponse({ error: "Bu videoga ruxsatingiz yo'q" }, { status: 403 });
+      }
     }
 
     if (!(await isBunnySigningConfigured())) {

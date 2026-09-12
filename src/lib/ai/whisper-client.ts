@@ -46,6 +46,86 @@ const SUPPORTED_HOSTS_BLOCKED = new Set([
   'www.vimeo.com',
 ]);
 
+export class WhisperUrlError extends Error {
+  code = 'WHISPER_URL_REJECTED';
+}
+
+/**
+ * IPv4 literal (masalan "10.0.0.5") private/loopback/link-level ekanini aniqlaydi.
+ * IPv4 bo'lmasa null qaytaradi (tekshirish uchun literal emas).
+ */
+function isPrivateIPv4(host: string): boolean | null {
+  const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (!m) return null;
+  const oct = m.slice(1).map(Number);
+  if (oct.some((n) => n > 255)) return true; // yaroqsiz IPv4 → xavfsizlik uchun rad
+  const [a, b] = oct;
+  if (a === 127) return true; // 127.0.0.0/8 loopback
+  if (a === 10) return true; // 10.0.0.0/8
+  if (a === 172 && b >= 16 && b <= 31) return true; // 172.16.0.0/12
+  if (a === 192 && b === 168) return true; // 192.168.0.0/16
+  if (a === 169 && b === 254) return true; // 169.254.0.0/16 link-local
+  if (a === 0) return true; // 0.0.0.0/8
+  return false;
+}
+
+/**
+ * SSRF himoyasi: server user-controlled URL'ni yuklab olishdan OLDIN tekshiradi.
+ *   - faqat https: protokol
+ *   - loopback / private / link-local hostlar bloklanadi
+ *   - R2_PUBLIC_URL sozlangan bo'lsa — faqat o'sha hostga ruxsat (allowlist)
+ * Rad etilsa WhisperUrlError tashlaydi.
+ */
+function assertSafeFetchUrl(parsed: URL): void {
+  if (parsed.protocol !== 'https:') {
+    throw new WhisperUrlError("Faqat https: URL'lar qo'llab-quvvatlanadi");
+  }
+
+  const host = parsed.hostname.toLowerCase();
+
+  if (host === 'localhost' || host === '::1' || host === '[::1]' || host === '0.0.0.0') {
+    throw new WhisperUrlError("Ichki (loopback) manzillar taqiqlangan");
+  }
+
+  // Hex-literal (0x7f000001) — bypass, rad et.
+  if (/^0x/i.test(host)) {
+    throw new WhisperUrlError("Hex IP-literal hostlar taqiqlangan");
+  }
+
+  // Sof-raqamli/nuqtali host (masalan 2130706433 decimal, 0177.0.0.1 oktal) —
+  // agar standart dotted-quad bo'lmasa noaniq IP-literal, SSRF bypass ehtimoli. Rad et.
+  if (/^[0-9.]+$/.test(host) && isPrivateIPv4(host) === null) {
+    throw new WhisperUrlError("Noaniq IP-literal host taqiqlangan");
+  }
+
+  const privateV4 = isPrivateIPv4(host);
+  if (privateV4 === true) {
+    throw new WhisperUrlError("Ichki (private/loopback) IP manzillar taqiqlangan");
+  }
+
+  // IPv6 literal loopback/ULA(fc00::/7)/link-local(fe80::/10) — bracketli yoki xom.
+  if (host.includes(':')) {
+    const h6 = host.replace(/^\[|\]$/g, '');
+    if (h6 === '::1' || /^f[cd]/.test(h6) || /^fe[89ab]/.test(h6) || /^::ffff:/.test(h6)) {
+      throw new WhisperUrlError("Ichki IPv6 manzillar taqiqlangan");
+    }
+  }
+
+  // Ixtiyoriy allowlist: R2 public host sozlangan bo'lsa, faqat o'sha hostga ruxsat.
+  const publicUrl = process.env.R2_PUBLIC_URL;
+  if (publicUrl) {
+    let allowedHost = '';
+    try {
+      allowedHost = new URL(publicUrl).hostname.toLowerCase();
+    } catch {
+      allowedHost = '';
+    }
+    if (allowedHost && host !== allowedHost) {
+      throw new WhisperUrlError("Bu manbadan yuklab olishga ruxsat yo'q");
+    }
+  }
+}
+
 export async function transcribeFromUrl(
   url: string,
   options: { language?: string } = {},
@@ -61,7 +141,12 @@ export async function transcribeFromUrl(
     );
   }
 
-  const headResp = await fetch(url, { method: 'HEAD' }).catch(() => null);
+  // SSRF himoyasi — har qanday fetch'dan OLDIN URL'ni tekshir.
+  assertSafeFetchUrl(parsed);
+
+  // redirect: 'error' — 3xx orqali ichki hostga (SSRF) sakrashni bloklaydi:
+  // boshlang'ich URL xavfsiz bo'lsa-da, redirect ichki manzilga olib borishi mumkin edi.
+  const headResp = await fetch(url, { method: 'HEAD', redirect: 'error' }).catch(() => null);
   if (headResp && headResp.ok) {
     const lenHeader = headResp.headers.get('content-length');
     if (lenHeader) {
@@ -72,7 +157,7 @@ export async function transcribeFromUrl(
     }
   }
 
-  const fileResp = await fetch(url);
+  const fileResp = await fetch(url, { redirect: 'error' });
   if (!fileResp.ok) {
     throw new WhisperFetchError(`Faylni yuklab bo'lmadi: HTTP ${fileResp.status}`);
   }

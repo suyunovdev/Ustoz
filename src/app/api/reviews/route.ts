@@ -81,13 +81,15 @@ export async function POST(req: NextRequest) {
     return jsonResponse({ error: 'Izoh 1000 belgidan oshmasligi kerak' }, { status: 400 });
   }
 
-  // Faqat kursga yozilgan o'quvchi sharh yoza oladi
-  const enrollment = await prisma.enrollment.findUnique({
+  // Faqat kursga FAOL yozilgan o'quvchi sharh yoza oladi.
+  // isActive: true — pul qaytarilgan (refund) yoki bekor qilingan yozilma
+  // egasi baho qoldira olmasin. findUnique compound-key faqat noyob maydonlarni
+  // qabul qilgani uchun isActive filtri bilan findFirst ishlatamiz.
+  const enrollment = await prisma.enrollment.findFirst({
     where: {
-      studentId_courseId: {
-        studentId: session.sub,
-        courseId,
-      },
+      studentId: session.sub,
+      courseId,
+      isActive: true,
     },
     select: { id: true },
   });

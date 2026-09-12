@@ -13,8 +13,13 @@ import type { NextRequest } from 'next/server';
 import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { isR2Configured, createPresignedUpload } from '@/lib/storage/r2-client';
+import { contentMaterialRepo } from '@/lib/repositories';
 
 const MAX_SIZE = 50 * 1024 * 1024; // 50MB server upload limit
+
+// topicId R2 kaliti (key)ga qo'shilgani uchun qat'iy UUID bo'lishi shart —
+// bu '/' va '..' orqali path-traversal / kalitni buzishning oldini oladi.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const ALLOWED_TYPES = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
@@ -36,7 +41,25 @@ export async function POST(req: NextRequest) {
       return jsonResponse({ error: 'FormData formatida yuborilishi kerak' }, { status: 400 });
     }
     const file = formData.get('file') as File | null;
-    const topicId = (formData.get('topicId') as string) || 'general';
+
+    // topicId ixtiyoriy. Berilgan bo'lsa — UUID formatini talab qilamiz va
+    // so'rovchi shu mavzu egasi (yoki admin) ekanini tekshiramiz; berilmasa
+    // 'general' xavfsiz literal ishlatiladi.
+    const rawTopicId = formData.get('topicId');
+    let topicId = 'general';
+    if (rawTopicId !== null && rawTopicId !== '') {
+      if (typeof rawTopicId !== 'string' || !UUID_RE.test(rawTopicId)) {
+        return jsonResponse({ error: "topicId formati noto'g'ri" }, { status: 400 });
+      }
+      const access = await contentMaterialRepo.isTopicOwner(rawTopicId, session.sub);
+      if (!access.ok && session.role !== 'admin') {
+        return jsonResponse(
+          { error: 'Bu mavzu sizniki emas', code: 'TOPIC_ACCESS_DENIED' },
+          { status: 403 },
+        );
+      }
+      topicId = rawTopicId;
+    }
 
     if (!file) {
       return jsonResponse({ error: 'Fayl tanlanmagan' }, { status: 400 });

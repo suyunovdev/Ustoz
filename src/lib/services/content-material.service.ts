@@ -13,6 +13,7 @@ import {
   type MaterialType,
 } from '@/lib/repositories';
 import { ValidationError } from '@/lib/errors';
+import { isHttpUrl } from '@/lib/validation';
 
 export class MaterialNotFoundError extends Error {
   code = 'MATERIAL_NOT_FOUND';
@@ -67,11 +68,8 @@ function validateInput(input: AddMaterialInput): void {
     throw new ValidationError(`Noto'g'ri tur: ${input.materialType}`);
   }
   if (input.fileUrl) {
-    try {
-      new URL(input.fileUrl);
-    } catch {
-      throw new ValidationError("Yaroqsiz URL");
-    }
+    // Faqat http/https — `javascript:`/`data:` URL stored XSS'ni oldini oladi.
+    if (!isHttpUrl(input.fileUrl)) throw new ValidationError("Yaroqsiz URL");
   }
 }
 
@@ -132,11 +130,7 @@ export async function updateMaterial(
     throw new ValidationError(`Noto'g'ri tur: ${input.materialType}`);
   }
   if (input.fileUrl) {
-    try {
-      new URL(input.fileUrl);
-    } catch {
-      throw new ValidationError("Yaroqsiz URL");
-    }
+    if (!isHttpUrl(input.fileUrl)) throw new ValidationError("Yaroqsiz URL");
   }
 
   return contentMaterialRepo.update(materialId, input);
@@ -174,11 +168,7 @@ export async function replaceMaterial(
   if (!material) throw new MaterialNotFoundError(materialId);
   if (material.teacherId !== teacherId) throw new TopicAccessDeniedError();
 
-  try {
-    new URL(input.newFileUrl);
-  } catch {
-    throw new ValidationError("Yaroqsiz URL");
-  }
+  if (!isHttpUrl(input.newFileUrl)) throw new ValidationError("Yaroqsiz URL");
   if (input.newMaterialType && !VALID_MATERIAL_TYPES.has(input.newMaterialType)) {
     throw new ValidationError(`Noto'g'ri tur: ${input.newMaterialType}`);
   }

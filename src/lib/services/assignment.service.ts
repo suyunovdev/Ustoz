@@ -287,7 +287,20 @@ export async function updateAssignment(
     }
     patch.status = input.status;
   }
-  if (input.topicId !== undefined) patch.topicId = input.topicId;
+  if (input.topicId !== undefined) {
+    // Topshiriq boshqa kursning mavzusiga o'tkazib yuborilmasin — yangi mavzu
+    // ayni shu topshiriqning kursiga tegishli bo'lishi shart (create path bilan izchil).
+    if (input.topicId) {
+      const topic = await prisma.courseTopic.findUnique({
+        where: { id: input.topicId },
+        select: { courseId: true },
+      });
+      if (!topic || topic.courseId !== access.courseId) {
+        throw new ValidationError("Mavzu ushbu kursga tegishli emas");
+      }
+    }
+    patch.topicId = input.topicId;
+  }
 
   return assignmentRepo.updateAssignment(assignmentId, patch);
 }

@@ -57,12 +57,16 @@ const ALLOWED_PREF_KEYS = new Set([
 ]);
 
 function validateUrl(value: string): string {
+  let u: URL;
   try {
-    new URL(value);
-    return value;
+    u = new URL(value);
   } catch {
     throw new ValidationError("Yaroqsiz URL");
   }
+  if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+    throw new ValidationError("Yaroqsiz URL");
+  }
+  return value;
 }
 
 // ==================== READ ====================
