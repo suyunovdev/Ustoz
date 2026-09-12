@@ -5,6 +5,8 @@
 
 const requiredServerEnvVars = [
   'NEXT_PUBLIC_APP_URL',
+  'DATABASE_URL',
+  'JWT_SECRET',
   'CLICK_MERCHANT_ID',
   'CLICK_SERVICE_ID',
   'CLICK_SECRET_KEY',
@@ -27,9 +29,15 @@ export function validateEnv(): void {
   }
 
   if (missing.length > 0) {
-    console.warn(
-      `[ustoz] Quyidagi muhit o'zgaruvchilari sozlanmagan:\n${missing.map((k) => `  - ${k}`).join('\n')}\n.env faylini tekshiring.`
-    );
+    const message = `[ustoz] Quyidagi muhit o'zgaruvchilari sozlanmagan:\n${missing.map((k) => `  - ${k}`).join('\n')}\n.env faylini tekshiring.`;
+
+    // Production'da fail-closed: ishga tushishga yo'l qo'ymaymiz.
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(message);
+    }
+
+    // Dev/test rejimida faqat ogohlantiramiz.
+    console.warn(message);
   }
 }
 

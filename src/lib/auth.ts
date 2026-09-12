@@ -49,7 +49,10 @@ export async function signToken(payload: Omit<JWTPayload, 'iat' | 'exp'>): Promi
 // Token tekshirish
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    // Algoritmni HS256 bilan cheklaymiz — "alg: none" va algo-confusion hujumlaridan himoya.
+    const { payload } = await jwtVerify(token, JWT_SECRET, {
+      algorithms: ['HS256'],
+    });
     return payload as unknown as JWTPayload;
   } catch {
     // JWT verification failure (expired, malformed, wrong signature) is expected — return null
@@ -75,14 +78,18 @@ export async function getSessionFromRequest(req: NextRequest): Promise<JWTPayloa
 // Session cookie yaratish (Response headers uchun)
 export function createSessionCookie(token: string): string {
   const maxAge = 7 * 24 * 60 * 60; // 7 days in seconds
-  // Secure flag faqat HTTPS mavjud bo'lganda (APP_URL https:// bilan boshlansa)
-  const useSecure = (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
+  // Secure flag: production'da doim, aks holda APP_URL https:// bilan boshlansa.
+  const useSecure =
+    process.env.NODE_ENV === 'production' ||
+    (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
   return `${COOKIE_NAME}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${maxAge}${useSecure ? '; Secure' : ''}`;
 }
 
 // Session cookie o'chirish — createSessionCookie bilan BIR XIL atributlar (Secure ham),
 // aks holda ba'zi brauzerlar HTTPS'dagi Secure cookie'ni o'chirmaydi → self-heal ishlamaydi.
 export function clearSessionCookie(): string {
-  const useSecure = (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
+  const useSecure =
+    process.env.NODE_ENV === 'production' ||
+    (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
   return `${COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0${useSecure ? '; Secure' : ''}`;
 }
