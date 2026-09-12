@@ -35,6 +35,7 @@ import Analytics from '@/components/common/Analytics';
 import ErrorReporter from '@/components/common/ErrorReporter';
 import { CookieConsentProvider } from '@/contexts/CookieConsentContext';
 import { getServerLocale } from '@/lib/i18n/server';
+import { headers } from 'next/headers';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -116,6 +117,11 @@ export default async function RootLayout({
   // Client'da quyidagi inline script localStorage bo'yicha yana bir bor
   // moslashtiradi (cookie va localStorage saveLocale'da sinxron saqlanadi).
   const serverLocale = await getServerLocale();
+  // CSP nonce — middleware har request uchun yaratadi (x-nonce). Quyidagi inline
+  // skriptlar (theme + JSON-LD) shu nonce'ni olmasa, nonce-based CSP ostida
+  // ('unsafe-inline' yo'q) bloklanadi. Dev'da CSP yo'q → nonce undefined bo'ladi
+  // va React attribute'ni tushirib qoldiradi (zararsiz).
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   // Inline script to apply theme before paint (prevents flash of wrong theme)
   const themeScript = `
     (function() {
@@ -158,12 +164,12 @@ export default async function RootLayout({
   return (
     <html lang={serverLocale} className={`${nunitoSans.variable} ${jetbrainsMono.variable} ${sora.variable}`} suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }} />
+        <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(orgJsonLd) }} />
+        <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteJsonLd) }} />
       </head>
       <body>
         <AuthProvider>

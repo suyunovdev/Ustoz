@@ -23,7 +23,9 @@ export async function GET() {
       await prisma.$queryRaw`SELECT 1`;
       dbOk = true;
     } catch (err) {
-      checks.database = { status: 'error', message: String(err) };
+      // Xom xatoni mijozga bermaymiz (ma'lumot sizib chiqishi mumkin) — faqat server-logga.
+      console.error('[health] db error:', err);
+      checks.database = { status: 'error' };
     }
   }
   if (dbOk) {

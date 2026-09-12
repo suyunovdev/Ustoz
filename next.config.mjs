@@ -96,7 +96,6 @@ const nextConfig = {
   },
 
   async headers() {
-    const isDev = process.env.NODE_ENV === 'development';
     const securityHeaders = [
       { key: 'X-Frame-Options', value: 'DENY' },
       { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -107,7 +106,7 @@ const nextConfig = {
       },
     ];
 
-    // HSTS faqat HTTPS mavjud bo'lganda, CSP production'da
+    // HSTS faqat HTTPS mavjud bo'lganda.
     const isHttps = (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
     if (isHttps) {
       securityHeaders.push({
@@ -115,24 +114,10 @@ const nextConfig = {
         value: 'max-age=31536000; includeSubDomains',
       });
     }
-    if (!isDev) {
-      securityHeaders.push({
-        key: 'Content-Security-Policy',
-        value: [
-          "default-src 'self'",
-          "script-src 'self' 'unsafe-inline'",
-          "style-src 'self' 'unsafe-inline'",
-          "font-src 'self' data:",
-          "img-src 'self' data: blob: https:",
-          "connect-src 'self' https://api.resend.com https://my.click.uz https://checkout.paycom.uz https://*.r2.cloudflarestorage.com https://video.bunnycdn.com https://*.b-cdn.net https://*.mediadelivery.net",
-          "media-src 'self' blob: https://*.b-cdn.net https://*.mediadelivery.net https://*.r2.cloudflarestorage.com https://*.r2.dev",
-          "frame-src 'self' https://iframe.mediadelivery.net https://www.youtube.com https://player.vimeo.com",
-          "object-src 'none'",
-          "base-uri 'self'",
-          "form-action 'self' https://my.click.uz https://checkout.paycom.uz",
-        ].join('; '),
-      });
-    }
+
+    // Content-Security-Policy MIDDLEWARE'da (src/middleware.ts) quriladi:
+    // script-src'da 'unsafe-inline' o'rniga har-request nonce + 'strict-dynamic'.
+    // Bu yerda CSP QO'YILMAYDI — aks holda ikki header to'qnashadi.
 
     return [
       {

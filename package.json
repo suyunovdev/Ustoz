@@ -7,7 +7,6 @@
       "next",
       "react",
       "react-dom",
-      "@dhiwise/component-tagger",
       "@tailwindcss/typography",
       "recharts"
     ],
@@ -66,7 +65,6 @@
     "@adobe/css-tools": "^4.5.0",
     "@aws-sdk/client-s3": "^3.1056.0",
     "@aws-sdk/s3-request-presigner": "^3.1056.0",
-    "@dhiwise/component-tagger": "^1.0.14",
     "@hello-pangea/dnd": "^18.0.1",
     "@heroicons/react": "^2.2.0",
     "@prisma/adapter-pg": "^7.8.0",
@@ -94,14 +92,12 @@
     "react": "19.0.3",
     "react-dom": "19.0.3",
     "recharts": "^2.15.2",
-    "source-map-js": "^1.2.1",
-    "tus-js-client": "^4.3.1",
-    "vite": "^8.0.16"
+    "tus-js-client": "^4.3.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@netlify/plugin-nextjs": "^5.11.1",
-    "@next/bundle-analyzer": "^16.2.6",
+    "@next/bundle-analyzer": "^15",
     "@playwright/test": "^1.61.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
