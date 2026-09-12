@@ -23,6 +23,17 @@ interface Course {
   title: string;
 }
 
+const GATEWAY_HOSTS = ['click.uz', 'paycom.uz'];
+function isAllowedGatewayUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw);
+    if (u.protocol !== 'https:') return false;
+    return GATEWAY_HOSTS.some((h) => u.hostname === h || u.hostname.endsWith('.' + h));
+  } catch {
+    return false;
+  }
+}
+
 const PaymentProcessingInteractive = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -91,7 +102,12 @@ const PaymentProcessingInteractive = () => {
 
     if (paymentUrl && !hasRedirectedToGateway && gatewayRedirectCountdown === 0) {
       setHasRedirectedToGateway(true);
-      window.location.href = decodeURIComponent(paymentUrl);
+      const target = decodeURIComponent(paymentUrl);
+      if (isAllowedGatewayUrl(target)) {
+        window.location.href = target;
+      } else {
+        console.error('[payment] ruxsat etilmagan gateway URL bloklandi');
+      }
     }
   }, [paymentUrl, hasRedirectedToGateway, gatewayRedirectCountdown]);
 
@@ -331,7 +347,12 @@ const PaymentProcessingInteractive = () => {
               <button
                 onClick={() => {
                   setHasRedirectedToGateway(true);
-                  window.location.href = decodeURIComponent(paymentUrl);
+                  const target = decodeURIComponent(paymentUrl);
+                  if (isAllowedGatewayUrl(target)) {
+                    window.location.href = target;
+                  } else {
+                    console.error('[payment] ruxsat etilmagan gateway URL bloklandi');
+                  }
                 }}
                 className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-smooth"
               >

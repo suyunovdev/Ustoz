@@ -17,6 +17,21 @@ export function isNonEmptyString(v: unknown): v is string {
   return typeof v === 'string' && v.trim().length > 0;
 }
 
+/**
+ * URL faqat http:/https: protokolida ekanini tekshiradi.
+ * `javascript:`, `data:`, `vbscript:` kabi protokollar rad etiladi — stored XSS'dan himoya
+ * (URL keyinchalik `<a href>` sifatida render qilinadi).
+ */
+export function isHttpUrl(v: unknown): v is string {
+  if (typeof v !== 'string') return false;
+  try {
+    const u = new URL(v);
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 export function isEmail(v: unknown): v is string {
   if (typeof v !== 'string') return false;
   const e = v.trim();
