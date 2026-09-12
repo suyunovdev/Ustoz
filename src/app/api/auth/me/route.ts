@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSessionFromRequest, clearSessionCookie } from '@/lib/auth';
+import { clearSessionCookie } from '@/lib/auth';
 import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
 
@@ -49,8 +49,13 @@ export async function GET(req: NextRequest) {
 // Faqat fullName, avatarUrl, bio yangilanadi; role/email/payout kabi maydonlar
 // alohida endpoint'lar orqali (admin yoki maxsus flow) o'zgartiriladi.
 export async function PATCH(req: NextRequest) {
-  const session = await getSessionFromRequest(req);
-  if (!session) {
+  // requireAuth — DB-backed (tokenVersion/suspend/mavjudlik) to'liq tekshiruv.
+  // getSessionFromRequest faqat JWT'ni tekshirar va bekor qilingan (revoked)
+  // sessiyani chetlab o'tar edi; PATCH profilni o'zgartirgani uchun bu xavfli.
+  let session;
+  try {
+    session = await requireAuth(req);
+  } catch {
     return NextResponse.json({ error: 'Autentifikatsiya talab qilinadi' }, { status: 401 });
   }
 

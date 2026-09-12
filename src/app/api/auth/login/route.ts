@@ -12,8 +12,14 @@ import { checkRateLimit } from '@/lib/rateLimit';
 const LOGIN_MAX = 5;
 const LOGIN_WINDOW_MS = 15 * 60 * 1000;
 
-// Timing attack oldini olish uchun dummy hash
-const DUMMY_HASH = '$2a$12$LJ3m4ys3bGDZBOJfxvzuVuQGqDz5x3Xz3y5RGj5XJ5qZ3qZ3qZ3q';
+// Password spraying: bitta IP dan email o'zgartirib ko'p urinishga qarshi qo'pol cheklov.
+const IP_MAX = 30;
+const IP_WINDOW_MS = 15 * 60 * 1000;
+
+// Timing attack oldini olish uchun dummy hash.
+// Yaroqli bcrypt hash bo'lishi shart — aks holda bcrypt.compare darrov rad etib,
+// mavjud/yo'q email o'rtasida timing farqi paydo bo'ladi (enumeration).
+const DUMMY_HASH = bcrypt.hashSync('ustoz-timing-guard-constant', 12);
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,6 +55,17 @@ export async function POST(req: NextRequest) {
       // FAQAT muvaffaqiyatsiz urinishlar hisoblanadi (muvaffaqiyatli login limitga
       // tegmaydi). Redis (mavjud bo'lsa) yoki in-memory fallback — serverless/cluster
       // bo'ylab barqaror. Limitdan oshsa 429.
+
+      // Password spraying himoyasi: email'dan qat'i nazar, bitta IP bo'yicha qo'pol cheklov.
+      const ipRl = await checkRateLimit(`login-ip:${ip}`, IP_MAX, IP_WINDOW_MS);
+      if (!ipRl.allowed) {
+        const retryAfter = Math.max(1, Math.ceil((ipRl.resetAt - Date.now()) / 1000));
+        return NextResponse.json(
+          { error: `Juda ko'p urinish. ${retryAfter} sekunddan keyin qayta urinib ko'ring.` },
+          { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+        );
+      }
+
       const rl = await checkRateLimit(rateLimitKey, LOGIN_MAX, LOGIN_WINDOW_MS);
       if (!rl.allowed) {
         const retryAfter = Math.max(1, Math.ceil((rl.resetAt - Date.now()) / 1000));
@@ -77,6 +94,15 @@ export async function POST(req: NextRequest) {
       const totpCode = typeof body.totpCode === 'string' ? body.totpCode : '';
       if (!totpCode) {
         return NextResponse.json({ twoFactorRequired: true }, { status: 200 });
+      }
+      // 2FA brute-force himoyasi: TOTP/zaxira kodni cheksiz sinab ko'rishga yo'l qo'ymaymiz.
+      const tfaRl = await checkRateLimit(`2fa:${ip}:${user.id}`, 5, 15 * 60 * 1000);
+      if (!tfaRl.allowed) {
+        const retryAfter = Math.max(1, Math.ceil((tfaRl.resetAt - Date.now()) / 1000));
+        return NextResponse.json(
+          { error: `Juda ko'p urinish. ${retryAfter} sekunddan keyin qayta urinib ko'ring.`, twoFactorRequired: true },
+          { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+        );
       }
       const ok = await verifyTwoFactorCode(
         { id: user.id, totpSecret: user.totpSecret, totpBackupCodes: user.totpBackupCodes },

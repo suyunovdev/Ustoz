@@ -89,7 +89,11 @@ export async function GET(req: NextRequest) {
     // headers.append('Set-Cookie',...) + res.cookies.set() ni aralashtirsak,
     // Next serializatsiyada qo'lda qo'shilgan sessiya cookie'sini o'chirib yuboradi
     // → foydalanuvchi login bo'lmaydi (landing'ga qaytadi).
-    const useSecure = (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
+    // Prod'da doim Secure (createSessionCookie bilan bir xil qoida) — env drift'da
+    // ham HTTP orqali sessiya cookie'si tarqalmaydi.
+    const useSecure =
+      process.env.NODE_ENV === 'production' ||
+      (process.env.NEXT_PUBLIC_APP_URL || '').startsWith('https://');
     const res = NextResponse.redirect(appUrl('/'));
     res.cookies.set(COOKIE_NAME, token, {
       httpOnly: true,

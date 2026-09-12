@@ -12,6 +12,20 @@ const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
 const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const useRedis = Boolean(UPSTASH_URL && UPSTASH_TOKEN);
 
+// Modul yuklanganda rate-limit backend holatini ogohlantirish sifatida log qilamiz.
+// Server tomonida (build/runtime), brauzerda emas.
+if (typeof window === 'undefined') {
+  if (useRedis) {
+    console.info('[ustoz] Redis rate-limit faol (Upstash).');
+  } else if (process.env.NODE_ENV === 'production') {
+    console.warn(
+      '[ustoz] OGOHLANTIRISH: in-memory rate-limit ishlatilmoqda — ' +
+        'pm2 single-instance (cluster EMAS) kerak yoki UPSTASH_REDIS_REST_URL/TOKEN sozlang. ' +
+        "Aks holda limit har instance uchun alohida bo'lib, samarasiz bo'ladi.",
+    );
+  }
+}
+
 async function redisCommand(args: (string | number)[]): Promise<unknown> {
   const res = await fetch(UPSTASH_URL!, {
     method: 'POST',

@@ -81,6 +81,15 @@ export async function revokeSession(userId: string, sessionId: string): Promise<
   return res.count > 0;
 }
 
+/** JWT `jti` (UserSession.tokenId) bo'yicha sessiyani bekor qilish — logout uchun. */
+export async function revokeSessionByTokenId(tokenId: string): Promise<boolean> {
+  const res = await prisma.userSession.updateMany({
+    where: { tokenId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+  return res.count > 0;
+}
+
 /** Barcha qurilmalarni bekor qilish. */
 export async function revokeAllSessions(userId: string): Promise<void> {
   await prisma.userSession.updateMany({

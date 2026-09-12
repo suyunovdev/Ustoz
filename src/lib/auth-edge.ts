@@ -30,7 +30,7 @@ export interface JWTPayload {
 
 export async function verifyToken(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await jwtVerify(token, JWT_SECRET, { algorithms: ['HS256'] });
     return payload as unknown as JWTPayload;
   } catch {
     // JWT verification failure (expired, malformed, wrong signature) is expected — return null
