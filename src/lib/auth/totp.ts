@@ -2,7 +2,12 @@
  * TOTP (RFC 6238) — tashqi kutubxonasiz, node:crypto asosida.
  * HMAC-SHA1, 30s qadam, 6 raqam. Google Authenticator / Authy bilan mos.
  */
-import { createHmac, randomBytes } from 'node:crypto';
+import {
+  createHmac,
+  randomBytes,
+  createCipheriv,
+  createDecipheriv,
+} from 'node:crypto';
 
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
@@ -78,11 +83,75 @@ export function otpauthUrl(secret: string, account: string, issuer = 'Ustoz'): s
   return `otpauth://totp/${label}?${params.toString()}`;
 }
 
-/** Zaxira kodlar (bir martalik). */
+/**
+ * Zaxira kodlar (bir martalik). Har biri 10 bayt (80 bit) entropiya —
+ * 20 hex belgi, o'qishga qulay bo'lishi uchun 2 guruhga bo'linadi.
+ * Eslatma: kodlar chaqiruvchi tomonda bcrypt bilan hashlanib saqlanadi.
+ */
 export function generateBackupCodes(count = 8): string[] {
   const codes: string[] = [];
   for (let i = 0; i < count; i++) {
-    codes.push(randomBytes(4).toString('hex')); // 8 hex belgi
+    const hex = randomBytes(10).toString('hex'); // 20 hex belgi
+    codes.push(`${hex.slice(0, 10)}-${hex.slice(10)}`);
   }
   return codes;
+}
+
+/**
+ * TOTP maxfiy kalitini at-rest shifrlash uchun AEAD (AES-256-GCM).
+ * Kalit TOTP_ENC_KEY env'dan (32-baytlik base64) olinadi.
+ * Format: `v1:${iv_b64}:${tag_b64}:${ct_b64}`.
+ */
+const ENC_PREFIX = 'v1:';
+
+function getEncKey(): Buffer | null {
+  const raw = process.env.TOTP_ENC_KEY;
+  if (!raw) return null;
+  const key = Buffer.from(raw, 'base64');
+  if (key.length !== 32) {
+    console.warn('[2FA] TOTP_ENC_KEY 32 bayt (base64) bo\'lishi kerak — shifrlash o\'tkazib yuborildi');
+    return null;
+  }
+  return key;
+}
+
+/** Shifrlangan qiymat ekanligini tekshiradi. */
+export function isEncryptedSecret(value: string): boolean {
+  return typeof value === 'string' && value.startsWith(ENC_PREFIX);
+}
+
+/**
+ * Maxfiy kalitni shifrlaydi. TOTP_ENC_KEY o'rnatilmagan bo'lsa — plaintext
+ * qaytaradi (hozirgi xatti-harakat) va ogohlantiradi. Prod'ni buzmaydi.
+ */
+export function encryptSecret(plain: string): string {
+  const key = getEncKey();
+  if (!key) {
+    console.warn('[2FA] TOTP_ENC_KEY o\'rnatilmagan — totpSecret plaintext saqlanadi');
+    return plain;
+  }
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const ct = Buffer.concat([cipher.update(plain, 'utf8'), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return `${ENC_PREFIX}${iv.toString('base64')}:${tag.toString('base64')}:${ct.toString('base64')}`;
+}
+
+/**
+ * Maxfiy kalitni deshifrlaydi. 'v1:' bilan boshlanmasa — plaintext deb
+ * qabul qiladi (lazy migratsiya: mavjud userlar buzilmaydi).
+ */
+export function decryptSecret(stored: string): string {
+  if (!isEncryptedSecret(stored)) return stored; // eski plaintext
+  const key = getEncKey();
+  if (!key) {
+    throw new Error('[2FA] Shifrlangan totpSecret bor, lekin TOTP_ENC_KEY yo\'q');
+  }
+  const [, ivB64, tagB64, ctB64] = stored.split(':');
+  const iv = Buffer.from(ivB64, 'base64');
+  const tag = Buffer.from(tagB64, 'base64');
+  const ct = Buffer.from(ctB64, 'base64');
+  const decipher = createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(tag);
+  return Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8');
 }
