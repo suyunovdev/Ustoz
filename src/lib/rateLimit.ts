@@ -146,9 +146,16 @@ export async function checkRateLimit(
  * IP manzilini request'dan olish
  */
 export function getClientIp(request: Request): string {
+  // nginx `X-Real-IP`ni to'g'ridan-to'g'ri ulangan peer IP'siga o'rnatadi (mijoz
+  // spoof qila olmaydi). `X-Forwarded-For` esa `$proxy_add_x_forwarded_for` bilan
+  // mijoz yuborgan qiymatga QO'SHILADI — birinchi element soxta bo'lishi mumkin,
+  // shuning uchun OXIRGI hop (nginx ko'rgan haqiqiy peer) olinadi.
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp && realIp.trim()) return realIp.trim();
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
-    return forwarded.split(',')[0].trim();
+    const parts = forwarded.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
   }
-  return request.headers.get('x-real-ip') || 'unknown';
+  return 'unknown';
 }

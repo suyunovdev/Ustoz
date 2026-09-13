@@ -5,7 +5,7 @@ import { signToken, createSessionCookie } from '@/lib/auth';
 import { createSession } from '@/lib/services/session.service';
 import { userRepo } from '@/lib/repositories';
 import { verifyTwoFactorCode } from '@/lib/services/twofa.service';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 // Brute force: har (ip+email) uchun 5 muvaffaqiyatsiz urinish / 15 daqiqa.
 // Upstash Redis (mavjud bo'lsa) yoki in-memory fallback — serverless/cluster'da barqaror.
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     const normalizedEmail = String(email).toLowerCase().trim();
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const ip = getClientIp(req);
     const rateLimitKey = `login:${ip}:${normalizedEmail}`;
 
     const user = await prisma.user.findUnique({

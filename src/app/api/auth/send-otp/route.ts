@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 // Kriptografik xavfsiz OTP
 function generateOtp(): string {
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Noto\'g\'ri so\'rov turi' }, { status: 400 });
     }
 
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+    const ip = getClientIp(req);
     const normalizedEmail = String(email).toLowerCase().trim();
     const key = `otp:${ip}:${normalizedEmail}`;
 
