@@ -8,9 +8,15 @@ import { prisma } from '@/lib/prisma';
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // JWT bilan bir xil (7 kun)
 
 function getIp(req: NextRequest): string | null {
+  // Ishonchli: nginx `X-Real-IP`. XFF qo'shiladi — oxirgi hop olinadi.
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp && realIp.trim()) return realIp.trim();
   const xff = req.headers.get('x-forwarded-for');
-  if (xff) return xff.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || null;
+  if (xff) {
+    const parts = xff.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return null;
 }
 
 /** User-agent'dan o'qish uchun qulay qurilma nomi (brauzer + OS). */

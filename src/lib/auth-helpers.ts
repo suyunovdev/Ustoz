@@ -132,9 +132,16 @@ export async function requireStudent(req: NextRequest): Promise<JWTPayload> {
  * Request'dan IP olish (Vercel/proxy uchun forwarded header'ni hurmat qiladi).
  */
 export function getClientIp(req: NextRequest): string | null {
+  // Ishonchli manba: nginx `X-Real-IP` (spoof qilinmaydi). XFF qo'shiladigan
+  // bo'lgani uchun birinchi emas, OXIRGI hop olinadi (nginx ko'rgan peer).
+  const realIp = req.headers.get('x-real-ip');
+  if (realIp && realIp.trim()) return realIp.trim();
   const xff = req.headers.get('x-forwarded-for');
-  if (xff) return xff.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || null;
+  if (xff) {
+    const parts = xff.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length) return parts[parts.length - 1];
+  }
+  return null;
 }
 
 export function getUserAgent(req: NextRequest): string | null {

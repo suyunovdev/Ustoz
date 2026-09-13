@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { isEmail, validatePassword } from '@/lib/validation';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const normalizedEmail = String(email).toLowerCase().trim();
 
     // Rate limit — reset abuse'ni cheklaymiz (IP + email bo'yicha).
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+    const ip = getClientIp(req);
     const rl = await checkRateLimit(`reset:${ip}:${normalizedEmail}`, 5, 15 * 60 * 1000);
     if (!rl.allowed) {
       return NextResponse.json(

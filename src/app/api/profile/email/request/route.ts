@@ -8,7 +8,7 @@ import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { isEmail, normalizeEmail } from '@/lib/validation';
-import { checkRateLimit } from '@/lib/rateLimit';
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit';
 
 function generateOtp(): string {
   const a = new Uint32Array(1);
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       return jsonResponse({ error: 'Bu email band' }, { status: 409 });
     }
 
-    const ip = req.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
+    const ip = getClientIp(req);
     const rl = await checkRateLimit(`email-change:${session.sub}:${ip}`, 5, 15 * 60 * 1000);
     if (!rl.allowed) {
       return jsonResponse({ error: 'Juda ko\'p urinish. 15 daqiqadan keyin urinib ko\'ring.' }, { status: 429 });
