@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime } from '@/lib/i18n/format';
+import { LOCALE_TAG } from '@/lib/i18n';
+import type { Locale } from '@/lib/i18n';
 
 interface Session {
   id: string;
@@ -19,23 +23,24 @@ interface Props {
   groupId: string;
 }
 
-const UZ_MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
-// JS getDay(): 0=Yakshanba ... 6=Shanba
-const WEEKDAYS: { d: number; label: string }[] = [
-  { d: 1, label: 'Du' },
-  { d: 2, label: 'Se' },
-  { d: 3, label: 'Cho' },
-  { d: 4, label: 'Pa' },
-  { d: 5, label: 'Ju' },
-  { d: 6, label: 'Sha' },
-  { d: 0, label: 'Ya' },
-];
+// JS getDay(): 0=Yakshanba ... 6=Shanba. Panel tartibi Du..Ya.
+const WEEKDAY_ORDER = [1, 2, 3, 4, 5, 6, 0];
+const UZ_WD = ['Ya', 'Du', 'Se', 'Cho', 'Pa', 'Ju', 'Sha']; // index = getDay()
 
-function fmtWhen(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()}-${UZ_MONTHS[d.getMonth()]}, ${String(d.getHours()).padStart(2, '0')}:${String(
-    d.getMinutes(),
-  ).padStart(2, '0')}`;
+function weekdayLabel(d: number, locale: Locale): string {
+  if (locale === 'uz') return UZ_WD[d];
+  // 2024-01-07 (UTC) — yakshanba; +d bilan kerakli kun.
+  const ref = new Date(Date.UTC(2024, 0, 7 + d));
+  return new Intl.DateTimeFormat(LOCALE_TAG[locale], { weekday: 'short', timeZone: 'UTC' }).format(ref);
+}
+
+function fmtWhen(iso: string, locale: Locale): string {
+  return formatDateTime(iso, locale, {
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function isPast(s: Session): boolean {
@@ -62,6 +67,7 @@ function computeOccurrences(startDate: string, time: string, weekdays: Set<numbe
 }
 
 export default function GroupSessionsPanel({ groupId }: Props) {
+  const { t, locale } = useI18n();
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -122,15 +128,15 @@ export default function GroupSessionsPanel({ groupId }: Props) {
   }
 
   async function submit() {
-    if (title.trim().length < 2) return toast.error('Dars nomini kiriting');
-    if (!meetingUrl.trim()) return toast.error('Meet havolasini kiriting');
+    if (title.trim().length < 2) return toast.error(t('liveSessions.enterName'));
+    if (!meetingUrl.trim()) return toast.error(t('liveSessions.enterLink'));
 
     let payload: Record<string, unknown>;
     if (mode === 'series') {
-      if (occurrences.length === 0) return toast.error('Kamida bitta dars sanasi kerak');
+      if (occurrences.length === 0) return toast.error(t('liveSessions.needDate'));
       payload = { mode: 'series', title, occurrences, durationMin, meetingUrl };
     } else {
-      if (!singleAt) return toast.error('Dars sanasi/vaqtini tanlang');
+      if (!singleAt) return toast.error(t('liveSessions.needDateTime'));
       payload = { mode: 'single', title, startsAt: new Date(singleAt).toISOString(), durationMin, meetingUrl };
     }
 
@@ -143,15 +149,19 @@ export default function GroupSessionsPanel({ groupId }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || 'Dars yaratib bo\'lmadi');
+        toast.error(data.error || t('liveSessions.createFailed'));
         return;
       }
-      toast.success(mode === 'series' ? `${data.count} ta dars rejaga qo'shildi` : 'Dars rejaga qo\'shildi');
+      toast.success(
+        mode === 'series'
+          ? t('liveSessions.seriesCreated', { count: data.count })
+          : t('liveSessions.singleCreated'),
+      );
       resetForm();
       setShowForm(false);
       await reload();
     } catch {
-      toast.error('Tarmoq xatosi');
+      toast.error(t('liveSessions.networkError'));
     } finally {
       setSubmitting(false);
     }
@@ -163,13 +173,17 @@ export default function GroupSessionsPanel({ groupId }: Props) {
       const res = await fetch(`/api/teacher/sessions/${s.id}${q}`, { method: 'DELETE' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error || 'Bekor qilib bo\'lmadi');
+        toast.error(data.error || t('liveSessions.cancelFailed'));
         return;
       }
-      toast.success(scope === 'series' ? `${data.cancelled} ta dars bekor qilindi` : 'Dars bekor qilindi');
+      toast.success(
+        scope === 'series'
+          ? t('liveSessions.seriesCancelled', { count: data.cancelled })
+          : t('liveSessions.sessionCancelled'),
+      );
       await reload();
     } catch {
-      toast.error('Tarmoq xatosi');
+      toast.error(t('liveSessions.networkError'));
     }
   }
 
@@ -192,6 +206,9 @@ export default function GroupSessionsPanel({ groupId }: Props) {
   const upcoming = sessions.filter((s) => s.status === 'scheduled' && !isPast(s));
   const past = sessions.filter((s) => s.status !== 'scheduled' || isPast(s));
 
+  const inputCls =
+    'mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40';
+
   return (
     <section className="bg-card border border-border rounded-xl p-5 shadow-warm">
       <div className="flex items-center justify-between mb-4">
@@ -199,58 +216,54 @@ export default function GroupSessionsPanel({ groupId }: Props) {
           <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary">
             <Icon name="VideoCameraIcon" size={18} />
           </span>
-          <h2 className="text-lg font-heading font-semibold text-foreground">Jonli darslar</h2>
+          <h2 className="text-lg font-heading font-semibold text-foreground">{t('liveSessions.title')}</h2>
         </div>
         <button
           type="button"
           onClick={() => setShowForm((v) => !v)}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         >
-          <Icon name={showForm ? "XMarkIcon" : "PlusIcon"} size={16} />
-          {showForm ? 'Yopish' : 'Dars qo\'shish'}
+          <Icon name={showForm ? 'XMarkIcon' : 'PlusIcon'} size={16} />
+          {showForm ? t('liveSessions.closeBtn') : t('liveSessions.addBtn')}
         </button>
       </div>
 
-      {/* Meet havolasi haqida qisqa yordam */}
       {showForm && (
         <div className="mb-4 rounded-lg border border-border bg-background/60 p-4 space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">Dars nomi</span>
+              <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.lessonName')}</span>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="Masalan: Algebra — 1-mavzu"
-                className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                placeholder={t('liveSessions.lessonNamePlaceholder')}
+                className={inputCls}
               />
             </label>
             <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">Davomiylik (daqiqa)</span>
+              <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.duration')}</span>
               <input
                 type="number"
                 min={10}
                 max={480}
                 value={durationMin}
                 onChange={(e) => setDurationMin(Number(e.target.value))}
-                className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={inputCls}
               />
             </label>
           </div>
 
           <label className="block">
-            <span className="text-xs font-medium text-muted-foreground">Google Meet havolasi</span>
+            <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.meetLink')}</span>
             <input
               value={meetingUrl}
               onChange={(e) => setMeetingUrl(e.target.value)}
               placeholder="https://meet.google.com/xxx-xxxx-xxx"
-              className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+              className={inputCls}
             />
-            <span className="mt-1 block text-[11px] text-muted-foreground">
-              Google Calendar'da takroriy hodisa yarating → "Add Google Meet" → havolani shu yerga joylashtiring.
-            </span>
+            <span className="mt-1 block text-[11px] text-muted-foreground">{t('liveSessions.meetHelp')}</span>
           </label>
 
-          {/* Rejim: bir martalik / takroriy */}
           <div className="flex gap-2">
             {(['single', 'series'] as const).map((mo) => (
               <button
@@ -261,77 +274,80 @@ export default function GroupSessionsPanel({ groupId }: Props) {
                   mode === mo ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground hover:bg-muted/70'
                 }`}
               >
-                {mo === 'single' ? 'Bir martalik' : 'Takroriy'}
+                {mo === 'single' ? t('liveSessions.modeSingle') : t('liveSessions.modeSeries')}
               </button>
             ))}
           </div>
 
           {mode === 'single' ? (
             <label className="block">
-              <span className="text-xs font-medium text-muted-foreground">Sana va vaqt</span>
+              <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.dateTime')}</span>
               <input
                 type="datetime-local"
                 value={singleAt}
                 onChange={(e) => setSingleAt(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                className={inputCls}
               />
             </label>
           ) : (
             <div className="space-y-3">
               <div className="grid gap-3 sm:grid-cols-3">
                 <label className="block">
-                  <span className="text-xs font-medium text-muted-foreground">Boshlanish sanasi</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.startDate')}</span>
                   <input
                     type="date"
                     value={seriesDate}
                     onChange={(e) => setSeriesDate(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    className={inputCls}
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-muted-foreground">Vaqt</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.time')}</span>
                   <input
                     type="time"
                     value={seriesTime}
                     onChange={(e) => setSeriesTime(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    className={inputCls}
                   />
                 </label>
                 <label className="block">
-                  <span className="text-xs font-medium text-muted-foreground">Necha hafta</span>
+                  <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.weeks')}</span>
                   <input
                     type="number"
                     min={1}
                     max={52}
                     value={seriesWeeks}
                     onChange={(e) => setSeriesWeeks(Number(e.target.value))}
-                    className="mt-1 w-full rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    className={inputCls}
                   />
                 </label>
               </div>
               <div>
-                <span className="text-xs font-medium text-muted-foreground">Hafta kunlari</span>
+                <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.weekdaysLabel')}</span>
                 <div className="mt-1 flex flex-wrap gap-1.5">
-                  {WEEKDAYS.map((w) => (
+                  {WEEKDAY_ORDER.map((d) => (
                     <button
-                      key={w.d}
+                      key={d}
                       type="button"
-                      onClick={() => toggleWeekday(w.d)}
+                      onClick={() => toggleWeekday(d)}
                       className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
-                        weekdays.has(w.d)
+                        weekdays.has(d)
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-muted text-foreground hover:bg-muted/70'
                       }`}
                     >
-                      {w.label}
+                      {weekdayLabel(d, locale)}
                     </button>
                   ))}
                 </div>
               </div>
               <p className="text-[11px] text-muted-foreground">
                 {occurrences.length > 0
-                  ? `Jami ${occurrences.length} ta dars yaratiladi (birinchisi: ${fmtWhen(occurrences[0])}).`
-                  : 'Sana, vaqt va kamida bitta hafta kunini tanlang.'}
+                  ? t('liveSessions.occurrencesPreview', {
+                      count: occurrences.length,
+                      first: fmtWhen(occurrences[0], locale),
+                    })
+                  : t('liveSessions.occurrencesHint')}
               </p>
             </div>
           )}
@@ -343,22 +359,23 @@ export default function GroupSessionsPanel({ groupId }: Props) {
               disabled={submitting}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
             >
-              {submitting ? 'Saqlanmoqda...' : 'Saqlash'}
+              {submitting ? t('liveSessions.saving') : t('liveSessions.save')}
             </button>
           </div>
         </div>
       )}
 
-      {/* Ro'yxat */}
       {loading ? (
-        <p className="text-sm text-muted-foreground">Yuklanmoqda...</p>
+        <p className="text-sm text-muted-foreground">{t('liveSessions.loading')}</p>
       ) : sessions.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Hali jonli dars rejalashtirilmagan.</p>
+        <p className="text-sm text-muted-foreground">{t('liveSessions.empty')}</p>
       ) : (
         <div className="space-y-4">
           {upcoming.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">Kelayotgan</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                {t('liveSessions.upcoming')}
+              </h3>
               <ul className="space-y-2">
                 {upcoming.map((s) => (
                   <SessionRow
@@ -375,7 +392,9 @@ export default function GroupSessionsPanel({ groupId }: Props) {
           )}
           {past.length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">O'tgan / bekor</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                {t('liveSessions.pastCancelled')}
+              </h3>
               <ul className="space-y-2 opacity-70">
                 {past.slice(0, 10).map((s) => (
                   <SessionRow
@@ -412,6 +431,7 @@ function SessionRow({
   attendance: { studentId: string; fullName: string | null; joinedAt: string }[];
   past?: boolean;
 }) {
+  const { t, locale } = useI18n();
   const cancelled = s.status === 'cancelled';
   return (
     <li className="rounded-lg border border-border bg-background/60 px-3 py-2.5">
@@ -421,17 +441,17 @@ function SessionRow({
             <p className="text-sm font-medium text-foreground truncate">{s.title}</p>
             {cancelled && (
               <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-red-600">
-                BEKOR
+                {t('liveSessions.badgeCancelled')}
               </span>
             )}
             {s.seriesId && !cancelled && (
               <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
-                SERIYA
+                {t('liveSessions.badgeSeries')}
               </span>
             )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {fmtWhen(s.startsAt)} · {s.durationMin} daq · {s.attendeeCount} qatnashdi
+            {fmtWhen(s.startsAt, locale)} · {t('liveSessions.rowMeta', { duration: s.durationMin, count: s.attendeeCount })}
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
@@ -439,7 +459,7 @@ function SessionRow({
             type="button"
             onClick={() => onAttendance(s)}
             className="rounded-lg bg-muted px-2 py-1 text-xs font-medium text-foreground hover:bg-muted/70"
-            title="Davomat"
+            title={t('liveSessions.attendanceTitle')}
           >
             <Icon name="UsersIcon" size={14} />
           </button>
@@ -449,7 +469,7 @@ function SessionRow({
                 type="button"
                 onClick={() => onCancel(s, 'one')}
                 className="rounded-lg bg-muted px-2 py-1 text-xs font-medium text-red-600 hover:bg-red-500/10"
-                title="Bekor qilish"
+                title={t('liveSessions.cancelTitle')}
               >
                 <Icon name="TrashIcon" size={14} />
               </button>
@@ -458,9 +478,9 @@ function SessionRow({
                   type="button"
                   onClick={() => onCancel(s, 'series')}
                   className="rounded-lg bg-muted px-2 py-1 text-[11px] font-medium text-red-600 hover:bg-red-500/10"
-                  title="Butun seriyani bekor qilish"
+                  title={t('liveSessions.cancelSeriesTitle')}
                 >
-                  Seriya
+                  {t('liveSessions.cancelSeriesBtn')}
                 </button>
               )}
             </>
@@ -470,15 +490,12 @@ function SessionRow({
       {attendanceOpen && (
         <div className="mt-2 border-t border-border pt-2">
           {attendance.length === 0 ? (
-            <p className="text-xs text-muted-foreground">Hali hech kim qo'shilmagan.</p>
+            <p className="text-xs text-muted-foreground">{t('liveSessions.noAttendance')}</p>
           ) : (
             <ul className="flex flex-wrap gap-1.5">
               {attendance.map((a) => (
-                <li
-                  key={a.studentId}
-                  className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground"
-                >
-                  {a.fullName || 'Nomaʼlum'}
+                <li key={a.studentId} className="rounded-full bg-muted px-2 py-0.5 text-[11px] text-foreground">
+                  {a.fullName || t('liveSessions.unknownName')}
                 </li>
               ))}
             </ul>

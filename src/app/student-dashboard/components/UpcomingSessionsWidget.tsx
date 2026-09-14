@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
+import { useI18n } from '@/contexts/I18nContext';
+import { formatDateTime } from '@/lib/i18n/format';
 
 interface StudentSession {
   id: string;
@@ -23,20 +25,6 @@ const DOT_CLASS: Record<string, string> = {
   pink: 'bg-pink-500',
 };
 
-const UZ_MONTHS = [
-  'yan', 'fev', 'mar', 'apr', 'may', 'iyn',
-  'iyl', 'avg', 'sen', 'okt', 'noy', 'dek',
-];
-
-function formatWhen(iso: string): string {
-  const d = new Date(iso);
-  const day = d.getDate();
-  const mon = UZ_MONTHS[d.getMonth()];
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  return `${day}-${mon}, ${hh}:${mm}`;
-}
-
 /** Dars hozir jonlimi? (boshlanishiga 15 daq — tugagach 30 daq oynada) */
 function isLiveNow(s: StudentSession): boolean {
   const start = new Date(s.startsAt).getTime();
@@ -46,6 +34,7 @@ function isLiveNow(s: StudentSession): boolean {
 }
 
 export default function UpcomingSessionsWidget() {
+  const { t, locale } = useI18n();
   const [sessions, setSessions] = useState<StudentSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<string | null>(null);
@@ -69,8 +58,8 @@ export default function UpcomingSessionsWidget() {
 
   // Har 60 soniyada "jonli" holatini qayta hisoblash uchun.
   useEffect(() => {
-    const t = setInterval(() => forceTick((n) => n + 1), 60_000);
-    return () => clearInterval(t);
+    const timer = setInterval(() => forceTick((n) => n + 1), 60_000);
+    return () => clearInterval(timer);
   }, []);
 
   async function join(session: StudentSession) {
@@ -79,12 +68,12 @@ export default function UpcomingSessionsWidget() {
       const res = await fetch(`/api/student/sessions/${session.id}/join`, { method: 'POST' });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.meetingUrl) {
-        toast.error(data.error || "Darsga qo'shilib bo'lmadi");
+        toast.error(data.error || t('liveSessions.joinFailed'));
         return;
       }
       window.open(data.meetingUrl, '_blank', 'noopener,noreferrer');
     } catch {
-      toast.error('Tarmoq xatosi — qayta urinib ko\'ring');
+      toast.error(t('liveSessions.networkRetry'));
     } finally {
       setJoiningId(null);
     }
@@ -98,7 +87,7 @@ export default function UpcomingSessionsWidget() {
         <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary">
           <Icon name="VideoCameraIcon" size={18} />
         </span>
-        <h2 className="text-base font-heading font-semibold text-foreground">Yaqin jonli darslar</h2>
+        <h2 className="text-base font-heading font-semibold text-foreground">{t('liveSessions.widgetTitle')}</h2>
       </div>
 
       <ul className="space-y-3">
@@ -116,12 +105,18 @@ export default function UpcomingSessionsWidget() {
                   {live && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-red-600">
                       <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                      JONLI
+                      {t('liveSessions.liveBadge')}
                     </span>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                  {s.group.name} · {formatWhen(s.startsAt)}
+                  {s.group.name} ·{' '}
+                  {formatDateTime(s.startsAt, locale, {
+                    day: 'numeric',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
                 </p>
               </div>
               <button
@@ -135,7 +130,7 @@ export default function UpcomingSessionsWidget() {
                 }`}
               >
                 <Icon name="VideoCameraIcon" size={14} />
-                {joiningId === s.id ? '...' : "Qo'shilish"}
+                {joiningId === s.id ? '...' : t('liveSessions.joinBtn')}
               </button>
             </li>
           );
