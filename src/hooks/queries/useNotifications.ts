@@ -9,7 +9,8 @@ export type NotificationTypeDTO =
   | 'assignment_submission'
   | 'course_update'
   | 'achievement'
-  | 'payment';
+  | 'payment'
+  | 'live_session';
 
 export type NotificationStatusDTO = 'unread' | 'read' | 'archived';
 

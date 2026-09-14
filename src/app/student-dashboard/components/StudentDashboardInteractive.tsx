@@ -14,6 +14,7 @@ import ActivityHeatmapSkeleton from './ActivityHeatmapSkeleton';
 import SearchBar from './SearchBar';
 import CategoryFilter from './CategoryFilter';
 import QuickActions from './QuickActions';
+import UpcomingSessionsWidget from './UpcomingSessionsWidget';
 import Icon from '@/components/ui/AppIcon';
 import Button from '@/components/ui/Button';
 import { useI18n } from '@/contexts/I18nContext';
@@ -219,6 +220,10 @@ const StudentDashboardInteractive = () => {
                   : undefined
               }
             />
+
+            {/* Yaqin jonli darslar — a'zo guruhlarning rejalashtirilgan darslari
+                (dars bo'lmasa hech narsa ko'rsatmaydi) */}
+            <UpcomingSessionsWidget />
 
             {/* Continue Learning Hero — eng so'nggi ochilgan kurs */}
             {heroEnrollment && <ContinueLearningHero enrollment={heroEnrollment} />}

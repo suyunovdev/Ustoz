@@ -28,6 +28,7 @@ export * as testRepo from './test.repository';
 export * as assignmentRepo from './assignment.repository';
 export * as studentRepo from './student.repository';
 export * as groupRepo from './group.repository';
+export * as groupSessionRepo from './group-session.repository';
 export * as analyticsRepo from './analytics.repository';
 export * as earningsRepo from './earnings.repository';
 export * as conversationRepo from './conversation.repository';

@@ -33,6 +33,7 @@ export default function NotificationsClient() {
     course_update: { label: t('notifications.courseUpdate'), icon: 'BookOpenIcon', color: 'text-secondary' },
     achievement: { label: t('notifications.achievement'), icon: 'TrophyIcon', color: 'text-warning' },
     payment: { label: t('notifications.payment'), icon: 'CurrencyDollarIcon', color: 'text-success' },
+    live_session: { label: 'Jonli dars', icon: 'VideoCameraIcon', color: 'text-primary' },
   };
 
   function timeAgo(iso: string): string {
@@ -268,6 +269,7 @@ function NotificationCard({
     course_update: { label: t('notifications.courseUpdate'), icon: 'BookOpenIcon', color: 'text-secondary' },
     achievement: { label: t('notifications.achievement'), icon: 'TrophyIcon', color: 'text-warning' },
     payment: { label: t('notifications.payment'), icon: 'CurrencyDollarIcon', color: 'text-success' },
+    live_session: { label: 'Jonli dars', icon: 'VideoCameraIcon', color: 'text-primary' },
   };
 
   const isUnread = notification.status === 'unread';
