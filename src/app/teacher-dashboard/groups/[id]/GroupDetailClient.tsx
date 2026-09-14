@@ -20,6 +20,7 @@ import {
   useBroadcastToGroupMutation,
 } from '@/hooks/mutations/useGroupMutations';
 import { COLOR_CLASS } from '../GroupsListClient';
+import GroupSessionsPanel from './GroupSessionsPanel';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate } from '@/lib/i18n/format';
 
@@ -143,6 +144,11 @@ export default function GroupDetailClient({ groupId }: Props) {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Jonli darslar (Google Meet) — rejalash, bekor, davomat */}
+      <div className="mb-6">
+        <GroupSessionsPanel groupId={groupId} />
       </div>
 
       <div className="flex items-center justify-between mb-3">

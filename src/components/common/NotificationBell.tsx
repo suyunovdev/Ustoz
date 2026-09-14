@@ -24,6 +24,7 @@ const TYPE_ICON: Record<NotificationTypeDTO, string> = {
   course_update: 'BookOpenIcon',
   achievement: 'TrophyIcon',
   payment: 'CurrencyDollarIcon',
+  live_session: 'VideoCameraIcon',
 };
 
 function timeAgo(iso: string, locale: Locale): string {
