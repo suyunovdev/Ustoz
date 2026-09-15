@@ -1435,7 +1435,8 @@
     "assignmentMaxLabel": "Макс. балл",
     "assignmentTypeLabel": "Тип сдачи",
     "assignmentLateLabel": "Разрешить позднюю сдачу",
-    "assignmentPenaltyLabel": "Штраф за опоздание (%)"
+    "assignmentPenaltyLabel": "Штраф за опоздание (%)",
+    "createGroupLiveHint": "Онлайн-занятия добавляются после создания группы — в разделе «Онлайн-занятия» на странице группы (дата, время и ссылка Meet)."
   },
   "marketplace": {
     "searchCourses": "Поиск курсов",

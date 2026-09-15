@@ -1435,7 +1435,8 @@
     "assignmentMaxLabel": "Max score",
     "assignmentTypeLabel": "Submission type",
     "assignmentLateLabel": "Allow late submission",
-    "assignmentPenaltyLabel": "Late penalty (%)"
+    "assignmentPenaltyLabel": "Late penalty (%)",
+    "createGroupLiveHint": "Add live lessons after creating the group — in the \"Live lessons\" section on the group page (date, time and Meet link)."
   },
   "marketplace": {
     "searchCourses": "Search Courses",
