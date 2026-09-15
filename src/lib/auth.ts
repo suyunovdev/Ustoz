@@ -7,6 +7,13 @@ function resolveJwtSecret(): Uint8Array {
   if (raw && raw.length >= 32) {
     return new TextEncoder().encode(raw);
   }
+  // `next build` (sahifa ma'lumotini yig'ish) bu modulni yuklaydi. Build paytida
+  // haqiqiy sekret shart emas — runtime'da instrumentation.ts (validateEnv) startda
+  // JWT_SECRET yo'q bo'lsa fail-closed qiladi. Shu sabab build fazasida throw qilmaymiz
+  // (aks holda Vercel/CI'da JWT_SECRET'siz build yiqilardi).
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return new TextEncoder().encode('build-time-placeholder-secret-not-used-at-runtime');
+  }
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
       'JWT_SECRET muhit o\'zgaruvchisi o\'rnatilmagan yoki juda qisqa (kamida 32 belgi). ' +
