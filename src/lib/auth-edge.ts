@@ -6,6 +6,11 @@ function resolveJwtSecret(): Uint8Array {
   if (raw && raw.length >= 32) {
     return new TextEncoder().encode(raw);
   }
+  // `next build` bu modulni yuklaydi — build paytida haqiqiy sekret shart emas.
+  // Runtime'da instrumentation.ts (validateEnv) startda fail-closed qiladi.
+  if (process.env.NEXT_PHASE === 'phase-production-build') {
+    return new TextEncoder().encode('build-time-placeholder-secret-not-used-at-runtime');
+  }
   if (process.env.NODE_ENV === 'production') {
     throw new Error(
       'JWT_SECRET muhit o\'zgaruvchisi o\'rnatilmagan yoki juda qisqa (kamida 32 belgi). ' +
