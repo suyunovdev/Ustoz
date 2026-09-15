@@ -93,26 +93,12 @@ export default function GroupDetailClient({ groupId }: Props) {
                 >
                   👥 {g.memberCount} / {g.maxMembers}
                 </span>
-                {g.scheduleNote && (
-                  <span className="text-muted-foreground">📅 {g.scheduleNote}</span>
-                )}
                 {g.status === 'archived' && (
                   <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded-full">
                     {t('teacher.groupsArchiveLabel')}
                   </span>
                 )}
               </div>
-              {g.meetingUrl && (
-                <a
-                  href={g.meetingUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                >
-                  <Icon name="VideoCameraIcon" size={12} />
-                  {g.meetingUrl}
-                </a>
-              )}
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -230,8 +216,6 @@ export default function GroupDetailClient({ groupId }: Props) {
             name: g.name,
             description: g.description ?? '',
             maxMembers: g.maxMembers,
-            meetingUrl: g.meetingUrl ?? '',
-            scheduleNote: g.scheduleNote ?? '',
             color: g.color,
           }}
           minMembers={g.memberCount}
@@ -533,8 +517,6 @@ interface EditGroupInitial {
   name: string;
   description: string;
   maxMembers: number;
-  meetingUrl: string;
-  scheduleNote: string;
   color: string;
 }
 
@@ -560,15 +542,10 @@ function EditGroupModal({
     if (form.maxMembers < Math.max(1, minMembers)) {
       return toast.error(t('teacher.groupMaxBelowMembers', { count: minMembers }));
     }
-    if (form.meetingUrl.trim() && !/^https?:\/\//.test(form.meetingUrl.trim())) {
-      return toast.error(t('teacher.groupMeetingUrlInvalid'));
-    }
     onSubmit({
       name: form.name.trim(),
       description: form.description.trim() || null,
       maxMembers: form.maxMembers,
-      meetingUrl: form.meetingUrl.trim() || null,
-      scheduleNote: form.scheduleNote.trim() || null,
       color: form.color,
     });
   };
@@ -640,25 +617,6 @@ function EditGroupModal({
                 })}
               </div>
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('teacher.groupMeetingLabel')}</label>
-            <input
-              type="url"
-              value={form.meetingUrl}
-              onChange={(e) => setForm((f) => ({ ...f, meetingUrl: e.target.value }))}
-              placeholder="https://..."
-              className="w-full px-3 py-2 border border-border rounded-md text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('teacher.groupScheduleLabel')}</label>
-            <input
-              type="text"
-              value={form.scheduleNote}
-              onChange={(e) => setForm((f) => ({ ...f, scheduleNote: e.target.value }))}
-              className="w-full px-3 py-2 border border-border rounded-md text-sm"
-            />
           </div>
         </div>
 

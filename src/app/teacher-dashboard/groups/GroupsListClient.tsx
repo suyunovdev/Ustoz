@@ -183,27 +183,12 @@ export default function GroupsListClient() {
                   >
                     👥 {g.memberCount} / {g.maxMembers}
                   </span>
-                  {g.scheduleNote && (
-                    <span className="text-muted-foreground">📅 {g.scheduleNote}</span>
-                  )}
                   {g.status === 'archived' && (
                     <span className="px-2 py-0.5 bg-muted text-muted-foreground rounded-full">
                       {t('teacher.groupsArchiveLabel')}
                     </span>
                   )}
                 </div>
-                {g.meetingUrl && (
-                  <a
-                    href={g.meetingUrl}
-                    onClick={(e) => e.stopPropagation()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                  >
-                    <Icon name="VideoCameraIcon" size={10} />
-                    {t('teacher.groupsMeetingLink')}
-                  </a>
-                )}
               </Link>
             );
           })}
@@ -266,8 +251,6 @@ function CreateGroupModal({
     description?: string;
     courseId?: string | null;
     maxMembers?: number;
-    meetingUrl?: string;
-    scheduleNote?: string;
     color?: GroupColorDTO;
   }) => void;
   onClose: () => void;
@@ -276,8 +259,6 @@ function CreateGroupModal({
   const [description, setDescription] = useState('');
   const [courseId, setCourseId] = useState('');
   const [maxMembers, setMaxMembers] = useState(30);
-  const [meetingUrl, setMeetingUrl] = useState('');
-  const [scheduleNote, setScheduleNote] = useState('');
   const [color, setColor] = useState<GroupColorDTO>('blue');
 
   const { t } = useI18n();
@@ -290,8 +271,6 @@ function CreateGroupModal({
       description: description.trim() || undefined,
       courseId: courseId || null,
       maxMembers,
-      meetingUrl: meetingUrl.trim() || undefined,
-      scheduleNote: scheduleNote.trim() || undefined,
       color,
     });
   };
@@ -362,25 +341,9 @@ function CreateGroupModal({
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('teacher.createGroupMeetingUrl')}</label>
-            <input
-              type="url"
-              value={meetingUrl}
-              onChange={(e) => setMeetingUrl(e.target.value)}
-              placeholder="https://zoom.us/j/…"
-              className="w-full px-3 py-2 border border-border rounded-md text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">{t('teacher.createGroupSchedule')}</label>
-            <input
-              type="text"
-              value={scheduleNote}
-              onChange={(e) => setScheduleNote(e.target.value)}
-              placeholder={t('teacher.createGroupSchedulePlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-md text-sm"
-            />
+          <div className="rounded-md border border-border bg-primary/5 px-3 py-2.5 text-xs text-muted-foreground flex items-start gap-2">
+            <Icon name="VideoCameraIcon" size={14} className="text-primary mt-0.5 shrink-0" />
+            <span>{t('teacher.createGroupLiveHint')}</span>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t('teacher.createGroupColor')}</label>

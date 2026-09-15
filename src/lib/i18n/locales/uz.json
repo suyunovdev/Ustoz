@@ -1435,7 +1435,8 @@
     "assignmentMaxLabel": "Maksimal ball",
     "assignmentTypeLabel": "Topshirish turi",
     "assignmentLateLabel": "Kechikkan topshirishga ruxsat",
-    "assignmentPenaltyLabel": "Kechikish jarimasi (%)"
+    "assignmentPenaltyLabel": "Kechikish jarimasi (%)",
+    "createGroupLiveHint": "Jonli darslarni guruh yaratilgach, uning sahifasidagi \"Jonli darslar\" bo'limidan qo'shasiz (sana, vaqt va Meet havolasi bilan)."
   },
   "marketplace": {
     "searchCourses": "Kurslarni qidirish",
