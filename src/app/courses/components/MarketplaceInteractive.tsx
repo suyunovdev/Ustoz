@@ -41,6 +41,7 @@ interface Course {
   targetAudience: string;
   gradeLevel: number | null;
   createdAt: string;
+  freeTopicCount: number;
 }
 
 interface Category {
@@ -141,6 +142,7 @@ const MarketplaceInteractive = ({ authed = false }: { authed?: boolean }) => {
         targetAudience: c.targetAudience || '',
         gradeLevel: typeof c.gradeLevel === 'number' ? c.gradeLevel : null,
         createdAt: c.createdAt || '',
+        freeTopicCount: Number(c.freeTopicCount) || 0,
       }));
 
       setCourses(mapped);

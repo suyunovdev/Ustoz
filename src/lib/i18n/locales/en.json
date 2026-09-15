@@ -265,7 +265,8 @@
     "tryOtherFilter": "Try different keywords or filters",
     "savedCount": "saved",
     "allCourses": "All courses",
-    "loadMore": "Show {count} more"
+    "loadMore": "Show {count} more",
+    "freeLessons": "{count} free lessons"
   },
   "dashboard": {
     "welcome": "Welcome",
@@ -2365,7 +2366,8 @@
     "videoOptionalLabel": "Lesson video (optional)",
     "guideStartBtn": "Got it, start",
     "freeHint": "Enter 0 for a free course.",
-    "topicsWithCount": "Topics ({count})"
+    "topicsWithCount": "Topics ({count})",
+    "freePreviewHint": "This topic will be open even to non-enrolled students (as a sample)."
   },
   "content": {
     "uploadCenterTitle": "Content Upload Center",
@@ -2603,7 +2605,10 @@
     "prevTopic": "Previous topic",
     "topicPosition": "Topic {current}/{total}",
     "materialComingSoonTitle": "Material coming soon",
-    "materialComingSoon": "No video or text has been added for this topic yet. The instructor will upload material soon."
+    "materialComingSoon": "No video or text has been added for this topic yet. The instructor will upload material soon.",
+    "previewBanner": "You're not enrolled in this course — only free lessons are open.",
+    "enrollCta": "Enroll",
+    "lockedTopicEnroll": "This lesson is for enrolled students. Please enroll."
   },
   "groups": {
     "loadingData": "Loading group data...",
@@ -2848,7 +2853,8 @@
     "noReviews": "No reviews yet. Be the first to share your thoughts!",
     "freePreview": "Free",
     "subFreeBadge": "Free with subscription",
-    "subDiscountBadge": "Subscription discount −{pct}%"
+    "subDiscountBadge": "Subscription discount −{pct}%",
+    "freeCount": "{count} free"
   },
   "categories": {
     "mathematics": "Mathematics",

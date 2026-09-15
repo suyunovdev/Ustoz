@@ -56,6 +56,7 @@ export async function GET(req: NextRequest) {
       teacher: { select: { fullName: true; avatarUrl: true } };
       categoryRel: { select: { slug: true; name: true } };
       _count: { select: { enrollments: true } };
+      topics: { select: { id: true } };
     };
   }>;
   let courses: CourseRow[];
@@ -68,6 +69,9 @@ export async function GET(req: NextRequest) {
           teacher: { select: { fullName: true, avatarUrl: true } },
           categoryRel: { select: { slug: true, name: true } },
           _count: { select: { enrollments: true } },
+          // Bepul (preview) mavzular soni — karta "N ta bepul dars" belgisi uchun.
+          // Filtrlangan relation: odatda 0-3 ta bepul mavzu, yengil.
+          topics: { where: { isFreePreview: true }, select: { id: true } },
         },
         orderBy,
         skip,
@@ -101,6 +105,7 @@ export async function GET(req: NextRequest) {
       rating: c.rating,
       reviewCount: c.reviewCount,
       enrollmentCount: c.enrollmentCount,
+      freeTopicCount: c.topics.length,
       teacherName: c.teacher.fullName,
       teacherAvatar: c.teacher.avatarUrl,
       createdAt: c.createdAt,

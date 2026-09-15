@@ -20,6 +20,7 @@ interface Course {
   difficulty: string;
   language: string;
   category: string;
+  freeTopicCount?: number;
 }
 
 interface CourseGridProps {

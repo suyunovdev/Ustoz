@@ -26,6 +26,9 @@ interface Topic {
   videoProvider?: string;
   content: string;
   moduleTitle: string;
+  isFreePreview?: boolean;
+  // Yozilmagan o'quvchi uchun bepul BO'LMAGAN mavzular qulflangan.
+  locked?: boolean;
 }
 
 interface Section {
@@ -61,6 +64,8 @@ const LearningInterfaceInteractive = () => {
   const [courseTitle, setCourseTitle] = useState('');
   const [enrollmentProgress, setEnrollmentProgress] = useState(0);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
+  // Yozilganmi — yozilmagan o'quvchi faqat bepul (preview) mavzularni ko'ra oladi.
+  const [isEnrolled, setIsEnrolled] = useState(true);
   const completeMutation = useCompleteTopicMutation();
   const isMarkingComplete = completeMutation.isPending;
 
@@ -131,24 +136,24 @@ const LearningInterfaceInteractive = () => {
       const { course } = await courseRes.json();
       if (signal?.aborted) return;
 
-      if (!course.isEnrolled) {
-        router.push(`/courses/${id}`);
-        return;
-      }
-
+      // Yozilmagan o'quvchini QAYTARIB YUBORMAYMIZ — u faqat bepul (preview)
+      // mavzularni ko'radi (lead magnet). Bepul bo'lmaganlar qulflangan.
+      setIsEnrolled(course.isEnrolled);
       setCourseTitle(course.title);
 
-      // Real progress + completed topic IDs (Source of Truth)
-      const progRes = await fetch(`/api/enrollments/${id}/progress`, {
-        credentials: 'include',
-        signal,
-      });
+      // Real progress — faqat yozilganlar uchun (endpoint yozilmaganga 403 beradi).
       let completedIds = new Set<string>();
-      if (progRes.ok) {
-        const prog: CourseProgressResponse = await progRes.json();
-        if (signal?.aborted) return;
-        setEnrollmentProgress(prog.progress || 0);
-        completedIds = new Set(prog.completedTopicIds);
+      if (course.isEnrolled) {
+        const progRes = await fetch(`/api/enrollments/${id}/progress`, {
+          credentials: 'include',
+          signal,
+        });
+        if (progRes.ok) {
+          const prog: CourseProgressResponse = await progRes.json();
+          if (signal?.aborted) return;
+          setEnrollmentProgress(prog.progress || 0);
+          completedIds = new Set(prog.completedTopicIds);
+        }
       }
 
       const topics = course.topics || [];
@@ -157,23 +162,34 @@ const LearningInterfaceInteractive = () => {
         return;
       }
 
-      const mappedTopics: Topic[] = topics.map((t: Record<string, string>) => ({
-        id: t.id,
-        title: t.title,
-        duration: t.duration || '—',
-        isCompleted: completedIds.has(t.id),
-        isCurrent: false,
-        videoUrl: t.videoUrl || '',
-        videoProvider: t.videoProvider || '',
-        content: t.content || '',
-        moduleTitle: t.moduleTitle || '',
-      }));
+      const mappedTopics: Topic[] = topics.map((t: Record<string, string>) => {
+        const isFree = Boolean((t as Record<string, unknown>).isFreePreview);
+        return {
+          id: t.id,
+          title: t.title,
+          duration: t.duration || '—',
+          isCompleted: completedIds.has(t.id),
+          isCurrent: false,
+          videoUrl: t.videoUrl || '',
+          videoProvider: t.videoProvider || '',
+          content: t.content || '',
+          moduleTitle: t.moduleTitle || '',
+          isFreePreview: isFree,
+          locked: !course.isEnrolled && !isFree,
+        };
+      });
 
-      // URL'dan topicId yoki birinchi tugatilmagan
+      // URL'dan topicId yoki (yozilgan: birinchi tugatilmagan / yozilmagan: birinchi bepul)
       const urlTopicId = searchParams.get('topicId');
+      const selectable = (t: Topic) => course.isEnrolled || !t.locked;
       let initial = urlTopicId
-        ? mappedTopics.find((t) => t.id === urlTopicId)
-        : mappedTopics.find((t) => !t.isCompleted) ?? mappedTopics[0];
+        ? mappedTopics.find((t) => t.id === urlTopicId && selectable(t))
+        : undefined;
+      if (!initial) {
+        initial = course.isEnrolled
+          ? (mappedTopics.find((t) => !t.isCompleted) ?? mappedTopics[0])
+          : mappedTopics.find((t) => !t.locked);
+      }
       if (initial) {
         initial = { ...initial, isCurrent: true };
         mappedTopics.forEach((t) => {
@@ -198,7 +214,7 @@ const LearningInterfaceInteractive = () => {
   };
 
   const handleTopicComplete = (topicId: string) => {
-    if (!userId || !courseId || isMarkingComplete) return;
+    if (!userId || !courseId || isMarkingComplete || !isEnrolled) return;
 
     // Lokal optimistic UI (sections) — dashboard cache esa mutation ichida yangilanadi
     const previousSections = sections;
@@ -234,6 +250,10 @@ const LearningInterfaceInteractive = () => {
   };
 
   const handleTopicSelect = (topic: Topic) => {
+    if (topic.locked) {
+      toast.info(t('learning.lockedTopicEnroll'));
+      return;
+    }
     setCurrentTopic(topic);
     setSections((prev) =>
       prev.map((s) => ({
@@ -356,6 +376,22 @@ const LearningInterfaceInteractive = () => {
         </button>
       </div>
 
+      {/* Yozilmagan o'quvchi uchun preview banneri + yozilish CTA */}
+      {!isEnrolled && (
+        <div className="flex-shrink-0 bg-primary/10 border-b border-primary/20 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+          <p className="text-sm text-foreground min-w-0">
+            <Icon name="LockClosedIcon" size={14} className="inline mr-1 text-primary" />
+            {t('learning.previewBanner')}
+          </p>
+          <button
+            onClick={() => router.push(`/courses/${courseId}`)}
+            className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary/90"
+          >
+            {t('learning.enrollCta')}
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-1 min-h-0">
         {/* Asosiy kontent — skroll bo'ladigan ustun */}
         <div className="flex-1 min-w-0 overflow-y-auto">
@@ -390,6 +426,7 @@ const LearningInterfaceInteractive = () => {
                     )}
                   </div>
                 </div>
+                {isEnrolled && (
                 <div className="flex-shrink-0">
                   {currentTopic?.isCompleted ? (
                     <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-success/10 text-success text-sm font-medium">
@@ -416,6 +453,7 @@ const LearningInterfaceInteractive = () => {
                     </button>
                   )}
                 </div>
+                )}
               </div>
             </div>
 

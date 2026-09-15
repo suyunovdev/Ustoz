@@ -140,9 +140,16 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
 
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <div>
-            <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground mb-1">
-              {t('teacher.topics')}
-            </h1>
+            <div className="flex items-center gap-2 mb-1">
+              <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">
+                {t('teacher.topics')}
+              </h1>
+              {topics.filter((tp) => tp.isFreePreview).length > 0 && (
+                <span className="rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
+                  {t('courseDetails.freeCount', { count: topics.filter((tp) => tp.isFreePreview).length })}
+                </span>
+              )}
+            </div>
             <p className="text-muted-foreground text-sm">
               {t('teacher.topicsSubtitle')}
             </p>
