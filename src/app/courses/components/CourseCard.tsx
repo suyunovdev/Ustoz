@@ -27,6 +27,7 @@ interface Course {
   targetAudience?: string;
   subjectCategory?: string;
   gradeLevel?: number;
+  freeTopicCount?: number;
 }
 
 interface CourseCardProps {
@@ -143,6 +144,11 @@ const CourseCard = ({ course, onWishlistToggle, isWishlisted }: CourseCardProps)
             <div className="text-2xl font-heading font-bold text-primary">
               {course.price === 0 ? t('courses.free') : `${course.price.toLocaleString('uz')} so'm`}
             </div>
+            {(course.freeTopicCount ?? 0) > 0 && (
+              <span className="inline-flex items-center rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-semibold text-success">
+                {t('courses.freeLessons', { count: course.freeTopicCount ?? 0 })}
+              </span>
+            )}
           </div>
           <Link
             href={`/courses/${course.id}`}

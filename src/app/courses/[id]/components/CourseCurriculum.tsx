@@ -19,9 +19,11 @@ interface CourseCurriculumProps {
   sections: CurriculumSection[];
   expandedSections: string[];
   onToggleSection: (sectionId: string) => void;
+  // Qulflanmagan (bepul yoki yozilgan) mavzuni ochish — learning-interface'ga o'tadi.
+  onTopicOpen?: (topicId: string) => void;
 }
 
-const CourseCurriculum = ({ sections, expandedSections, onToggleSection }: CourseCurriculumProps) => {
+const CourseCurriculum = ({ sections, expandedSections, onToggleSection, onTopicOpen }: CourseCurriculumProps) => {
   const { t } = useI18n();
   const totalTopics = sections.reduce((acc, section) => acc + section.topics.length, 0);
   // Davomiylik erkin formatda ("10 min", "1:30", "45 daqiqa") — xavfsiz parslash
@@ -30,14 +32,25 @@ const CourseCurriculum = ({ sections, expandedSections, onToggleSection }: Cours
       acc + section.topics.reduce((tAcc, topic) => tAcc + parseDurationToMinutes(topic.duration), 0),
     0,
   );
+  const freeCount = sections.reduce(
+    (acc, section) => acc + section.topics.filter((topic) => topic.hasPreview).length,
+    0,
+  );
 
   return (
     <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-heading font-bold text-foreground">{t('courseDetails.curriculum')}</h2>
-        <div className="text-sm text-muted-foreground">
-          {totalTopics} {t('courseDetails.topics')}
-          {totalMinutes > 0 && ` • ${formatMinutes(totalMinutes)}`}
+        <div className="flex items-center gap-2">
+          {freeCount > 0 && (
+            <span className="rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
+              {t('courseDetails.freeCount', { count: freeCount })}
+            </span>
+          )}
+          <div className="text-sm text-muted-foreground">
+            {totalTopics} {t('courseDetails.topics')}
+            {totalMinutes > 0 && ` • ${formatMinutes(totalMinutes)}`}
+          </div>
         </div>
       </div>
 
@@ -73,10 +86,17 @@ const CourseCurriculum = ({ sections, expandedSections, onToggleSection }: Cours
               {/* Topics List */}
               {isExpanded && (
                 <div className="bg-card">
-                  {section.topics.map((topic) => (
+                  {section.topics.map((topic) => {
+                    const openable = !topic.isLocked && !!onTopicOpen;
+                    return (
                     <div
                       key={topic.id}
-                      className="flex items-center justify-between p-4 border-t border-border hover:bg-muted/50 transition-smooth"
+                      onClick={openable ? () => onTopicOpen!(topic.id) : undefined}
+                      role={openable ? 'button' : undefined}
+                      tabIndex={openable ? 0 : undefined}
+                      className={`flex items-center justify-between p-4 border-t border-border transition-smooth ${
+                        openable ? 'hover:bg-muted/50 cursor-pointer' : ''
+                      }`}
                     >
                       <div className="flex items-center space-x-3 flex-1">
                         <Icon 
@@ -108,7 +128,8 @@ const CourseCurriculum = ({ sections, expandedSections, onToggleSection }: Cours
                         )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

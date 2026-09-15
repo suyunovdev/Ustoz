@@ -265,7 +265,8 @@
     "tryOtherFilter": "Попробуйте другие ключевые слова или фильтры",
     "savedCount": "сохранено",
     "allCourses": "Все курсы",
-    "loadMore": "Показать ещё {count}"
+    "loadMore": "Показать ещё {count}",
+    "freeLessons": "{count} бесплатных урока"
   },
   "dashboard": {
     "welcome": "Добро пожаловать",
@@ -2365,7 +2366,8 @@
     "videoOptionalLabel": "Видео урока (необязательно)",
     "guideStartBtn": "Понятно, начать",
     "freeHint": "Для бесплатного курса введите 0.",
-    "topicsWithCount": "Темы ({count})"
+    "topicsWithCount": "Темы ({count})",
+    "freePreviewHint": "Эта тема будет доступна даже незаписавшимся студентам (как образец)."
   },
   "content": {
     "uploadCenterTitle": "Центр загрузки контента",
@@ -2603,7 +2605,10 @@
     "prevTopic": "Предыдущая тема",
     "topicPosition": "Тема {current}/{total}",
     "materialComingSoonTitle": "Материал готовится",
-    "materialComingSoon": "Для этой темы пока не добавлено видео или текст. Преподаватель скоро загрузит материал."
+    "materialComingSoon": "Для этой темы пока не добавлено видео или текст. Преподаватель скоро загрузит материал.",
+    "previewBanner": "Вы не записаны на этот курс — открыты только бесплатные уроки.",
+    "enrollCta": "Записаться",
+    "lockedTopicEnroll": "Этот урок только для записавшихся. Запишитесь на курс."
   },
   "groups": {
     "loadingData": "Загрузка данных группы...",
@@ -2848,7 +2853,8 @@
     "noReviews": "Пока нет отзывов. Будьте первым, кто оставит отзыв!",
     "freePreview": "Бесплатно",
     "subFreeBadge": "Бесплатно с подпиской",
-    "subDiscountBadge": "Скидка по подписке −{pct}%"
+    "subDiscountBadge": "Скидка по подписке −{pct}%",
+    "freeCount": "{count} бесплатно"
   },
   "categories": {
     "mathematics": "Математика",

@@ -378,6 +378,9 @@ const CourseDetailsInteractive = ({ courseId: courseIdProp }: { courseId?: strin
                   sections={curriculum}
                   expandedSections={expandedSections}
                   onToggleSection={toggleSection}
+                  onTopicOpen={(topicId) =>
+                    router.push(`/learning-interface?courseId=${courseId}&topicId=${topicId}`)
+                  }
                 />
               ) : (
                 <div className="bg-card rounded-md shadow-warm p-8 text-center text-muted-foreground">

@@ -12,6 +12,8 @@ interface Topic {
   videoUrl: string;
   content: string;
   moduleTitle: string;
+  isFreePreview?: boolean;
+  locked?: boolean;
 }
 
 interface Section {
@@ -65,11 +67,13 @@ const CourseNavigation = ({ sections, currentTopicId, onTopicChange, progress }:
                 active
                   ? 'bg-primary/10 border-primary'
                   : 'border-transparent hover:bg-muted/50'
-              }`}
+              } ${topic.locked ? 'opacity-60' : ''}`}
             >
               {/* Status / raqam */}
               <span className="mt-0.5 flex-shrink-0">
-                {topic.isCompleted ? (
+                {topic.locked ? (
+                  <Icon name="LockClosedIcon" size={18} className="text-muted-foreground" />
+                ) : topic.isCompleted ? (
                   <Icon name="CheckCircleIcon" size={20} variant="solid" className="text-success" />
                 ) : active ? (
                   <Icon name="PlayCircleIcon" size={20} variant="solid" className="text-primary" />

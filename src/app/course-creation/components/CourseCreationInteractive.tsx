@@ -22,6 +22,7 @@ interface Topic {
   title: string;
   duration: string;
   hasQuiz: boolean;
+  isFreePreview: boolean;
   isExpanded: boolean;
   content: string;
   videoUrl: string;
@@ -190,6 +191,7 @@ const CourseCreationInteractive = () => {
       title: t('courseCreation.defaultTopicTitle', { n: topicNumber }),
       duration: '0 min',
       hasQuiz: false,
+      isFreePreview: false,
       isExpanded: false,
       content: '',
       videoUrl: '',
@@ -273,6 +275,7 @@ const CourseCreationInteractive = () => {
         videoProvider: t.videoProvider === 'bunny' ? 'bunny' : null,
         streamUid: t.videoProvider === 'bunny' ? (t.streamUid || null) : null,
         hasQuiz: t.hasQuiz,
+        isFreePreview: t.isFreePreview,
         // Savollar kurs bilan bitta amalda saqlanadi (server test.service orqali
         // yozadi) — ilgari umuman yuborilmasdi va jimgina yo'qolardi.
         questions: t.questions.map((q) => ({
@@ -816,6 +819,28 @@ const CourseCreationInteractive = () => {
                           {t('courseCreation.minutesUnit')}
                         </span>
                       </div>
+                    </div>
+
+                    {/* Bepul preview — yozilmagan o'quvchi ham ko'ra oladi (lead magnet) */}
+                    <div className="bg-card rounded-md shadow-warm p-4">
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedTopic.isFreePreview}
+                          onChange={(e) =>
+                            setTopics((prev) =>
+                              prev.map((tp) =>
+                                tp.id === selectedTopicId ? { ...tp, isFreePreview: e.target.checked } : tp,
+                              ),
+                            )
+                          }
+                          className="w-4 h-4 accent-primary"
+                        />
+                        <span className="font-medium text-foreground">{t('teacher.topicFreePreviewLabel')}</span>
+                      </label>
+                      <p className="mt-1 pl-6 text-xs text-muted-foreground">
+                        {t('courseCreation.freePreviewHint')}
+                      </p>
                     </div>
 
                     <RichTextEditor

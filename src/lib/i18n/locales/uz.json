@@ -265,7 +265,8 @@
     "tryOtherFilter": "Boshqa kalit so'z yoki filtr bilan qidirib ko'ring",
     "savedCount": "ta saqlangan",
     "allCourses": "Barcha kurslar",
-    "loadMore": "Yana {count} ta ko‘rsatish"
+    "loadMore": "Yana {count} ta ko‘rsatish",
+    "freeLessons": "{count} ta bepul dars"
   },
   "dashboard": {
     "welcome": "Xush kelibsiz",
@@ -2365,7 +2366,8 @@
     "videoOptionalLabel": "Dars videosi (ixtiyoriy)",
     "guideStartBtn": "Tushundim, boshlash",
     "freeHint": "Bepul kurs uchun 0 kiriting.",
-    "topicsWithCount": "Mavzular ({count})"
+    "topicsWithCount": "Mavzular ({count})",
+    "freePreviewHint": "Bu mavzu kursga yozilmagan o'quvchiga ham ochiq bo'ladi (namuna sifatida)."
   },
   "content": {
     "uploadCenterTitle": "Kontent yuklash markazi",
@@ -2603,7 +2605,10 @@
     "prevTopic": "Oldingi mavzu",
     "topicPosition": "Mavzu {current}/{total}",
     "materialComingSoonTitle": "Material tayyorlanmoqda",
-    "materialComingSoon": "Bu mavzu uchun video yoki matn hali qo'shilmagan. O'qituvchi tez orada material joylaydi."
+    "materialComingSoon": "Bu mavzu uchun video yoki matn hali qo'shilmagan. O'qituvchi tez orada material joylaydi.",
+    "previewBanner": "Siz bu kursga yozilmagansiz — faqat bepul darslar ochiq.",
+    "enrollCta": "Kursga yozilish",
+    "lockedTopicEnroll": "Bu dars faqat yozilganlar uchun. Kursga yoziling."
   },
   "groups": {
     "loadingData": "Guruh ma'lumotlari yuklanmoqda...",
@@ -2848,7 +2853,8 @@
     "noReviews": "Hozircha sharhlar yo'q. Birinchi bo'lib fikr bildiring!",
     "freePreview": "Bepul",
     "subFreeBadge": "Obuna bilan bepul",
-    "subDiscountBadge": "Obuna chegirmasi −{pct}%"
+    "subDiscountBadge": "Obuna chegirmasi −{pct}%",
+    "freeCount": "{count} ta bepul"
   },
   "categories": {
     "mathematics": "Matematika",
