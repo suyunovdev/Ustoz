@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import { useI18n } from '@/contexts/I18nContext';
 import { toast } from '@/components/common/Toaster';
 
@@ -165,12 +166,11 @@ const SystemSettingsPanel = () => {
         <div>
           <label className="block text-sm font-medium text-foreground mb-1.5">{t('admin.settingsDiscount')}</label>
           <div className="relative w-40">
-            <input
-              type="number"
+            <NumberInput
               min={0}
               max={100}
-              value={discount}
-              onChange={(e) => setDiscount(e.target.value)}
+              value={Number(discount)}
+              onValueChange={(n) => setDiscount(String(n))}
               className="w-full px-3 py-2 pr-8 bg-background border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>

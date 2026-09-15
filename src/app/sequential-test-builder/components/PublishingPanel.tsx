@@ -1,6 +1,7 @@
 'use client';
 
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface TestQuestion {
@@ -110,12 +111,11 @@ const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: Publi
           <label className="block text-sm font-medium text-foreground mb-2">
             Vaqt limiti (daqiqa) *
           </label>
-          <input
-            type="number"
-            min="5"
-            max="180"
+          <NumberInput
+            min={5}
+            max={180}
             value={config.timeLimit}
-            onChange={(e) => handleChange('timeLimit', parseInt(e.target.value) || 60)}
+            onValueChange={(n) => handleChange('timeLimit', n)}
             className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             required
           />
@@ -170,12 +170,11 @@ const PublishingPanel = ({ config, questions, onConfigUpdate, onPublish }: Publi
             <label className="block text-sm font-medium text-foreground mb-2">
               Maksimal qayta topshirish soni *
             </label>
-            <input
-              type="number"
-              min="1"
-              max="10"
+            <NumberInput
+              min={1}
+              max={10}
               value={config.maxRetakes}
-              onChange={(e) => handleChange('maxRetakes', parseInt(e.target.value) || 3)}
+              onValueChange={(n) => handleChange('maxRetakes', n)}
               className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface TestQuestion {
@@ -213,12 +214,11 @@ const QuestionEditor = ({ question, onQuestionUpdate, onQuestionDelete }: Questi
           <label className="block text-sm font-medium text-foreground mb-2">
             Ball *
           </label>
-          <input
-            type="number"
-            min="1"
-            max="100"
+          <NumberInput
+            min={1}
+            max={100}
             value={localQuestion.points}
-            onChange={(e) => handleChange('points', parseInt(e.target.value) || 10)}
+            onValueChange={(n) => handleChange('points', n)}
             className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             required
           />
@@ -245,11 +245,10 @@ const QuestionEditor = ({ question, onQuestionUpdate, onQuestionDelete }: Questi
           <label className="block text-sm font-medium text-foreground mb-2">
             Vaqt limiti (soniya)
           </label>
-          <input
-            type="number"
-            min="0"
+          <NumberInput
+            min={0}
             value={localQuestion.timeLimit || 0}
-            onChange={(e) => handleChange('timeLimit', parseInt(e.target.value) || 0)}
+            onValueChange={(n) => handleChange('timeLimit', n)}
             placeholder="0 = cheksiz"
             className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />

@@ -7,6 +7,7 @@ import { Skeleton, SkeletonDetail } from '@/components/ui/Skeleton';
 import ErrorState from '@/components/common/ErrorState';
 import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
+import NumberInput from '@/components/ui/NumberInput';
 import { toast } from '@/components/common/Toaster';
 import {
   useTeacherAssignment,
@@ -408,12 +409,11 @@ function GradeModal({
           <label className="block text-sm font-medium mb-1">
             {t('teacher.gradeModalScoreLabel')} (0–{maxScore}) *
           </label>
-          <input
-            type="number"
+          <NumberInput
             min={0}
             max={maxScore}
             value={grade}
-            onChange={(e) => setGrade(Number(e.target.value))}
+            onValueChange={(n) => setGrade(n)}
             className="w-full px-3 py-2 border border-border rounded-md text-sm"
           />
         </div>
@@ -555,11 +555,10 @@ function EditAssignmentModal({
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">{t('teacher.assignmentMaxLabel')}</label>
-            <input
-              type="number"
+            <NumberInput
               min={1}
               value={form.maxScore}
-              onChange={(e) => setForm((f) => ({ ...f, maxScore: Number(e.target.value) || 0 }))}
+              onValueChange={(n) => setForm((f) => ({ ...f, maxScore: n }))}
               className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
             />
           </div>
@@ -588,12 +587,11 @@ function EditAssignmentModal({
         {form.allowLateSubmission && (
           <div>
             <label className="block text-sm font-medium mb-1">{t('teacher.assignmentPenaltyLabel')}</label>
-            <input
-              type="number"
+            <NumberInput
               min={0}
               max={100}
               value={form.latePenaltyPercent}
-              onChange={(e) => setForm((f) => ({ ...f, latePenaltyPercent: Number(e.target.value) || 0 }))}
+              onValueChange={(n) => setForm((f) => ({ ...f, latePenaltyPercent: n }))}
               className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
             />
           </div>

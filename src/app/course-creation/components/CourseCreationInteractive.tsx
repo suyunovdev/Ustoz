@@ -10,6 +10,7 @@ import Icon from '@/components/ui/AppIcon';
 import { Skeleton, SkeletonForm } from '@/components/ui/Skeleton';
 import ContentUploadManager from './ContentUploadManager';
 import LessonVideoInput from './LessonVideoInput';
+import NumberInput from '@/components/ui/NumberInput';
 import { useI18n } from '@/contexts/I18nContext';
 import { toast } from '@/components/common/Toaster';
 
@@ -232,9 +233,9 @@ const CourseCreationInteractive = () => {
 
   // Mavzu davomiyligi (daqiqa) — bozorda jami vaqt shundan hisoblanadi (ilgari doim
   // "0 min" edi, natijada kurs "0 daqiqa" ko'rinardi).
-  const handleDurationChange = (minutes: string) => {
+  const handleDurationChange = (minutes: number) => {
     if (!selectedTopicId) return;
-    const n = Math.max(0, parseInt(minutes) || 0);
+    const n = Math.max(0, minutes);
     setTopics(prev => prev.map(t =>
       t.id === selectedTopicId ? { ...t, duration: `${n} min` } : t
     ));
@@ -805,14 +806,12 @@ const CourseCreationInteractive = () => {
                         {t('courseCreation.topicDurationLabel')}
                       </label>
                       <div className="relative w-40">
-                        <input
+                        <NumberInput
                           id="topic-duration"
-                          type="number"
-                          inputMode="numeric"
-                          min="0"
-                          step="5"
+                          min={0}
+                          step={5}
                           value={parseInt(selectedTopic.duration) || 0}
-                          onChange={(e) => handleDurationChange(e.target.value)}
+                          onValueChange={handleDurationChange}
                           className="w-full px-3 py-2 pr-16 bg-background border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">

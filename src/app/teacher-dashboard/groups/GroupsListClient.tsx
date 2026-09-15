@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import {
@@ -331,12 +332,11 @@ function CreateGroupModal({
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">{t('teacher.createGroupMaxMembers')}</label>
-              <input
-                type="number"
+              <NumberInput
                 min={1}
                 max={1000}
                 value={maxMembers}
-                onChange={(e) => setMaxMembers(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))}
+                onValueChange={(n) => setMaxMembers(n)}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>

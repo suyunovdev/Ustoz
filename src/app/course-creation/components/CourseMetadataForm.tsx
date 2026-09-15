@@ -5,6 +5,7 @@ import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import { buildSubjectGroups, buildTargetAudiences, buildGradeLevels } from '@/lib/data/subject-groups';
 import AppImage from '@/components/ui/AppImage';
+import NumberInput from '@/components/ui/NumberInput';
 
 interface CategoryOption {
   id: string;
@@ -295,13 +296,12 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
       <div>
         <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.priceUZS')}</label>
         <div className="relative">
-          <input
-            type="number"
-            value={metadata.priceUZS}
-            onChange={(e) => handleChange('priceUZS', e.target.value)}
+          <NumberInput
+            value={parseInt(metadata.priceUZS) || 0}
+            onValueChange={(n) => handleChange('priceUZS', String(n))}
             placeholder="0"
-            min="0"
-            step="1000"
+            min={0}
+            step={1000}
             className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             required
           />

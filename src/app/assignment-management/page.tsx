@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDate as i18nFormatDate } from '@/lib/i18n/format';
 
@@ -456,13 +457,12 @@ const AssignmentManagementInteractive = () => {
                     <label className="block text-sm font-medium text-foreground mb-2">
                       {t('assignments.maxScore')}
                     </label>
-                    <input
-                      type="number"
+                    <NumberInput
                       value={formData.maxScore}
-                      onChange={(e) => setFormData({ ...formData, maxScore: parseInt(e.target.value) })}
+                      onValueChange={(n) => setFormData({ ...formData, maxScore: n })}
                       className="w-full px-4 py-3 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                      min="1"
-                      max="1000"
+                      min={1}
+                      max={1000}
                       required
                     />
                   </div>
@@ -600,14 +600,13 @@ const AssignmentManagementInteractive = () => {
                               <label className="block text-sm font-medium text-foreground mb-2">
                                 {t('assignments.scoreMaxLabel', { max: selectedAssignment.maxScore })}
                               </label>
-                              <input
-                                type="number"
+                              <NumberInput
                                 value={gradingData.grade}
-                                onChange={(e) =>
-                                  setGradingData({ ...gradingData, grade: parseInt(e.target.value) })
+                                onValueChange={(n) =>
+                                  setGradingData({ ...gradingData, grade: n })
                                 }
                                 className="w-full px-4 py-3 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                                min="0"
+                                min={0}
                                 max={selectedAssignment.maxScore}
                                 required
                               />

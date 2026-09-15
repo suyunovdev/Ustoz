@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import { SkeletonDetail } from '@/components/ui/Skeleton';
 import AppImage from '@/components/ui/AppImage';
 import ConfirmModal from '@/components/common/ConfirmModal';
@@ -590,11 +591,10 @@ function EditGroupModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">{t('teacher.groupMaxLabel')}</label>
-              <input
-                type="number"
+              <NumberInput
                 min={Math.max(1, minMembers)}
                 value={form.maxMembers}
-                onChange={(e) => setForm((f) => ({ ...f, maxMembers: Number(e.target.value) || 0 }))}
+                onValueChange={(n) => setForm((f) => ({ ...f, maxMembers: n }))}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>

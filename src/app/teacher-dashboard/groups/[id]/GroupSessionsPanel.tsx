@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import { toast } from '@/components/common/Toaster';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDateTime } from '@/lib/i18n/format';
@@ -242,12 +243,11 @@ export default function GroupSessionsPanel({ groupId }: Props) {
             </label>
             <label className="block">
               <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.duration')}</span>
-              <input
-                type="number"
+              <NumberInput
                 min={10}
                 max={480}
                 value={durationMin}
-                onChange={(e) => setDurationMin(Number(e.target.value))}
+                onValueChange={(n) => setDurationMin(n)}
                 className={inputCls}
               />
             </label>
@@ -312,12 +312,11 @@ export default function GroupSessionsPanel({ groupId }: Props) {
                 </label>
                 <label className="block">
                   <span className="text-xs font-medium text-muted-foreground">{t('liveSessions.weeks')}</span>
-                  <input
-                    type="number"
+                  <NumberInput
                     min={1}
                     max={52}
                     value={seriesWeeks}
-                    onChange={(e) => setSeriesWeeks(Number(e.target.value))}
+                    onValueChange={(n) => setSeriesWeeks(n)}
                     className={inputCls}
                   />
                 </label>

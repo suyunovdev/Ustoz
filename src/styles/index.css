@@ -1,1 +1,18 @@
 @import './tailwind.css';
+
+/* ─────────────────────────────────────────────────────────────
+   Number input'lar noqulayligini kamaytirish (global):
+   - spinner (yuqori/past strelka) tugmalari olib tashlanadi
+   - type="number" saqlanadi → mobil raqamli klaviatura foydasi qoladi
+   - scroll bilan qiymat o'zgarishi NumericInputGuard (layout) da bloklanadi
+   ───────────────────────────────────────────────────────────── */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
