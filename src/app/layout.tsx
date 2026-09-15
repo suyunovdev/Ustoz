@@ -29,6 +29,7 @@ const jetbrainsMono = JetBrains_Mono({
 import { AuthProvider } from '@/contexts/AuthContext';
 import { I18nProvider } from '@/contexts/I18nContext';
 import { QueryProvider } from '@/components/providers/QueryProvider';
+import NumericInputGuard from '@/components/providers/NumericInputGuard';
 import { Toaster } from '@/components/common/Toaster';
 import CookieConsent from '@/components/common/CookieConsent';
 import Analytics from '@/components/common/Analytics';
@@ -177,6 +178,7 @@ export default async function RootLayout({
             <CookieConsentProvider>
               <QueryProvider>
                 {children}
+                <NumericInputGuard />
                 <Toaster />
                 <CookieConsent />
                 <Analytics />

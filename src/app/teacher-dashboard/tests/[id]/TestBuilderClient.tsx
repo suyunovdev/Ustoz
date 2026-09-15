@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import { Skeleton } from '@/components/ui/Skeleton';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
@@ -214,12 +215,11 @@ export default function TestBuilderClient({ testId }: Props) {
                 <label className="block text-sm font-medium text-foreground mb-1">
                   {t('teacher.passingPercent')}
                 </label>
-                <input
-                  type="number"
+                <NumberInput
                   min={0}
                   max={100}
                   value={sPassingScore}
-                  onChange={(e) => setSPassingScore(Number(e.target.value))}
+                  onValueChange={(n) => setSPassingScore(n)}
                   className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
                 />
               </div>
@@ -227,14 +227,11 @@ export default function TestBuilderClient({ testId }: Props) {
                 <label className="block text-sm font-medium text-foreground mb-1">
                   {t('teacher.timeMinutes')}
                 </label>
-                <input
-                  type="number"
+                <NumberInput
                   min={0}
                   max={180}
-                  value={sTimeLimitMin}
-                  onChange={(e) =>
-                    setSTimeLimitMin(e.target.value === '' ? '' : Number(e.target.value))
-                  }
+                  value={Number(sTimeLimitMin) || 0}
+                  onValueChange={(n) => setSTimeLimitMin(n)}
                   placeholder={t('teacher.unlimited')}
                   className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
                 />
@@ -243,12 +240,11 @@ export default function TestBuilderClient({ testId }: Props) {
                 <label className="block text-sm font-medium text-foreground mb-1">
                   {t('teacher.attempts')}
                 </label>
-                <input
-                  type="number"
+                <NumberInput
                   min={0}
                   max={20}
                   value={sAllowedAttempts}
-                  onChange={(e) => setSAllowedAttempts(Number(e.target.value))}
+                  onValueChange={(n) => setSAllowedAttempts(n)}
                   placeholder={t('teacher.unlimited')}
                   className="w-full px-3 py-2 border border-border rounded-md text-sm bg-background"
                 />
@@ -759,12 +755,11 @@ function QuestionEditorModal({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium mb-1">{t('teacher.points')} *</label>
-              <input
-                type="number"
+              <NumberInput
                 min={0}
                 max={100}
                 value={points}
-                onChange={(e) => setPoints(Number(e.target.value))}
+                onValueChange={(n) => setPoints(n)}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>

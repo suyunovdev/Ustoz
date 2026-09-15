@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import {
@@ -329,12 +330,11 @@ function CreateTestModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 {t('teacher.passingPercent')}
               </label>
-              <input
-                type="number"
+              <NumberInput
                 min={0}
                 max={100}
                 value={passingScore}
-                onChange={(e) => setPassingScore(Number(e.target.value))}
+                onValueChange={(n) => setPassingScore(n)}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>
@@ -342,14 +342,11 @@ function CreateTestModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 {t('teacher.timeMinutes')}
               </label>
-              <input
-                type="number"
+              <NumberInput
                 min={0}
                 max={120}
-                value={timeLimitMin}
-                onChange={(e) =>
-                  setTimeLimitMin(e.target.value === '' ? '' : Number(e.target.value))
-                }
+                value={Number(timeLimitMin) || 0}
+                onValueChange={(n) => setTimeLimitMin(n)}
                 placeholder={t('teacher.unlimited')}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
@@ -358,12 +355,11 @@ function CreateTestModal({
               <label className="block text-sm font-medium text-foreground mb-1">
                 {t('teacher.attempts')}
               </label>
-              <input
-                type="number"
+              <NumberInput
                 min={0}
                 max={20}
                 value={allowedAttempts}
-                onChange={(e) => setAllowedAttempts(Number(e.target.value))}
+                onValueChange={(n) => setAllowedAttempts(n)}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>

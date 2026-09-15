@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import {
@@ -369,12 +370,11 @@ function CreateAssignmentModal({
             </div>
             <div>
               <label className="block text-sm font-medium mb-1">{t('teacher.createAssignmentMaxScore')}</label>
-              <input
-                type="number"
+              <NumberInput
                 min={1}
                 max={1000}
                 value={maxScore}
-                onChange={(e) => setMaxScore(Math.max(1, Math.min(1000, Number(e.target.value) || 1)))}
+                onValueChange={(n) => setMaxScore(n)}
                 className="w-full px-3 py-2 border border-border rounded-md text-sm"
               />
             </div>
@@ -412,12 +412,11 @@ function CreateAssignmentModal({
                 <label className="block text-xs text-muted-foreground mb-1">
                   {t('teacher.createAssignmentPenaltyLabel')}
                 </label>
-                <input
-                  type="number"
+                <NumberInput
                   min={0}
                   max={100}
                   value={latePenalty}
-                  onChange={(e) => setLatePenalty(Math.max(0, Math.min(100, Number(e.target.value) || 0)))}
+                  onValueChange={(n) => setLatePenalty(n)}
                   className="w-24 px-3 py-1.5 border border-border rounded-md text-sm"
                 />
               </div>

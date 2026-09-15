@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import { toast } from '@/components/common/Toaster';
 import { useI18n } from '@/contexts/I18nContext';
 import { formatDateTime } from '@/lib/i18n/format';
@@ -116,7 +117,7 @@ const LiveSessionsAdminPanel = () => {
         <input className={input} placeholder="Muallif/host nomi" value={form.hostName} onChange={(e) => setForm({ ...form, hostName: e.target.value })} />
         <label className="block text-xs text-muted-foreground">Boshlanish vaqti *</label>
         <input type="datetime-local" className={input} value={form.startsAt} onChange={(e) => setForm({ ...form, startsAt: e.target.value })} required />
-        <input type="number" min={5} max={600} className={input} placeholder="Davomiyligi (daqiqa)" value={form.durationMin} onChange={(e) => setForm({ ...form, durationMin: Number(e.target.value) })} />
+        <NumberInput min={5} max={600} className={input} placeholder="Davomiyligi (daqiqa)" value={form.durationMin} onValueChange={(n) => setForm({ ...form, durationMin: n })} />
         <input type="url" className={input} placeholder="Meeting havolasi (https://...) *" value={form.meetingUrl} onChange={(e) => setForm({ ...form, meetingUrl: e.target.value })} required />
         <label className="flex items-center gap-2 text-sm text-foreground">
           <input type="checkbox" checked={form.isPublished} onChange={(e) => setForm({ ...form, isPublished: e.target.checked })} />

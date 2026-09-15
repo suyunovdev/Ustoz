@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import {
@@ -513,12 +514,11 @@ function WithdrawalModal({
         <div className="space-y-3">
           <div>
             <label className="block text-sm font-medium mb-1">{t('teacher.withdrawModalAmountLabel')}</label>
-            <input
-              type="number"
+            <NumberInput
               min={100_000}
               max={Number(available)}
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              value={Number(amount) || 0}
+              onValueChange={(n) => setAmount(String(n))}
               required
               className="w-full px-3 py-2 border border-border rounded-md text-sm"
             />

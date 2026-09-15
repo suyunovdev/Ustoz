@@ -9,6 +9,7 @@
  */
 import { useEffect, useState, useCallback } from 'react';
 import Icon from '@/components/ui/AppIcon';
+import NumberInput from '@/components/ui/NumberInput';
 import { SkeletonList } from '@/components/ui/Skeleton';
 import { useI18n } from '@/contexts/I18nContext';
 import { toast } from '@/components/common/Toaster';
@@ -397,12 +398,11 @@ export default function SubscriptionsPanel() {
           <div>
             <label className="block text-xs text-muted-foreground mb-1">Chegirma (%)</label>
             <div className="flex items-center gap-2">
-              <input
-                type="number"
+              <NumberInput
                 min={0}
                 max={100}
-                value={discountInput}
-                onChange={(e) => setDiscountInput(e.target.value)}
+                value={Number(discountInput)}
+                onValueChange={(n) => setDiscountInput(String(n))}
                 className="w-28 px-3 py-2 bg-background border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
               />
               <span className="text-sm text-muted-foreground">%</span>
@@ -653,21 +653,19 @@ export default function SubscriptionsPanel() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1">{t('admin.subPrice')}</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={form.priceUzs}
-                    onChange={(e) => setForm((f) => ({ ...f, priceUzs: e.target.value }))}
+                  <NumberInput
+                    min={0}
+                    value={Number(form.priceUzs)}
+                    onValueChange={(n) => setForm((f) => ({ ...f, priceUzs: String(n) }))}
                     className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1">{t('admin.subDurationDays')}</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={form.durationDays}
-                    onChange={(e) => setForm((f) => ({ ...f, durationDays: e.target.value }))}
+                  <NumberInput
+                    min={1}
+                    value={Number(form.durationDays)}
+                    onValueChange={(n) => setForm((f) => ({ ...f, durationDays: String(n) }))}
                     className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
@@ -684,11 +682,10 @@ export default function SubscriptionsPanel() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-foreground mb-1">#</label>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    value={form.sortOrder}
-                    onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
+                  <NumberInput
+                    min={0}
+                    value={Number(form.sortOrder)}
+                    onValueChange={(n) => setForm((f) => ({ ...f, sortOrder: String(n) }))}
                     className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
