@@ -3,57 +3,69 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import CourseMetadataForm from './CourseMetadataForm';
 import Icon from '@/components/ui/AppIcon';
+import FormField, { fieldClasses } from '@/components/ui/FormField';
 import { toast } from '@/components/common/Toaster';
 import { useI18n } from '@/contexts/I18nContext';
+import { buildSubjectGroups, buildTargetAudiences } from '@/lib/data/subject-groups';
 import { queryKeys } from '@/hooks/queries/queryKeys';
 
-interface CourseMetadata {
+interface Draft {
   title: string;
-  description: string;
-  category: string;
-  priceUZS: string;
-  coverImage: string;
-  language: string;
   targetAudience: string;
   subjectCategory: string;
-  gradeLevel: string;
-  difficultyLevel: string;
 }
 
+type FieldKey = keyof Draft;
+
 /**
- * Kurs yaratish = QISQA metadata forma. "Yaratish" bosilganda kurs DRAFT holatда
- * serverда yaratiladi va o'qituvchi darhol YAGONA MUHARRIRга (/teacher-dashboard/courses/[id])
- * yo'naltiriladi — mavzu/kontent/video/material/test o'sha yerда qo'shiladi.
- * Ilgari bu yerда 5 bosqichli wizard bor edi (dublikat, material yo'qolishi, localStorage
- * qoralama muammolari bilan) — endi yagona haqiqat manbai muharrir.
+ * Kurs yaratish = ENG QISQA forma: faqat 3 MAJBURIY maydon (nom, kim uchun, fan).
+ * "Yaratish" bosilganда kurs DRAFT holatда serverда yaratiladi va o'qituvchi darhol
+ * YAGONA MUHARRIRга (/teacher-dashboard/courses/[id]) yo'naltiriladi — muqova, tavsif,
+ * narx, mavzu/kontent/video/test o'sha yerда ("Kurs sozlamalari" + mavzular) qo'shiladi.
+ *
+ * Ilgari bu yerда 10 maydonli forma bor edi (7 tasi soxta "majburiy" — hech qachon
+ * majburlanmasди, faqat chalg'itardi). Endi start engil: 3 maydon → 1 tugma → muharrir.
  */
 const CourseCreationInteractive = () => {
   const { t } = useI18n();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [metadata, setMetadata] = useState<CourseMetadata>({
+
+  const [draft, setDraft] = useState<Draft>({
     title: '',
-    description: '',
-    category: '',
-    priceUZS: '',
-    coverImage: '',
-    language: '',
     targetAudience: '',
     subjectCategory: '',
-    gradeLevel: '',
-    difficultyLevel: '',
   });
+  const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [isSaving, setIsSaving] = useState(false);
 
+  const targetAudiences = buildTargetAudiences(t);
+  const subjectGroups = buildSubjectGroups(t);
+
+  const errors: Partial<Record<FieldKey, string>> = {
+    title:
+      touched.title && draft.title.trim().length < 3 ? t('courseCreation.titleRequired') : '',
+    targetAudience:
+      touched.targetAudience && !draft.targetAudience ? t('courseCreation.audienceRequired') : '',
+    subjectCategory:
+      touched.subjectCategory && !draft.subjectCategory ? t('courseCreation.subjectRequired') : '',
+  };
+
   const canCreate =
-    !!metadata.title.trim() && !!metadata.targetAudience && !!metadata.subjectCategory;
+    draft.title.trim().length >= 3 && !!draft.targetAudience && !!draft.subjectCategory;
+
+  const markTouched = (field: FieldKey) => setTouched((prev) => ({ ...prev, [field]: true }));
+
+  const update = (field: FieldKey, value: string) => {
+    setDraft((prev) => ({ ...prev, [field]: value }));
+  };
 
   const handleCreate = async () => {
-    if (!metadata.title.trim()) return toast.error(t('courseCreation.titleRequired'));
-    if (!metadata.targetAudience) return toast.error(t('courseCreation.audienceRequired'));
-    if (!metadata.subjectCategory) return toast.error(t('courseCreation.subjectRequired'));
+    if (!canCreate) {
+      setTouched({ title: true, targetAudience: true, subjectCategory: true });
+      return;
+    }
 
     setIsSaving(true);
     try {
@@ -61,16 +73,16 @@ const CourseCreationInteractive = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: metadata.title.trim(),
-          description: metadata.description || '',
-          category: metadata.category || 'general',
-          targetAudience: metadata.targetAudience,
-          subjectCategory: metadata.subjectCategory,
-          gradeLevel: metadata.gradeLevel ? parseInt(metadata.gradeLevel) : null,
-          priceUzs: String(parseInt(metadata.priceUZS) || 0),
-          coverImage: metadata.coverImage || null,
-          language: metadata.language || 'uz',
-          difficultyLevel: metadata.difficultyLevel || null,
+          title: draft.title.trim(),
+          description: '',
+          category: 'general',
+          targetAudience: draft.targetAudience,
+          subjectCategory: draft.subjectCategory,
+          gradeLevel: null,
+          priceUzs: '0',
+          coverImage: null,
+          language: 'uz',
+          difficultyLevel: null,
           totalDuration: 0,
         }),
       });
@@ -92,7 +104,7 @@ const CourseCreationInteractive = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto w-full px-4 py-8 space-y-6">
+      <div className="max-w-xl mx-auto w-full px-4 py-8 space-y-6">
         <div>
           <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground">
             {t('courseCreation.newCourseTitle')}
@@ -102,19 +114,109 @@ const CourseCreationInteractive = () => {
           </p>
         </div>
 
-        <CourseMetadataForm metadata={metadata} onMetadataChange={setMetadata} />
-
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={handleCreate}
-            disabled={isSaving || !canCreate}
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+        <form
+          className="bg-card rounded-md shadow-warm p-6 space-y-5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleCreate();
+          }}
+        >
+          <FormField
+            label={t('courseCreation.courseTitle')}
+            htmlFor="course-title"
+            required
+            error={errors.title}
           >
-            <Icon name={isSaving ? 'ArrowPathIcon' : 'PlusIcon'} size={18} />
-            {isSaving ? t('courseCreation.creating') : t('courseCreation.createAndContinue')}
-          </button>
-        </div>
+            <input
+              id="course-title"
+              type="text"
+              value={draft.title}
+              onChange={(e) => update('title', e.target.value)}
+              onBlur={() => markTouched('title')}
+              placeholder={t('courseCreation.courseTitlePlaceholder')}
+              className={fieldClasses(!!errors.title)}
+              aria-invalid={!!errors.title}
+              autoFocus
+            />
+          </FormField>
+
+          <FormField
+            label={t('courseCreation.targetAudience')}
+            htmlFor="course-audience"
+            required
+            error={errors.targetAudience}
+          >
+            <select
+              id="course-audience"
+              value={draft.targetAudience}
+              onChange={(e) => {
+                update('targetAudience', e.target.value);
+                markTouched('targetAudience');
+              }}
+              onBlur={() => markTouched('targetAudience')}
+              className={fieldClasses(!!errors.targetAudience)}
+              aria-invalid={!!errors.targetAudience}
+            >
+              <option value="">{t('courseCreation.selectAudience')}</option>
+              {targetAudiences.map((audience) => (
+                <option key={audience.value} value={audience.value}>
+                  {audience.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          <FormField
+            label={t('courseCreation.subjectName')}
+            htmlFor="course-subject"
+            required
+            error={errors.subjectCategory}
+            hint={!draft.targetAudience ? t('courseCreation.selectSubjectFirst') : undefined}
+          >
+            <select
+              id="course-subject"
+              value={draft.subjectCategory}
+              onChange={(e) => {
+                update('subjectCategory', e.target.value);
+                markTouched('subjectCategory');
+              }}
+              onBlur={() => markTouched('subjectCategory')}
+              disabled={!draft.targetAudience}
+              className={`${fieldClasses(!!errors.subjectCategory)} disabled:opacity-60 disabled:cursor-not-allowed`}
+              aria-invalid={!!errors.subjectCategory}
+            >
+              <option value="">
+                {!draft.targetAudience
+                  ? t('courseCreation.selectSubjectFirst')
+                  : t('courseCreation.selectSubject')}
+              </option>
+              {subjectGroups.map((g) => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.options.map((subject) => (
+                    <option key={subject.value} value={subject.value}>
+                      {subject.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </FormField>
+
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="inline-flex items-center gap-2 rounded-md bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+            >
+              <Icon name={isSaving ? 'ArrowPathIcon' : 'PlusIcon'} size={18} />
+              {isSaving ? t('courseCreation.creating') : t('courseCreation.createAndContinue')}
+            </button>
+          </div>
+        </form>
+
+        <p className="text-xs text-muted-foreground text-center">
+          {t('courseCreation.createMoreLater')}
+        </p>
       </div>
     </div>
   );

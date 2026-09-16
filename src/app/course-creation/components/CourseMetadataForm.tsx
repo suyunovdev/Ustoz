@@ -6,6 +6,7 @@ import { useI18n } from '@/contexts/I18nContext';
 import { buildSubjectGroups, buildTargetAudiences, buildGradeLevels } from '@/lib/data/subject-groups';
 import AppImage from '@/components/ui/AppImage';
 import NumberInput from '@/components/ui/NumberInput';
+import FormField, { fieldClasses } from '@/components/ui/FormField';
 
 interface CategoryOption {
   id: string;
@@ -13,7 +14,7 @@ interface CategoryOption {
   slug: string;
 }
 
-interface CourseMetadata {
+export interface CourseMetadata {
   title: string;
   description: string;
   category: string;
@@ -31,13 +32,21 @@ interface CourseMetadataFormProps {
   onMetadataChange: (metadata: CourseMetadata) => void;
 }
 
+/**
+ * Kurs metadatasi formasi — YAGONA MUHARRIRдаги "Kurs sozlamalari" panelида ishlatiladi
+ * (muqova, tavsif, narx, daraja...). Tashqi karta/sarlavhani ota-komponent beradi, shuning
+ * uchun bu yerда faqat maydonlar (bare field group). Nom/tavsif/muqova "nashr uchun kerak"
+ * deb belgilanadi (submit blokerlari); qolganlar ixtiyoriy — soxta `required` yo'q.
+ */
 const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormProps) => {
   const { t } = useI18n();
   const [imagePreview, setImagePreview] = useState(metadata.coverImage);
-  // Kategoriyalar bozor bilan YAGONA manba — Category jadvalidan (ilgari sehrgarda
-  // 8 ta qattiq kodlangan inglizcha qiymat edi; ular Category slug/nomiga mos kelmay
-  // categoryId=null qolardi — kurs hech qaysi bozor kategoriyasiga bog'lanmasdi).
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+
+  // Tashqaridan (masalan kurs yuklangач) coverImage o'zgarsa preview'ни sinxronlaymiz.
+  useEffect(() => {
+    setImagePreview(metadata.coverImage);
+  }, [metadata.coverImage]);
 
   useEffect(() => {
     let alive = true;
@@ -59,7 +68,6 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
   ];
 
   const targetAudiences = buildTargetAudiences(t);
-  // Fan guruhlari — marketplace filtri bilan yagona manba (subject-groups.ts).
   const subjectGroups = buildSubjectGroups(t);
   const gradeLevels = buildGradeLevels(t);
 
@@ -111,12 +119,9 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
   };
 
   return (
-    <div className="bg-card rounded-md shadow-warm p-6 space-y-6">
-      <h3 className="text-xl font-heading font-semibold text-foreground">{t('courseCreation.courseInfo')}</h3>
-
-      {/* Cover Image */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.coverImage')}</label>
+    <div className="space-y-6">
+      {/* Cover Image — nashr uchun kerak */}
+      <FormField label={t('courseCreation.coverImage')} required hint={t('teacher.requiredToPublish')}>
         <div className="flex flex-col sm:flex-row items-start space-y-4 sm:space-y-0 sm:space-x-4">
           <div className="w-full sm:w-48 h-32 rounded-md overflow-hidden bg-muted border border-border">
             {imagePreview ? (
@@ -149,42 +154,39 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
             <p className="caption text-muted-foreground mt-2">{t('courseCreation.imageRecommendation')}</p>
           </div>
         </div>
-      </div>
+      </FormField>
 
-      {/* Title */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.courseTitle')}</label>
+      {/* Title — nashr uchun kerak */}
+      <FormField label={t('courseCreation.courseTitle')} htmlFor="cmf-title" required hint={t('teacher.requiredToPublish')}>
         <input
+          id="cmf-title"
           type="text"
           value={metadata.title}
           onChange={(e) => handleChange('title', e.target.value)}
           placeholder={t('courseCreation.courseTitlePlaceholder')}
-          className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          required
+          className={fieldClasses()}
         />
-      </div>
+      </FormField>
 
-      {/* Description */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.courseDescription')}</label>
+      {/* Description — nashr uchun kerak */}
+      <FormField label={t('courseCreation.courseDescription')} htmlFor="cmf-desc" required hint={t('teacher.requiredToPublish')}>
         <textarea
+          id="cmf-desc"
           value={metadata.description}
           onChange={(e) => handleChange('description', e.target.value)}
           placeholder={t('courseCreation.courseDescriptionPlaceholder')}
           rows={4}
-          className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-          required
+          className={`${fieldClasses()} resize-none`}
         />
-      </div>
+      </FormField>
 
       {/* Target Audience */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.targetAudience')}</label>
+      <FormField label={t('courseCreation.targetAudience')} htmlFor="cmf-audience">
         <select
+          id="cmf-audience"
           value={metadata.targetAudience}
           onChange={(e) => handleChange('targetAudience', e.target.value)}
-          className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          required
+          className={fieldClasses()}
         >
           <option value="">{t('courseCreation.selectAudience')}</option>
           {targetAudiences.map((audience) => (
@@ -193,16 +195,19 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
             </option>
           ))}
         </select>
-      </div>
+      </FormField>
 
       {/* Subject Category */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.subjectName')}</label>
+      <FormField
+        label={t('courseCreation.subjectName')}
+        htmlFor="cmf-subject"
+        hint={!metadata.targetAudience ? t('courseCreation.selectSubjectFirst') : undefined}
+      >
         <select
+          id="cmf-subject"
           value={metadata.subjectCategory}
           onChange={(e) => handleChange('subjectCategory', e.target.value)}
-          className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          required
+          className={`${fieldClasses()} disabled:opacity-60 disabled:cursor-not-allowed`}
           disabled={!metadata.targetAudience}
         >
           <option value="">{!metadata.targetAudience ? t('courseCreation.selectSubjectFirst') : t('courseCreation.selectSubject')}</option>
@@ -216,17 +221,16 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
             </optgroup>
           ))}
         </select>
-      </div>
+      </FormField>
 
       {/* Grade Level (only for school students) */}
       {isSchoolAudience && (
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.gradeLevel')}</label>
+        <FormField label={t('courseCreation.gradeLevel')} htmlFor="cmf-grade">
           <select
+            id="cmf-grade"
             value={metadata.gradeLevel}
             onChange={(e) => handleChange('gradeLevel', e.target.value)}
-            className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            required
+            className={fieldClasses()}
           >
             <option value="">{t('courseCreation.selectGrade')}</option>
             {gradeLevels.map((grade) => (
@@ -235,18 +239,17 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
       )}
 
       {/* Category and Language */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.category')}</label>
+        <FormField label={t('courseCreation.category')} htmlFor="cmf-category">
           <select
+            id="cmf-category"
             value={metadata.category}
             onChange={(e) => handleChange('category', e.target.value)}
-            className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            required
+            className={fieldClasses()}
           >
             <option value="">{t('courseCreation.selectCategory')}</option>
             {categories.map((c) => (
@@ -255,15 +258,14 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
 
-        <div>
-          <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.language')}</label>
+        <FormField label={t('courseCreation.language')} htmlFor="cmf-language">
           <select
+            id="cmf-language"
             value={metadata.language}
             onChange={(e) => handleChange('language', e.target.value)}
-            className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            required
+            className={fieldClasses()}
           >
             <option value="">{t('courseCreation.selectLanguage')}</option>
             {languages.map((lang) => (
@@ -272,43 +274,39 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
       </div>
 
-      {/* Difficulty level — bozorda daraja filtriga tushishi uchun (ilgari yo'q edi,
-          natijada kurs har doim "Boshlang'ich" bo'lib ko'rinardi) */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.difficultyLevel')}</label>
+      {/* Difficulty level — bozorda daraja filtriga tushishi uchun */}
+      <FormField label={t('courseCreation.difficultyLevel')} htmlFor="cmf-difficulty">
         <select
+          id="cmf-difficulty"
           value={metadata.difficultyLevel}
           onChange={(e) => handleChange('difficultyLevel', e.target.value)}
-          className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          required
+          className={fieldClasses()}
         >
           <option value="">{t('courseCreation.selectDifficulty')}</option>
           <option value="Beginner">{t('misc.beginner')}</option>
           <option value="Intermediate">{t('misc.intermediate')}</option>
           <option value="Advanced">{t('misc.advanced')}</option>
         </select>
-      </div>
+      </FormField>
 
       {/* Pricing — faqat so'mda (platforma to'liq so'mda) */}
-      <div>
-        <label className="block text-sm font-medium text-foreground mb-2">{t('courseCreation.priceUZS')}</label>
+      <FormField label={t('courseCreation.priceUZS')} htmlFor="cmf-price" hint={t('courseCreation.freeHint')}>
         <div className="relative">
           <NumberInput
+            id="cmf-price"
             value={parseInt(metadata.priceUZS) || 0}
             onValueChange={(n) => handleChange('priceUZS', String(n))}
             placeholder="0"
             min={0}
             step={1000}
-            className="w-full px-4 py-2 bg-background border border-input rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            required
+            className={fieldClasses()}
           />
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground caption">so'm</span>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">{t('courseCreation.freeHint')}</p>
-      </div>
+      </FormField>
     </div>
   );
 };

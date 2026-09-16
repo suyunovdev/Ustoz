@@ -8,6 +8,7 @@ import { requireTeacherOrAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { CourseNotFoundError } from '@/lib/errors';
+import { getCourseReadiness } from '@/lib/course-completeness';
 
 export async function POST(
   req: NextRequest,
@@ -22,34 +23,32 @@ export async function POST(
     });
     if (!course) throw new CourseNotFoundError(id);
 
-    // To'liqlik tekshiruvi — chala kurs moderatsiyaga tushmasin. Bu tekshiruv
-    // SERVER tomonida majburlanadi (ilgari faqat client checklist edi — dekorativ:
-    // muqovasiz/testsiz kurs 200 olardi). Client tugmasi ham shu shartlarga bog'landi.
-    const missing: string[] = [];
-    if (!course.title || course.title.trim().length < 3) missing.push('nom (kamida 3 belgi)');
-    if (!course.description || course.description.trim().length < 10) missing.push('tavsif (kamida 10 belgi)');
-    if (!course.coverImage || !course.coverImage.trim()) missing.push('muqova rasmi');
-
-    // Mavzular — kamida bitta, har birida dars matni, va kamida bitta mavzuda test.
+    // To'liqlik tekshiruvi — chala kurs moderatsiyaga tushmasin. Qoidalar KLIENT
+    // muharridagi "tayyorlik ro'yxati" bilan YAGONA manbadан (course-completeness.ts):
+    // shu tufayli client tugmasi va server aynan bir xil shartни tekshiradi.
+    // Test IXTIYORIY (bu qoidada yo'q).
     const topics = await prisma.courseTopic.findMany({
       where: { courseId: id },
-      select: { content: true, hasQuiz: true },
+      select: { content: true },
     });
-    if (topics.length === 0) {
+    const readiness = getCourseReadiness({
+      title: course.title,
+      description: course.description,
+      coverImage: course.coverImage,
+      topics,
+    });
+
+    if (!readiness.hasTopics) {
       return jsonResponse(
         { error: 'Tekshiruvga yuborishdan oldin kamida bitta mavzu qo\'shing', code: 'NO_TOPICS' },
         { status: 400 },
       );
     }
-    const emptyContentCount = topics.filter((tp) => !tp.content || !tp.content.trim()).length;
-    if (emptyContentCount > 0) missing.push(`${emptyContentCount} ta mavzuda dars matni yo'q`);
-    // Test IXTIYORIY — endi e'lon uchun shart emas (avval "kamida bitta mavzuda 5+ savolli
-    // test" majburiy edi, katta friksiya berardi). O'qituvchi xohlasa test qo'shadi.
 
-    if (missing.length > 0) {
+    if (readiness.missing.length > 0) {
       return jsonResponse(
         {
-          error: `Tekshiruvga yuborishdan oldin to'ldiring: ${missing.join(', ')}`,
+          error: `Tekshiruvga yuborishdan oldin to'ldiring: ${readiness.missing.join(', ')}`,
           code: 'INCOMPLETE_COURSE',
         },
         { status: 400 },

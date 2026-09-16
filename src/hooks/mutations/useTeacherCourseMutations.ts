@@ -3,10 +3,23 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queries/queryKeys';
 
-async function patchCourse(vars: {
-  courseId: string;
-  isPublished?: boolean;
-}): Promise<void> {
+/** Muharrir "Kurs sozlamalari" panelidan yuboriladigan metadata maydonlari. */
+export interface CourseMetadataPatch {
+  title?: string;
+  description?: string | null;
+  coverImage?: string | null;
+  priceUzs?: string;
+  language?: string;
+  difficultyLevel?: string | null;
+  category?: string;
+  targetAudience?: string;
+  subjectCategory?: string;
+  gradeLevel?: number | null;
+}
+
+async function patchCourse(
+  vars: { courseId: string; isPublished?: boolean } & CourseMetadataPatch,
+): Promise<void> {
   const { courseId, ...body } = vars;
   const res = await fetch(`/api/teacher/courses/${courseId}`, {
     method: 'PATCH',
@@ -54,6 +67,17 @@ export function useUnarchiveCourseMutation() {
   return useMutation({
     mutationFn: (courseId: string) => patchCourse({ courseId, isPublished: true }),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.teacherDashboard }),
+  });
+}
+
+export function useUpdateCourseMetadataMutation(courseId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (patch: CourseMetadataPatch) => patchCourse({ courseId, ...patch }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: queryKeys.teacherCourse(courseId) });
+      qc.invalidateQueries({ queryKey: queryKeys.teacherDashboard });
+    },
   });
 }
 

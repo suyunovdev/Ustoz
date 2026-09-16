@@ -1,12 +1,14 @@
 'use client';
 
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Icon from '@/components/ui/AppIcon';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import { useCourseTopics, type CourseTopicDTO } from '@/hooks/queries/useCourseTopics';
+import { useTeacherCourseDetail, type TeacherCourseDetail } from '@/hooks/queries/useTeacherCourseDetail';
 import {
   useCreateTopicMutation,
   useUpdateTopicMutation,
@@ -14,11 +16,38 @@ import {
   useReorderTopicsMutation,
   type TopicFormInput,
 } from '@/hooks/mutations/useCourseTopicMutations';
+import { useUpdateCourseMetadataMutation } from '@/hooks/mutations/useTeacherCourseMutations';
+import { queryKeys } from '@/hooks/queries/queryKeys';
+import { getCourseReadiness, type ReadinessKey } from '@/lib/course-completeness';
 import TopicMaterials from './TopicMaterials';
 import RichTextEditor from '@/app/course-creation/components/RichTextEditor';
 import LessonVideoInput from '@/app/course-creation/components/LessonVideoInput';
+import CourseMetadataForm, { type CourseMetadata } from '@/app/course-creation/components/CourseMetadataForm';
 import NumberInput from '@/components/ui/NumberInput';
+import FormField, { fieldClasses } from '@/components/ui/FormField';
 import { useI18n } from '@/contexts/I18nContext';
+
+const READINESS_LABEL: Record<ReadinessKey, string> = {
+  title: 'teacher.readiness_title',
+  description: 'teacher.readiness_description',
+  cover: 'teacher.readiness_cover',
+  topics: 'teacher.readiness_topics',
+};
+
+function detailToMetadata(d: TeacherCourseDetail): CourseMetadata {
+  return {
+    title: d.title ?? '',
+    description: d.description ?? '',
+    category: d.category ?? '',
+    priceUZS: d.priceUzs ?? '0',
+    coverImage: d.coverImage ?? '',
+    language: d.language ?? 'uz',
+    targetAudience: d.targetAudience ?? '',
+    subjectCategory: d.subjectCategory ?? '',
+    gradeLevel: d.gradeLevel != null ? String(d.gradeLevel) : '',
+    difficultyLevel: d.difficultyLevel ?? '',
+  };
+}
 
 interface Props {
   courseId: string;
@@ -51,30 +80,89 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
   const deleteMut = useDeleteTopicMutation(courseId);
   const reorderMut = useReorderTopicsMutation(courseId);
 
+  const qc = useQueryClient();
+  const { data: detail } = useTeacherCourseDetail(courseId);
+  const updateMetaMut = useUpdateCourseMetadataMutation(courseId);
+
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingTopic, setEditingTopic] = useState<CourseTopicDTO | null>(null);
   const [pendingDelete, setPendingDelete] = useState<CourseTopicDTO | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
-  // Kurs moderatsiya holati + "moderatsiyaga yuborish" — ilgari faqat wizard'da edi.
-  const [moderationStatus, setModerationStatus] = useState<string>('draft');
   const [submitting, setSubmitting] = useState(false);
+  // "Kurs sozlamalari" (muqova, tavsif, narx...) — muharrir ichida tahrirlanadi.
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsDraft, setSettingsDraft] = useState<CourseMetadata | null>(null);
+  const seededRef = useRef(false);
 
-  const loadStatus = useCallback(async () => {
-    try {
-      // /api/courses/[id] egaga (owner) to'liq kursni beradi (`...course` spread orqali
-      // moderationStatus ham). Teacher GET og'ir revenue-query bilan (ba'zan xato beradi).
-      const res = await fetch(`/api/courses/${courseId}`);
-      const d = await res.json().catch(() => ({}));
-      if (res.ok && d.course?.moderationStatus) setModerationStatus(d.course.moderationStatus);
-    } catch {
-      /* noop */
-    }
-  }, [courseId]);
+  const moderationStatus = detail?.moderationStatus ?? 'draft';
 
+  const topics = useMemo(() => data?.topics ?? [], [data]);
+
+  // Tayyorlik — server submit qoidalari bilan YAGONA manbadан (course-completeness.ts).
+  const readiness = useMemo(
+    () =>
+      getCourseReadiness({
+        title: detail?.title,
+        description: detail?.description,
+        coverImage: detail?.coverImage,
+        topics,
+      }),
+    [detail, topics],
+  );
+
+  const isEditableStatus =
+    moderationStatus === 'draft' ||
+    moderationStatus === 'rejected' ||
+    moderationStatus === 'revision_requested';
+
+  // Kurs metadatasi kelgач sozlamalar qoralamasini BIR MARTA seed qilamiz (keyingi
+  // invalidatsiyalar o'qituvchi kiritayotgan matnни buzmasin). Metadata chala bo'lsa
+  // sozlamalar avto-ochiladi — o'qituvchi darhol muqova/tavsifни ko'radi.
   useEffect(() => {
-    loadStatus();
-  }, [loadStatus]);
+    if (detail && !seededRef.current) {
+      seededRef.current = true;
+      setSettingsDraft(detailToMetadata(detail));
+      const titleOk = (detail.title ?? '').trim().length >= 3;
+      const descOk = (detail.description ?? '').trim().length >= 10;
+      const coverOk = (detail.coverImage ?? '').trim().length > 0;
+      if (!titleOk || !descOk || !coverOk) setSettingsOpen(true);
+    }
+  }, [detail]);
+
+  const handleSaveSettings = () => {
+    if (!settingsDraft) return;
+    updateMetaMut.mutate(
+      {
+        title: settingsDraft.title.trim(),
+        description: settingsDraft.description || null,
+        coverImage: settingsDraft.coverImage || null,
+        priceUzs: String(parseInt(settingsDraft.priceUZS) || 0),
+        language: settingsDraft.language || 'uz',
+        difficultyLevel: settingsDraft.difficultyLevel || null,
+        category: settingsDraft.category || undefined,
+        targetAudience: settingsDraft.targetAudience || undefined,
+        subjectCategory: settingsDraft.subjectCategory || undefined,
+        gradeLevel: settingsDraft.gradeLevel ? parseInt(settingsDraft.gradeLevel) : null,
+      },
+      {
+        onSuccess: () => toast.success(t('teacher.settingsSaved')),
+        onError: (err) => toast.error(err.message),
+      },
+    );
+  };
+
+  const handleReadinessClick = (key: ReadinessKey, done: boolean) => {
+    if (done) return;
+    if (key === 'topics') {
+      handleCreateNew();
+    } else {
+      setSettingsOpen(true);
+      if (typeof document !== 'undefined') {
+        document.getElementById('course-settings')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
 
   const handleSubmitForReview = async () => {
     setSubmitting(true);
@@ -86,15 +174,14 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
         return;
       }
       toast.success(t('teacher.submittedForReview'));
-      setModerationStatus('submitted');
+      qc.invalidateQueries({ queryKey: queryKeys.teacherCourse(courseId) });
+      qc.invalidateQueries({ queryKey: queryKeys.teacherDashboard });
     } catch {
       toast.error(t('teacher.networkError'));
     } finally {
       setSubmitting(false);
     }
   };
-
-  const topics = useMemo(() => data?.topics ?? [], [data]);
   const groups = useMemo(() => groupByModule(topics), [topics]);
   // Vizual (modul bo'yicha guruhlangan) tartibdagi yassi ro'yxat — drag-drop
   // indekslari SHU tartibga mos bo'lishi shart (aks holda modullar aralashsa
@@ -208,18 +295,6 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
             >
               {t(`teacher.status_${moderationStatus}`)}
             </span>
-            {(moderationStatus === 'draft' ||
-              moderationStatus === 'rejected' ||
-              moderationStatus === 'revision_requested') && (
-              <button
-                onClick={handleSubmitForReview}
-                disabled={submitting}
-                className="px-4 py-2 bg-success text-white rounded-md hover:bg-success/90 transition-smooth flex items-center gap-2 text-sm font-medium disabled:opacity-50"
-              >
-                <Icon name="PaperAirplaneIcon" size={16} />
-                {submitting ? t('teacher.submitting') : t('teacher.submitForReview')}
-              </button>
-            )}
             <button
               onClick={() => setBulkOpen(true)}
               className="px-3 py-2 border border-border text-foreground rounded-md hover:bg-muted transition-smooth flex items-center gap-2 text-sm font-medium"
@@ -236,6 +311,107 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
             </button>
           </div>
         </div>
+
+        {/* Tayyorlik ro'yxati — faqat tahrirlanadigan holatда (draft/rejected/revision).
+            Har band ✓/✗; ✗ bosilса tegishli joyга olib boradi. Submit tayyor bo'lguncha
+            o'chirilgan — post-klik toast o'rniga oldindan aniq. */}
+        {isEditableStatus && detail && (
+          <section className="bg-card rounded-md shadow-warm p-4 mb-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h2 className="font-heading font-semibold text-foreground">
+                  {t('teacher.readinessTitle')}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {t('teacher.readinessProgress', {
+                    done: readiness.items.filter((i) => i.done).length,
+                    total: readiness.items.length,
+                  })}
+                </p>
+              </div>
+              <button
+                onClick={handleSubmitForReview}
+                disabled={submitting || !readiness.complete}
+                title={!readiness.complete ? t('teacher.readinessIncomplete') : undefined}
+                className="px-4 py-2 bg-success text-white rounded-md hover:bg-success/90 transition-smooth flex items-center gap-2 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Icon name="PaperAirplaneIcon" size={16} />
+                {submitting ? t('teacher.submitting') : t('teacher.submitForReview')}
+              </button>
+            </div>
+            <ul className="mt-3 grid gap-1.5 sm:grid-cols-2">
+              {readiness.items.map((item) => (
+                <li key={item.key}>
+                  <button
+                    type="button"
+                    onClick={() => handleReadinessClick(item.key, item.done)}
+                    disabled={item.done}
+                    className={`w-full flex items-center gap-2 text-left text-sm rounded-md px-2 py-1.5 transition-smooth ${
+                      item.done ? 'text-muted-foreground cursor-default' : 'text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    <Icon
+                      name={item.done ? 'CheckCircleIcon' : 'ExclamationCircleIcon'}
+                      size={18}
+                      className={item.done ? 'text-success shrink-0' : 'text-warning shrink-0'}
+                    />
+                    <span>{t(READINESS_LABEL[item.key])}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {!readiness.complete && (
+              <p className="mt-2 text-xs text-warning">
+                {t('teacher.readinessStepsLeft', {
+                  count: readiness.items.filter((i) => !i.done).length,
+                })}
+              </p>
+            )}
+          </section>
+        )}
+
+        {/* Kurs sozlamalari — yig'ma (muqova, tavsif, narx, daraja...). Backend PATCH
+            allaqachon hammasini qabul qiladi; bu yagona tahrirlash joyi. */}
+        {detail && settingsDraft && (
+          <section id="course-settings" className="bg-card rounded-md shadow-warm mb-4">
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((v) => !v)}
+              className="w-full flex items-center justify-between p-4 text-left"
+              aria-expanded={settingsOpen}
+            >
+              <span className="font-heading font-semibold text-foreground flex items-center gap-2">
+                <Icon name="Cog6ToothIcon" size={18} className="text-muted-foreground" />
+                {t('teacher.courseSettings')}
+              </span>
+              <Icon
+                name={settingsOpen ? 'ChevronUpIcon' : 'ChevronDownIcon'}
+                size={18}
+                className="text-muted-foreground"
+              />
+            </button>
+            {settingsOpen && (
+              <div className="px-4 pb-4 border-t border-border pt-4">
+                <CourseMetadataForm metadata={settingsDraft} onMetadataChange={setSettingsDraft} />
+                <div className="flex justify-end mt-4">
+                  <button
+                    type="button"
+                    onClick={handleSaveSettings}
+                    disabled={updateMetaMut.isPending}
+                    className="px-5 py-2.5 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth text-sm font-semibold disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {updateMetaMut.isPending && (
+                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                    )}
+                    {updateMetaMut.isPending
+                      ? t('teacher.savingSettings')
+                      : t('teacher.saveSettings')}
+                  </button>
+                </div>
+              </div>
+            )}
+          </section>
+        )}
 
         {error && (
           <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm flex items-center justify-between">
@@ -475,7 +651,10 @@ function TopicEditorModal({
   const [isFreePreview, setIsFreePreview] = useState(topic?.isFreePreview ?? false);
   const [isLocked, setIsLocked] = useState(topic?.isLocked ?? false);
   const [aiLoading, setAiLoading] = useState(false);
+  const [titleTouched, setTitleTouched] = useState(false);
   const { t } = useI18n();
+
+  const titleError = titleTouched && title.trim().length < 2 ? t('teacher.topicNameMinLength') : '';
 
   const handleAiSuggest = async () => {
     if (title.trim().length < 2) {
@@ -511,6 +690,7 @@ function TopicEditorModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (title.trim().length < 2) {
+      setTitleTouched(true);
       toast.error(t('teacher.topicNameMinLength'));
       return;
     }
@@ -554,19 +734,18 @@ function TopicEditorModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              {t('teacher.topicName')} *
-            </label>
+          <FormField label={t('teacher.topicName')} htmlFor="topic-title" required error={titleError}>
             <input
+              id="topic-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              required
+              onBlur={() => setTitleTouched(true)}
               placeholder={t('teacher.topicNamePlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              className={fieldClasses(!!titleError)}
+              aria-invalid={!!titleError}
             />
-          </div>
+          </FormField>
 
           {/* Module selector */}
           <div>
@@ -644,12 +823,9 @@ function TopicEditorModal({
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              {t('teacher.topicContent')}
-            </label>
+          <FormField label={t('teacher.topicContent')} hint={t('teacher.requiredToPublish')}>
             <RichTextEditor content={content} onContentChange={setContent} />
-          </div>
+          </FormField>
 
           <div className="space-y-2 pt-2 border-t border-border">
             <label className="flex items-center gap-2 text-sm cursor-pointer">
