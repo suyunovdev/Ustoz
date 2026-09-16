@@ -1437,7 +1437,18 @@
     "assignmentTypeLabel": "Submission type",
     "assignmentLateLabel": "Allow late submission",
     "assignmentPenaltyLabel": "Late penalty (%)",
-    "createGroupLiveHint": "Add live lessons after creating the group — in the \"Live lessons\" section on the group page (date, time and Meet link)."
+    "createGroupLiveHint": "Add live lessons after creating the group — in the \"Live lessons\" section on the group page (date, time and Meet link).",
+    "status_draft": "Draft",
+    "status_submitted": "In review",
+    "status_under_review": "Under review",
+    "status_approved": "Approved",
+    "status_rejected": "Rejected",
+    "status_revision_requested": "Revision requested",
+    "submitForReview": "Submit for review",
+    "submitting": "Submitting...",
+    "submitFailed": "Could not submit",
+    "submittedForReview": "Course submitted for review",
+    "networkError": "Network error"
   },
   "marketplace": {
     "searchCourses": "Search Courses",
@@ -2367,7 +2378,17 @@
     "guideStartBtn": "Got it, start",
     "freeHint": "Enter 0 for a free course.",
     "topicsWithCount": "Topics ({count})",
-    "freePreviewHint": "This topic will be open even to non-enrolled students (as a sample)."
+    "freePreviewHint": "This topic will be open even to non-enrolled students (as a sample).",
+    "newCourseTitle": "New course",
+    "newCourseSubtitle": "Fill in the basics — you'll add topics, video and quizzes in the editor.",
+    "createAndContinue": "Create and continue",
+    "creating": "Creating...",
+    "created": "Course created",
+    "createFailed": "Could not create course",
+    "networkError": "Network error",
+    "titleRequired": "Enter the course title",
+    "audienceRequired": "Select the audience",
+    "subjectRequired": "Select the subject"
   },
   "content": {
     "uploadCenterTitle": "Content Upload Center",

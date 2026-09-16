@@ -1437,7 +1437,18 @@
     "assignmentTypeLabel": "Topshirish turi",
     "assignmentLateLabel": "Kechikkan topshirishga ruxsat",
     "assignmentPenaltyLabel": "Kechikish jarimasi (%)",
-    "createGroupLiveHint": "Jonli darslarni guruh yaratilgach, uning sahifasidagi \"Jonli darslar\" bo'limidan qo'shasiz (sana, vaqt va Meet havolasi bilan)."
+    "createGroupLiveHint": "Jonli darslarni guruh yaratilgach, uning sahifasidagi \"Jonli darslar\" bo'limidan qo'shasiz (sana, vaqt va Meet havolasi bilan).",
+    "status_draft": "Qoralama",
+    "status_submitted": "Tekshiruvda",
+    "status_under_review": "Ko'rib chiqilmoqda",
+    "status_approved": "Tasdiqlangan",
+    "status_rejected": "Rad etilgan",
+    "status_revision_requested": "Tuzatish so'ralgan",
+    "submitForReview": "Moderatsiyaga yuborish",
+    "submitting": "Yuborilmoqda...",
+    "submitFailed": "Yuborib bo'lmadi",
+    "submittedForReview": "Kurs tekshiruvga yuborildi",
+    "networkError": "Tarmoq xatosi"
   },
   "marketplace": {
     "searchCourses": "Kurslarni qidirish",
@@ -2367,7 +2378,17 @@
     "guideStartBtn": "Tushundim, boshlash",
     "freeHint": "Bepul kurs uchun 0 kiriting.",
     "topicsWithCount": "Mavzular ({count})",
-    "freePreviewHint": "Bu mavzu kursga yozilmagan o'quvchiga ham ochiq bo'ladi (namuna sifatida)."
+    "freePreviewHint": "Bu mavzu kursga yozilmagan o'quvchiga ham ochiq bo'ladi (namuna sifatida).",
+    "newCourseTitle": "Yangi kurs",
+    "newCourseSubtitle": "Asosiy ma'lumotni to'ldiring — mavzular, video va testlarni keyin muharrirda qo'shasiz.",
+    "createAndContinue": "Yaratish va davom etish",
+    "creating": "Yaratilmoqda...",
+    "created": "Kurs yaratildi",
+    "createFailed": "Kurs yaratib bo'lmadi",
+    "networkError": "Tarmoq xatosi",
+    "titleRequired": "Kurs nomini kiriting",
+    "audienceRequired": "Auditoriyani tanlang",
+    "subjectRequired": "Fan yo'nalishini tanlang"
   },
   "content": {
     "uploadCenterTitle": "Kontent yuklash markazi",

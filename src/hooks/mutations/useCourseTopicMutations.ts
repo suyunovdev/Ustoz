@@ -14,6 +14,8 @@ export interface TopicFormInput {
   isFreePreview?: boolean;
   isLocked?: boolean;
   moduleTitle?: string | null;
+  videoProvider?: 'bunny' | null;
+  streamUid?: string | null;
 }
 
 async function createTopic(vars: {

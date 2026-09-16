@@ -43,7 +43,8 @@ export async function POST(
     }
     const emptyContentCount = topics.filter((tp) => !tp.content || !tp.content.trim()).length;
     if (emptyContentCount > 0) missing.push(`${emptyContentCount} ta mavzuda dars matni yo'q`);
-    if (!topics.some((tp) => tp.hasQuiz)) missing.push('kamida bitta mavzuda 5+ savolli test');
+    // Test IXTIYORIY — endi e'lon uchun shart emas (avval "kamida bitta mavzuda 5+ savolli
+    // test" majburiy edi, katta friksiya berardi). O'qituvchi xohlasa test qo'shadi.
 
     if (missing.length > 0) {
       return jsonResponse(

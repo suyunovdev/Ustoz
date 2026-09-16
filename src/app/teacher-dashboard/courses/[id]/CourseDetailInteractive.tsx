@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { DragDropContext, Droppable, Draggable, type DropResult } from '@hello-pangea/dnd';
 import Icon from '@/components/ui/AppIcon';
@@ -15,6 +15,9 @@ import {
   type TopicFormInput,
 } from '@/hooks/mutations/useCourseTopicMutations';
 import TopicMaterials from './TopicMaterials';
+import RichTextEditor from '@/app/course-creation/components/RichTextEditor';
+import LessonVideoInput from '@/app/course-creation/components/LessonVideoInput';
+import NumberInput from '@/components/ui/NumberInput';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface Props {
@@ -53,6 +56,43 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
   const [pendingDelete, setPendingDelete] = useState<CourseTopicDTO | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
+  // Kurs moderatsiya holati + "moderatsiyaga yuborish" — ilgari faqat wizard'da edi.
+  const [moderationStatus, setModerationStatus] = useState<string>('draft');
+  const [submitting, setSubmitting] = useState(false);
+
+  const loadStatus = useCallback(async () => {
+    try {
+      // /api/courses/[id] egaga (owner) to'liq kursni beradi (`...course` spread orqali
+      // moderationStatus ham). Teacher GET og'ir revenue-query bilan (ba'zan xato beradi).
+      const res = await fetch(`/api/courses/${courseId}`);
+      const d = await res.json().catch(() => ({}));
+      if (res.ok && d.course?.moderationStatus) setModerationStatus(d.course.moderationStatus);
+    } catch {
+      /* noop */
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  const handleSubmitForReview = async () => {
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/teacher/courses/${courseId}/submit`, { method: 'POST' });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(d.error || t('teacher.submitFailed'));
+        return;
+      }
+      toast.success(t('teacher.submittedForReview'));
+      setModerationStatus('submitted');
+    } catch {
+      toast.error(t('teacher.networkError'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const topics = useMemo(() => data?.topics ?? [], [data]);
   const groups = useMemo(() => groupByModule(topics), [topics]);
@@ -154,7 +194,32 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
               {t('teacher.topicsSubtitle')}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                moderationStatus === 'approved'
+                  ? 'bg-success/10 text-success'
+                  : moderationStatus === 'submitted' || moderationStatus === 'under_review'
+                  ? 'bg-warning/10 text-warning'
+                  : moderationStatus === 'rejected'
+                  ? 'bg-destructive/10 text-destructive'
+                  : 'bg-muted text-muted-foreground'
+              }`}
+            >
+              {t(`teacher.status_${moderationStatus}`)}
+            </span>
+            {(moderationStatus === 'draft' ||
+              moderationStatus === 'rejected' ||
+              moderationStatus === 'revision_requested') && (
+              <button
+                onClick={handleSubmitForReview}
+                disabled={submitting}
+                className="px-4 py-2 bg-success text-white rounded-md hover:bg-success/90 transition-smooth flex items-center gap-2 text-sm font-medium disabled:opacity-50"
+              >
+                <Icon name="PaperAirplaneIcon" size={16} />
+                {submitting ? t('teacher.submitting') : t('teacher.submitForReview')}
+              </button>
+            )}
             <button
               onClick={() => setBulkOpen(true)}
               className="px-3 py-2 border border-border text-foreground rounded-md hover:bg-muted transition-smooth flex items-center gap-2 text-sm font-medium"
@@ -399,6 +464,10 @@ function TopicEditorModal({
   const [title, setTitle] = useState(topic?.title ?? '');
   const [description, setDescription] = useState(topic?.description ?? '');
   const [videoUrl, setVideoUrl] = useState(topic?.videoUrl ?? '');
+  const [videoProvider, setVideoProvider] = useState<'bunny' | null>(
+    topic?.videoProvider === 'bunny' ? 'bunny' : null,
+  );
+  const [streamUid, setStreamUid] = useState<string | null>(topic?.streamUid ?? null);
   const [duration, setDuration] = useState(topic?.duration ?? '0 min');
   const [content, setContent] = useState(topic?.content ?? '');
   const [moduleTitle, setModuleTitle] = useState(topic?.moduleTitle ?? '');
@@ -449,6 +518,8 @@ function TopicEditorModal({
       title,
       description: description || null,
       videoUrl: videoUrl || null,
+      videoProvider,
+      streamUid,
       duration,
       content,
       moduleTitle: moduleTitle || null,
@@ -546,28 +617,31 @@ function TopicEditorModal({
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                {t('teacher.courseVideoUrl')}
-              </label>
-              <input
-                type="url"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="https://..."
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-1">
-                {t('teacher.duration')}
-              </label>
-              <input
-                type="text"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder={t('teacher.durationPlaceholder')}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              {t('teacher.courseVideoUrl')}
+            </label>
+            <LessonVideoInput
+              topicTitle={title}
+              videoUrl={videoUrl}
+              videoProvider={videoProvider}
+              streamUid={streamUid}
+              onChange={(patch) => {
+                if (patch.videoUrl !== undefined) setVideoUrl(patch.videoUrl);
+                if (patch.videoProvider !== undefined) setVideoProvider(patch.videoProvider);
+                if (patch.streamUid !== undefined) setStreamUid(patch.streamUid);
+              }}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1">
+              {t('teacher.duration')}
+            </label>
+            <div className="w-40">
+              <NumberInput
+                value={parseInt(duration) || 0}
+                onValueChange={(n) => setDuration(`${n} min`)}
+                min={0}
                 className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
               />
             </div>
@@ -577,13 +651,7 @@ function TopicEditorModal({
             <label className="block text-sm font-medium text-foreground mb-1">
               {t('teacher.topicContent')}
             </label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              rows={5}
-              placeholder={t('teacher.topicContentPlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-y text-sm font-mono"
-            />
+            <RichTextEditor content={content} onContentChange={setContent} />
           </div>
 
           <div className="space-y-2 pt-2 border-t border-border">
@@ -604,15 +672,6 @@ function TopicEditorModal({
                 className="w-4 h-4"
               />
               <span>{t('teacher.topicLockedLabel')}</span>
-            </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <input
-                type="checkbox"
-                checked={hasQuiz}
-                onChange={(e) => setHasQuiz(e.target.checked)}
-                className="w-4 h-4"
-              />
-              <span>{t('teacher.topicHasQuizLabel')}</span>
             </label>
           </div>
         </div>

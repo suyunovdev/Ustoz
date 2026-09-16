@@ -9,6 +9,8 @@ export interface CourseTopicDTO {
   title: string;
   description: string | null;
   videoUrl: string | null;
+  videoProvider: string | null;
+  streamUid: string | null;
   orderIndex: number;
   duration: string;
   content: string;

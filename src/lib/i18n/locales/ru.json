@@ -1437,7 +1437,18 @@
     "assignmentTypeLabel": "Тип сдачи",
     "assignmentLateLabel": "Разрешить позднюю сдачу",
     "assignmentPenaltyLabel": "Штраф за опоздание (%)",
-    "createGroupLiveHint": "Онлайн-занятия добавляются после создания группы — в разделе «Онлайн-занятия» на странице группы (дата, время и ссылка Meet)."
+    "createGroupLiveHint": "Онлайн-занятия добавляются после создания группы — в разделе «Онлайн-занятия» на странице группы (дата, время и ссылка Meet).",
+    "status_draft": "Черновик",
+    "status_submitted": "На проверке",
+    "status_under_review": "Рассматривается",
+    "status_approved": "Одобрен",
+    "status_rejected": "Отклонён",
+    "status_revision_requested": "Требуется доработка",
+    "submitForReview": "Отправить на проверку",
+    "submitting": "Отправка...",
+    "submitFailed": "Не удалось отправить",
+    "submittedForReview": "Курс отправлен на проверку",
+    "networkError": "Ошибка сети"
   },
   "marketplace": {
     "searchCourses": "Поиск курсов",
@@ -2367,7 +2378,17 @@
     "guideStartBtn": "Понятно, начать",
     "freeHint": "Для бесплатного курса введите 0.",
     "topicsWithCount": "Темы ({count})",
-    "freePreviewHint": "Эта тема будет доступна даже незаписавшимся студентам (как образец)."
+    "freePreviewHint": "Эта тема будет доступна даже незаписавшимся студентам (как образец).",
+    "newCourseTitle": "Новый курс",
+    "newCourseSubtitle": "Заполните основную информацию — темы, видео и тесты добавите в редакторе.",
+    "createAndContinue": "Создать и продолжить",
+    "creating": "Создание...",
+    "created": "Курс создан",
+    "createFailed": "Не удалось создать курс",
+    "networkError": "Ошибка сети",
+    "titleRequired": "Введите название курса",
+    "audienceRequired": "Выберите аудиторию",
+    "subjectRequired": "Выберите предмет"
   },
   "content": {
     "uploadCenterTitle": "Центр загрузки контента",
