@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import CourseMetadataForm from './CourseMetadataForm';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
 import { useI18n } from '@/contexts/I18nContext';
+import { queryKeys } from '@/hooks/queries/queryKeys';
 
 interface CourseMetadata {
   title: string;
@@ -30,6 +32,7 @@ interface CourseMetadata {
 const CourseCreationInteractive = () => {
   const { t } = useI18n();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [metadata, setMetadata] = useState<CourseMetadata>({
     title: '',
     description: '',
@@ -77,6 +80,8 @@ const CourseCreationInteractive = () => {
         return;
       }
       toast.success(t('courseCreation.created'));
+      // Dashboard "Kurslarim" ro'yxati keshini eskirtiramiz — yangi draft darhol ko'rinadi.
+      queryClient.invalidateQueries({ queryKey: queryKeys.teacherDashboard });
       router.push(`/teacher-dashboard/courses/${data.course.id}`);
     } catch {
       toast.error(t('courseCreation.networkError'));

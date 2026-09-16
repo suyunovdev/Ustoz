@@ -536,10 +536,10 @@ function TopicEditorModal({
     >
       <form
         onSubmit={handleSubmit}
-        className="bg-card rounded-md shadow-warm-lg max-w-2xl w-full p-6 my-8"
+        className="bg-card rounded-md shadow-warm-lg max-w-2xl w-full max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
           <h3 className="text-xl font-heading font-semibold text-foreground">
             {topic ? t('teacher.editTopic') : t('teacher.newTopic')}
           </h3>
@@ -553,7 +553,7 @@ function TopicEditorModal({
           </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-foreground mb-1">
               {t('teacher.topicName')} *
@@ -618,9 +618,6 @@ function TopicEditorModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              {t('teacher.courseVideoUrl')}
-            </label>
             <LessonVideoInput
               topicTitle={title}
               videoUrl={videoUrl}
@@ -676,7 +673,7 @@ function TopicEditorModal({
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 mt-6 pt-4 border-t border-border">
+        <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-border flex-shrink-0">
           <button
             type="button"
             onClick={onClose}

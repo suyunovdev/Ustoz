@@ -114,21 +114,7 @@ const RichTextEditor = ({
   ];
 
   return (
-    <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
-      {/* Persistent Help Banner */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500 p-4 rounded-r-md">
-        <div className="flex items-start space-x-3">
-          <Icon name="InformationCircleIcon" size={20} className="text-blue-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-foreground mb-1">{t('courseCreation.textOnlyHint')}</p>
-            <p className="text-xs text-muted-foreground">{t('courseCreation.textOnlyHintDesc')}</p>
-          </div>
-        </div>
-      </div>
-
-      <h3 className="text-xl font-heading font-semibold text-foreground">{t('courseCreation.lessonTextTitle')}</h3>
-
-      <div className="bg-card rounded-md shadow-warm border border-border overflow-hidden">
+      <div className="rounded-md border border-border overflow-hidden">
         {/* Toolbar */}
         <div className="flex items-center space-x-1 p-2 border-b border-border bg-muted/50">
           {toolbarButtons.map((button) => (
@@ -164,7 +150,7 @@ const RichTextEditor = ({
           contentEditable
           suppressContentEditableWarning
           onInput={(e) => emit(e.currentTarget.innerHTML)}
-          className="min-h-[400px] p-4 text-foreground focus:outline-none"
+          className="min-h-[220px] p-4 text-foreground focus:outline-none"
           data-placeholder={editorPlaceholder}
           style={{
             wordWrap: 'break-word',
@@ -215,7 +201,6 @@ const RichTextEditor = ({
           </div>
         )}
       </div>
-    </div>
   );
 };
 
