@@ -11,7 +11,7 @@
  * Agar biror env yo'q bo'lsa, isR2Configured() false qaytaradi va API'lar 503 beradi.
  */
 
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { randomBytes } from 'node:crypto';
 
@@ -149,6 +149,21 @@ export async function createAvatarUpload(
     ? `${PUBLIC_URL.replace(/\/$/, '')}/${r2Key}`
     : `https://${BUCKET}.${ACCOUNT_ID}.r2.cloudflarestorage.com/${r2Key}`;
   return { uploadUrl, publicUrl, r2Key, expiresInSec };
+}
+
+/**
+ * Qisqa muddatli imzolangan YUKLAB OLISH (GET) URL — private bucket'dagi obyektga.
+ * Faqat avtorizatsiya tekshiruvidan o'tgach chaqiriladi (masalan faol enrollment).
+ * Doimiy public URL o'rniga: URL muddati tugaydi va tarqatib bo'lmaydi.
+ * R2 sozlanmagan yoki r2Key yo'q bo'lsa null qaytaradi (chaqiruvchi fileUrl'ga qaytadi).
+ */
+export async function createPresignedDownload(
+  r2Key: string | null | undefined,
+  expiresInSec = 3600,
+): Promise<string | null> {
+  if (!r2Key || !isR2Configured()) return null;
+  const cmd = new GetObjectCommand({ Bucket: BUCKET, Key: r2Key });
+  return getSignedUrl(getClient(), cmd, { expiresIn: expiresInSec });
 }
 
 export async function deleteR2Object(r2Key: string): Promise<void> {

@@ -14,6 +14,9 @@
  *   - To'g'ridan-to'g'ri .mp3/.mp4/.wav/.m4a/.webm URL'lar uchun ishlaydi
  */
 
+import { lookup as dnsLookup } from 'node:dns/promises';
+import { Agent, fetch as undiciFetch } from 'undici';
+
 const ENDPOINT = 'https://api.openai.com/v1/audio/transcriptions';
 const MODEL = 'whisper-1';
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
@@ -67,6 +70,34 @@ function isPrivateIPv4(host: string): boolean | null {
   if (a === 169 && b === 254) return true; // 169.254.0.0/16 link-local
   if (a === 0) return true; // 0.0.0.0/8
   return false;
+}
+
+/** Yechilgan IP (v4/v6) public (internetga ochiq) ekanini tekshiradi. */
+function isPublicIp(address: string, family: number): boolean {
+  if (family === 4) return isPrivateIPv4(address) === false;
+  // IPv6: loopback / ULA (fc00::/7) / link-local (fe80::/10) / IPv4-mapped — rad.
+  const h = address.toLowerCase();
+  if (h === '::1' || /^f[cd]/.test(h) || /^fe[89ab]/.test(h) || h.startsWith('::ffff:')) return false;
+  return true;
+}
+
+/**
+ * Host'ni DNS orqali HOZIR yechib, barcha IP'lar public ekanini tekshiradi va birinchi
+ * public IP'ni qaytaradi (fetch shu IP'ga PIN qilinadi). Bu DNS-rebinding'ni yopadi:
+ * tekshiruvdan keyin fetch qayta yechib ichki IP'ga sakramaydi. IP-literal host uchun
+ * (allaqachon assertSafeFetchUrl tekshirgan) null qaytaradi — pin shart emas.
+ */
+async function resolvePinnedIp(host: string): Promise<{ address: string; family: number } | null> {
+  // IP-literal (dotted-quad yoki IPv6) — DNS yechish shart emas.
+  if (isPrivateIPv4(host) !== null || host.includes(':')) return null;
+  const records = await dnsLookup(host, { all: true }).catch(() => [] as Array<{ address: string; family: number }>);
+  if (!records.length) throw new WhisperFetchError('Host DNS orqali yechilmadi');
+  for (const r of records) {
+    if (!isPublicIp(r.address, r.family)) {
+      throw new WhisperUrlError('Host ichki IP manzilga yechildi (SSRF taqiqlangan)');
+    }
+  }
+  return { address: records[0].address, family: records[0].family };
 }
 
 /**
@@ -144,9 +175,23 @@ export async function transcribeFromUrl(
   // SSRF himoyasi — har qanday fetch'dan OLDIN URL'ni tekshir.
   assertSafeFetchUrl(parsed);
 
+  // DNS-rebinding himoyasi: host'ni HOZIR yechib, IP'ni pin qilamiz — fetch aynan shu
+  // (tekshirilgan public) IP'ga ulanadi, qayta yechmaydi. TLS SNI hostname bo'yicha qoladi.
+  const pinned = await resolvePinnedIp(parsed.hostname.toLowerCase());
+  const dispatcher = pinned
+    ? new Agent({
+        connect: {
+          lookup: ((_hostname: string, _options: unknown, cb: (err: Error | null, address: string, family: number) => void) => {
+            cb(null, pinned.address, pinned.family);
+          }) as never,
+        },
+      })
+    : undefined;
+  const fetchOpts = dispatcher ? { dispatcher } : {};
+
   // redirect: 'error' — 3xx orqali ichki hostga (SSRF) sakrashni bloklaydi:
   // boshlang'ich URL xavfsiz bo'lsa-da, redirect ichki manzilga olib borishi mumkin edi.
-  const headResp = await fetch(url, { method: 'HEAD', redirect: 'error' }).catch(() => null);
+  const headResp = await undiciFetch(url, { method: 'HEAD', redirect: 'error', ...fetchOpts }).catch(() => null);
   if (headResp && headResp.ok) {
     const lenHeader = headResp.headers.get('content-length');
     if (lenHeader) {
@@ -157,7 +202,7 @@ export async function transcribeFromUrl(
     }
   }
 
-  const fileResp = await fetch(url, { redirect: 'error' });
+  const fileResp = await undiciFetch(url, { redirect: 'error', ...fetchOpts });
   if (!fileResp.ok) {
     throw new WhisperFetchError(`Faylni yuklab bo'lmadi: HTTP ${fileResp.status}`);
   }

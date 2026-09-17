@@ -184,17 +184,25 @@ export async function PATCH(
         });
         topicCountChanged = existingTopics.length !== incomingTopics.length;
         const overlap = Math.min(existingTopics.length, incomingTopics.length);
+        // Update + create'larni ketma-ket await o'rniga BATTA yig'ib pipeline qilamiz
+        // (N ta ketma-ket round-trip o'rniga — tranzaksiya connection'ida navbatlanadi).
+        const writes: Array<Promise<unknown>> = [];
         for (let i = 0; i < overlap; i++) {
-          await tx.courseTopic.update({
-            where: { id: existingTopics[i].id },
-            data: buildTopicWrite(incomingTopics[i], i + 1),
-          });
+          writes.push(
+            tx.courseTopic.update({
+              where: { id: existingTopics[i].id },
+              data: buildTopicWrite(incomingTopics[i], i + 1),
+            }),
+          );
         }
         for (let i = overlap; i < incomingTopics.length; i++) {
-          await tx.courseTopic.create({
-            data: { courseId: id, ...buildTopicWrite(incomingTopics[i], i + 1) },
-          });
+          writes.push(
+            tx.courseTopic.create({
+              data: { courseId: id, ...buildTopicWrite(incomingTopics[i], i + 1) },
+            }),
+          );
         }
+        await Promise.all(writes);
         if (existingTopics.length > incomingTopics.length) {
           const toDelete = existingTopics.slice(incomingTopics.length).map((tp) => tp.id);
           await tx.courseTopic.deleteMany({ where: { id: { in: toDelete } } });

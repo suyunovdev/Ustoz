@@ -10,6 +10,7 @@ import { requireAuth, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { prisma } from '@/lib/prisma';
 import { hasActiveCourseAccess } from '@/lib/services/subscription.service';
+import { createPresignedDownload } from '@/lib/storage/r2-client';
 
 export async function GET(
   req: NextRequest,
@@ -47,6 +48,7 @@ export async function GET(
         title: true,
         description: true,
         fileUrl: true,
+        r2Key: true,
         fileName: true,
         fileSize: true,
         fileType: true,
@@ -54,18 +56,23 @@ export async function GET(
       },
     });
 
-    return jsonResponse({
-      materials: materials.map((m) => ({
+    // R2'dagi fayllarni DOIMIY public URL o'rniga qisqa muddatli imzolangan URL bilan
+    // beramiz (bu route allaqachon enrollment/egalik bilan himoyalangan). Tashqi havolalar
+    // (r2Key yo'q) o'z fileUrl'ida qoladi.
+    const mapped = await Promise.all(
+      materials.map(async (m) => ({
         id: m.id,
         title: m.title,
         description: m.description,
-        fileUrl: m.fileUrl,
+        fileUrl: (await createPresignedDownload(m.r2Key, 3600)) ?? m.fileUrl,
         fileName: m.fileName,
         fileSize: m.fileSize != null ? Number(m.fileSize) : null,
         fileType: m.fileType,
         materialType: m.materialType,
       })),
-    });
+    );
+
+    return jsonResponse({ materials: mapped });
   } catch (err) {
     return errorResponse(err);
   }
