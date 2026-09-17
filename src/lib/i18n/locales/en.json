@@ -2381,6 +2381,7 @@
     "quizAutoSaveNote": "Questions are saved automatically when you save the course",
     "publishBlockedHint": "To publish: title, description, cover image, lesson text in every topic, and at least one 5+ question test",
     "draftRestored": "Restored your saved draft",
+    "difficultyLevel": "Difficulty Level",
     "selectDifficulty": "Select level",
     "errTitleRequired": "Enter the course title",
     "errDescRequired": "Enter the course description",

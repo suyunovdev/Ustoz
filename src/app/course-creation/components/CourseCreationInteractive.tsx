@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import Icon from '@/components/ui/AppIcon';
@@ -39,6 +39,18 @@ const CourseCreationInteractive = () => {
   });
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [isSaving, setIsSaving] = useState(false);
+  // Eski "Tahrirlash" havolasi (/course-creation?edit=ID) — endi tahrirlash YAGONA
+  // MUHARRIRда bo'ladi. Bu sahifa faqat yaratish; ?edit=ID kelsa muharrirга yo'naltiramiz
+  // (aks holda o'qituvchi bo'sh "Yangi kurs" formasini ko'rib, tahrirlay olmaydi).
+  const [redirecting, setRedirecting] = useState(false);
+
+  useEffect(() => {
+    const editId = new URLSearchParams(window.location.search).get('edit');
+    if (editId) {
+      setRedirecting(true);
+      router.replace(`/teacher-dashboard/courses/${editId}`);
+    }
+  }, [router]);
 
   const targetAudiences = buildTargetAudiences(t);
   const subjectGroups = buildSubjectGroups(t);
@@ -101,6 +113,14 @@ const CourseCreationInteractive = () => {
       setIsSaving(false);
     }
   };
+
+  if (redirecting) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <span className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

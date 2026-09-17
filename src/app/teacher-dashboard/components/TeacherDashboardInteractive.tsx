@@ -222,7 +222,7 @@ const TeacherDashboardInteractive = () => {
               isLoading={isLoading}
               onAction={setPending}
               onCreate={() => router.push('/course-creation')}
-              onEdit={(id) => router.push(`/course-creation?edit=${id}`)}
+              onEdit={(id) => router.push(`/teacher-dashboard/courses/${id}`)}
               onOpenTopics={(id) => router.push(`/teacher-dashboard/courses/${id}`)}
             />
           )}

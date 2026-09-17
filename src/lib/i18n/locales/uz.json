@@ -2381,6 +2381,7 @@
     "quizAutoSaveNote": "Savollar kurs saqlanganda avtomatik saqlanadi",
     "publishBlockedHint": "Nashr uchun: nom, tavsif, muqova rasmi, har mavzuda dars matni va kamida bitta 5+ savolli test kerak",
     "draftRestored": "Saqlangan qoralama tiklandi",
+    "difficultyLevel": "Qiyinlik darajasi",
     "selectDifficulty": "Darajani tanlang",
     "errTitleRequired": "Kurs nomini kiriting",
     "errDescRequired": "Kurs tavsifini kiriting",
