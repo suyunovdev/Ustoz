@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
@@ -338,13 +339,17 @@ const CourseOversightPanel = () => {
                   key={course.id}
                   className="flex items-start justify-between gap-3 p-4 border border-border rounded-md hover:bg-muted/30 transition-smooth"
                 >
-                  <div className="flex items-start gap-4 min-w-0 flex-1">
+                  <Link
+                    href={`/courses/${course.id}`}
+                    className="flex items-start gap-4 min-w-0 flex-1 group"
+                    title={t('admin.viewCourseDetails')}
+                  >
                     <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-md shrink-0">
                       <Icon name="BookOpenIcon" size={24} className="text-primary" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h4 className="font-heading font-semibold text-foreground truncate">
+                        <h4 className="font-heading font-semibold text-foreground truncate group-hover:text-primary group-hover:underline transition-smooth">
                           {course.title}
                         </h4>
                         {course.isFeatured && (
@@ -381,7 +386,7 @@ const CourseOversightPanel = () => {
                         </div>
                       )}
                     </div>
-                  </div>
+                  </Link>
 
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${badge.color}`}>
