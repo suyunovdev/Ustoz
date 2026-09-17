@@ -5,9 +5,9 @@ import { queryKeys } from './queryKeys';
 
 /**
  * Muharrir uchun kurs metadatasi (muqova, tavsif, narx, daraja...). `/api/courses/[id]`
- * egaga to'liq kursni beradi (`...course` spread) — bu yerда faqat muharrirга kerakli
- * maydonlarni olamiz. `teacherCourse(id)` kaliti bilan — PATCH'дан keyin invalidatsiya
- * qilinса tayyorlik ro'yxati o'z-o'zidan yangilanadi.
+ * egaga to'liq kursni beradi (`...course` spread) — bu yerda faqat muharrirga kerakli
+ * maydonlarni olamiz. `teacherCourse(id)` kaliti bilan — PATCH'dan keyin invalidatsiya
+ * qilinsa tayyorlik ro'yxati o'z-o'zidan yangilanadi.
  */
 export interface TeacherCourseDetail {
   id: string;

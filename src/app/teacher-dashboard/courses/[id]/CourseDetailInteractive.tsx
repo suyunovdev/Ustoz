@@ -81,7 +81,12 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
   const reorderMut = useReorderTopicsMutation(courseId);
 
   const qc = useQueryClient();
-  const { data: detail } = useTeacherCourseDetail(courseId);
+  const {
+    data: detail,
+    isLoading: detailLoading,
+    error: detailError,
+    refetch: refetchDetail,
+  } = useTeacherCourseDetail(courseId);
   const updateMetaMut = useUpdateCourseMetadataMutation(courseId);
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -99,7 +104,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
 
   const topics = useMemo(() => data?.topics ?? [], [data]);
 
-  // Tayyorlik — server submit qoidalari bilan YAGONA manbadан (course-completeness.ts).
+  // Tayyorlik — server submit qoidalari bilan YAGONA manbadan (course-completeness.ts).
   const readiness = useMemo(
     () =>
       getCourseReadiness({
@@ -116,9 +121,9 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
     moderationStatus === 'rejected' ||
     moderationStatus === 'revision_requested';
 
-  // Kurs metadatasi kelgач sozlamalar qoralamasini BIR MARTA seed qilamiz (keyingi
-  // invalidatsiyalar o'qituvchi kiritayotgan matnни buzmasin). Metadata chala bo'lsa
-  // sozlamalar avto-ochiladi — o'qituvchi darhol muqova/tavsifни ko'radi.
+  // Kurs metadatasi kelgach sozlamalar qoralamasini BIR MARTA seed qilamiz (keyingi
+  // invalidatsiyalar o'qituvchi kiritayotgan matnni buzmasin). Metadata chala bo'lsa
+  // sozlamalar avto-ochiladi — o'qituvchi darhol muqova/tavsifni ko'radi.
   useEffect(() => {
     if (detail && !seededRef.current) {
       seededRef.current = true;
@@ -312,8 +317,21 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
           </div>
         </div>
 
-        {/* Tayyorlik ro'yxati — faqat tahrirlanadigan holatда (draft/rejected/revision).
-            Har band ✓/✗; ✗ bosilса tegishli joyга olib boradi. Submit tayyor bo'lguncha
+        {/* Kurs metadatasi (tayyorlik + sozlamalar manbai) yuklanmoqda yoki xato — pop-in
+            flash va jim qolishning oldini olamiz (M5). */}
+        {detailError ? (
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm flex items-center justify-between">
+            <span>{detailError instanceof Error ? detailError.message : t('teacher.networkError')}</span>
+            <button onClick={() => refetchDetail()} className="underline text-xs">
+              {t('teacher.retry')}
+            </button>
+          </div>
+        ) : detailLoading && !detail ? (
+          <div className="mb-4 animate-pulse h-28 bg-card rounded-md" />
+        ) : null}
+
+        {/* Tayyorlik ro'yxati — faqat tahrirlanadigan holatda (draft/rejected/revision).
+            Har band ✓/✗; ✗ bosilsa tegishli joyga olib boradi. Submit tayyor bo'lguncha
             o'chirilgan — post-klik toast o'rniga oldindan aniq. */}
         {isEditableStatus && detail && (
           <section className="bg-card rounded-md shadow-warm p-4 mb-4">

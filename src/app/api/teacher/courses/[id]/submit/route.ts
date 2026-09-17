@@ -24,8 +24,8 @@ export async function POST(
     if (!course) throw new CourseNotFoundError(id);
 
     // To'liqlik tekshiruvi — chala kurs moderatsiyaga tushmasin. Qoidalar KLIENT
-    // muharridagi "tayyorlik ro'yxati" bilan YAGONA manbadан (course-completeness.ts):
-    // shu tufayli client tugmasi va server aynan bir xil shartни tekshiradi.
+    // muharridagi "tayyorlik ro'yxati" bilan YAGONA manbadan (course-completeness.ts):
+    // shu tufayli client tugmasi va server aynan bir xil shartni tekshiradi.
     // Test IXTIYORIY (bu qoidada yo'q).
     const topics = await prisma.courseTopic.findMany({
       where: { courseId: id },

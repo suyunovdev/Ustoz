@@ -20,12 +20,12 @@ type FieldKey = keyof Draft;
 
 /**
  * Kurs yaratish = ENG QISQA forma: faqat 3 MAJBURIY maydon (nom, kim uchun, fan).
- * "Yaratish" bosilganда kurs DRAFT holatда serverда yaratiladi va o'qituvchi darhol
- * YAGONA MUHARRIRга (/teacher-dashboard/courses/[id]) yo'naltiriladi — muqova, tavsif,
- * narx, mavzu/kontent/video/test o'sha yerда ("Kurs sozlamalari" + mavzular) qo'shiladi.
+ * "Yaratish" bosilganda kurs DRAFT holatda serverda yaratiladi va o'qituvchi darhol
+ * YAGONA MUHARRIRga (/teacher-dashboard/courses/[id]) yo'naltiriladi — muqova, tavsif,
+ * narx, mavzu/kontent/video/test o'sha yerda ("Kurs sozlamalari" + mavzular) qo'shiladi.
  *
- * Ilgari bu yerда 10 maydonli forma bor edi (7 tasi soxta "majburiy" — hech qachon
- * majburlanmasди, faqat chalg'itardi). Endi start engil: 3 maydon → 1 tugma → muharrir.
+ * Ilgari bu yerda 10 maydonli forma bor edi (7 tasi soxta "majburiy" — hech qachon
+ * majburlanmasdi, faqat chalg'itardi). Endi start engil: 3 maydon → 1 tugma → muharrir.
  */
 const CourseCreationInteractive = () => {
   const { t } = useI18n();
@@ -40,7 +40,7 @@ const CourseCreationInteractive = () => {
   const [touched, setTouched] = useState<Partial<Record<FieldKey, boolean>>>({});
   const [isSaving, setIsSaving] = useState(false);
   // Eski "Tahrirlash" havolasi (/course-creation?edit=ID) — endi tahrirlash YAGONA
-  // MUHARRIRда bo'ladi. Bu sahifa faqat yaratish; ?edit=ID kelsa muharrirга yo'naltiramiz
+  // MUHARRIRda bo'ladi. Bu sahifa faqat yaratish; ?edit=ID kelsa muharrirga yo'naltiramiz
   // (aks holda o'qituvchi bo'sh "Yangi kurs" formasini ko'rib, tahrirlay olmaydi).
   const [redirecting, setRedirecting] = useState(false);
 

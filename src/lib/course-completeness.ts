@@ -1,13 +1,13 @@
 /**
  * Kurs tayyorligi (moderatsiyaga yuborish uchun) — YAGONA HAQIQAT MANBAI.
  *
- * Ayni qoidalar ikki joyда ishlatiladi:
+ * Ayni qoidalar ikki joyda ishlatiladi:
  *   - Server: `POST /api/teacher/courses/[id]/submit` — chala kurs moderatsiyaga tushmaydi.
- *   - Klient: muharrirдаги "tayyorlik ro'yxati" — o'qituvchiga nima yetishmayotganini
- *     oldindan (submit'ни bosishдан oldin) aniq ko'rsatadi.
+ *   - Klient: muharrirdagi "tayyorlik ro'yxati" — o'qituvchiga nima yetishmayotganini
+ *     oldindan (submit'ni bosishdan oldin) aniq ko'rsatadi.
  *
  * Qoidalar: nom ≥3 belgi, tavsif ≥10 belgi, muqova rasmi mavjud, kamida bitta mavzu,
- * har mavzuда bo'sh bo'lmagan dars matni (content). TEST IXTIYORIY — bu yerда shart emas.
+ * har mavzuda bo'sh bo'lmagan dars matni (content). TEST IXTIYORIY — bu yerda shart emas.
  */
 
 export interface ReadinessTopicInput {
@@ -30,13 +30,13 @@ export interface ReadinessItem {
 
 export interface CourseReadiness {
   items: ReadinessItem[];
-  /** Kamida bitta mavzu bormi (0 mavzu — server'да alohida NO_TOPICS javobi). */
+  /** Kamida bitta mavzu bormi (0 mavzu — server'da alohida NO_TOPICS javobi). */
   hasTopics: boolean;
   /** Dars matni bo'sh mavzular soni. */
   emptyContentCount: number;
   /**
    * INCOMPLETE_COURSE javobi uchun yetishmovchiliklar (o'zbekcha, server matni bilan
-   * AYNAN bir xil). "Kamida bitta mavzu" bu ro'yxatда EMAS — u alohida NO_TOPICS.
+   * AYNAN bir xil). "Kamida bitta mavzu" bu ro'yxatda EMAS — u alohida NO_TOPICS.
    */
   missing: string[];
   /** Barcha shartlar bajarildimi (submit yoqilishi mumkin). */

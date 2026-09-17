@@ -60,11 +60,11 @@ const TERMS: Record<Locale, LegalDoc> = {
       },
       {
         heading: '7. O\'qituvchi daromadi va to\'lovlar',
-        body: 'O\'qituvchilar o\'z kurslari sotuvidan platforma komissiyasi ayirilgan sof ulushni oladi. Komissiya foizi va joriy balans o\'qituvchi paneliда ko\'rsatiladi. Yechib olish (withdrawal) so\'rovlari belgilangan minimal summadan yuqori bo\'lganda va bank/karta ma\'lumotlari to\'liq bo\'lganda amalga oshiriladi. Qaytarilgan sotuvlar bo\'yicha tegishli tuzatishlar kiritilishi mumkin.',
+        body: 'O\'qituvchilar o\'z kurslari sotuvidan platforma komissiyasi ayirilgan sof ulushni oladi. Komissiya foizi va joriy balans o\'qituvchi panelida ko\'rsatiladi. Yechib olish (withdrawal) so\'rovlari belgilangan minimal summadan yuqori bo\'lganda va bank/karta ma\'lumotlari to\'liq bo\'lganda amalga oshiriladi. Qaytarilgan sotuvlar bo\'yicha tegishli tuzatishlar kiritilishi mumkin.',
       },
       {
         heading: '8. Intellektual mulk',
-        body: 'UstozEdu nomi, logotipi, dizayni va Platforma dasturiy ta\'minoti bizning yoki litsenziarlarimizning mulki hisoblanadi. Foydalanuvchilar joylashtirgan kontent tegishli mualliflarга tegishli bo\'lib qoladi; joylashtirish orqali ular UstozEdu\'ga kontentni Platforma doirasida ko\'rsatish uchun zarur huquqlarni beradi.',
+        body: 'UstozEdu nomi, logotipi, dizayni va Platforma dasturiy ta\'minoti bizning yoki litsenziarlarimizning mulki hisoblanadi. Foydalanuvchilar joylashtirgan kontent tegishli mualliflarga tegishli bo\'lib qoladi; joylashtirish orqali ular UstozEdu\'ga kontentni Platforma doirasida ko\'rsatish uchun zarur huquqlarni beradi.',
       },
       {
         heading: '9. Kafolatlardan voz kechish',
@@ -108,7 +108,7 @@ const TERMS: Record<Locale, LegalDoc> = {
       },
       {
         heading: '4. Курсы и контент',
-        body: 'Курсы, видео и материалы, размещённые преподавателями, являются их интеллектуальной собственностью или собственностью правообладателей. Записавшемуся учащемуся предоставляется ограниченная, непередаваемая лицензия на использование контента исключительно в личных некоммерческих целях.\n\nПреподаватели гарантируют законность своего контента. UstozEdu вправе модерировать и удалять материалы, нарушающие Условия.',
+        body: 'Курсы, видео и материалы, размещённые преподавателями, являются их интеллектуальной собственностью или собственностью правообладателей. Записавшемуся учащемуся предоставляется ограниченная, непередаваемая лицензия на использование контента исключительно в личных некоммерческих целях.\n\nPrepodavateli гарантируют законность своего контента. UstozEdu вправе модерировать и удалять материалы, нарушающие Условия.',
       },
       {
         heading: '5. Платежи и покупки',
@@ -285,7 +285,7 @@ const PRIVACY: Record<Locale, LegalDoc> = {
       },
       {
         heading: '4. Передача данных третьим лицам',
-        body: 'Мы не продаём ваши данные. Для оказания услуг мы передаём данные надёжным поставщикам в необходимом объёме:\n\n• Платежи: Click, Payme.\n• Видеохостинг: Bunny Stream.\n• Доставка e-mail: Resend.\n• Аутентификация: Google (при входе через Google).\n• Хранение файлов: Cloudflare R2.\n\nЭти поставщики обрабатывают данные только для оказания нам услуг.',
+        body: 'Мы не продаём ваши данные. Для оказания услуг мы передаём данные надёжным поставщикам в необходимом объёме:\n\n• Платежи: Click, Payme.\n• Видеохостинг: Bunny Stream.\n• Доставка e-mail: Resend.\n• Аутентификация: Google (при входе через Google).\n• Хранение файлов: Cloudflare R2.\n\nEti поставщики обрабатывают данные только для оказания нам услуг.',
       },
       {
         heading: '5. Срок хранения данных',

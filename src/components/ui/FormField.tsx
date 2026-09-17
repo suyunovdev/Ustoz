@@ -9,9 +9,9 @@ interface FormFieldProps {
   htmlFor?: string;
   /** Majburiy maydon — yorliqda `*` ko'rsatiladi. */
   required?: boolean;
-  /** Inline xato matni (qizil). Berilса izoh o'rniga ko'rinadi. */
+  /** Inline xato matni (qizil). Berilsa izoh o'rniga ko'rinadi. */
   error?: string | null;
-  /** Ixtiyoriy izoh (kulrang) — xato bo'lmagan holatда. */
+  /** Ixtiyoriy izoh (kulrang) — xato bo'lmagan holatda. */
   hint?: string;
   /** Xato/izoh bloki ustidagi kontent (input/select/textarea yoki NumberInput). */
   children: ReactNode;
@@ -21,12 +21,12 @@ interface FormFieldProps {
 
 /**
  * Yagona forma-maydon o'rami — yorliq (+ majburiy `*`), inline xato (qizil matn)
- * va ixtiyoriy izohни izchil ko'rsatadi. Toast (submit-darajali) o'rnini bosmaydi,
+ * va ixtiyoriy izohni izchil ko'rsatadi. Toast (submit-darajali) o'rnini bosmaydi,
  * unga maydon-darajali signal qo'shadi.
  *
- * Input ramkasini xato holatида almashtirish uchun `fieldClasses(error)`
- * helper'idан foydalaning — u border-color'ни shartli beradi, shuning uchun
- * Tailwind'да `border-input` bilan `border-destructive` to'qnashmaydi.
+ * Input ramkasini xato holatida almashtirish uchun `fieldClasses(error)`
+ * helper'idan foydalaning — u border-color'ni shartli beradi, shuning uchun
+ * Tailwind'da `border-input` bilan `border-destructive` to'qnashmaydi.
  */
 export default function FormField({
   label,

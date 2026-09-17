@@ -33,9 +33,9 @@ interface CourseMetadataFormProps {
 }
 
 /**
- * Kurs metadatasi formasi — YAGONA MUHARRIRдаги "Kurs sozlamalari" panelида ishlatiladi
+ * Kurs metadatasi formasi — YAGONA MUHARRIRdagi "Kurs sozlamalari" panelida ishlatiladi
  * (muqova, tavsif, narx, daraja...). Tashqi karta/sarlavhani ota-komponent beradi, shuning
- * uchun bu yerда faqat maydonlar (bare field group). Nom/tavsif/muqova "nashr uchun kerak"
+ * uchun bu yerda faqat maydonlar (bare field group). Nom/tavsif/muqova "nashr uchun kerak"
  * deb belgilanadi (submit blokerlari); qolganlar ixtiyoriy — soxta `required` yo'q.
  */
 const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormProps) => {
@@ -43,7 +43,7 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
   const [imagePreview, setImagePreview] = useState(metadata.coverImage);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
 
-  // Tashqaridan (masalan kurs yuklangач) coverImage o'zgarsa preview'ни sinxronlaymiz.
+  // Tashqaridan (masalan kurs yuklangach) coverImage o'zgarsa preview'ni sinxronlaymiz.
   useEffect(() => {
     setImagePreview(metadata.coverImage);
   }, [metadata.coverImage]);
