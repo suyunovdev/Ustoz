@@ -66,12 +66,12 @@ export async function POST(req: NextRequest) {
     // Signup holati — yangi user yaratish. Verified belgilash/OTP iste'mol qilinishi
     // FAQAT muvaffaqiyatli yaratishdan keyin (validatsiya yiqilsa kod yonmaydi).
     if (otpRecord.type === 'signup' && fullName && password) {
-      // Privilegiya oshirishning oldini olish: rol faqat whitelist'dan
-      // (aks holda body'dagi {"role":"admin"} orqali admin akkaunt yaratilardi)
-      const validRoles = ['student', 'teacher'];
-      if (!validRoles.includes(role)) {
-        return NextResponse.json({ error: 'Noto\'g\'ri rol' }, { status: 400 });
-      }
+      // VETTING: self-signup FAQAT 'student' yaratadi. Ustoz bo'lish admin tasdig'i orqali
+      // (teacher-application -> admin approve -> rol ustozga o'tadi). Body'dagi `role`
+      // butunlay e'tiborsiz qoldiriladi — shu tufayli {"role":"teacher"} yoki {"role":"admin"}
+      // bilan privilegiya oshirib bo'lmaydi.
+      void role; // body'dan kelishi mumkin, lekin ishlatilmaydi
+      const signupRole = 'student' as const;
 
       // Yagona parol siyosati (register/reset bilan bir xil)
       const pwErr = validatePassword(password);
@@ -89,12 +89,12 @@ export async function POST(req: NextRequest) {
         data: {
           email: normalizedEmail,
           passwordHash,
-          role: role as 'student' | 'teacher',
+          role: signupRole,
           profile: {
             create: {
               email: normalizedEmail,
               fullName,
-              role: role as 'student' | 'teacher',
+              role: signupRole,
             },
           },
         },

@@ -243,10 +243,12 @@ const RegistrationForm = () => {
         }
       );
 
-      // Session cookie set by verify-otp — redirect by role
+      // Session cookie set by verify-otp — redirect by role.
+      // VETTING: akkaunt har doim STUDENT sifatida yaratiladi. "Ustoz" tanlagan bo'lsa,
+      // uni ariza formasiga yo'naltiramiz (admin tasdig'idan keyin rol ustozga o'tadi).
       if (result?.user) {
         if ((registeredRole || formData.role) === 'teacher') {
-          router.push('/teacher-dashboard');
+          router.push('/become-teacher');
         } else {
           router.push('/student-dashboard');
         }
@@ -308,9 +310,10 @@ const RegistrationForm = () => {
           setShowOtpStep(true);
           setResendCooldown(60);
         } else {
-          // Auto-confirmed — session exists, redirect directly
+          // Auto-confirmed — session exists, redirect directly.
+          // VETTING: "Ustoz" tanlagan bo'lsa ariza formasiga (akkaunt student sifatida yaratildi).
           if (formData.role === 'teacher') {
-            router.push('/teacher-dashboard');
+            router.push('/become-teacher');
           } else {
             router.push('/student-dashboard');
           }
