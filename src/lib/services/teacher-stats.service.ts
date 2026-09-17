@@ -224,7 +224,8 @@ function courseToDTO(c: TeacherCourseWithRevenue) {
   return {
     id: c.id,
     title: c.title,
-    coverImage: c.coverImage,
+    // base64 (data:) muqovani dashboard ro'yxatida yubormaymiz (5MB gacha payload).
+    coverImage: c.coverImage && c.coverImage.startsWith('data:') ? null : c.coverImage,
     isPublished: c.isPublished,
     moderationStatus: c.moderationStatus,
     adminFeedback: c.adminFeedback,

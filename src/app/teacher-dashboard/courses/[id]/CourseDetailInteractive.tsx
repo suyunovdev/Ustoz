@@ -22,7 +22,13 @@ import { getCourseReadiness, type ReadinessKey } from '@/lib/course-completeness
 import TopicMaterials from './TopicMaterials';
 import RichTextEditor from '@/app/course-creation/components/RichTextEditor';
 import LessonVideoInput from '@/app/course-creation/components/LessonVideoInput';
-import CourseMetadataForm, { type CourseMetadata } from '@/app/course-creation/components/CourseMetadataForm';
+import dynamic from 'next/dynamic';
+import { type CourseMetadata } from '@/app/course-creation/components/CourseMetadataForm';
+// Sozlamalar formasi yig'ma bo'lim orqasida — faqat ochilganda yuklanadi (bundle yengil).
+const CourseMetadataForm = dynamic(
+  () => import('@/app/course-creation/components/CourseMetadataForm'),
+  { ssr: false, loading: () => <div className="animate-pulse h-64 bg-muted/40 rounded-md" /> },
+);
 import NumberInput from '@/components/ui/NumberInput';
 import FormField, { fieldClasses } from '@/components/ui/FormField';
 import { useI18n } from '@/contexts/I18nContext';
@@ -410,6 +416,14 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
             </button>
             {settingsOpen && (
               <div className="px-4 pb-4 border-t border-border pt-4">
+                {/* M3: nashr etilgan kursda sozlama saqlash uni QAYTA TEKSHIRUVGA yuboradi va
+                    vaqtincha nashrdan oladi — bu jim sodir bo'lmasin, oldindan ogohlantiramiz. */}
+                {moderationStatus === 'approved' && (
+                  <div className="mb-4 p-3 bg-warning/10 border border-warning/20 rounded-md text-warning text-sm flex items-start gap-2">
+                    <Icon name="ExclamationTriangleIcon" size={16} className="shrink-0 mt-0.5" />
+                    <span>{t('teacher.editApprovedWarning')}</span>
+                  </div>
+                )}
                 <CourseMetadataForm metadata={settingsDraft} onMetadataChange={setSettingsDraft} />
                 <div className="flex justify-end mt-4">
                   <button
@@ -423,7 +437,9 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
                     )}
                     {updateMetaMut.isPending
                       ? t('teacher.savingSettings')
-                      : t('teacher.saveSettings')}
+                      : moderationStatus === 'approved'
+                        ? t('teacher.saveAndResubmit')
+                        : t('teacher.saveSettings')}
                   </button>
                 </div>
               </div>
@@ -674,6 +690,15 @@ function TopicEditorModal({
 
   const titleError = titleTouched && title.trim().length < 2 ? t('teacher.topicNameMinLength') : '';
 
+  // A11y: Escape bilan yopish (klaviatura foydalanuvchilari uchun — modal fixed WCAG 2.1.2).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !isLoading) onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [isLoading, onClose]);
+
   const handleAiSuggest = async () => {
     if (title.trim().length < 2) {
       toast.error(t('teacher.enterTopicName'));
@@ -734,11 +759,14 @@ function TopicEditorModal({
     >
       <form
         onSubmit={handleSubmit}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="topic-modal-title"
         className="bg-card rounded-md shadow-warm-lg max-w-2xl w-full max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-border flex-shrink-0">
-          <h3 className="text-xl font-heading font-semibold text-foreground">
+          <h3 id="topic-modal-title" className="text-xl font-heading font-semibold text-foreground">
             {topic ? t('teacher.editTopic') : t('teacher.newTopic')}
           </h3>
           <button
@@ -766,17 +794,15 @@ function TopicEditorModal({
           </FormField>
 
           {/* Module selector */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              {t('teacher.subModule')}
-            </label>
+          <FormField label={t('teacher.subModule')} htmlFor="topic-module">
             <input
+              id="topic-module"
               type="text"
               value={moduleTitle}
               onChange={(e) => setModuleTitle(e.target.value)}
               list="existing-modules"
               placeholder={t('teacher.subModulePlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+              className={fieldClasses()}
             />
             {existingModules.length > 0 && (
               <datalist id="existing-modules">
@@ -785,12 +811,14 @@ function TopicEditorModal({
                 ))}
               </datalist>
             )}
-          </div>
+          </FormField>
 
-          {/* Description + AI button */}
+          {/* Description + AI button (yorliq-qatorida tugma bo'lgani uchun FormField emas) */}
           <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="block text-sm font-medium text-foreground">{t('teacher.description')}</label>
+            <div className="flex items-center justify-between mb-2">
+              <label htmlFor="topic-desc" className="block text-sm font-medium text-foreground">
+                {t('teacher.description')}
+              </label>
               <button
                 type="button"
                 onClick={handleAiSuggest}
@@ -806,11 +834,12 @@ function TopicEditorModal({
               </button>
             </div>
             <textarea
+              id="topic-desc"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
               placeholder={t('teacher.topicDescPlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary resize-y text-sm"
+              className={`${fieldClasses()} resize-y`}
             />
           </div>
 
@@ -827,19 +856,17 @@ function TopicEditorModal({
               }}
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
-              {t('teacher.duration')}
-            </label>
+          <FormField label={t('teacher.duration')} htmlFor="topic-duration">
             <div className="w-40">
               <NumberInput
+                id="topic-duration"
                 value={parseInt(duration) || 0}
                 onValueChange={(n) => setDuration(`${n} min`)}
                 min={0}
-                className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm"
+                className={fieldClasses()}
               />
             </div>
-          </div>
+          </FormField>
 
           <FormField label={t('teacher.topicContent')} hint={t('teacher.requiredToPublish')}>
             <RichTextEditor content={content} onContentChange={setContent} />
@@ -907,6 +934,15 @@ function BulkImportModal({
   const [loading, setLoading] = useState(false);
   const { t } = useI18n();
 
+  // A11y: Escape bilan yopish.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !loading) onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [loading, onClose]);
+
   // Format: Title | Description | Duration | VideoURL | ModuleTitle
   // Har qator — bitta mavzu. | bilan ajratiladi.
   const parsed = useMemo(() => {
@@ -953,7 +989,7 @@ function BulkImportModal({
       );
       onSuccess();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Xatolik');
+      toast.error(err instanceof Error ? err.message : t('teacher.genericError'));
     } finally {
       setLoading(false);
     }
@@ -965,11 +1001,14 @@ function BulkImportModal({
       onClick={() => !loading && onClose()}
     >
       <div
-        className="bg-card rounded-md shadow-warm-lg max-w-3xl w-full p-6 my-8"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="bulk-modal-title"
+        className="bg-card rounded-md shadow-warm-lg max-w-3xl w-full p-6 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-heading font-semibold text-foreground">
+          <h3 id="bulk-modal-title" className="text-xl font-heading font-semibold text-foreground">
             {t('teacher.bulkImportHeading')}
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-muted rounded">
@@ -991,7 +1030,7 @@ function BulkImportModal({
           value={raw}
           onChange={(e) => setRaw(e.target.value)}
           rows={12}
-          placeholder={"React asoslari | React nima va u nima uchun kerak | 15 min | https://... | 1-bo'lim\nState va Props | Komponentlar orasida ma'lumot uzatish | 20 min | | 1-bo'lim"}
+          placeholder={t('teacher.bulkPlaceholder')}
           className="w-full px-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono"
         />
 

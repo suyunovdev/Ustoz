@@ -15,10 +15,14 @@ const nextConfig = {
   // `next start` ham ishlayveradi, shuning uchun mavjud deploy'ni buzmaydi.
   output: 'standalone',
 
+  // TypeScript xatolari endi build'ni yiqitadi — to'lov/PII bilan ishlovchi ilova uchun
+  // tip xavfsizligi build gate sifatida yoqildi (tsc lokal va CI'da 0 xato beradi).
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
 
+  // ESLint hozircha advisory (build'ni yiqitmaydi) — kodbazada ko'p eski `any`/unused
+  // ogohlantirishlar bor; ularni bosqichma-bosqich tozalash kerak, aks holda deploy bloklanadi.
   eslint: {
     ignoreDuringBuilds: true,
   },

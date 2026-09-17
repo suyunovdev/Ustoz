@@ -127,7 +127,7 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
             {imagePreview ? (
               <AppImage
                 src={imagePreview}
-                alt="Course cover preview showing uploaded image"
+                alt={t('courseCreation.coverAlt')}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -302,9 +302,11 @@ const CourseMetadataForm = ({ metadata, onMetadataChange }: CourseMetadataFormPr
             placeholder="0"
             min={0}
             step={1000}
-            className={fieldClasses()}
+            className={`${fieldClasses()} pr-14`}
           />
-          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground caption">so'm</span>
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground caption pointer-events-none">
+            {t('courseCreation.som')}
+          </span>
         </div>
       </FormField>
     </div>

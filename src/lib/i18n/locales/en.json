@@ -1461,7 +1461,10 @@
     "readiness_title": "Course title",
     "readiness_description": "Description (10+ chars)",
     "readiness_cover": "Cover image",
-    "readiness_topics": "At least 1 topic + lesson text"
+    "readiness_topics": "At least 1 topic + lesson text",
+    "editApprovedWarning": "This course is published. Saving settings will temporarily unpublish it and send it back for review.",
+    "saveAndResubmit": "Save and resubmit for review",
+    "bulkPlaceholder": "React basics | What React is and why you need it | 15 min | https://... | Section 1\nState and Props | Passing data between components | 20 min | | Section 1"
   },
   "marketplace": {
     "searchCourses": "Search Courses",
@@ -2382,6 +2385,8 @@
     "publishBlockedHint": "To publish: title, description, cover image, lesson text in every topic, and at least one 5+ question test",
     "draftRestored": "Restored your saved draft",
     "difficultyLevel": "Difficulty Level",
+    "coverAlt": "Course cover preview",
+    "som": "UZS",
     "selectDifficulty": "Select level",
     "errTitleRequired": "Enter the course title",
     "errDescRequired": "Enter the course description",

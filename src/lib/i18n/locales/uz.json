@@ -1461,7 +1461,10 @@
     "readiness_title": "Kurs nomi",
     "readiness_description": "Tavsif (10+ belgi)",
     "readiness_cover": "Muqova rasmi",
-    "readiness_topics": "Kamida 1 mavzu + dars matni"
+    "readiness_topics": "Kamida 1 mavzu + dars matni",
+    "editApprovedWarning": "Bu kurs nashr etilgan. Sozlamalarni saqlash uni vaqtincha nashrdan olib, qayta tekshiruvga yuboradi.",
+    "saveAndResubmit": "Saqlash va qayta tekshiruvga yuborish",
+    "bulkPlaceholder": "React asoslari | React nima va nega kerak | 15 min | https://... | 1-bo'lim\nState va Props | Komponentlar o'rtasida ma'lumot uzatish | 20 min | | 1-bo'lim"
   },
   "marketplace": {
     "searchCourses": "Kurslarni qidirish",
@@ -2382,6 +2385,8 @@
     "publishBlockedHint": "Nashr uchun: nom, tavsif, muqova rasmi, har mavzuda dars matni va kamida bitta 5+ savolli test kerak",
     "draftRestored": "Saqlangan qoralama tiklandi",
     "difficultyLevel": "Qiyinlik darajasi",
+    "coverAlt": "Kurs muqovasi ko'rinishi",
+    "som": "so'm",
     "selectDifficulty": "Darajani tanlang",
     "errTitleRequired": "Kurs nomini kiriting",
     "errDescRequired": "Kurs tavsifini kiriting",

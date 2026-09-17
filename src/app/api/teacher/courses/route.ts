@@ -26,12 +26,18 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: 'desc' },
   });
 
+  // Ro'yxatda base64 (data:) muqovalarni YUBORMAYMIZ — ular 5MB gacha bo'lib, har
+  // dashboard/list yuklamasida o'nlab MB JSON-serialize + transfer + kesh bo'lardi
+  // (public marketplace route ham xuddi shunday strip qiladi). URL muqovalar qoladi;
+  // to'liq base64 faqat yagona muharrir GET'ida kerak.
+  const stripDataUrl = (v: string | null) => (v && v.startsWith('data:') ? null : v);
+
   return jsonResponse({
     courses: courses.map(c => ({
       id: c.id,
       title: c.title,
       description: c.description,
-      coverImage: c.coverImage,
+      coverImage: stripDataUrl(c.coverImage),
       isPublished: c.isPublished,
       moderationStatus: c.moderationStatus,
       adminFeedback: c.adminFeedback,

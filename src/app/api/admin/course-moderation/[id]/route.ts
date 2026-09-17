@@ -2,18 +2,18 @@
  * PATCH /api/admin/course-moderation/[id]
  * Admin kursni tasdiqlaydi/rad etadi/qayta ishlashga qaytaradi.
  * Body: { action: 'approve' | 'reject' | 'request_revision', feedback?: string }
- *  - approve          → moderationStatus=approved, isPublished=true (jonli bo'ladi)
- *  - reject           → moderationStatus=rejected,  isPublished=false (feedback majburiy)
- *  - request_revision → moderationStatus=revision_requested (feedback majburiy)
- * Har qaror o'qituvchiga notifikatsiya yuboradi.
+ *
+ * Barchasi YAGONA state-machine servisidan (course-moderation.service.applyAction) o'tadi:
+ *  - o'tish qoidalari (masalan draft'ni to'g'ridan approve qilib bo'lmaydi -> 400),
+ *  - idempotentlik, audit log, va o'qituvchiga EMAIL bilan bildirishnoma.
+ * Ilgari bu route prisma'ga to'g'ridan-to'g'ri yozib, qoidalarni chetlab o'tar va faqat
+ * in-app notification yuborardi (email yo'q).
  */
 import type { NextRequest } from 'next/server';
 import { requireAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
-import { prisma } from '@/lib/prisma';
 import { ValidationError } from '@/lib/errors';
-import type { ModerationStatus } from '@/generated/prisma/client';
-import { log, AUDIT_ACTIONS } from '@/lib/services/audit-log.service';
+import { applyAction, type CourseActionPayload } from '@/lib/services/course-moderation.service';
 
 export async function PATCH(
   req: NextRequest,
@@ -30,98 +30,24 @@ export async function PATCH(
       throw new ValidationError('JSON formatida xato');
     }
     const action = String(body.action || '');
-    const feedback = typeof body.feedback === 'string' ? body.feedback.trim() : '';
+    const feedback = typeof body.feedback === 'string' ? body.feedback.trim() : undefined;
 
     if (!['approve', 'reject', 'request_revision'].includes(action)) {
       throw new ValidationError("action: approve | reject | request_revision");
     }
-    if ((action === 'reject' || action === 'request_revision') && !feedback) {
-      return jsonResponse(
-        { error: 'Rad etish/qayta ishlash uchun sabab (feedback) majburiy', code: 'FEEDBACK_REQUIRED' },
-        { status: 400 },
-      );
-    }
 
-    const course = await prisma.course.findUnique({ where: { id } });
-    if (!course) {
-      return jsonResponse({ error: 'Kurs topilmadi', code: 'COURSE_NOT_FOUND' }, { status: 404 });
-    }
-
-    const now = new Date();
-    let newStatus: ModerationStatus;
-    let isPublished: boolean;
-    let title: string;
-    let message: string;
-
+    let payload: CourseActionPayload;
     if (action === 'approve') {
-      newStatus = 'approved';
-      isPublished = true;
-      title = 'Kursingiz tasdiqlandi ✅';
-      message = `"${course.title}" kursi admin tomonidan tasdiqlandi va endi platformada jonli.`;
+      payload = { action: 'approve', feedback };
     } else if (action === 'reject') {
-      newStatus = 'rejected';
-      isPublished = false;
-      title = 'Kursingiz rad etildi';
-      message = `"${course.title}" kursi rad etildi. Sabab: ${feedback}`;
+      payload = { action: 'reject', feedback: feedback ?? '' };
     } else {
-      newStatus = 'revision_requested';
-      isPublished = false;
-      title = 'Kursingizga tuzatish so\'raldi';
-      message = `"${course.title}" kursi uchun tuzatish so'raldi. Izoh: ${feedback}`;
+      payload = { action: 'request_revision', feedback: feedback ?? '' };
     }
 
-    const updated = await prisma.course.update({
-      where: { id },
-      data: {
-        moderationStatus: newStatus,
-        isPublished,
-        publishedAt: isPublished ? (course.publishedAt ?? now) : course.publishedAt,
-        adminFeedback: action === 'approve' ? null : feedback,
-        reviewedById: session.sub,
-        reviewedAt: now,
-      },
-    });
-
-    // Audit log — moderatsiya qarori izsiz qolmasin (best-effort). Ilgari bu endpoint
-    // audit yozmasdan prisma bilan to'g'ridan-to'g'ri ishlardi.
-    try {
-      const auditAction =
-        action === 'approve'
-          ? AUDIT_ACTIONS.COURSE_APPROVE
-          : action === 'reject'
-            ? AUDIT_ACTIONS.COURSE_REJECT
-            : AUDIT_ACTIONS.COURSE_REVISION_REQUESTED;
-      await log({
-        adminId: session.sub,
-        action: auditAction,
-        targetType: 'course',
-        targetId: id,
-        metadata: { title: course.title, teacherId: course.teacherId, feedback: feedback || null },
-        request: req,
-      });
-    } catch (e) {
-      console.error('[course-moderation] audit log failed:', e);
-    }
-
-    // O'qituvchiga notifikatsiya (best-effort — muvaffaqiyatsizlik qarorni buzmaydi)
-    try {
-      await prisma.notification.create({
-        data: {
-          recipientId: course.teacherId,
-          senderId: session.sub,
-          type: 'course_update',
-          title,
-          message,
-          relatedCourseId: id,
-        },
-      });
-    } catch (e) {
-      console.error('[course-moderation] notification failed:', e);
-    }
-
-    return jsonResponse({
-      course: { ...updated, priceUzs: updated.priceUzs.toString() },
-    });
+    // Servis feedback'ni ham tekshiradi (reject/revision -> kamida 5 belgi).
+    const course = await applyAction(session.sub, id, payload, req);
+    return jsonResponse({ course });
   } catch (err) {
     return errorResponse(err);
   }

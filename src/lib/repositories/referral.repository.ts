@@ -284,16 +284,18 @@ export async function handlePaymentCompleted(transactionId: string): Promise<voi
   if (tx.status !== 'completed') return;
   if (!tx.student.referredById) return;
 
-  const commissionPct = Number(process.env.REFERRAL_COMMISSION_PCT ?? '10');
-  // Sog'liq tekshiruvi: referral komissiyasi platforma ulushidan oshmasligi kerak,
-  // aks holda platforma har sotuvda zarar ko'radi (referral platforma fee ichidan to'lanadi).
+  const rawCommissionPct = Number(process.env.REFERRAL_COMMISSION_PCT ?? '10');
   const platformFeePct = Number(process.env.PLATFORM_FEE_PCT ?? '15');
-  if (commissionPct > platformFeePct) {
+  // Referral komissiyasi platforma ulushidan OSHMASLIGI kerak — u shu ulush ichidan
+  // to'lanadi. Noto'g'ri sozlansa ham platforma zarar ko'rmasin: warn o'rniga QAT'IY
+  // cheklaymiz (platformFeePct'gacha).
+  const commissionPct = Math.max(0, Math.min(rawCommissionPct, platformFeePct));
+  if (rawCommissionPct > platformFeePct) {
     console.warn(
-      `[referral] OGOHLANTIRISH: REFERRAL_COMMISSION_PCT (${commissionPct}%) > PLATFORM_FEE_PCT (${platformFeePct}%) — platforma har referral sotuvda zarar ko'radi.`,
+      `[referral] REFERRAL_COMMISSION_PCT (${rawCommissionPct}%) > PLATFORM_FEE_PCT (${platformFeePct}%) — ${platformFeePct}% gacha cheklandi.`,
     );
   }
-  const amountUzs = (tx.amountUzs * BigInt(commissionPct)) / BigInt(100);
+  const amountUzs = (tx.amountUzs * BigInt(Math.floor(commissionPct))) / BigInt(100);
 
   await createEarning({
     referrerId: tx.student.referredById,

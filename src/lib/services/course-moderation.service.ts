@@ -17,6 +17,7 @@ import {
 import {
   CourseNotFoundError,
   ValidationError,
+  ServiceError,
 } from '@/lib/errors';
 import { log as auditLog } from './audit-log.service';
 import { createNotification } from '@/lib/repositories/notification.repository';
@@ -39,11 +40,9 @@ const REVIEWABLE_STATUSES: ReadonlyArray<ModerationStatus> = [
   'revision_requested',
 ];
 
-export class InvalidStatusTransitionError extends Error {
-  code = 'INVALID_STATUS_TRANSITION';
+export class InvalidStatusTransitionError extends ServiceError {
   constructor(current: string, target: string) {
-    super(`Status o'tishi noto'g'ri: "${current}" -> "${target}"`);
-    this.name = 'InvalidStatusTransitionError';
+    super(`Status o'tishi noto'g'ri: "${current}" -> "${target}"`, 'INVALID_STATUS_TRANSITION');
   }
 }
 

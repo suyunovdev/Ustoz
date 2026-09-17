@@ -45,6 +45,14 @@ export interface CourseReadiness {
 
 const trimmed = (v: string | null | undefined): string => (typeof v === 'string' ? v.trim() : '');
 
+// Rich-text kontent BO'SHmi — RichTextEditor bo'sh darsda ham `<p></p>`, `<p><br></p>`,
+// `&nbsp;` kabi markup chiqaradi (bo'sh bo'lmagan string). Teg/probel tozalab tekshiramiz,
+// aks holda ko'rinishidan bo'sh dars "matn bor" deb submit/approve bo'lib ketardi.
+const htmlToText = (v: string | null | undefined): string =>
+  (typeof v === 'string'
+    ? v.replace(/<[^>]*>/g, '').replace(/&nbsp;/gi, ' ').replace(/\s+/g, ' ').trim()
+    : '');
+
 export function getCourseReadiness(input: ReadinessInput): CourseReadiness {
   const titleOk = trimmed(input.title).length >= 3;
   const descriptionOk = trimmed(input.description).length >= 10;
@@ -52,7 +60,7 @@ export function getCourseReadiness(input: ReadinessInput): CourseReadiness {
 
   const topics = Array.isArray(input.topics) ? input.topics : [];
   const hasTopics = topics.length > 0;
-  const emptyContentCount = topics.filter((tp) => trimmed(tp.content).length === 0).length;
+  const emptyContentCount = topics.filter((tp) => htmlToText(tp.content).length === 0).length;
   const topicsOk = hasTopics && emptyContentCount === 0;
 
   const missing: string[] = [];

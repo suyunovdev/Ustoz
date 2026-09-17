@@ -111,6 +111,41 @@ const CSP_STATIC_DIRECTIVES = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // ─── CSRF (defense-in-depth): mutating /api so'rovlarida cross-origin'ni rad etamiz.
+  // Session cookie SameSite=Lax allaqachon brauzer cross-site cookie POST'ini bloklaydi;
+  // bu qo'shimcha qatlam. Faqat Origin MAVJUD va MOS KELMAGANDA rad etamiz — Origin yo'q
+  // (same-origin navigatsiya / native client / server cron) ruxsat. To'lov provayder
+  // callback'lari (payme/click) cross-origin bo'ladi va imzo bilan tekshiriladi -> exempt.
+  if (
+    pathname.startsWith('/api/') &&
+    (request.method === 'POST' ||
+      request.method === 'PUT' ||
+      request.method === 'PATCH' ||
+      request.method === 'DELETE')
+  ) {
+    const origin = request.headers.get('origin');
+    const isProviderCallback =
+      pathname.startsWith('/api/payment/payme') || pathname.startsWith('/api/payment/click');
+    if (origin && !isProviderCallback) {
+      const allowedHost =
+        request.headers.get('x-forwarded-host') ||
+        request.headers.get('host') ||
+        request.nextUrl.host;
+      let originHost = '';
+      try {
+        originHost = new URL(origin).host;
+      } catch {
+        /* noto'g'ri Origin — pastda rad etiladi */
+      }
+      if (allowedHost && originHost !== allowedHost) {
+        return NextResponse.json(
+          { error: "Cross-origin so'rov rad etildi", code: 'CSRF_BLOCKED' },
+          { status: 403 },
+        );
+      }
+    }
+  }
+
   // Statik fayllar va API — o'tkazib yuborish (HTML emas, CSP/nonce kerak emas)
   if (
     pathname.startsWith('/_next/') ||

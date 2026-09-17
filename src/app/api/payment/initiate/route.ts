@@ -74,19 +74,41 @@ export async function POST(req: NextRequest) {
     }
 
     const merchantTransId = `${session.sub.slice(0, 8)}-${refId}-${Date.now()}`;
-    const transaction = await prisma.paymentTransaction.create({
-      data: {
+    // Ayni student+kurs+usul uchun tugallanmagan (pending) tranzaksiya bo'lsa — YANGISINI
+    // yaratmaymiz, mavjudini joriy narx/merchantTransId bilan yangilaymiz. Aks holda har
+    // "To'lash" bosilganda cheksiz pending qatorlar yig'ilib DB'ni shishirar edi.
+    const existingPending = await prisma.paymentTransaction.findFirst({
+      where: {
         studentId: session.sub,
-        amountUzs: BigInt(priceUzs),
-        currency: 'UZS',
+        courseId,
         paymentMethod: paymentMethod as PaymentMethod,
         status: 'pending',
-        merchantTransId,
-        // Komissiya foizi to'lov boshlanganda muzlatiladi (keyin env o'zgarsa ta'sir qilmaydi).
-        platformFeePct: PLATFORM_FEE_PCT,
-        ...txnExtra,
       },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
     });
+    const transaction = existingPending
+      ? await prisma.paymentTransaction.update({
+          where: { id: existingPending.id },
+          data: {
+            amountUzs: BigInt(priceUzs),
+            merchantTransId,
+            platformFeePct: PLATFORM_FEE_PCT,
+          },
+        })
+      : await prisma.paymentTransaction.create({
+          data: {
+            studentId: session.sub,
+            amountUzs: BigInt(priceUzs),
+            currency: 'UZS',
+            paymentMethod: paymentMethod as PaymentMethod,
+            status: 'pending',
+            merchantTransId,
+            // Komissiya foizi to'lov boshlanganda muzlatiladi (keyin env o'zgarsa ta'sir qilmaydi).
+            platformFeePct: PLATFORM_FEE_PCT,
+            ...txnExtra,
+          },
+        });
 
     // ── Payment URL ──
     let paymentUrl = '';
