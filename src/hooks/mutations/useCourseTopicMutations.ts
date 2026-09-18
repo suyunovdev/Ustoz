@@ -4,6 +4,14 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '../queries/queryKeys';
 import type { CourseTopicDTO } from '../queries/useCourseTopics';
 
+/** Inline test savoli (QuizBuilder shakli, client `id`siz) — mavzu bilan birga yuboriladi. */
+export interface TopicQuizQuestionInput {
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation: string;
+}
+
 export interface TopicFormInput {
   title: string;
   description?: string | null;
@@ -16,6 +24,8 @@ export interface TopicFormInput {
   moduleTitle?: string | null;
   videoProvider?: 'bunny' | null;
   streamUid?: string | null;
+  /** Yuborilsa — mavzu testini almashtiradi (syncTopicQuizzes). Yuborilmasa test tegilmaydi. */
+  questions?: TopicQuizQuestionInput[];
 }
 
 async function createTopic(vars: {

@@ -22,6 +22,7 @@ import { getCourseReadiness, type ReadinessKey } from '@/lib/course-completeness
 import TopicMaterials from './TopicMaterials';
 import RichTextEditor from '@/app/course-creation/components/RichTextEditor';
 import LessonVideoInput from '@/app/course-creation/components/LessonVideoInput';
+import QuizBuilder from '@/app/course-creation/components/QuizBuilder';
 import dynamic from 'next/dynamic';
 import { type CourseMetadata } from '@/app/course-creation/components/CourseMetadataForm';
 // Sozlamalar formasi yig'ma bo'lim orqasida — faqat ochilganda yuklanadi (bundle yengil).
@@ -618,6 +619,7 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
 
       {editorOpen && (
         <TopicEditorModal
+          courseId={courseId}
           topic={editingTopic}
           isLoading={createMut.isPending || updateMut.isPending}
           existingModules={existingModules}
@@ -658,13 +660,23 @@ const CourseDetailInteractive = ({ courseId }: Props) => {
 
 // ─── Topic editor ─────────────────────────────────────────────────────────
 
+interface QuizQ {
+  id: string;
+  question: string;
+  options: string[];
+  correctAnswer: number;
+  explanation: string;
+}
+
 function TopicEditorModal({
+  courseId,
   topic,
   isLoading,
   existingModules,
   onSave,
   onClose,
 }: {
+  courseId: string;
   topic: CourseTopicDTO | null;
   isLoading: boolean;
   existingModules: string[];
@@ -686,9 +698,38 @@ function TopicEditorModal({
   const [isLocked, setIsLocked] = useState(topic?.isLocked ?? false);
   const [aiLoading, setAiLoading] = useState(false);
   const [titleTouched, setTitleTouched] = useState(false);
+  // Inline test — mavzu bilan birga saqlanadi. `quizTouched` = test bo'limi ochilgan/tahrirlangan
+  // (faqat shundagina saqlashda `questions` yuboriladi, aks holda mavjud test tegilmaydi).
+  const [quizQuestions, setQuizQuestions] = useState<QuizQ[]>([]);
+  const [quizOpen, setQuizOpen] = useState(false);
+  const [quizTouched, setQuizTouched] = useState(false);
   const { t } = useI18n();
 
   const titleError = titleTouched && title.trim().length < 2 ? t('teacher.topicNameMinLength') : '';
+
+  // Mavjud mavzu testini yuklaymiz (prefill). Faqat hasQuiz bo'lsa so'rov yuboramiz.
+  useEffect(() => {
+    if (!topic?.id || !topic.hasQuiz) return;
+    let alive = true;
+    (async () => {
+      try {
+        const res = await fetch(`/api/teacher/courses/${courseId}/topics/${topic.id}/quiz`, {
+          credentials: 'include',
+        });
+        const d = await res.json().catch(() => ({}));
+        if (alive && res.ok && Array.isArray(d.questions)) {
+          setQuizQuestions(
+            d.questions.map((q: Omit<QuizQ, 'id'>, i: number) => ({ ...q, id: `q-load-${i}` })),
+          );
+        }
+      } catch {
+        /* noop — test yuklanmasa bo'sh qoladi */
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [courseId, topic?.id, topic?.hasQuiz]);
 
   // A11y: Escape bilan yopish (klaviatura foydalanuvchilari uchun — modal fixed WCAG 2.1.2).
   useEffect(() => {
@@ -737,6 +778,9 @@ function TopicEditorModal({
       toast.error(t('teacher.topicNameMinLength'));
       return;
     }
+    // Test faqat bo'lim ochilgan/tahrirlangan yoki savollar yuklangan bo'lsa yuboriladi
+    // (aks holda mavjud test tegilmaydi). Client `id` olib tashlanadi.
+    const includeQuiz = quizTouched || quizQuestions.length > 0;
     onSave({
       title,
       description: description || null,
@@ -749,6 +793,14 @@ function TopicEditorModal({
       hasQuiz,
       isFreePreview,
       isLocked,
+      ...(includeQuiz && {
+        questions: quizQuestions.map(({ question, options, correctAnswer, explanation }) => ({
+          question,
+          options,
+          correctAnswer,
+          explanation,
+        })),
+      }),
     });
   };
 
@@ -891,6 +943,47 @@ function TopicEditorModal({
               />
               <span>{t('teacher.topicLockedLabel')}</span>
             </label>
+          </div>
+
+          {/* Inline test — ixtiyoriy, yig'ma. Bu yerda savol qo'shiladi va mavzu bilan
+              birga saqlanadi (alohida sahifa/qayta kurs tanlash yo'q). */}
+          <div className="pt-2 border-t border-border">
+            <button
+              type="button"
+              onClick={() => {
+                setQuizOpen((v) => !v);
+                setQuizTouched(true);
+              }}
+              className="w-full flex items-center justify-between py-1 text-left"
+              aria-expanded={quizOpen}
+            >
+              <span className="text-sm font-medium text-foreground flex items-center gap-2">
+                <Icon name="AcademicCapIcon" size={18} className="text-muted-foreground" />
+                {t('teacher.topicQuizSection')}
+                {quizQuestions.length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                    {quizQuestions.length}
+                  </span>
+                )}
+              </span>
+              <Icon
+                name={quizOpen ? 'ChevronUpIcon' : 'ChevronDownIcon'}
+                size={18}
+                className="text-muted-foreground"
+              />
+            </button>
+            {quizOpen && (
+              <div className="pt-3">
+                <QuizBuilder
+                  questions={quizQuestions}
+                  onQuestionsChange={(qs) => {
+                    setQuizQuestions(qs as QuizQ[]);
+                    setQuizTouched(true);
+                  }}
+                  topicTitle={title}
+                />
+              </div>
+            )}
           </div>
         </div>
 

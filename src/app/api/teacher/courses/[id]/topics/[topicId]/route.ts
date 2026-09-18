@@ -11,6 +11,7 @@ import {
   deleteTopic,
   TopicNotFoundError,
 } from '@/lib/services/course-topic.service';
+import { syncTopicQuizzes, type RawQuizQuestion } from '@/lib/services/course-quiz-sync';
 import { CourseNotFoundError, ValidationError } from '@/lib/errors';
 
 export async function PATCH(
@@ -19,7 +20,7 @@ export async function PATCH(
 ) {
   try {
     const session = await requireTeacherOrAdmin(req);
-    const { topicId } = await params;
+    const { id: courseId, topicId } = await params;
 
     let body: unknown;
     try {
@@ -68,7 +69,17 @@ export async function PATCH(
           ? b.moduleTitle
           : undefined,
     });
-    return jsonResponse({ topic: updated });
+
+    // Inline test — mavzu bilan birga saqlanadi (mavzuga bog'lanadi). Faqat `questions`
+    // massiv YUBORILGANda sinxronlaymiz (yuborilmasa mavjud test tegilmaydi).
+    let warnings: string[] = [];
+    if (Array.isArray(b.questions)) {
+      const sync = await syncTopicQuizzes(session.sub, courseId, [
+        { topicId, topicTitle: updated.title, questions: b.questions as RawQuizQuestion[] },
+      ]);
+      warnings = sync.warnings;
+    }
+    return jsonResponse({ topic: updated, warnings });
   } catch (err) {
     if (err instanceof TopicNotFoundError || err instanceof CourseNotFoundError) {
       return jsonResponse({ error: err.message, code: err.code }, { status: 404 });

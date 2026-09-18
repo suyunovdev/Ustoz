@@ -1450,6 +1450,7 @@
     "submittedForReview": "Курс отправлен на проверку",
     "networkError": "Ошибка сети",
     "requiredToPublish": "Требуется для публикации",
+    "topicQuizSection": "Тест (необязательно)",
     "courseSettings": "Настройки курса",
     "saveSettings": "Сохранить",
     "savingSettings": "Сохранение...",

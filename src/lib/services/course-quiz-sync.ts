@@ -35,7 +35,9 @@ export interface QuizSyncResult {
   warning?: string;
 }
 
-const MIN_PUBLISHABLE = 5;
+// Test "bor" (hasQuiz) hisoblanishi va e'lon (published) bo'lishi uchun minimal savol soni.
+// Ilgari 5 edi — o'qituvchilar uchun friksiya; endi 3 (qisqa test ham to'liq test).
+const MIN_PUBLISHABLE = 3;
 
 /** Client savolini tekshirib AddQuestionInput'ga o'giradi; yaroqsiz bo'lsa null. */
 function toValidInput(raw: RawQuizQuestion): AddQuestionInput | null {
@@ -167,4 +169,33 @@ export async function syncTopicQuizzes(
   }
   const warnings = results.map((r) => r.warning).filter((w): w is string => !!w);
   return { results, warnings };
+}
+
+/**
+ * Mavzuning mavjud testini `QuizBuilder` shakliga qaytaradi — muharrir ochilganda prefill
+ * uchun. Faqat o'qituvchining O'Z testi (teacherId filtri). Test yo'q bo'lsa bo'sh massiv.
+ */
+export async function getTopicQuizQuestions(
+  teacherId: string,
+  topicId: string,
+): Promise<Array<{ question: string; options: string[]; correctAnswer: number; explanation: string }>> {
+  const test = await prisma.courseTest.findFirst({
+    where: { topicId, teacherId },
+    orderBy: { createdAt: 'desc' },
+    include: { questions: { orderBy: { questionOrder: 'asc' } } },
+  });
+  if (!test) return [];
+  return test.questions.map((q) => {
+    const opts = Array.isArray(q.options)
+      ? (q.options as Array<{ text?: string; isCorrect?: boolean }>)
+      : [];
+    const options = opts.map((o) => (o && typeof o.text === 'string' ? o.text : ''));
+    const idx = opts.findIndex((o) => o?.isCorrect);
+    return {
+      question: q.questionText,
+      options: options.length ? options : ['', '', '', ''],
+      correctAnswer: idx >= 0 ? idx : 0,
+      explanation: q.explanation ?? '',
+    };
+  });
 }

@@ -10,6 +10,7 @@ import {
   listTopics,
   createTopic,
 } from '@/lib/services/course-topic.service';
+import { syncTopicQuizzes, type RawQuizQuestion } from '@/lib/services/course-quiz-sync';
 import { CourseNotFoundError, ValidationError } from '@/lib/errors';
 
 export async function GET(
@@ -62,7 +63,16 @@ export async function POST(
       isLocked: typeof b.isLocked === 'boolean' ? b.isLocked : undefined,
       moduleTitle: typeof b.moduleTitle === 'string' ? b.moduleTitle : undefined,
     });
-    return jsonResponse({ topic });
+
+    // Inline test — yangi mavzuga bog'lanadi. Faqat `questions` massiv yuborilganda.
+    let warnings: string[] = [];
+    if (Array.isArray(b.questions)) {
+      const sync = await syncTopicQuizzes(session.sub, courseId, [
+        { topicId: topic.id, topicTitle: topic.title, questions: b.questions as RawQuizQuestion[] },
+      ]);
+      warnings = sync.warnings;
+    }
+    return jsonResponse({ topic, warnings });
   } catch (err) {
     if (err instanceof CourseNotFoundError) {
       return jsonResponse({ error: err.message, code: err.code }, { status: 404 });

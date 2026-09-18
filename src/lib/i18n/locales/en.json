@@ -1450,6 +1450,7 @@
     "submittedForReview": "Course submitted for review",
     "networkError": "Network error",
     "requiredToPublish": "Required to publish",
+    "topicQuizSection": "Test (optional)",
     "courseSettings": "Course settings",
     "saveSettings": "Save",
     "savingSettings": "Saving...",
