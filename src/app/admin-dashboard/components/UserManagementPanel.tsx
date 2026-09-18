@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
@@ -212,13 +213,17 @@ const UserManagementPanel = () => {
                   key={user.id}
                   className="flex items-center justify-between p-4 border border-border rounded-md hover:bg-muted/50 transition-smooth"
                 >
-                  <div className="flex items-center space-x-4 min-w-0">
+                  <Link
+                    href={`/admin-dashboard/users/${user.id}`}
+                    className="flex items-center space-x-4 min-w-0 flex-1 group"
+                    title={t('adminUserDetail.viewDetails')}
+                  >
                     <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full shrink-0">
                       <Icon name="UserIcon" size={24} className="text-primary" />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <h4 className="font-heading font-semibold text-foreground truncate">
+                        <h4 className="font-heading font-semibold text-foreground truncate group-hover:text-primary group-hover:underline transition-smooth">
                           {user.fullName}
                         </h4>
                         {!user.isActive && (
@@ -238,7 +243,7 @@ const UserManagementPanel = () => {
                         {formatDate(user.lastLoginAt, locale)}
                       </p>
                     </div>
-                  </div>
+                  </Link>
 
                   <div className="flex items-center space-x-3 shrink-0">
                     <span

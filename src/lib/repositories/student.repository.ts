@@ -282,6 +282,100 @@ export async function getStudentDetailForTeacher(
   };
 }
 
+/**
+ * ADMIN uchun talaba bo'yicha to'liq ma'lumot — `getStudentDetailForTeacher` naqshi,
+ * lekin `teacherId` kurs-filtri YO'Q (barcha kurslar bo'yicha) va egalik tekshiruvi yo'q.
+ * Faqat admin route'idan (`requireAdmin`) chaqiriladi.
+ */
+export async function getStudentDetailForAdmin(
+  studentId: string,
+): Promise<StudentDetailRow | null> {
+  const profile = await prisma.userProfile.findUnique({
+    where: { id: studentId },
+    select: { id: true, fullName: true, email: true, avatarUrl: true, createdAt: true },
+  });
+  if (!profile) return null;
+
+  const [enrollments, testStats, assignmentStats, certCount, payments, topicCompletions] =
+    await Promise.all([
+      prisma.enrollment.findMany({
+        where: { studentId },
+        include: { course: { select: { id: true, title: true } } },
+        orderBy: { enrolledAt: 'desc' },
+      }),
+      prisma.testAttempt.findMany({
+        where: { studentId, status: 'submitted' },
+        select: { passed: true, percentage: true },
+      }),
+      prisma.assignmentSubmission.findMany({
+        where: { studentId },
+        select: {
+          status: true,
+          grade: true,
+          assignmentId: true,
+          revisionNumber: true,
+          assignment: { select: { maxScore: true } },
+        },
+      }),
+      prisma.certificate.count({ where: { studentId } }),
+      prisma.paymentTransaction.aggregate({
+        where: { studentId, status: 'completed' },
+        _sum: { amountUzs: true },
+      }),
+      prisma.topicCompletion.count({ where: { studentId } }),
+    ]);
+
+  const passedAttempts = testStats.filter((a) => a.passed).length;
+  const avgTest =
+    testStats.length > 0
+      ? testStats.reduce((s, a) => s + Number(a.percentage ?? 0), 0) / testStats.length
+      : null;
+
+  const latestGradedByAssignment = new Map<string, { grade: number; maxScore: number; rev: number }>();
+  for (const a of assignmentStats) {
+    if (a.status !== 'graded' || a.grade === null) continue;
+    const maxScore = a.assignment?.maxScore ?? 0;
+    if (maxScore <= 0) continue;
+    const prev = latestGradedByAssignment.get(a.assignmentId);
+    if (!prev || a.revisionNumber > prev.rev) {
+      latestGradedByAssignment.set(a.assignmentId, { grade: a.grade, maxScore, rev: a.revisionNumber });
+    }
+  }
+  const gradedList = Array.from(latestGradedByAssignment.values());
+  const avgAssignment =
+    gradedList.length > 0
+      ? gradedList.reduce((s, g) => s + (g.grade / g.maxScore) * 100, 0) / gradedList.length
+      : null;
+  const distinctSubmittedAssignments = new Set(assignmentStats.map((a) => a.assignmentId)).size;
+
+  return {
+    studentId: profile.id,
+    fullName: profile.fullName,
+    email: profile.email,
+    avatarUrl: profile.avatarUrl,
+    createdAt: profile.createdAt,
+    enrollments: enrollments.map((e) => ({
+      enrollmentId: e.id,
+      courseId: e.course.id,
+      courseTitle: e.course.title,
+      enrolledAt: e.enrolledAt,
+      progress: e.progress,
+      completedAt: e.completedAt,
+      isActive: e.isActive,
+      lastAccessedAt: e.lastAccessedAt,
+    })),
+    totalTopicCompletions: topicCompletions,
+    totalTestAttempts: testStats.length,
+    passedTestAttempts: passedAttempts,
+    avgTestScore: avgTest !== null ? Math.round(avgTest * 100) / 100 : null,
+    totalAssignmentSubmissions: distinctSubmittedAssignments,
+    gradedAssignmentSubmissions: gradedList.length,
+    avgAssignmentGrade: avgAssignment !== null ? Math.round(avgAssignment * 100) / 100 : null,
+    totalCertificates: certCount,
+    totalPaymentsUzs: payments._sum?.amountUzs ?? BigInt(0),
+  };
+}
+
 // ==================== ENROLLMENT MANAGEMENT ====================
 
 export async function isEnrollmentOwner(

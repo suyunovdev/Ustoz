@@ -98,6 +98,36 @@ export async function findById(userId: string): Promise<AdminUserRow | null> {
   });
 }
 
+export type AdminUserDetailRow = AdminUserRow & {
+  bio: string | null;
+  phone: string | null;
+  referralCode: string | null;
+  headline: string | null;
+  // Payout — RAW; servis maskalaydi (oxirgi 4 raqam). Route hech qachon xom qaytarmaydi.
+  payoutBankName: string | null;
+  payoutRecipientName: string | null;
+  payoutCardNumber: string | null;
+  payoutAccountNumber: string | null;
+};
+
+/** Bitta foydalanuvchi bo'yicha boyroq profil — admin detail sahifasi uchun. */
+export async function findDetailForAdmin(userId: string): Promise<AdminUserDetailRow | null> {
+  return prisma.userProfile.findUnique({
+    where: { id: userId },
+    select: {
+      ...adminUserSelect,
+      bio: true,
+      phone: true,
+      referralCode: true,
+      headline: true,
+      payoutBankName: true,
+      payoutRecipientName: true,
+      payoutCardNumber: true,
+      payoutAccountNumber: true,
+    },
+  });
+}
+
 export async function updateActiveStatus(
   userId: string,
   isActive: boolean,

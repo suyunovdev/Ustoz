@@ -15,6 +15,7 @@ export const queryKeys = {
   adminStats: ['admin-stats'] as const,
   adminUsers: (filters: { role?: string; search?: string; cursor?: string | null }) =>
     ['admin-users', filters.role ?? 'all', filters.search ?? '', filters.cursor ?? null] as const,
+  adminUser: (id: string) => ['admin-user', id] as const,
   adminAuditLog: (targetType?: string, targetId?: string) =>
     ['admin-audit-log', targetType ?? null, targetId ?? null] as const,
   adminCourses: (filters: {

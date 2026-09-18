@@ -22,8 +22,29 @@ import {
   CannotDeleteAdminError,
   ContentNotFoundError,
 } from '@/lib/services/admin-content.service';
+import { getUserDetailForAdmin } from '@/lib/services/admin-user-detail.service';
 import { ValidationError } from '@/lib/errors';
 import type { UserRole } from '@/generated/prisma/client';
+
+/**
+ * GET /api/admin/users/[id] — foydalanuvchi bo'yicha to'liq detail (rolga qarab).
+ */
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    await requireAdmin(req);
+    const { id } = await params;
+    const detail = await getUserDetailForAdmin(id);
+    if (!detail) {
+      return jsonResponse({ error: 'Foydalanuvchi topilmadi', code: 'USER_NOT_FOUND' }, { status: 404 });
+    }
+    return jsonResponse(detail);
+  } catch (err) {
+    return errorResponse(err);
+  }
+}
 
 const VALID_ACTIONS = ['suspend', 'activate', 'change_role'] as const;
 const VALID_ROLES: ReadonlyArray<UserRole> = ['student', 'teacher', 'admin'];
