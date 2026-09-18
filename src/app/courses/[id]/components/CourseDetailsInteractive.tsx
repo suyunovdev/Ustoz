@@ -87,6 +87,10 @@ const CourseDetailsInteractive = ({ courseId: courseIdProp }: { courseId?: strin
   const [expandedSections, setExpandedSections] = useState<string[]>([]);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  // Viewer munosabati — admin/owner sotib olish oqimini emas, boshqaruv panelini ko'radi.
+  const [isOwner, setIsOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [moderationStatus, setModerationStatus] = useState<string | undefined>(undefined);
   const [course, setCourse] = useState<CourseDetails | null>(null);
   const [curriculum, setCurriculum] = useState<CurriculumSection[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -200,6 +204,9 @@ const CourseDetailsInteractive = ({ courseId: courseIdProp }: { courseId?: strin
       setRelatedCourses(c.relatedCourses || []);
       setInstructorCourses(c.instructorCourses || []);
       setIsEnrolled(!!c.isEnrolled);
+      setIsOwner(!!c.isOwner);
+      setIsAdmin(!!c.isAdmin);
+      setModerationStatus(typeof c.moderationStatus === 'string' ? c.moderationStatus : undefined);
     } catch (err) {
       if (signal?.aborted) return;
       console.error('Kurs yuklanmadi:', err);
@@ -296,6 +303,8 @@ const CourseDetailsInteractive = ({ courseId: courseIdProp }: { courseId?: strin
           onPurchase={handlePurchase}
           isPurchasing={isPurchasing}
           isEnrolled={isEnrolled}
+          isOwner={isOwner}
+          isAdmin={isAdmin}
         />
 
         <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -409,6 +418,10 @@ const CourseDetailsInteractive = ({ courseId: courseIdProp }: { courseId?: strin
               onPurchase={handlePurchase}
               isPurchasing={isPurchasing}
               isEnrolled={isEnrolled}
+              isOwner={isOwner}
+              isAdmin={isAdmin}
+              moderationStatus={moderationStatus}
+              courseId={course.id}
             />
           </div>
         </div>

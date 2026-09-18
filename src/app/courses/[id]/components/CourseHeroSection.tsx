@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import AppImage from '@/components/ui/AppImage';
 import Avatar from '@/components/ui/Avatar';
 import Icon from '@/components/ui/AppIcon';
@@ -6,6 +7,7 @@ import { formatDate, formatNumber } from '@/lib/i18n/format';
 
 interface CourseHeroSectionProps {
   course: {
+    id: string;
     title: string;
     subtitle: string;
     coverImage: string;
@@ -28,10 +30,13 @@ interface CourseHeroSectionProps {
   onPurchase: () => void;
   isPurchasing: boolean;
   isEnrolled: boolean;
+  isOwner?: boolean;
+  isAdmin?: boolean;
 }
 
-const CourseHeroSection = ({ course, onPurchase, isPurchasing, isEnrolled }: CourseHeroSectionProps) => {
+const CourseHeroSection = ({ course, onPurchase, isPurchasing, isEnrolled, isOwner = false, isAdmin = false }: CourseHeroSectionProps) => {
   const { t, locale } = useI18n();
+  const isManager = isAdmin || isOwner;
   const ctaLabel = isPurchasing
     ? t('courseDetails.loading')
     : isEnrolled
@@ -107,14 +112,24 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing, isEnrolled }: Cou
             </div>
           </div>
 
-          {/* CTA Button - Mobile */}
-          <button
-            onClick={onPurchase}
-            disabled={isPurchasing}
-            className="md:hidden w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {ctaLabel}
-          </button>
+          {/* CTA Button - Mobile — admin/owner sotib olmaydi */}
+          {isOwner && !isAdmin ? (
+            <Link
+              href={`/teacher-dashboard/courses/${course.id}`}
+              className="md:hidden w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth flex items-center justify-center gap-2"
+            >
+              <Icon name="PencilSquareIcon" size={18} />
+              {t('courseDetails.manageCourse')}
+            </Link>
+          ) : !isManager ? (
+            <button
+              onClick={onPurchase}
+              disabled={isPurchasing}
+              className="md:hidden w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {ctaLabel}
+            </button>
+          ) : null}
 
           <p className="text-xs text-muted-foreground">
             {t('courseDetails.lastUpdatedLabel')} {formatDate(course.lastUpdated, locale)}

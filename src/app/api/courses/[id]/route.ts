@@ -150,6 +150,10 @@ export async function GET(
       priceUsd: course.priceUsd.toString(),
       enrollmentCount: course.enrollmentCount,
       isEnrolled,
+      // Viewer munosabati — client kurs-detail sahifasini rolga qarab ko'rsatadi
+      // (admin/owner sotib olish oqimini emas, boshqaruv/moderatsiya panelini ko'radi).
+      isOwner,
+      isAdmin,
       ratingDistribution,
       relatedCourses: relatedRaw.map(toCard),
       instructorCourses: instructorRaw.map(toCard),

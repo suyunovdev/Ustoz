@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
 import { useI18n } from '@/contexts/I18nContext';
@@ -22,12 +23,36 @@ interface CourseSidebarProps {
   onPurchase: () => void;
   isPurchasing: boolean;
   isEnrolled: boolean;
+  isOwner?: boolean;
+  isAdmin?: boolean;
+  moderationStatus?: string;
+  courseId: string;
 }
 
-const CourseSidebar = ({ course, onPurchase, isPurchasing, isEnrolled }: CourseSidebarProps) => {
+const CourseSidebar = ({
+  course,
+  onPurchase,
+  isPurchasing,
+  isEnrolled,
+  isOwner = false,
+  isAdmin = false,
+  moderationStatus,
+  courseId,
+}: CourseSidebarProps) => {
   const { t, locale } = useI18n();
 
   const priceUzs = course.pricing.uzs;
+  // Admin yoki kurs egasi sotib olmaydi — ular boshqaruv/moderatsiya panelini ko'radi.
+  const isManager = isAdmin || isOwner;
+
+  const statusColor =
+    moderationStatus === 'approved'
+      ? 'bg-success/10 text-success'
+      : moderationStatus === 'submitted' || moderationStatus === 'under_review'
+        ? 'bg-warning/10 text-warning'
+        : moderationStatus === 'rejected'
+          ? 'bg-destructive/10 text-destructive'
+          : 'bg-muted text-muted-foreground';
 
   const ctaLabel = isPurchasing
     ? t('courseDetails.loading')
@@ -62,29 +87,70 @@ const CourseSidebar = ({ course, onPurchase, isPurchasing, isEnrolled }: CourseS
 
   return (
     <div className="sticky top-24 space-y-4">
-      {/* Pricing Card */}
-      <div className="bg-card rounded-md shadow-warm-lg p-6 space-y-4">
-        <div className="flex items-baseline space-x-2">
-          <span className="text-3xl font-heading font-bold text-primary">
-            {priceUzs > 0 ? formatCurrency(priceUzs, locale, 'UZS') : t('courses.free')}
-          </span>
+      {/* Pricing / Management Card — rolga qarab */}
+      {isManager ? (
+        <div className="bg-card rounded-md shadow-warm-lg p-6 space-y-4">
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-heading font-bold text-primary">
+              {priceUzs > 0 ? formatCurrency(priceUzs, locale, 'UZS') : t('courses.free')}
+            </span>
+            <span className="text-xs text-muted-foreground">{t('courseDetails.priceInfoNote')}</span>
+          </div>
+
+          {moderationStatus && (
+            <span className={`inline-block px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
+              {t(`teacher.status_${moderationStatus}`)}
+            </span>
+          )}
+
+          <div className="flex items-start gap-2 text-sm text-muted-foreground">
+            <Icon name="InformationCircleIcon" size={16} className="shrink-0 mt-0.5" />
+            <span>{isAdmin ? t('courseDetails.adminViewing') : t('courseDetails.ownerViewing')}</span>
+          </div>
+
+          {isOwner && !isAdmin && (
+            <Link
+              href={`/teacher-dashboard/courses/${courseId}`}
+              className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth flex items-center justify-center gap-2"
+            >
+              <Icon name="PencilSquareIcon" size={18} />
+              {t('courseDetails.manageCourse')}
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              href="/admin-dashboard?tab=courses"
+              className="w-full px-6 py-3 border border-border text-foreground rounded-md font-semibold hover:bg-muted transition-smooth flex items-center justify-center gap-2"
+            >
+              <Icon name="ShieldCheckIcon" size={18} />
+              {t('courseDetails.moderationPanel')}
+            </Link>
+          )}
         </div>
+      ) : (
+        <div className="bg-card rounded-md shadow-warm-lg p-6 space-y-4">
+          <div className="flex items-baseline space-x-2">
+            <span className="text-3xl font-heading font-bold text-primary">
+              {priceUzs > 0 ? formatCurrency(priceUzs, locale, 'UZS') : t('courses.free')}
+            </span>
+          </div>
 
-        <button
-          onClick={onPurchase}
-          disabled={isPurchasing}
-          className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          {isEnrolled && <Icon name="PlayIcon" size={18} variant="solid" />}
-          {ctaLabel}
-        </button>
+          <button
+            onClick={onPurchase}
+            disabled={isPurchasing}
+            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isEnrolled && <Icon name="PlayIcon" size={18} variant="solid" />}
+            {ctaLabel}
+          </button>
 
-        {!isEnrolled && (
-          <p className="text-xs text-center text-muted-foreground">
-            {t('courseDetails.refundGuarantee')}
-          </p>
-        )}
-      </div>
+          {!isEnrolled && (
+            <p className="text-xs text-center text-muted-foreground">
+              {t('courseDetails.refundGuarantee')}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Course Info Card */}
       <div className="bg-card rounded-md shadow-warm p-6 space-y-4">
