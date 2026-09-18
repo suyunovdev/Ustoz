@@ -60,7 +60,8 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle }: QuizBuilderPr
     onQuestionsChange(questions.filter((q) => q.id !== id));
   };
 
-  const canAddMore = questions.length < 15;
+  // Savol soni CHEKSIZ — o'qituvchi istalgancha savol qo'shishi mumkin (ilgari 15 chek edi).
+  const canAddMore = true;
   const meetsMinimum = questions.length >= 3;
 
   return (
@@ -74,7 +75,7 @@ const QuizBuilder = ({ questions, onQuestionsChange, topicTitle }: QuizBuilderPr
         >
           <Icon name={meetsMinimum ? 'CheckCircleIcon' : 'ExclamationTriangleIcon'} size={16} />
           <span>
-            {questions.length} / 3-15 {t('courseCreation.questionsCount')}
+            {questions.length} {t('courseCreation.questionsCount')}{!meetsMinimum ? ` · ${t('courseCreation.minQuestionsHint')}` : ''}
           </span>
         </div>
         <button
