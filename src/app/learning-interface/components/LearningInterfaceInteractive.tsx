@@ -66,6 +66,8 @@ const LearningInterfaceInteractive = () => {
   const [showCertificateModal, setShowCertificateModal] = useState(false);
   // Yozilganmi — yozilmagan o'quvchi faqat bepul (preview) mavzularni ko'ra oladi.
   const [isEnrolled, setIsEnrolled] = useState(true);
+  // Admin/owner — pullik kursni ham to'liq ko'radi (view-only, progress yozilmaydi).
+  const [canViewAll, setCanViewAll] = useState(true);
   const completeMutation = useCompleteTopicMutation();
   const isMarkingComplete = completeMutation.isPending;
 
@@ -136,6 +138,12 @@ const LearningInterfaceInteractive = () => {
       const { course } = await courseRes.json();
       if (signal?.aborted) return;
 
+      // Admin va kurs egasi (owner) pullik kursni ham TO'LIQ ko'radi (view-only):
+      // barcha dars/video ochiq, lekin progress yozilmaydi va "tugatildi" belgilanmaydi.
+      // Server (api/courses/[id]) admin/owner uchun kontentni allaqachon ochiq yuboradi.
+      const canViewAll = Boolean(course.isEnrolled || course.isAdmin || course.isOwner);
+      setCanViewAll(canViewAll);
+
       // Yozilmagan o'quvchini QAYTARIB YUBORMAYMIZ — u faqat bepul (preview)
       // mavzularni ko'radi (lead magnet). Bepul bo'lmaganlar qulflangan.
       setIsEnrolled(course.isEnrolled);
@@ -175,18 +183,18 @@ const LearningInterfaceInteractive = () => {
           content: t.content || '',
           moduleTitle: t.moduleTitle || '',
           isFreePreview: isFree,
-          locked: !course.isEnrolled && !isFree,
+          locked: !canViewAll && !isFree,
         };
       });
 
       // URL'dan topicId yoki (yozilgan: birinchi tugatilmagan / yozilmagan: birinchi bepul)
       const urlTopicId = searchParams.get('topicId');
-      const selectable = (t: Topic) => course.isEnrolled || !t.locked;
+      const selectable = (t: Topic) => canViewAll || !t.locked;
       let initial = urlTopicId
         ? mappedTopics.find((t) => t.id === urlTopicId && selectable(t))
         : undefined;
       if (!initial) {
-        initial = course.isEnrolled
+        initial = canViewAll
           ? (mappedTopics.find((t) => !t.isCompleted) ?? mappedTopics[0])
           : mappedTopics.find((t) => !t.locked);
       }
@@ -376,8 +384,9 @@ const LearningInterfaceInteractive = () => {
         </button>
       </div>
 
-      {/* Yozilmagan o'quvchi uchun preview banneri + yozilish CTA */}
-      {!isEnrolled && (
+      {/* Yozilmagan o'quvchi uchun preview banneri + yozilish CTA.
+          Admin/owner (canViewAll) uni ko'rmaydi — ular sotib olmaydi. */}
+      {!canViewAll && (
         <div className="flex-shrink-0 bg-primary/10 border-b border-primary/20 px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
           <p className="text-sm text-foreground min-w-0">
             <Icon name="LockClosedIcon" size={14} className="inline mr-1 text-primary" />

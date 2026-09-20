@@ -108,10 +108,19 @@ const CourseSidebar = ({
             <span>{isAdmin ? t('courseDetails.adminViewing') : t('courseDetails.ownerViewing')}</span>
           </div>
 
+          {/* Admin/owner darslarni to'liq ko'rish uchun learning-interface'ga o'tadi (view-only). */}
+          <Link
+            href={`/learning-interface?courseId=${courseId}`}
+            className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth flex items-center justify-center gap-2"
+          >
+            <Icon name="PlayCircleIcon" size={18} />
+            {t('courseDetails.viewCourse')}
+          </Link>
+
           {isOwner && !isAdmin && (
             <Link
               href={`/teacher-dashboard/courses/${courseId}`}
-              className="w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth flex items-center justify-center gap-2"
+              className="w-full px-6 py-3 border border-border text-foreground rounded-md font-semibold hover:bg-muted transition-smooth flex items-center justify-center gap-2"
             >
               <Icon name="PencilSquareIcon" size={18} />
               {t('courseDetails.manageCourse')}

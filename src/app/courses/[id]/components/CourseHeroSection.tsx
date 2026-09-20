@@ -112,16 +112,16 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing, isEnrolled, isOwn
             </div>
           </div>
 
-          {/* CTA Button - Mobile — admin/owner sotib olmaydi */}
-          {isOwner && !isAdmin ? (
+          {/* CTA Button - Mobile — admin/owner sotib olmaydi, kursni to'liq ko'radi */}
+          {isManager ? (
             <Link
-              href={`/teacher-dashboard/courses/${course.id}`}
+              href={`/learning-interface?courseId=${course.id}`}
               className="md:hidden w-full px-6 py-3 bg-primary text-primary-foreground rounded-md font-semibold hover:bg-primary/90 transition-smooth flex items-center justify-center gap-2"
             >
-              <Icon name="PencilSquareIcon" size={18} />
-              {t('courseDetails.manageCourse')}
+              <Icon name="PlayCircleIcon" size={18} />
+              {t('courseDetails.viewCourse')}
             </Link>
-          ) : !isManager ? (
+          ) : (
             <button
               onClick={onPurchase}
               disabled={isPurchasing}
@@ -129,7 +129,7 @@ const CourseHeroSection = ({ course, onPurchase, isPurchasing, isEnrolled, isOwn
             >
               {ctaLabel}
             </button>
-          ) : null}
+          )}
 
           <p className="text-xs text-muted-foreground">
             {t('courseDetails.lastUpdatedLabel')} {formatDate(course.lastUpdated, locale)}
