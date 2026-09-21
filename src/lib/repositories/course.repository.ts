@@ -138,13 +138,30 @@ export async function findSimilarByEnrollment(
 
 // ─── Admin queries ─────────────────────────────────────────────────────────
 
+export type CourseSortField =
+  | 'createdAt'
+  | 'priceUzs'
+  | 'enrollmentCount'
+  | 'rating'
+  | 'title';
+
+const COURSE_SORT_FIELDS: Record<CourseSortField, keyof Prisma.CourseOrderByWithRelationInput> = {
+  createdAt: 'createdAt',
+  priceUzs: 'priceUzs',
+  enrollmentCount: 'enrollmentCount',
+  rating: 'rating',
+  title: 'title',
+};
+
 export interface AdminCourseFilters {
   status?: ModerationStatus | 'all';
   search?: string;
   featuredOnly?: boolean;
   suspendedOnly?: boolean;
   limit?: number;
-  cursor?: string | null;
+  offset?: number;
+  sort?: CourseSortField;
+  order?: 'asc' | 'desc';
 }
 
 export async function findAllForAdmin(
@@ -156,7 +173,9 @@ export async function findAllForAdmin(
     featuredOnly,
     suspendedOnly,
     limit = 20,
-    cursor,
+    offset = 0,
+    sort = 'createdAt',
+    order = 'desc',
   } = filters;
 
   const where: Prisma.CourseWhereInput = {
@@ -173,12 +192,14 @@ export async function findAllForAdmin(
     ...(suspendedOnly ? { suspendedAt: { not: null } } : {}),
   };
 
+  const sortField = COURSE_SORT_FIELDS[sort] ?? 'createdAt';
+
   return prisma.course.findMany({
     where,
     include: adminCourseInclude,
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1, // +1 — hasMore aniqlash
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    orderBy: [{ [sortField]: order } as Prisma.CourseOrderByWithRelationInput, { id: 'asc' }],
+    take: limit,
+    skip: offset,
   });
 }
 

@@ -15,25 +15,35 @@ export interface AdminUserDTO {
   createdAt: string;
 }
 
+export type AdminUsersSortField =
+  | 'createdAt'
+  | 'lastLoginAt'
+  | 'fullName'
+  | 'email'
+  | 'role';
+
 export interface AdminUsersResponse {
   users: AdminUserDTO[];
   total: number;
-  nextCursor: string | null;
 }
 
 export interface AdminUsersFilters {
   role?: 'student' | 'teacher' | 'admin' | 'all';
   search?: string;
-  cursor?: string | null;
-  limit?: number;
+  page?: number;
+  pageSize?: number;
+  sort?: AdminUsersSortField;
+  order?: 'asc' | 'desc';
 }
 
 async function fetchAdminUsers(filters: AdminUsersFilters): Promise<AdminUsersResponse> {
   const params = new URLSearchParams();
   if (filters.role) params.set('role', filters.role);
   if (filters.search) params.set('search', filters.search);
-  if (filters.cursor) params.set('cursor', filters.cursor);
-  if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.page) params.set('page', String(filters.page));
+  if (filters.pageSize) params.set('limit', String(filters.pageSize));
+  if (filters.sort) params.set('sort', filters.sort);
+  if (filters.order) params.set('order', filters.order);
 
   const res = await fetch(`/api/admin/users?${params}`, { credentials: 'include' });
   if (!res.ok) {
@@ -48,10 +58,13 @@ export function useAdminUsers(filters: AdminUsersFilters = {}) {
     queryKey: queryKeys.adminUsers({
       role: filters.role,
       search: filters.search,
-      cursor: filters.cursor,
+      page: filters.page,
+      pageSize: filters.pageSize,
+      sort: filters.sort,
+      order: filters.order,
     }),
     queryFn: () => fetchAdminUsers(filters),
     staleTime: 30_000,
-    placeholderData: keepPreviousData, // pagination/search'da flicker bo'lmasligi uchun
+    placeholderData: keepPreviousData, // pagination/search/sort'da flicker bo'lmasligi uchun
   });
 }

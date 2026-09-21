@@ -73,25 +73,24 @@ beforeEach(() => {
 });
 
 describe('listUsers', () => {
-  it('paginated natija: nextCursor mavjud bo\'lganda', async () => {
-    const rows = Array.from({ length: 21 }, (_, i) => makeUser({ id: `u${i}` }));
+  it('offset natija: users va total qaytadi', async () => {
+    const rows = Array.from({ length: 20 }, (_, i) => makeUser({ id: `u${i}` }));
     vi.mocked(userRepo.findManyForAdmin).mockResolvedValue(rows);
     vi.mocked(userRepo.countForAdmin).mockResolvedValue(50);
 
     const result = await listUsers({ limit: 20 });
     expect(result.users).toHaveLength(20);
-    expect(result.nextCursor).toBe('u19'); // 20-chi qator (index 19)
     expect(result.total).toBe(50);
   });
 
-  it('oxirgi sahifa: nextCursor=null', async () => {
+  it('oxirgi sahifa: qisman ro\'yxat', async () => {
     const rows = [makeUser({ id: 'u1' }), makeUser({ id: 'u2' })];
     vi.mocked(userRepo.findManyForAdmin).mockResolvedValue(rows);
     vi.mocked(userRepo.countForAdmin).mockResolvedValue(2);
 
     const result = await listUsers({ limit: 20 });
     expect(result.users).toHaveLength(2);
-    expect(result.nextCursor).toBeNull();
+    expect(result.total).toBe(2);
   });
 });
 

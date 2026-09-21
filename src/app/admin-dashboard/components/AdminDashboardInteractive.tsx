@@ -3,9 +3,9 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Icon from '@/components/ui/AppIcon';
 import { useI18n } from '@/contexts/I18nContext';
 import AdminSidebar, { type AdminTabId } from './AdminSidebar';
+import AdminTopbar from './AdminTopbar';
 
 // Yengil panellar — to'g'ridan-to'g'ri import (dynamic chunk overhead'isiz).
 // Faqat ko'p og'ir kutubxonalar (Recharts) — AnalyticsCharts bo'lsa, uni
@@ -158,28 +158,15 @@ const AdminDashboardInteractive = () => {
         onMobileClose={() => setMobileNavOpen(false)}
       />
 
-      {/* Mobile top bar */}
-      <div className="md:hidden sticky top-0 z-30 bg-card border-b border-border flex items-center justify-between px-4 h-14">
-        <button
-          onClick={() => setMobileNavOpen(true)}
-          className="p-2 -ml-2 rounded-md hover:bg-muted transition-smooth"
-          aria-label="Menyu"
-        >
-          <Icon name="Bars3Icon" size={24} />
-        </button>
-        <p className="font-heading font-semibold text-foreground">{t(headerKeys.title)}</p>
-        <div className="w-9" />
-      </div>
+      <div className="md:ml-60">
+        <AdminTopbar
+          title={t(headerKeys.title)}
+          subtitle={t(headerKeys.subtitle)}
+          onMenuClick={() => setMobileNavOpen(true)}
+        />
 
-      <main className="md:ml-60 p-4 sm:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6 hidden md:block">
-            <h1 className="text-2xl lg:text-3xl font-heading font-bold text-foreground mb-1">
-              {t(headerKeys.title)}
-            </h1>
-            <p className="text-muted-foreground text-sm">{t(headerKeys.subtitle)}</p>
-          </div>
-
+        <main className="p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto">
           {activeTab === 'overview' && (
             <div className="space-y-6">
               <PlatformMetrics />
@@ -216,8 +203,9 @@ const AdminDashboardInteractive = () => {
           {activeTab === 'analytics' && <AnalyticsCharts expanded />}
           {activeTab === 'system' && <SystemHealthPanel expanded />}
           {activeTab === 'settings' && <SystemSettingsPanel />}
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 };

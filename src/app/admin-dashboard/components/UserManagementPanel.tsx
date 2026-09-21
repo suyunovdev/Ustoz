@@ -1,11 +1,20 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import Icon from '@/components/ui/AppIcon';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Avatar from '@/components/ui/Avatar';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
+import { DataTable, type Column, type SortState } from '@/components/ui/DataTable';
+import { Menu } from '@/components/ui/Menu';
+import { Pagination } from '@/components/ui/Pagination';
+import { Toolbar, SearchInput, FilterChips } from '@/components/ui/Toolbar';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
-import { useAdminUsers, type AdminUserDTO } from '@/hooks/queries/useAdminUsers';
+import {
+  useAdminUsers,
+  type AdminUserDTO,
+  type AdminUsersSortField,
+} from '@/hooks/queries/useAdminUsers';
 import { useUserActionMutation } from '@/hooks/mutations/useUserActionMutation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useI18n } from '@/contexts/I18nContext';
@@ -20,9 +29,11 @@ interface PendingAction {
   newRole?: 'student' | 'teacher' | 'admin';
 }
 
-// ROLE_LABELS are now driven by t() inside the component
-
-// FILTERS are now driven by t() inside the component
+const ROLE_VARIANT: Record<string, BadgeVariant> = {
+  admin: 'destructive',
+  teacher: 'primary',
+  student: 'success',
+};
 
 function formatDate(iso: string | null, locale: Locale): string {
   if (!iso) return '—';
@@ -32,12 +43,14 @@ function formatDate(iso: string | null, locale: Locale): string {
 const UserManagementPanel = () => {
   const { user: currentUser } = useAuth();
   const { t, locale } = useI18n();
+  const router = useRouter();
 
-  const ROLE_LABELS: Record<string, { label: string; color: string }> = {
-    admin: { label: t('admin.roleAdmin'), color: 'bg-destructive/10 text-destructive' },
-    teacher: { label: t('admin.roleTeacher'), color: 'bg-primary/10 text-primary' },
-    student: { label: t('admin.roleStudent'), color: 'bg-success/10 text-success' },
-  };
+  const roleLabel = (role: string) =>
+    role === 'admin'
+      ? t('admin.roleAdmin')
+      : role === 'teacher'
+        ? t('admin.roleTeacher')
+        : t('admin.roleStudent');
 
   const FILTERS: { id: RoleFilter; label: string }[] = [
     { id: 'all', label: t('admin.filterAll') },
@@ -45,27 +58,37 @@ const UserManagementPanel = () => {
     { id: 'student', label: t('admin.filterStudents') },
     { id: 'admin', label: t('admin.filterAdmins') },
   ];
+
   const [filterRole, setFilterRole] = useState<RoleFilter>('all');
-  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [openMenuFor, setOpenMenuFor] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [sort, setSort] = useState<SortState>({ key: 'createdAt', dir: 'desc' });
   const [pending, setPending] = useState<PendingAction | null>(null);
 
   const { data, isLoading, isFetching, error, refetch } = useAdminUsers({
     role: filterRole,
     search: search || undefined,
+    page,
+    pageSize,
+    sort: sort.key as AdminUsersSortField,
+    order: sort.dir,
   });
 
   const actionMutation = useUserActionMutation();
 
-  // Debounce search (300ms)
-  useMemo(() => {
-    const t = setTimeout(() => setSearch(searchInput.trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchInput]);
-
   const users = data?.users ?? [];
   const total = data?.total ?? 0;
+
+  // Filtr/qidiruv/sort/hajm o'zgarsa birinchi sahifaga qaytamiz.
+  const resetTo = <T,>(setter: (v: T) => void) => (v: T) => {
+    setter(v);
+    setPage(1);
+  };
+  const handleSort = (s: SortState) => {
+    setSort(s);
+    setPage(1);
+  };
 
   const confirmTexts = (() => {
     if (!pending) return null;
@@ -87,7 +110,7 @@ const UserManagementPanel = () => {
     }
     return {
       title: t('admin.changeRole'),
-      message: `${pending.user.fullName}'ning rolini ${ROLE_LABELS[pending.user.role]?.label} → ${ROLE_LABELS[pending.newRole!]?.label}'ga o'zgartirilsinmi?`,
+      message: `${pending.user.fullName}'ning rolini ${roleLabel(pending.user.role)} → ${roleLabel(pending.newRole!)}'ga o'zgartirilsinmi?`,
       confirmLabel: t('admin.changeBtn'),
       variant: 'default' as const,
     };
@@ -107,216 +130,166 @@ const UserManagementPanel = () => {
     if (pending.type === 'suspend') {
       actionMutation.mutate(
         { userId: pending.user.id, action: 'suspend' },
-        {
-          onSuccess: () => onSuccess(t('admin.userSuspended')),
-          onError,
-        },
+        { onSuccess: () => onSuccess(t('admin.userSuspended')), onError },
       );
     } else if (pending.type === 'activate') {
       actionMutation.mutate(
         { userId: pending.user.id, action: 'activate' },
-        {
-          onSuccess: () => onSuccess(t('admin.userActivated')),
-          onError,
-        },
+        { onSuccess: () => onSuccess(t('admin.userActivated')), onError },
       );
     } else {
       actionMutation.mutate(
         { userId: pending.user.id, action: 'change_role', newRole: pending.newRole! },
-        {
-          onSuccess: () => onSuccess(t('admin.roleChanged')),
-          onError,
-        },
+        { onSuccess: () => onSuccess(t('admin.roleChanged')), onError },
       );
     }
   };
 
+  const columns: Column<AdminUserDTO>[] = [
+    {
+      key: 'fullName',
+      header: t('admin.colUser'),
+      sortable: true,
+      render: (u) => {
+        const isSelf = currentUser?.id === u.id;
+        return (
+          <div className="flex items-center gap-3 min-w-0">
+            <Avatar src={u.avatarUrl} name={u.fullName} size={36} />
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-medium text-foreground truncate">{u.fullName}</span>
+                {!u.isActive && <Badge variant="destructive">{t('admin.blocked')}</Badge>}
+                {isSelf && <Badge variant="muted">{t('admin.you')}</Badge>}
+              </div>
+              <span className="text-xs text-muted-foreground truncate md:hidden">{u.email}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'email',
+      header: t('admin.colEmail'),
+      sortable: true,
+      headerClassName: 'hidden md:table-cell',
+      cellClassName: 'hidden md:table-cell text-muted-foreground',
+      render: (u) => <span className="truncate">{u.email}</span>,
+    },
+    {
+      key: 'role',
+      header: t('admin.colRole'),
+      sortable: true,
+      render: (u) => (
+        <Badge variant={ROLE_VARIANT[u.role] ?? 'muted'}>{roleLabel(u.role)}</Badge>
+      ),
+    },
+    {
+      key: 'createdAt',
+      header: t('admin.joinedAt'),
+      sortable: true,
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell text-muted-foreground whitespace-nowrap',
+      render: (u) => formatDate(u.createdAt, locale),
+    },
+    {
+      key: 'lastLoginAt',
+      header: t('admin.lastLogin'),
+      sortable: true,
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell text-muted-foreground whitespace-nowrap',
+      render: (u) => formatDate(u.lastLoginAt, locale),
+    },
+    {
+      key: 'actions',
+      header: t('admin.colActions'),
+      align: 'right',
+      width: 'w-16',
+      render: (u) => {
+        const isSelf = currentUser?.id === u.id;
+        return (
+          <Menu
+            triggerLabel={t('admin.actionsMenu')}
+            disabled={isSelf}
+            sections={[
+              {
+                items: [
+                  u.isActive
+                    ? {
+                        label: t('admin.suspendBtn'),
+                        icon: 'NoSymbolIcon',
+                        variant: 'danger' as const,
+                        onClick: () => setPending({ user: u, type: 'suspend' }),
+                      }
+                    : {
+                        label: t('admin.activateBtn'),
+                        icon: 'CheckCircleIcon',
+                        variant: 'success' as const,
+                        onClick: () => setPending({ user: u, type: 'activate' }),
+                      },
+                ],
+              },
+              {
+                label: t('admin.changeRole'),
+                items: (['student', 'teacher', 'admin'] as const).map((r) => ({
+                  label: roleLabel(r),
+                  icon: 'ArrowRightIcon',
+                  disabled: u.role === r,
+                  onClick: () => setPending({ user: u, type: 'change_role', newRole: r }),
+                })),
+              },
+            ]}
+          />
+        );
+      },
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Filters */}
-      <div className="bg-card rounded-md shadow-warm p-6">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div className="flex items-center space-x-2 flex-wrap gap-y-2">
-            {FILTERS.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setFilterRole(f.id)}
-                className={`px-4 py-2 rounded-md transition-smooth text-sm font-medium ${
-                  filterRole === f.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-foreground hover:bg-muted/80'
-                }`}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="relative">
-            <Icon
-              name="MagnifyingGlassIcon"
-              size={20}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <input
-              type="text"
-              placeholder={t('admin.searchByEmailOrName')}
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary w-full md:w-80"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* User List */}
-      <div className="bg-card rounded-md shadow-warm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-heading font-semibold text-foreground">
-            {t('admin.usersCount')} ({total})
-          </h3>
+    <div className="space-y-4">
+      <Toolbar>
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <FilterChips options={FILTERS} value={filterRole} onChange={resetTo(setFilterRole)} />
           {isFetching && !isLoading && (
             <span className="text-xs text-muted-foreground">{t('admin.updating')}</span>
           )}
         </div>
+        <SearchInput
+          placeholder={t('admin.searchByEmailOrName')}
+          onSearch={resetTo(setSearch)}
+        />
+      </Toolbar>
 
-        {error && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
-            <span>{t('admin.error')}: {error.message}</span>
-            <button onClick={() => refetch()} className="underline text-xs">
-              {t('admin.retryBtn')}
-            </button>
-          </div>
-        )}
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 text-sm text-destructive flex items-center justify-between">
+          <span>
+            {t('admin.error')}: {error.message}
+          </span>
+          <button onClick={() => refetch()} className="underline text-xs">
+            {t('admin.retryBtn')}
+          </button>
+        </div>
+      )}
 
-        {isLoading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={`user-skeleton-${i}`} className="animate-pulse">
-                <div className="h-16 bg-muted rounded-md" />
-              </div>
-            ))}
-          </div>
-        ) : users.length === 0 ? (
-          <div className="text-center py-12">
-            <Icon name="UserGroupIcon" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">{t('admin.usersNotFound')}</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {users.map((user) => {
-              const roleBadge = ROLE_LABELS[user.role] ?? ROLE_LABELS.student;
-              const isSelf = currentUser?.id === user.id;
-              const menuOpen = openMenuFor === user.id;
-              return (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-md hover:bg-muted/50 transition-smooth"
-                >
-                  <Link
-                    href={`/admin-dashboard/users/${user.id}`}
-                    className="flex items-center space-x-4 min-w-0 flex-1 group"
-                    title={t('adminUserDetail.viewDetails')}
-                  >
-                    <div className="flex items-center justify-center w-12 h-12 bg-primary/10 rounded-full shrink-0">
-                      <Icon name="UserIcon" size={24} className="text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-heading font-semibold text-foreground truncate group-hover:text-primary group-hover:underline transition-smooth">
-                          {user.fullName}
-                        </h4>
-                        {!user.isActive && (
-                          <span className="px-2 py-0.5 text-xs bg-destructive/10 text-destructive rounded-full">
-                            {t('admin.blocked')}
-                          </span>
-                        )}
-                        {isSelf && (
-                          <span className="px-2 py-0.5 text-xs bg-muted text-muted-foreground rounded-full">
-                            {t('admin.you')}
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {t('admin.joinedAt')}: {formatDate(user.createdAt, locale)} · {t('admin.lastLogin')}:{' '}
-                        {formatDate(user.lastLoginAt, locale)}
-                      </p>
-                    </div>
-                  </Link>
+      <DataTable
+        columns={columns}
+        rows={users}
+        getRowId={(u) => u.id}
+        onRowClick={(u) => router.push(`/admin-dashboard/users/${u.id}`)}
+        sort={sort}
+        onSortChange={handleSort}
+        isLoading={isLoading}
+        emptyIcon="UserGroupIcon"
+        emptyTitle={t('admin.usersNotFound')}
+      />
 
-                  <div className="flex items-center space-x-3 shrink-0">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${roleBadge.color}`}
-                    >
-                      {roleBadge.label}
-                    </span>
-                    <div className="relative">
-                      <button
-                        onClick={() => setOpenMenuFor(menuOpen ? null : user.id)}
-                        disabled={isSelf}
-                        className="p-2 hover:bg-muted rounded-md transition-smooth disabled:opacity-30 disabled:cursor-not-allowed"
-                        aria-label={t('admin.actionsMenu')}
-                      >
-                        <Icon name="EllipsisVerticalIcon" size={20} className="text-muted-foreground" />
-                      </button>
-                      {menuOpen && !isSelf && (
-                        <>
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setOpenMenuFor(null)}
-                          />
-                          <div className="absolute right-0 mt-1 w-56 bg-card border border-border rounded-md shadow-warm-lg z-20 py-1">
-                            {user.isActive ? (
-                              <button
-                                onClick={() => {
-                                  setOpenMenuFor(null);
-                                  setPending({ user, type: 'suspend' });
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-destructive/10 flex items-center gap-2"
-                              >
-                                <Icon name="NoSymbolIcon" size={16} />
-                                {t('admin.suspendBtn')}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  setOpenMenuFor(null);
-                                  setPending({ user, type: 'activate' });
-                                }}
-                                className="w-full text-left px-4 py-2 text-sm text-success hover:bg-success/10 flex items-center gap-2"
-                              >
-                                <Icon name="CheckCircleIcon" size={16} />
-                                {t('admin.activateBtn')}
-                              </button>
-                            )}
-                            <div className="border-t border-border my-1" />
-                            <p className="px-4 py-1 text-xs text-muted-foreground">{t('admin.changeRole')}</p>
-                            {(['student', 'teacher', 'admin'] as const).map((r) => (
-                              <button
-                                key={r}
-                                onClick={() => {
-                                  setOpenMenuFor(null);
-                                  setPending({ user, type: 'change_role', newRole: r });
-                                }}
-                                disabled={user.role === r}
-                                className="w-full text-left px-4 py-2 text-sm hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-2"
-                              >
-                                <Icon name="ArrowRightIcon" size={14} />
-                                {ROLE_LABELS[r].label}
-                              </button>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={resetTo(setPageSize)}
+        isFetching={isFetching}
+      />
 
       {confirmTexts && (
         <ConfirmModal

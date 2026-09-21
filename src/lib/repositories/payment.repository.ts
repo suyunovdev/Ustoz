@@ -17,12 +17,21 @@ export type AdminTransactionRow = Prisma.PaymentTransactionGetPayload<{
   include: typeof adminTransactionInclude;
 }>;
 
+export type PaymentSortField = 'createdAt' | 'amountUzs';
+
+const PAYMENT_SORT_FIELDS: Record<PaymentSortField, keyof Prisma.PaymentTransactionOrderByWithRelationInput> = {
+  createdAt: 'createdAt',
+  amountUzs: 'amountUzs',
+};
+
 export interface ListTransactionsFilters {
   status?: TransactionStatus | 'all';
   method?: PaymentMethod | 'all';
   search?: string; // student email yoki course title
   limit?: number;
-  cursor?: string | null;
+  offset?: number;
+  sort?: PaymentSortField;
+  order?: 'asc' | 'desc';
 }
 
 /**
@@ -88,7 +97,7 @@ export async function monthlyRevenue(
 export async function findAllForAdmin(
   filters: ListTransactionsFilters = {},
 ): Promise<AdminTransactionRow[]> {
-  const { status, method, search, limit = 20, cursor } = filters;
+  const { status, method, search, limit = 20, offset = 0, sort = 'createdAt', order = 'desc' } = filters;
 
   const where: Prisma.PaymentTransactionWhereInput = {
     ...(status && status !== 'all' ? { status } : {}),
@@ -105,12 +114,14 @@ export async function findAllForAdmin(
       : {}),
   };
 
+  const sortField = PAYMENT_SORT_FIELDS[sort] ?? 'createdAt';
+
   return prisma.paymentTransaction.findMany({
     where,
     include: adminTransactionInclude,
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    orderBy: [{ [sortField]: order } as Prisma.PaymentTransactionOrderByWithRelationInput, { id: 'asc' }],
+    take: limit,
+    skip: offset,
   });
 }
 

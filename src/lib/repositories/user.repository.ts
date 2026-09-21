@@ -20,11 +20,24 @@ export type AdminUserRow = {
   createdAt: Date;
 };
 
+export type UserSortField = 'createdAt' | 'lastLoginAt' | 'fullName' | 'email' | 'role';
+
+const USER_SORT_FIELDS: Record<UserSortField, keyof Prisma.UserProfileOrderByWithRelationInput> = {
+  createdAt: 'createdAt',
+  lastLoginAt: 'lastLoginAt',
+  fullName: 'fullName',
+  email: 'email',
+  role: 'role',
+};
+
 export interface ListUsersOptions {
   role?: UserRole | 'all';
   search?: string;
   limit?: number;
-  cursor?: string | null;
+  /** Offset (sahifa raqamli) pagination — (page-1)*limit. */
+  offset?: number;
+  sort?: UserSortField;
+  order?: 'asc' | 'desc';
   includeInactive?: boolean;
 }
 
@@ -42,12 +55,20 @@ const adminUserSelect = {
 
 /**
  * Foydalanuvchilar ro'yxati — admin panel uchun.
- * Cursor pagination: oxirgi user.id'ni `cursor` parametriga uzating.
+ * Offset pagination + ustun-sort. `id` ikkilamchi tartib (barqaror sahifalash).
  */
 export async function findManyForAdmin(
   options: ListUsersOptions = {},
 ): Promise<AdminUserRow[]> {
-  const { role, search, limit = 20, cursor, includeInactive = true } = options;
+  const {
+    role,
+    search,
+    limit = 20,
+    offset = 0,
+    sort = 'createdAt',
+    order = 'desc',
+    includeInactive = true,
+  } = options;
 
   const where: Prisma.UserProfileWhereInput = {
     ...(role && role !== 'all' ? { role } : {}),
@@ -62,12 +83,14 @@ export async function findManyForAdmin(
     ...(!includeInactive ? { isActive: true, deletedAt: null } : {}),
   };
 
+  const sortField = USER_SORT_FIELDS[sort] ?? 'createdAt';
+
   return prisma.userProfile.findMany({
     where,
     select: adminUserSelect,
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1, // +1 — `hasMore` aniqlash uchun
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    orderBy: [{ [sortField]: order } as Prisma.UserProfileOrderByWithRelationInput, { id: 'asc' }],
+    take: limit,
+    skip: offset,
   });
 }
 

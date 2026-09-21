@@ -44,10 +44,11 @@ export interface AdminPaymentsStats {
   cancelled: number;
 }
 
+export type AdminPaymentsSortField = 'createdAt' | 'amountUzs';
+
 export interface AdminPaymentsResponse {
   transactions: AdminTransactionDTO[];
   total: number;
-  nextCursor: string | null;
   stats: AdminPaymentsStats;
   totalRevenueUzs: string;
 }
@@ -56,8 +57,10 @@ export interface AdminPaymentsFilters {
   status?: TransactionStatusDTO | 'all';
   method?: PaymentMethodDTO | 'all';
   search?: string;
-  cursor?: string | null;
-  limit?: number;
+  page?: number;
+  pageSize?: number;
+  sort?: AdminPaymentsSortField;
+  order?: 'asc' | 'desc';
 }
 
 async function fetchAdminPayments(
@@ -67,8 +70,10 @@ async function fetchAdminPayments(
   if (filters.status) params.set('status', filters.status);
   if (filters.method) params.set('method', filters.method);
   if (filters.search) params.set('search', filters.search);
-  if (filters.cursor) params.set('cursor', filters.cursor);
-  if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.page) params.set('page', String(filters.page));
+  if (filters.pageSize) params.set('limit', String(filters.pageSize));
+  if (filters.sort) params.set('sort', filters.sort);
+  if (filters.order) params.set('order', filters.order);
 
   const res = await fetch(`/api/admin/payments?${params}`, { credentials: 'include' });
   if (!res.ok) {
@@ -84,7 +89,10 @@ export function useAdminPayments(filters: AdminPaymentsFilters = {}) {
       status: filters.status,
       method: filters.method,
       search: filters.search,
-      cursor: filters.cursor,
+      page: filters.page,
+      pageSize: filters.pageSize,
+      sort: filters.sort,
+      order: filters.order,
     }),
     queryFn: () => fetchAdminPayments(filters),
     staleTime: 30_000,

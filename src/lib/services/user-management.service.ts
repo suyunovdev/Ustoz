@@ -27,24 +27,19 @@ const VALID_ROLES: ReadonlyArray<UserRole> = ['student', 'teacher', 'admin'];
 export interface ListUsersResult {
   users: AdminUserRow[];
   total: number;
-  nextCursor: string | null;
 }
 
 export async function listUsers(filters: ListUsersOptions = {}): Promise<ListUsersResult> {
   const limit = filters.limit ?? 20;
-  const rows = await userRepo.findManyForAdmin({ ...filters, limit });
-  const hasMore = rows.length > limit;
-  const items = hasMore ? rows.slice(0, limit) : rows;
-  const total = await userRepo.countForAdmin({
-    role: filters.role,
-    search: filters.search,
-    includeInactive: filters.includeInactive,
-  });
-  return {
-    users: items,
-    total,
-    nextCursor: hasMore ? items[items.length - 1].id : null,
-  };
+  const [users, total] = await Promise.all([
+    userRepo.findManyForAdmin({ ...filters, limit }),
+    userRepo.countForAdmin({
+      role: filters.role,
+      search: filters.search,
+      includeInactive: filters.includeInactive,
+    }),
+  ]);
+  return { users, total };
 }
 
 export async function suspendUser(

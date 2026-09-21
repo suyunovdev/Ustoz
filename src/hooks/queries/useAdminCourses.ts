@@ -52,10 +52,16 @@ export interface AdminCoursesStats {
   suspended: number;
 }
 
+export type AdminCoursesSortField =
+  | 'createdAt'
+  | 'priceUzs'
+  | 'enrollmentCount'
+  | 'rating'
+  | 'title';
+
 export interface AdminCoursesResponse {
   courses: AdminCourseDTO[];
   total: number;
-  nextCursor: string | null;
   stats: AdminCoursesStats;
 }
 
@@ -64,8 +70,10 @@ export interface AdminCoursesFilters {
   search?: string;
   featuredOnly?: boolean;
   suspendedOnly?: boolean;
-  cursor?: string | null;
-  limit?: number;
+  page?: number;
+  pageSize?: number;
+  sort?: AdminCoursesSortField;
+  order?: 'asc' | 'desc';
 }
 
 async function fetchAdminCourses(
@@ -76,8 +84,10 @@ async function fetchAdminCourses(
   if (filters.search) params.set('search', filters.search);
   if (filters.featuredOnly) params.set('featuredOnly', 'true');
   if (filters.suspendedOnly) params.set('suspendedOnly', 'true');
-  if (filters.cursor) params.set('cursor', filters.cursor);
-  if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.page) params.set('page', String(filters.page));
+  if (filters.pageSize) params.set('limit', String(filters.pageSize));
+  if (filters.sort) params.set('sort', filters.sort);
+  if (filters.order) params.set('order', filters.order);
 
   const res = await fetch(`/api/admin/courses?${params}`, { credentials: 'include' });
   if (!res.ok) {
@@ -94,7 +104,10 @@ export function useAdminCourses(filters: AdminCoursesFilters = {}) {
       search: filters.search,
       featuredOnly: filters.featuredOnly,
       suspendedOnly: filters.suspendedOnly,
-      cursor: filters.cursor,
+      page: filters.page,
+      pageSize: filters.pageSize,
+      sort: filters.sort,
+      order: filters.order,
     }),
     queryFn: () => fetchAdminCourses(filters),
     staleTime: 30_000,

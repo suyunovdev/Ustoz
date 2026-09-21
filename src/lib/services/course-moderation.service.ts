@@ -49,7 +49,6 @@ export class InvalidStatusTransitionError extends ServiceError {
 export interface ListCoursesResult {
   courses: CourseWithAdminInfo[];
   total: number;
-  nextCursor: string | null;
   stats: Awaited<ReturnType<typeof courseRepo.statusCountsForAdmin>>;
 }
 
@@ -57,7 +56,7 @@ export async function listCourses(
   filters: AdminCourseFilters = {},
 ): Promise<ListCoursesResult> {
   const limit = filters.limit ?? 20;
-  const [rows, total, stats] = await Promise.all([
+  const [courses, total, stats] = await Promise.all([
     courseRepo.findAllForAdmin({ ...filters, limit }),
     courseRepo.countForAdmin({
       status: filters.status,
@@ -68,14 +67,7 @@ export async function listCourses(
     courseRepo.statusCountsForAdmin(),
   ]);
 
-  const hasMore = rows.length > limit;
-  const items = hasMore ? rows.slice(0, limit) : rows;
-  return {
-    courses: items,
-    total,
-    nextCursor: hasMore ? items[items.length - 1].id : null,
-    stats,
-  };
+  return { courses, total, stats };
 }
 
 export async function approveCourse(

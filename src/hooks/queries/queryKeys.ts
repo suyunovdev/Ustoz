@@ -13,8 +13,23 @@ export const queryKeys = {
 
   // Admin
   adminStats: ['admin-stats'] as const,
-  adminUsers: (filters: { role?: string; search?: string; cursor?: string | null }) =>
-    ['admin-users', filters.role ?? 'all', filters.search ?? '', filters.cursor ?? null] as const,
+  adminUsers: (filters: {
+    role?: string;
+    search?: string;
+    page?: number;
+    pageSize?: number;
+    sort?: string;
+    order?: string;
+  }) =>
+    [
+      'admin-users',
+      filters.role ?? 'all',
+      filters.search ?? '',
+      filters.page ?? 1,
+      filters.pageSize ?? 20,
+      filters.sort ?? 'createdAt',
+      filters.order ?? 'desc',
+    ] as const,
   adminUser: (id: string) => ['admin-user', id] as const,
   adminAuditLog: (targetType?: string, targetId?: string) =>
     ['admin-audit-log', targetType ?? null, targetId ?? null] as const,
@@ -23,7 +38,10 @@ export const queryKeys = {
     search?: string;
     featuredOnly?: boolean;
     suspendedOnly?: boolean;
-    cursor?: string | null;
+    page?: number;
+    pageSize?: number;
+    sort?: string;
+    order?: string;
   }) =>
     [
       'admin-courses',
@@ -31,20 +49,29 @@ export const queryKeys = {
       filters.search ?? '',
       filters.featuredOnly ?? false,
       filters.suspendedOnly ?? false,
-      filters.cursor ?? null,
+      filters.page ?? 1,
+      filters.pageSize ?? 20,
+      filters.sort ?? 'createdAt',
+      filters.order ?? 'desc',
     ] as const,
   adminPayments: (filters: {
     status?: string;
     method?: string;
     search?: string;
-    cursor?: string | null;
+    page?: number;
+    pageSize?: number;
+    sort?: string;
+    order?: string;
   }) =>
     [
       'admin-payments',
       filters.status ?? 'all',
       filters.method ?? 'all',
       filters.search ?? '',
-      filters.cursor ?? null,
+      filters.page ?? 1,
+      filters.pageSize ?? 20,
+      filters.sort ?? 'createdAt',
+      filters.order ?? 'desc',
     ] as const,
   adminReviews: (filters: {
     status?: string;

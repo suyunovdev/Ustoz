@@ -33,23 +33,59 @@ interface NavItem {
   icon: string;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { id: 'overview', labelKey: 'admin.navOverview', icon: 'HomeIcon' },
-  { id: 'users', labelKey: 'admin.navUsers', icon: 'UserGroupIcon' },
-  { id: 'teacher_applications', labelKey: 'admin.navTeacherApps', icon: 'AcademicCapIcon' },
-  { id: 'courses', labelKey: 'admin.navCourses', icon: 'BookOpenIcon' },
-  { id: 'reviews', labelKey: 'admin.navReviews', icon: 'ChatBubbleLeftRightIcon' },
-  { id: 'payments', labelKey: 'admin.navPayments', icon: 'CreditCardIcon' },
-  { id: 'withdrawals', labelKey: 'admin.navWithdrawals', icon: 'BanknotesIcon' },
-  { id: 'subscriptions', labelKey: 'admin.navSubscriptions', icon: 'SparklesIcon' },
-  { id: 'live_sessions', labelKey: 'admin.navLiveSessions', icon: 'VideoCameraIcon' },
-  { id: 'campaigns', labelKey: 'admin.navCampaigns', icon: 'EnvelopeIcon' },
-  { id: 'moderation', labelKey: 'admin.navModeration', icon: 'ShieldCheckIcon' },
-  { id: 'tickets', labelKey: 'admin.navTickets', icon: 'LifebuoyIcon' },
-  { id: 'audit_log', labelKey: 'admin.navAuditLog', icon: 'ClipboardDocumentListIcon' },
-  { id: 'analytics', labelKey: 'admin.navAnalytics', icon: 'ChartBarIcon' },
-  { id: 'system', labelKey: 'admin.navSystem', icon: 'CogIcon' },
-  { id: 'settings', labelKey: 'admin.navSettings', icon: 'Cog6ToothIcon' },
+interface NavGroup {
+  titleKey: string;
+  items: NavItem[];
+}
+
+// CRM uslubi — bo'limlar mazmuniga qarab guruhlangan (tekis 16 tugma o'rniga).
+const NAV_GROUPS: NavGroup[] = [
+  {
+    titleKey: 'admin.groupOverview',
+    items: [
+      { id: 'overview', labelKey: 'admin.navOverview', icon: 'HomeIcon' },
+      { id: 'analytics', labelKey: 'admin.navAnalytics', icon: 'ChartBarIcon' },
+    ],
+  },
+  {
+    titleKey: 'admin.groupUsers',
+    items: [
+      { id: 'users', labelKey: 'admin.navUsers', icon: 'UserGroupIcon' },
+      { id: 'teacher_applications', labelKey: 'admin.navTeacherApps', icon: 'AcademicCapIcon' },
+    ],
+  },
+  {
+    titleKey: 'admin.groupContent',
+    items: [
+      { id: 'courses', labelKey: 'admin.navCourses', icon: 'BookOpenIcon' },
+      { id: 'moderation', labelKey: 'admin.navModeration', icon: 'ShieldCheckIcon' },
+      { id: 'reviews', labelKey: 'admin.navReviews', icon: 'ChatBubbleLeftRightIcon' },
+      { id: 'live_sessions', labelKey: 'admin.navLiveSessions', icon: 'VideoCameraIcon' },
+    ],
+  },
+  {
+    titleKey: 'admin.groupFinance',
+    items: [
+      { id: 'payments', labelKey: 'admin.navPayments', icon: 'CreditCardIcon' },
+      { id: 'withdrawals', labelKey: 'admin.navWithdrawals', icon: 'BanknotesIcon' },
+      { id: 'subscriptions', labelKey: 'admin.navSubscriptions', icon: 'SparklesIcon' },
+    ],
+  },
+  {
+    titleKey: 'admin.groupComms',
+    items: [
+      { id: 'campaigns', labelKey: 'admin.navCampaigns', icon: 'EnvelopeIcon' },
+      { id: 'tickets', labelKey: 'admin.navTickets', icon: 'LifebuoyIcon' },
+    ],
+  },
+  {
+    titleKey: 'admin.groupSystem',
+    items: [
+      { id: 'audit_log', labelKey: 'admin.navAuditLog', icon: 'ClipboardDocumentListIcon' },
+      { id: 'system', labelKey: 'admin.navSystem', icon: 'CogIcon' },
+      { id: 'settings', labelKey: 'admin.navSettings', icon: 'Cog6ToothIcon' },
+    ],
+  },
 ];
 
 interface AdminSidebarProps {
@@ -104,32 +140,40 @@ export default function AdminSidebar({
         </div>
       </Link>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => {
-          const isActive = activeTab === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                onTabChange(item.id);
-                onMobileClose();
-              }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-smooth ${
-                isActive
-                  ? 'bg-primary text-primary-foreground shadow-warm'
-                  : 'text-foreground hover:bg-muted'
-              }`}
-            >
-              <Icon
-                name={item.icon}
-                size={20}
-                className={isActive ? '' : 'text-muted-foreground'}
-              />
-              <span className="truncate">{t(item.labelKey)}</span>
-            </button>
-          );
-        })}
+      {/* Navigation — mazmuniga qarab guruhlangan */}
+      <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
+        {NAV_GROUPS.map((group) => (
+          <div key={group.titleKey} className="space-y-1">
+            <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+              {t(group.titleKey)}
+            </p>
+            {group.items.map((item) => {
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    onTabChange(item.id);
+                    onMobileClose();
+                  }}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-smooth ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground shadow-warm'
+                      : 'text-foreground hover:bg-muted'
+                  }`}
+                >
+                  <Icon
+                    name={item.icon}
+                    size={18}
+                    className={isActive ? '' : 'text-muted-foreground'}
+                  />
+                  <span className="truncate">{t(item.labelKey)}</span>
+                </button>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* User block (bottom) */}

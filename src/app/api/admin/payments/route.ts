@@ -6,14 +6,17 @@
  *   ?status=completed|pending|failed|refunded|cancelled|all
  *   ?method=click|payme|all
  *   ?search=string (email, name, course title, merchant_trans_id)
- *   ?limit=20
- *   ?cursor=<txId>
+ *   ?limit=20              (sahifa hajmi, 1-100)
+ *   ?page=1                (1-asosli sahifa)
+ *   ?sort=createdAt|amountUzs
+ *   ?order=asc|desc
  */
 
 import type { NextRequest } from 'next/server';
 import { requireAdmin, errorResponse } from '@/lib/auth-helpers';
 import { jsonResponse } from '@/lib/json';
 import { listTransactions } from '@/lib/services/refund.service';
+import type { PaymentSortField } from '@/lib/repositories';
 import type { TransactionStatus, PaymentMethod } from '@/generated/prisma/client';
 
 const VALID_STATUSES = new Set([
@@ -26,6 +29,7 @@ const VALID_STATUSES = new Set([
   'all',
 ]);
 const VALID_METHODS = new Set(['click', 'payme', 'all']);
+const VALID_SORTS = new Set<PaymentSortField>(['createdAt', 'amountUzs']);
 
 export async function GET(req: NextRequest) {
   try {
@@ -37,7 +41,13 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get('search')?.trim() || undefined;
     const limitRaw = Number(searchParams.get('limit') ?? 20);
     const limit = Math.min(Math.max(1, Number.isFinite(limitRaw) ? limitRaw : 20), 100);
-    const cursor = searchParams.get('cursor') || undefined;
+    const pageRaw = Number(searchParams.get('page') ?? 1);
+    const page = Math.max(1, Number.isFinite(pageRaw) ? Math.floor(pageRaw) : 1);
+    const offset = (page - 1) * limit;
+
+    const sortRaw = searchParams.get('sort') as PaymentSortField | null;
+    const sort = sortRaw && VALID_SORTS.has(sortRaw) ? sortRaw : 'createdAt';
+    const order = searchParams.get('order') === 'asc' ? 'asc' : 'desc';
 
     const status = VALID_STATUSES.has(statusRaw)
       ? (statusRaw as TransactionStatus | 'all')
@@ -46,7 +56,7 @@ export async function GET(req: NextRequest) {
       ? (methodRaw as PaymentMethod | 'all')
       : 'all';
 
-    const result = await listTransactions({ status, method, search, limit, cursor });
+    const result = await listTransactions({ status, method, search, limit, offset, sort, order });
     return jsonResponse(result);
   } catch (err) {
     return errorResponse(err);

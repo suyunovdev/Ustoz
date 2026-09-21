@@ -41,7 +41,6 @@ export class NotRefundableError extends Error {
 export interface ListTransactionsResult {
   transactions: AdminTransactionRow[];
   total: number;
-  nextCursor: string | null;
   stats: Awaited<ReturnType<typeof paymentRepo.statusCountsForAdmin>>;
   totalRevenueUzs: string;
 }
@@ -50,7 +49,7 @@ export async function listTransactions(
   filters: ListTransactionsFilters = {},
 ): Promise<ListTransactionsResult> {
   const limit = filters.limit ?? 20;
-  const [rows, total, stats, revenue] = await Promise.all([
+  const [transactions, total, stats, revenue] = await Promise.all([
     paymentRepo.findAllForAdmin({ ...filters, limit }),
     paymentRepo.countForAdmin({
       status: filters.status,
@@ -61,12 +60,9 @@ export async function listTransactions(
     paymentRepo.sumCompletedRevenue(),
   ]);
 
-  const hasMore = rows.length > limit;
-  const items = hasMore ? rows.slice(0, limit) : rows;
   return {
-    transactions: items,
+    transactions,
     total,
-    nextCursor: hasMore ? items[items.length - 1].id : null,
     stats,
     totalRevenueUzs: revenue.toString(),
   };

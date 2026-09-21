@@ -46,13 +46,15 @@ export type {
   CourseWithCategoryAndTeacher,
   CourseWithAdminInfo,
   AdminCourseFilters,
+  CourseSortField,
 } from './course.repository';
 export type { StudentCertificateRow } from './certificate.repository';
-export type { AdminUserRow, ListUsersOptions } from './user.repository';
+export type { AdminUserRow, ListUsersOptions, UserSortField } from './user.repository';
 export type { AuditLogRow, CreateAuditLogInput } from './audit-log.repository';
 export type {
   AdminTransactionRow,
   ListTransactionsFilters,
+  PaymentSortField,
 } from './payment.repository';
 export type {
   AdminReviewRow,
