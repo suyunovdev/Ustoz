@@ -1,112 +1,74 @@
 'use client';
 
 /**
- * SubscriptionsPanel — admin uchun obuna rejalari va faol obunalar boshqaruvi.
- * GET   /api/admin/subscription-plans
- * POST  /api/admin/subscription-plans
- * PATCH /api/admin/subscription-plans/[id]
- * GET   /api/admin/subscriptions?status=active
+ * SubscriptionsPanel — obuna rejalari, faol obunalar va so'rovlar (CRM Tabs + jadval).
  */
 import { useEffect, useState, useCallback } from 'react';
-import Icon from '@/components/ui/AppIcon';
+import Badge from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { DataTable, type Column } from '@/components/ui/DataTable';
+import { Menu } from '@/components/ui/Menu';
+import { Modal } from '@/components/ui/Modal';
+import { Tabs } from '@/components/ui/Tabs';
 import NumberInput from '@/components/ui/NumberInput';
-import { SkeletonList } from '@/components/ui/Skeleton';
 import { useI18n } from '@/contexts/I18nContext';
 import { toast } from '@/components/common/Toaster';
 import { formatCurrency, formatDate } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 interface Plan {
-  id: string;
-  name: string;
-  description: string;
-  priceUzs: string;
-  durationDays: number;
-  tier: string;
-  features: string[];
-  allCoursesAccess: boolean;
-  isActive: boolean;
-  sortOrder: number;
+  id: string; name: string; description: string; priceUzs: string; durationDays: number;
+  tier: string; features: string[]; allCoursesAccess: boolean; isActive: boolean; sortOrder: number;
 }
-
 interface ActiveSub {
-  id: string;
-  userName: string;
-  userEmail: string;
-  planName: string;
-  status: string;
-  startedAt: string;
-  expiresAt: string;
+  id: string; userName: string; userEmail: string; planName: string; status: string; startedAt: string; expiresAt: string;
 }
-
+interface ReqRow {
+  id: string; userName: string; userEmail: string; planName: string; durationDays: number; paymentMethod: string | null; status: string; createdAt: string;
+}
 interface PlanForm {
-  name: string;
-  description: string;
-  priceUzs: string;
-  durationDays: string;
-  tier: string;
-  features: string;
-  allCoursesAccess: boolean;
-  isActive: boolean;
-  sortOrder: string;
+  name: string; description: string; priceUzs: string; durationDays: string; tier: string;
+  features: string; allCoursesAccess: boolean; isActive: boolean; sortOrder: string;
 }
 
 const EMPTY_FORM: PlanForm = {
-  name: '',
-  description: '',
-  priceUzs: '',
-  durationDays: '30',
-  tier: 'basic',
-  features: '',
-  allCoursesAccess: false,
-  isActive: true,
-  sortOrder: '0',
+  name: '', description: '', priceUzs: '', durationDays: '30', tier: 'basic',
+  features: '', allCoursesAccess: false, isActive: true, sortOrder: '0',
 };
 
-interface ReqRow {
-  id: string;
-  userName: string;
-  userEmail: string;
-  planName: string;
-  durationDays: number;
-  paymentMethod: string | null;
-  status: string;
-  createdAt: string;
+const input =
+  'w-full px-3 py-2 bg-card border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring';
+
+function fmtDate(iso: string, locale: Locale) {
+  return formatDate(iso, locale, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 export default function SubscriptionsPanel() {
   const { t, locale } = useI18n();
   const [tab, setTab] = useState<'plans' | 'active' | 'requests'>('plans');
 
-  // Obuna so'rovlari (student → admin tasdig'i)
   const [requests, setRequests] = useState<ReqRow[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
 
-  // Plans state
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
-  const [busyId, setBusyId] = useState<string | null>(null);
 
-  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<PlanForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
 
-  // Active subs state
   const [subs, setSubs] = useState<ActiveSub[]>([]);
   const [subsLoading, setSubsLoading] = useState(true);
 
-  // Qo'lda obuna berish (grant) state
   const [grantOpen, setGrantOpen] = useState(false);
   const [grantEmail, setGrantEmail] = useState('');
   const [grantPlanId, setGrantPlanId] = useState('');
   const [grantPlans, setGrantPlans] = useState<Plan[]>([]);
   const [granting, setGranting] = useState(false);
-  const [cancelingId, setCancelingId] = useState<string | null>(null);
 
-  // Obunachi kurs chegirmasi (admin boshqaradi)
   const [discountInput, setDiscountInput] = useState('');
   const [discountSaved, setDiscountSaved] = useState<number | null>(null);
   const [savingDiscount, setSavingDiscount] = useState(false);
@@ -125,28 +87,17 @@ export default function SubscriptionsPanel() {
 
   const saveDiscount = async () => {
     const val = Number(discountInput);
-    if (!Number.isFinite(val) || val < 0 || val > 100) {
-      toast.error('0–100 orasida foiz kiriting');
-      return;
-    }
+    if (!Number.isFinite(val) || val < 0 || val > 100) return toast.error('0–100 orasida foiz kiriting');
     setSavingDiscount(true);
     try {
       const res = await fetch('/api/admin/subscription-discount', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ discountPct: val }),
       });
       const d = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setDiscountSaved(d.discountPct);
-        toast.success('Chegirma saqlandi');
-      } else {
-        toast.error(d.error || 'Xatolik');
-      }
-    } finally {
-      setSavingDiscount(false);
-    }
+      if (res.ok) { setDiscountSaved(d.discountPct); toast.success('Chegirma saqlandi'); }
+      else toast.error(d.error || 'Xatolik');
+    } finally { setSavingDiscount(false); }
   };
 
   const loadPlans = useCallback(async () => {
@@ -154,13 +105,8 @@ export default function SubscriptionsPanel() {
     try {
       const res = await fetch('/api/admin/subscription-plans', { credentials: 'include' });
       if (!res.ok) throw new Error();
-      const data = await res.json();
-      setPlans(data.plans || []);
-    } catch {
-      toast.error(t('admin.subError'));
-    } finally {
-      setPlansLoading(false);
-    }
+      setPlans((await res.json()).plans || []);
+    } catch { toast.error(t('admin.subError')); } finally { setPlansLoading(false); }
   }, [t]);
 
   const loadSubs = useCallback(async () => {
@@ -168,13 +114,8 @@ export default function SubscriptionsPanel() {
     try {
       const res = await fetch('/api/admin/subscriptions?status=active', { credentials: 'include' });
       if (!res.ok) throw new Error();
-      const data = await res.json();
-      setSubs(data.subscriptions || []);
-    } catch {
-      toast.error(t('admin.subError'));
-    } finally {
-      setSubsLoading(false);
-    }
+      setSubs((await res.json()).subscriptions || []);
+    } catch { toast.error(t('admin.subError')); } finally { setSubsLoading(false); }
   }, [t]);
 
   const loadRequests = useCallback(async () => {
@@ -182,18 +123,12 @@ export default function SubscriptionsPanel() {
     try {
       const res = await fetch('/api/admin/subscription-requests?status=pending', { credentials: 'include' });
       if (!res.ok) throw new Error();
-      const data = await res.json();
-      const list: ReqRow[] = data.requests || [];
+      const list: ReqRow[] = (await res.json()).requests || [];
       setRequests(list);
       setPendingCount(list.length);
-    } catch {
-      toast.error(t('admin.subError'));
-    } finally {
-      setRequestsLoading(false);
-    }
+    } catch { toast.error(t('admin.subError')); } finally { setRequestsLoading(false); }
   }, [t]);
 
-  // Kutilayotgan so'rovlar sonini boshlanishda yuklaymiz (tab badge uchun)
   useEffect(() => {
     fetch('/api/admin/subscription-requests?status=pending', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
@@ -211,594 +146,251 @@ export default function SubscriptionsPanel() {
     setReviewingId(id);
     try {
       const res = await fetch(`/api/admin/subscription-requests/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ action }),
       });
       if (res.ok) {
-        toast.success(action === 'approve' ? 'Obuna tasdiqlandi va faollashtirildi' : 'So\'rov rad etildi');
+        toast.success(action === 'approve' ? 'Obuna tasdiqlandi va faollashtirildi' : "So'rov rad etildi");
         setRequests((prev) => prev.filter((r) => r.id !== id));
         setPendingCount((c) => Math.max(0, c - 1));
       } else {
-        const d = await res.json().catch(() => ({}));
-        toast.error(d.error || 'Xatolik');
+        toast.error((await res.json().catch(() => ({}))).error || 'Xatolik');
       }
-    } finally {
-      setReviewingId(null);
-    }
+    } finally { setReviewingId(null); }
   };
 
-  const openCreate = () => {
-    setEditingId(null);
-    setForm(EMPTY_FORM);
-    setModalOpen(true);
-  };
-
-  // Qo'lda obuna berish modalini ochish — rejalarni yuklaymiz
-  const openGrant = async () => {
-    setGrantEmail('');
-    setGrantPlanId('');
-    setGrantOpen(true);
-    try {
-      const res = await fetch('/api/admin/subscription-plans', { credentials: 'include' });
-      if (res.ok) {
-        const d = await res.json();
-        const ps: Plan[] = (d.plans || []).filter((p: Plan) => p.isActive);
-        setGrantPlans(ps);
-        if (ps[0]) setGrantPlanId(ps[0].id);
-      }
-    } catch {
-      /* ignore */
-    }
-  };
-
-  const submitGrant = async () => {
-    if (!grantEmail.trim()) {
-      toast.error('Foydalanuvchi emailini kiriting');
-      return;
-    }
-    if (!grantPlanId) {
-      toast.error('Obuna rejasini tanlang');
-      return;
-    }
-    setGranting(true);
-    try {
-      const res = await fetch('/api/admin/subscriptions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email: grantEmail.trim(), planId: grantPlanId }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success('Obuna qo\'lda berildi');
-        setGrantOpen(false);
-        await loadSubs();
-      } else {
-        toast.error(d.error || 'Xatolik');
-      }
-    } finally {
-      setGranting(false);
-    }
-  };
-
-  const cancelSub = async (id: string) => {
-    setCancelingId(id);
-    try {
-      const res = await fetch(`/api/admin/subscriptions/${id}`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-      if (res.ok) {
-        toast.success('Obuna bekor qilindi');
-        setSubs((prev) => prev.filter((s) => s.id !== id));
-      } else {
-        const d = await res.json().catch(() => ({}));
-        toast.error(d.error || 'Xatolik');
-      }
-    } finally {
-      setCancelingId(null);
-    }
-  };
-
+  const openCreate = () => { setEditingId(null); setForm(EMPTY_FORM); setModalOpen(true); };
   const openEdit = (p: Plan) => {
     setEditingId(p.id);
     setForm({
-      name: p.name,
-      description: p.description ?? '',
-      priceUzs: String(p.priceUzs ?? ''),
-      durationDays: String(p.durationDays ?? ''),
-      tier: p.tier ?? '',
-      features: (p.features ?? []).join(', '),
-      allCoursesAccess: !!p.allCoursesAccess,
-      isActive: !!p.isActive,
-      sortOrder: String(p.sortOrder ?? 0),
+      name: p.name, description: p.description ?? '', priceUzs: String(p.priceUzs ?? ''),
+      durationDays: String(p.durationDays ?? ''), tier: p.tier ?? '', features: (p.features ?? []).join(', '),
+      allCoursesAccess: !!p.allCoursesAccess, isActive: !!p.isActive, sortOrder: String(p.sortOrder ?? 0),
     });
     setModalOpen(true);
   };
 
   const submitForm = async () => {
-    if (!form.name.trim()) {
-      toast.error(t('admin.subError'));
-      return;
-    }
+    if (!form.name.trim()) return toast.error(t('admin.subError'));
     setSaving(true);
     const payload = {
-      name: form.name.trim(),
-      description: form.description.trim(),
-      priceUzs: Number(form.priceUzs) || 0,
-      durationDays: Number(form.durationDays) || 0,
-      tier: form.tier.trim(),
-      features: form.features
-        .split(',')
-        .map((f) => f.trim())
-        .filter(Boolean),
-      allCoursesAccess: form.allCoursesAccess,
-      isActive: form.isActive,
-      sortOrder: Number(form.sortOrder) || 0,
+      name: form.name.trim(), description: form.description.trim(), priceUzs: Number(form.priceUzs) || 0,
+      durationDays: Number(form.durationDays) || 0, tier: form.tier.trim(),
+      features: form.features.split(',').map((f) => f.trim()).filter(Boolean),
+      allCoursesAccess: form.allCoursesAccess, isActive: form.isActive, sortOrder: Number(form.sortOrder) || 0,
     };
     try {
       const res = await fetch(
         editingId ? `/api/admin/subscription-plans/${editingId}` : '/api/admin/subscription-plans',
-        {
-          method: editingId ? 'PATCH' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify(payload),
-        },
+        { method: editingId ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(payload) },
       );
       if (!res.ok) throw new Error();
       toast.success(editingId ? t('admin.subUpdated') : t('admin.subCreated'));
       setModalOpen(false);
       await loadPlans();
-    } catch {
-      toast.error(t('admin.subError'));
-    } finally {
-      setSaving(false);
-    }
+    } catch { toast.error(t('admin.subError')); } finally { setSaving(false); }
   };
 
-  const toggleActive = async (p: Plan) => {
-    setBusyId(p.id);
+  const togglePlanActive = async (p: Plan) => {
     try {
       const res = await fetch(`/api/admin/subscription-plans/${p.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ isActive: !p.isActive }),
       });
-      if (!res.ok) throw new Error();
-      toast.success(t('admin.subUpdated'));
-      setPlans((prev) => prev.map((x) => (x.id === p.id ? { ...x, isActive: !x.isActive } : x)));
-    } catch {
-      toast.error(t('admin.subError'));
-    } finally {
-      setBusyId(null);
-    }
+      if (res.ok) { setPlans((prev) => prev.map((x) => (x.id === p.id ? { ...x, isActive: !x.isActive } : x))); toast.success(t('admin.subUpdated')); }
+      else toast.error('Xatolik');
+    } catch { toast.error('Xatolik'); }
   };
 
+  const openGrant = async () => {
+    setGrantEmail(''); setGrantPlanId(''); setGrantOpen(true);
+    try {
+      const res = await fetch('/api/admin/subscription-plans', { credentials: 'include' });
+      if (res.ok) {
+        const ps: Plan[] = ((await res.json()).plans || []).filter((p: Plan) => p.isActive);
+        setGrantPlans(ps);
+        if (ps[0]) setGrantPlanId(ps[0].id);
+      }
+    } catch { /* ignore */ }
+  };
+
+  const submitGrant = async () => {
+    if (!grantEmail.trim()) return toast.error('Foydalanuvchi emailini kiriting');
+    if (!grantPlanId) return toast.error('Obuna rejasini tanlang');
+    setGranting(true);
+    try {
+      const res = await fetch('/api/admin/subscriptions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+        body: JSON.stringify({ email: grantEmail.trim(), planId: grantPlanId }),
+      });
+      const d = await res.json().catch(() => ({}));
+      if (res.ok) { toast.success("Obuna qo'lda berildi"); setGrantOpen(false); await loadSubs(); }
+      else toast.error(d.error || 'Xatolik');
+    } finally { setGranting(false); }
+  };
+
+  const cancelSub = async (id: string) => {
+    try {
+      const res = await fetch(`/api/admin/subscriptions/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (res.ok) { toast.success('Obuna bekor qilindi'); setSubs((prev) => prev.filter((s) => s.id !== id)); }
+      else toast.error((await res.json().catch(() => ({}))).error || 'Xatolik');
+    } catch { toast.error('Xatolik'); }
+  };
+
+  // ─── Column definitions ──────────────────────────────────────────────────
+  const planCols: Column<Plan>[] = [
+    {
+      key: 'name', header: 'Reja',
+      render: (p) => (
+        <div className="min-w-0">
+          <div className="font-medium text-foreground truncate">{p.name}</div>
+          {p.description && <div className="text-xs text-muted-foreground truncate">{p.description}</div>}
+        </div>
+      ),
+    },
+    { key: 'priceUzs', header: t('admin.colPrice'), align: 'right', cellClassName: 'whitespace-nowrap font-medium', render: (p) => formatCurrency(Number(p.priceUzs), locale, 'UZS') },
+    { key: 'durationDays', header: 'Muddat', align: 'right', headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell text-muted-foreground whitespace-nowrap', render: (p) => `${p.durationDays} kun` },
+    { key: 'tier', header: 'Tier', headerClassName: 'hidden lg:table-cell', cellClassName: 'hidden lg:table-cell', render: (p) => <Badge variant="secondary">{p.tier}</Badge> },
+    { key: 'access', header: 'Kirish', headerClassName: 'hidden lg:table-cell', cellClassName: 'hidden lg:table-cell', render: (p) => (p.allCoursesAccess ? <Badge variant="primary">Barcha kurslar</Badge> : <span className="text-muted-foreground">—</span>) },
+    { key: 'isActive', header: t('admin.colStatus'), render: (p) => (p.isActive ? <Badge variant="success">Faol</Badge> : <Badge variant="muted">Nofaol</Badge>) },
+    {
+      key: 'actions', header: '', align: 'right', width: 'w-12',
+      render: (p) => (
+        <Menu sections={[{ items: [
+          { label: 'Tahrirlash', icon: 'PencilSquareIcon', onClick: () => openEdit(p) },
+          { label: p.isActive ? 'Nofaol qilish' : 'Faollashtirish', icon: p.isActive ? 'NoSymbolIcon' : 'CheckCircleIcon', onClick: () => togglePlanActive(p) },
+        ] }]} />
+      ),
+    },
+  ];
+
+  const subCols: Column<ActiveSub>[] = [
+    { key: 'user', header: t('admin.colUser'), render: (s) => (
+      <div className="min-w-0"><div className="font-medium text-foreground truncate">{s.userName}</div><div className="text-xs text-muted-foreground truncate">{s.userEmail}</div></div>
+    ) },
+    { key: 'planName', header: 'Reja', render: (s) => <Badge variant="primary">{s.planName}</Badge> },
+    { key: 'startedAt', header: 'Boshlangan', headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell text-muted-foreground whitespace-nowrap', render: (s) => fmtDate(s.startedAt, locale) },
+    { key: 'expiresAt', header: 'Tugaydi', cellClassName: 'text-muted-foreground whitespace-nowrap', render: (s) => fmtDate(s.expiresAt, locale) },
+    { key: 'actions', header: '', align: 'right', width: 'w-12', render: (s) => (
+      <Menu sections={[{ items: [{ label: 'Bekor qilish', icon: 'XCircleIcon', variant: 'danger', onClick: () => cancelSub(s.id) }] }]} />
+    ) },
+  ];
+
+  const reqCols: Column<ReqRow>[] = [
+    { key: 'user', header: t('admin.colUser'), render: (r) => (
+      <div className="min-w-0"><div className="font-medium text-foreground truncate">{r.userName}</div><div className="text-xs text-muted-foreground truncate">{r.userEmail}</div></div>
+    ) },
+    { key: 'planName', header: 'Reja', render: (r) => <Badge variant="primary">{r.planName}</Badge> },
+    { key: 'durationDays', header: 'Muddat', align: 'right', headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell text-muted-foreground whitespace-nowrap', render: (r) => `${r.durationDays} kun` },
+    { key: 'paymentMethod', header: t('admin.colMethod'), headerClassName: 'hidden lg:table-cell', cellClassName: 'hidden lg:table-cell text-muted-foreground', render: (r) => r.paymentMethod ?? '—' },
+    { key: 'createdAt', header: t('admin.colDate'), headerClassName: 'hidden md:table-cell', cellClassName: 'hidden md:table-cell text-muted-foreground whitespace-nowrap', render: (r) => fmtDate(r.createdAt, locale) },
+    { key: 'actions', header: t('admin.colActions'), align: 'right', render: (r) => (
+      <div className="flex items-center justify-end gap-1">
+        <Button variant="secondary" size="sm" iconLeft="CheckIcon" loading={reviewingId === r.id} onClick={() => reviewRequest(r.id, 'approve')}>Tasdiq</Button>
+        <Button variant="outline" size="sm" className="text-destructive" iconLeft="XMarkIcon" disabled={reviewingId === r.id} onClick={() => reviewRequest(r.id, 'reject')}>Rad</Button>
+      </div>
+    ) },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Obunachi kurs chegirmasi */}
+      <div className="bg-card rounded-lg border border-border p-4 flex flex-col sm:flex-row sm:items-end gap-3">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-foreground">Obunachi kurs chegirmasi</p>
+          <p className="text-xs text-muted-foreground">Faol obunachilar barcha pullik kurslarga shu foizda chegirma oladi.{discountSaved != null ? ` Hozirgi: ${discountSaved}%` : ''}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <NumberInput min={0} max={100} value={Number(discountInput) || 0} onValueChange={(n) => setDiscountInput(String(n))} className={`${input} w-24`} />
+          <Button variant="primary" size="sm" loading={savingDiscount} onClick={saveDiscount}>Saqlash</Button>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <Tabs
+          items={[
+            { id: 'plans', label: 'Rejalar' },
+            { id: 'active', label: 'Faol obunalar' },
+            { id: 'requests', label: "So'rovlar", count: pendingCount },
+          ]}
+          value={tab}
+          onChange={setTab}
+          className="flex-1"
+        />
+        {tab === 'plans' && <Button variant="primary" size="sm" iconLeft="PlusIcon" onClick={openCreate}>Yangi reja</Button>}
+        {tab === 'active' && <Button variant="primary" size="sm" iconLeft="PlusIcon" onClick={openGrant}>Qo&apos;lda obuna</Button>}
+      </div>
+
+      {tab === 'plans' && (
+        <DataTable columns={planCols} rows={plans} getRowId={(p) => p.id} isLoading={plansLoading} emptyIcon="SparklesIcon" emptyTitle="Reja yo'q" />
+      )}
+      {tab === 'active' && (
+        <DataTable columns={subCols} rows={subs} getRowId={(s) => s.id} isLoading={subsLoading} emptyIcon="SparklesIcon" emptyTitle="Faol obuna yo'q" />
+      )}
+      {tab === 'requests' && (
+        <DataTable columns={reqCols} rows={requests} getRowId={(r) => r.id} isLoading={requestsLoading} emptyIcon="InboxIcon" emptyTitle="So'rov yo'q" />
+      )}
+
+      {/* Plan create/edit modal */}
+      <Modal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editingId ? 'Rejani tahrirlash' : 'Yangi reja'}
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setModalOpen(false)}>Bekor</Button>
+            <Button variant="primary" loading={saving} onClick={submitForm}>{editingId ? 'Saqlash' : 'Yaratish'}</Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Field label="Nomi *"><input className={input} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+          <Field label="Tavsif"><textarea className={input} rows={2} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></Field>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Narx (UZS)"><input className={input} inputMode="numeric" value={form.priceUzs} onChange={(e) => setForm({ ...form, priceUzs: e.target.value })} /></Field>
+            <Field label="Muddat (kun)"><input className={input} inputMode="numeric" value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: e.target.value })} /></Field>
+            <Field label="Tier"><input className={input} value={form.tier} onChange={(e) => setForm({ ...form, tier: e.target.value })} /></Field>
+            <Field label="Tartib (sortOrder)"><input className={input} inputMode="numeric" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: e.target.value })} /></Field>
+          </div>
+          <Field label="Imkoniyatlar (vergul bilan)"><input className={input} value={form.features} onChange={(e) => setForm({ ...form, features: e.target.value })} /></Field>
+          <div className="flex items-center gap-6">
+            <label className="flex items-center gap-2 text-sm text-foreground"><input type="checkbox" className="w-4 h-4 accent-primary" checked={form.allCoursesAccess} onChange={(e) => setForm({ ...form, allCoursesAccess: e.target.checked })} />Barcha kurslar</label>
+            <label className="flex items-center gap-2 text-sm text-foreground"><input type="checkbox" className="w-4 h-4 accent-primary" checked={form.isActive} onChange={(e) => setForm({ ...form, isActive: e.target.checked })} />Faol</label>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Grant modal */}
+      <Modal
+        open={grantOpen}
+        onClose={() => setGrantOpen(false)}
+        title="Qo'lda obuna berish"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setGrantOpen(false)}>Bekor</Button>
+            <Button variant="primary" loading={granting} onClick={submitGrant}>Berish</Button>
+          </>
+        }
+      >
+        <div className="space-y-3">
+          <Field label="Foydalanuvchi emaili"><input className={input} type="email" value={grantEmail} onChange={(e) => setGrantEmail(e.target.value)} placeholder="user@example.com" /></Field>
+          <Field label="Obuna rejasi">
+            <select className={input} value={grantPlanId} onChange={(e) => setGrantPlanId(e.target.value)}>
+              {grantPlans.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </Field>
+        </div>
+      </Modal>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      {/* Obunachi kurs chegirmasi — admin boshqaruvi */}
-      <div className="mb-5 bg-card border border-border rounded-lg p-5 shadow-warm">
-        <div className="flex items-start gap-3 mb-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-lg flex-shrink-0">
-            <Icon name="ReceiptPercentIcon" size={20} className="text-primary" />
-          </div>
-          <div className="min-w-0">
-            <h3 className="font-heading font-semibold text-foreground">Obunachi kurs chegirmasi</h3>
-            <p className="text-sm text-muted-foreground">
-              Faol obunachilar (all-access bo'lmagan rejalar) pullik kurslarni shu foizda arzon oladi.
-              O'qituvchi chegirmali summadan ulush oladi.
-            </p>
-          </div>
-        </div>
-        <div className="flex items-end gap-3 flex-wrap">
-          <div>
-            <label className="block text-xs text-muted-foreground mb-1">Chegirma (%)</label>
-            <div className="flex items-center gap-2">
-              <NumberInput
-                min={0}
-                max={100}
-                value={Number(discountInput)}
-                onValueChange={(n) => setDiscountInput(String(n))}
-                className="w-28 px-3 py-2 bg-background border border-border rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/40"
-              />
-              <span className="text-sm text-muted-foreground">%</span>
-            </div>
-          </div>
-          <button
-            onClick={saveDiscount}
-            disabled={savingDiscount}
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50"
-          >
-            {savingDiscount ? 'Saqlanmoqda…' : 'Saqlash'}
-          </button>
-          {discountSaved !== null && (
-            <span className="text-sm text-muted-foreground">
-              Joriy: <span className="font-medium text-foreground">{discountSaved}%</span>
-              {discountSaved === 0 && ' (chegirma yo\'q)'}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
-        <div className="inline-flex rounded-md border border-border bg-card p-1">
-          {(['plans', 'active', 'requests'] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => setTab(s)}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition-smooth ${tab === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              {s === 'plans' ? t('admin.subPlansTab') : s === 'active' ? t('admin.subActiveTab') : 'So\'rovlar'}
-              {s === 'requests' && pendingCount > 0 && (
-                <span className={`inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[11px] font-bold ${tab === s ? 'bg-primary-foreground text-primary' : 'bg-warning text-warning-foreground'}`}>
-                  {pendingCount}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-        {tab === 'plans' && (
-          <button
-            onClick={openCreate}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-smooth"
-          >
-            <Icon name="PlusIcon" size={16} />
-            {t('admin.subNewPlan')}
-          </button>
-        )}
-        {tab === 'active' && (
-          <button
-            onClick={openGrant}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 transition-smooth"
-          >
-            <Icon name="PlusIcon" size={16} />
-            Qo&apos;lda obuna berish
-          </button>
-        )}
-      </div>
-
-      {/* PLANS TAB */}
-      {tab === 'plans' && (
-        plansLoading ? (
-          <SkeletonList count={4} />
-        ) : plans.length === 0 ? (
-          <div className="bg-card rounded-md shadow-warm p-12 text-center">
-            <Icon name="SparklesIcon" size={64} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">{t('admin.subNoPlans')}</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {plans.map((p) => (
-              <div key={p.id} className="bg-card border border-border rounded-lg p-5 flex flex-col lg:flex-row lg:items-center gap-4 shadow-warm">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-3 mb-1 flex-wrap">
-                    <span className="text-xl font-heading font-bold text-foreground">{p.name}</span>
-                    <span className="text-lg font-semibold text-primary">
-                      {formatCurrency(Number(p.priceUzs), locale, 'UZS')}
-                    </span>
-                    {p.allCoursesAccess && (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-medium">
-                        <Icon name="CheckBadgeIcon" size={12} />
-                        {t('admin.subAllAccess')}
-                      </span>
-                    )}
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${p.isActive ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
-                      {t('admin.subActive')}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <span>{t('admin.subDuration')}: {p.durationDays}</span>
-                    {p.tier && <span>{p.tier}</span>}
-                    {p.features?.length > 0 && <span className="truncate">{p.features.join(' · ')}</span>}
-                  </div>
-                  {p.description && <p className="text-sm text-muted-foreground mt-2">{p.description}</p>}
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => toggleActive(p)}
-                    disabled={busyId === p.id}
-                    className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-smooth disabled:opacity-50 ${p.isActive ? 'bg-muted text-foreground hover:bg-muted/80' : 'bg-success/10 text-success hover:bg-success/20'}`}
-                  >
-                    <Icon name={p.isActive ? 'EyeSlashIcon' : 'EyeIcon'} size={16} />
-                    {t('admin.subToggleActive')}
-                  </button>
-                  <button
-                    onClick={() => openEdit(p)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 bg-primary/10 text-primary rounded-md text-sm font-medium hover:bg-primary/20 transition-smooth"
-                  >
-                    <Icon name="PencilSquareIcon" size={16} />
-                    {t('admin.subEditPlan')}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      )}
-
-      {/* ACTIVE SUBS TAB */}
-      {tab === 'active' && (
-        subsLoading ? (
-          <SkeletonList count={4} />
-        ) : subs.length === 0 ? (
-          <div className="bg-card rounded-md shadow-warm p-12 text-center">
-            <Icon name="UserGroupIcon" size={64} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">{t('admin.subNoSubs')}</p>
-          </div>
-        ) : (
-          <div className="bg-card border border-border rounded-lg overflow-hidden shadow-warm">
-            <div className="hidden sm:grid grid-cols-[1.4fr_1fr_1fr_auto] gap-4 px-5 py-3 border-b border-border text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              <span>{t('admin.subUser')}</span>
-              <span>{t('admin.subPlan')}</span>
-              <span>{t('admin.subExpires')}</span>
-              <span className="text-right">Amal</span>
-            </div>
-            <div className="divide-y divide-border">
-              {subs.map((s) => (
-                <div key={s.id} className="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1fr_auto] gap-2 sm:gap-4 px-5 py-4 items-center">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">{s.userName}</p>
-                    <p className="text-xs text-muted-foreground truncate">{s.userEmail}</p>
-                  </div>
-                  <div className="text-sm text-foreground">{s.planName}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {formatDate(s.expiresAt, locale, { year: 'numeric', month: 'short', day: 'numeric' })}
-                  </div>
-                  <div className="sm:text-right">
-                    <button
-                      onClick={() => cancelSub(s.id)}
-                      disabled={cancelingId === s.id}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-smooth disabled:opacity-50"
-                    >
-                      <Icon name="XMarkIcon" size={15} />
-                      Bekor qilish
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )
-      )}
-
-      {/* REQUESTS TAB — student obuna so'rovlari (tasdiqlash → faollashtirish) */}
-      {tab === 'requests' && (
-        requestsLoading ? (
-          <SkeletonList count={4} />
-        ) : requests.length === 0 ? (
-          <div className="bg-card rounded-md shadow-warm p-12 text-center">
-            <Icon name="InboxIcon" size={64} className="text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">Kutilayotgan obuna so&apos;rovi yo&apos;q</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {requests.map((r) => (
-              <div key={r.id} className="bg-card border border-border rounded-lg p-5 flex flex-col lg:flex-row lg:items-center gap-4 shadow-warm">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-3 flex-wrap mb-1">
-                    <span className="font-medium text-foreground">{r.userName}</span>
-                    <span className="text-xs text-muted-foreground truncate">{r.userEmail}</span>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                    <span className="text-foreground font-medium">{r.planName}</span>
-                    <span className="text-xs text-muted-foreground">{r.durationDays} kun</span>
-                    {r.paymentMethod && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-xs font-medium capitalize">
-                        {r.paymentMethod}
-                      </span>
-                    )}
-                    <span className="text-xs text-muted-foreground">
-                      {formatDate(r.createdAt, locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => reviewRequest(r.id, 'approve')}
-                    disabled={reviewingId === r.id}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium bg-success/10 text-success hover:bg-success/20 transition-smooth disabled:opacity-50"
-                  >
-                    <Icon name="CheckIcon" size={16} />
-                    Tasdiqlash
-                  </button>
-                  <button
-                    onClick={() => reviewRequest(r.id, 'reject')}
-                    disabled={reviewingId === r.id}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-smooth disabled:opacity-50"
-                  >
-                    <Icon name="XMarkIcon" size={16} />
-                    Rad etish
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )
-      )}
-
-      {/* PLAN MODAL */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-          <div className="bg-card rounded-lg shadow-warm-lg w-full max-w-lg p-6 my-8">
-            <h3 className="text-lg font-heading font-semibold text-foreground mb-4">
-              {editingId ? t('admin.subEditPlan') : t('admin.subNewPlan')}
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">{t('admin.subPlanName')}</label>
-                <input
-                  value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">{t('admin.descriptionSection')}</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                  rows={2}
-                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">{t('admin.subPrice')}</label>
-                  <NumberInput
-                    min={0}
-                    value={Number(form.priceUzs)}
-                    onValueChange={(n) => setForm((f) => ({ ...f, priceUzs: String(n) }))}
-                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">{t('admin.subDurationDays')}</label>
-                  <NumberInput
-                    min={1}
-                    value={Number(form.durationDays)}
-                    onValueChange={(n) => setForm((f) => ({ ...f, durationDays: String(n) }))}
-                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">Tier</label>
-                  <input
-                    value={form.tier}
-                    onChange={(e) => setForm((f) => ({ ...f, tier: e.target.value }))}
-                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-1">#</label>
-                  <NumberInput
-                    min={0}
-                    value={Number(form.sortOrder)}
-                    onValueChange={(n) => setForm((f) => ({ ...f, sortOrder: String(n) }))}
-                    className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">{t('admin.subFeatures')}</label>
-                <input
-                  value={form.features}
-                  onChange={(e) => setForm((f) => ({ ...f, features: e.target.value }))}
-                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-
-              <div className="flex items-center gap-6">
-                <label className="inline-flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.allCoursesAccess}
-                    onChange={(e) => setForm((f) => ({ ...f, allCoursesAccess: e.target.checked }))}
-                    className="w-4 h-4 rounded border-input text-primary focus:ring-2 focus:ring-ring"
-                  />
-                  {t('admin.subAllAccess')}
-                </label>
-                <label className="inline-flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.isActive}
-                    onChange={(e) => setForm((f) => ({ ...f, isActive: e.target.checked }))}
-                    className="w-4 h-4 rounded border-input text-primary focus:ring-2 focus:ring-ring"
-                  />
-                  {t('admin.subActive')}
-                </label>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setModalOpen(false)}
-                className="px-4 py-2 text-foreground rounded-md hover:bg-muted transition-smooth text-sm font-medium"
-              >
-                {t('admin.subCancel')}
-              </button>
-              <button
-                onClick={submitForm}
-                disabled={saving}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth text-sm font-medium disabled:opacity-50"
-              >
-                {t('admin.subSave')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* QO'LDA OBUNA BERISH MODAL */}
-      {grantOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-          <div className="bg-card rounded-lg shadow-warm-lg w-full max-w-md p-6 my-8">
-            <h3 className="text-lg font-heading font-semibold text-foreground mb-1">Qo&apos;lda obuna berish</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              To&apos;lovsiz (Payme/Click integratsiyasiz) foydalanuvchiga obunani qo&apos;lda faollashtiring.
-              Mavjud faol obuna bo&apos;lsa — muddati uzaytiriladi.
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Foydalanuvchi email</label>
-                <input
-                  type="email"
-                  value={grantEmail}
-                  onChange={(e) => setGrantEmail(e.target.value)}
-                  placeholder="foydalanuvchi@email.uz"
-                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-1">Obuna rejasi</label>
-                <select
-                  value={grantPlanId}
-                  onChange={(e) => setGrantPlanId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  {grantPlans.length === 0 && <option value="">Faol reja yo&apos;q</option>}
-                  {grantPlans.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} · {p.durationDays} kun{p.allCoursesAccess ? ' · barcha kurslar' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                onClick={() => setGrantOpen(false)}
-                className="px-4 py-2 text-foreground rounded-md hover:bg-muted transition-smooth text-sm font-medium"
-              >
-                {t('admin.subCancel')}
-              </button>
-              <button
-                onClick={submitGrant}
-                disabled={granting || !grantPlanId}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-smooth text-sm font-medium disabled:opacity-50"
-              >
-                {granting ? 'Berilmoqda…' : 'Obuna berish'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <label className="block text-xs font-medium text-muted-foreground mb-1">{label}</label>
+      {children}
     </div>
   );
 }

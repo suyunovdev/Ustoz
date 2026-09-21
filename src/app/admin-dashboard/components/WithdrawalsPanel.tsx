@@ -1,21 +1,21 @@
 'use client';
 
 /**
- * WithdrawalsPanel — admin uchun o'qituvchi pul yechish so'rovlari boshqaruvi.
- * GET  /api/admin/withdrawals?status=pending
+ * WithdrawalsPanel — o'qituvchi pul yechish so'rovlari (CRM jadval + detail drawer).
+ * GET  /api/admin/withdrawals?status=pending|processing
  * PATCH /api/admin/withdrawals/[id] { action: approve|complete|reject, rejectionReason? }
  */
 import { useEffect, useState, useCallback } from 'react';
-import Icon from '@/components/ui/AppIcon';
-import { SkeletonList } from '@/components/ui/Skeleton';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
-import Modal from '@/components/ui/Modal';
-import ConfirmModal from '@/components/common/ConfirmModal';
+import { DataTable, type Column } from '@/components/ui/DataTable';
+import { Drawer } from '@/components/ui/Drawer';
+import { Toolbar, SearchInput, FilterChips } from '@/components/ui/Toolbar';
 import ErrorState from '@/components/common/ErrorState';
-import EmptyState from '@/components/common/EmptyState';
-import { useI18n } from '@/contexts/I18nContext';
 import { toast } from '@/components/common/Toaster';
+import { useI18n } from '@/contexts/I18nContext';
 import { formatCurrency, formatDate } from '@/lib/i18n/format';
+import type { Locale } from '@/lib/i18n';
 
 interface WithdrawalRow {
   id: string;
@@ -34,17 +34,20 @@ interface WithdrawalRow {
 
 type Action = 'approve' | 'complete' | 'reject';
 
+function fmtDate(iso: string, locale: Locale) {
+  return formatDate(iso, locale, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 export default function WithdrawalsPanel() {
   const { t, locale } = useI18n();
   const [rows, setRows] = useState<WithdrawalRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [tab, setTab] = useState<'pending' | 'processing'>('pending');
+  const [search, setSearch] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
-  // Tasdiqni talab qiladigan (pul harakati) amallar — ConfirmModal orqali
-  const [confirm, setConfirm] = useState<{ id: string; action: 'approve' | 'complete' } | null>(null);
-  // Rad etish — sabab modal ichida
-  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [active, setActive] = useState<WithdrawalRow | null>(null);
+  const [drawerReject, setDrawerReject] = useState(false);
   const [reason, setReason] = useState('');
 
   const load = useCallback(async () => {
@@ -56,7 +59,6 @@ export default function WithdrawalsPanel() {
       const data = await res.json();
       setRows(data.withdrawals || []);
     } catch {
-      // Xato = "bo'sh navbat" EMAS — bu pul to'lovlari, aniq xato holati ko'rsatiladi
       setError(true);
     } finally {
       setLoading(false);
@@ -81,12 +83,10 @@ export default function WithdrawalsPanel() {
         throw new Error(err?.error || '');
       }
       toast.success(
-        action === 'approve' ? t('admin.wdApproved')
-          : action === 'complete' ? t('admin.wdCompleted')
-            : t('admin.wdRejected'),
+        action === 'approve' ? t('admin.wdApproved') : action === 'complete' ? t('admin.wdCompleted') : t('admin.wdRejected'),
       );
-      setConfirm(null);
-      setRejectId(null);
+      setActive(null);
+      setDrawerReject(false);
       setReason('');
       setRows((prev) => prev.filter((w) => w.id !== id));
     } catch (e) {
@@ -96,141 +96,160 @@ export default function WithdrawalsPanel() {
     }
   };
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-5">
-        <h2 className="text-2xl font-heading font-bold text-foreground">{t('admin.withdrawalsTitle')}</h2>
-        <div className="inline-flex rounded-md border border-border bg-card p-1">
-          {(['pending', 'processing'] as const).map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setTab(s)}
-              className={`px-4 py-2 rounded text-sm font-medium transition-smooth ${tab === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              {s === 'pending' ? t('admin.wdStatusPending') : t('admin.wdStatusProcessing')}
-            </button>
-          ))}
-        </div>
-      </div>
+  const q = search.toLowerCase();
+  const visible = q
+    ? rows.filter((w) => w.teacherName.toLowerCase().includes(q) || w.teacherEmail.toLowerCase().includes(q))
+    : rows;
 
-      {loading ? (
-        <SkeletonList count={4} />
-      ) : error ? (
-        <div className="bg-card rounded-md shadow-warm">
+  const methodBadge = (m: string): { variant: BadgeVariant; label: string } =>
+    m === 'card' ? { variant: 'primary', label: t('admin.wdCard') } : { variant: 'secondary', label: t('admin.wdBank') };
+
+  const columns: Column<WithdrawalRow>[] = [
+    {
+      key: 'amountUzs',
+      header: t('admin.colAmount'),
+      cellClassName: 'font-semibold text-foreground whitespace-nowrap',
+      render: (w) => formatCurrency(Number(w.amountUzs), locale, 'UZS'),
+    },
+    {
+      key: 'teacher',
+      header: t('admin.colTeacher'),
+      render: (w) => (
+        <div className="min-w-0">
+          <div className="font-medium text-foreground truncate">{w.teacherName}</div>
+          <div className="text-xs text-muted-foreground truncate">{w.teacherEmail}</div>
+        </div>
+      ),
+    },
+    {
+      key: 'method',
+      header: t('admin.colMethod'),
+      render: (w) => {
+        const b = methodBadge(w.method);
+        return <Badge variant={b.variant}>{b.label}</Badge>;
+      },
+    },
+    {
+      key: 'requestedAt',
+      header: t('admin.wdRequestedAt'),
+      headerClassName: 'hidden md:table-cell',
+      cellClassName: 'hidden md:table-cell text-muted-foreground whitespace-nowrap',
+      render: (w) => fmtDate(w.requestedAt, locale),
+    },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <Toolbar>
+        <FilterChips
+          options={[
+            { id: 'pending', label: t('admin.wdStatusPending') },
+            { id: 'processing', label: t('admin.wdStatusProcessing') },
+          ]}
+          value={tab}
+          onChange={(v) => { setTab(v); setSearch(''); }}
+        />
+        <SearchInput placeholder={t('admin.searchByEmailOrName')} onSearch={setSearch} />
+      </Toolbar>
+
+      {error ? (
+        <div className="bg-card rounded-lg border border-border">
           <ErrorState message={t('admin.wdError')} onRetry={load} />
         </div>
-      ) : rows.length === 0 ? (
-        <div className="bg-card rounded-md shadow-warm">
-          <EmptyState icon="CheckBadgeIcon" title={t('admin.wdNoRequests')} />
-        </div>
       ) : (
-        <div className="space-y-4">
-          {rows.map((w) => (
-            <div key={w.id} className="bg-card border border-border rounded-lg p-5 flex flex-col lg:flex-row lg:items-center gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-baseline gap-3 mb-1">
-                  <span className="text-xl font-heading font-bold text-foreground">
-                    {formatCurrency(Number(w.amountUzs), locale, 'UZS')}
-                  </span>
-                  <span className="text-sm text-muted-foreground">{w.teacherName}</span>
-                </div>
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                  <span>{w.teacherEmail}</span>
-                  <span className="flex items-center gap-1">
-                    <Icon name={w.method === 'card' ? 'CreditCardIcon' : 'BuildingLibraryIcon'} size={14} />
-                    {w.method === 'card'
-                      ? `${t('admin.wdCard')}: ${w.cardNumber ?? '—'}`
-                      : `${t('admin.wdBank')}: ${w.bankName ?? '—'} ${w.bankAccountNumber ?? ''}`}
-                  </span>
-                  {w.recipientName && <span>{t('admin.wdRecipient')}: {w.recipientName}</span>}
-                  <span>{t('admin.wdRequestedAt')}: {formatDate(w.requestedAt, locale, { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                </div>
-                {w.note && <p className="text-sm text-muted-foreground mt-2 italic">"{w.note}"</p>}
-              </div>
+        <DataTable
+          columns={columns}
+          rows={visible}
+          getRowId={(w) => w.id}
+          onRowClick={(w) => { setActive(w); setDrawerReject(false); setReason(''); }}
+          isLoading={loading}
+          emptyIcon="CheckBadgeIcon"
+          emptyTitle={t('admin.wdNoRequests')}
+        />
+      )}
 
-              <div className="flex items-center gap-2 shrink-0">
-                {w.status === 'pending' && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    iconLeft="CheckIcon"
-                    disabled={busyId === w.id}
-                    onClick={() => setConfirm({ id: w.id, action: 'approve' })}
-                  >
+      <Drawer
+        open={active !== null}
+        onClose={() => setActive(null)}
+        title={active ? formatCurrency(Number(active.amountUzs), locale, 'UZS') : undefined}
+        subtitle={active?.teacherName}
+        width="md"
+        footer={
+          active ? (
+            drawerReject ? (
+              <>
+                <Button variant="ghost" onClick={() => setDrawerReject(false)}>{t('admin.wdCancel')}</Button>
+                <Button
+                  variant="destructive"
+                  loading={busyId === active.id}
+                  onClick={() => {
+                    if (!reason.trim()) return toast.error(t('admin.wdReason'));
+                    decide(active.id, 'reject', reason.trim());
+                  }}
+                >
+                  {t('admin.wdConfirm')}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" className="text-destructive" iconLeft="XMarkIcon" onClick={() => { setDrawerReject(true); setReason(''); }}>
+                  {t('admin.wdReject')}
+                </Button>
+                {active.status === 'pending' && (
+                  <Button variant="secondary" iconLeft="CheckIcon" loading={busyId === active.id} onClick={() => decide(active.id, 'approve')}>
                     {t('admin.wdApprove')}
                   </Button>
                 )}
-                <Button
-                  variant="primary"
-                  size="sm"
-                  iconLeft="BanknotesIcon"
-                  disabled={busyId === w.id}
-                  onClick={() => setConfirm({ id: w.id, action: 'complete' })}
-                >
+                <Button variant="primary" iconLeft="BanknotesIcon" loading={busyId === active.id} onClick={() => decide(active.id, 'complete')}>
                   {t('admin.wdComplete')}
                 </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  iconLeft="XMarkIcon"
-                  disabled={busyId === w.id}
-                  onClick={() => { setReason(''); setRejectId(w.id); }}
-                >
-                  {t('admin.wdReject')}
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Approve / Complete — pul harakati, tasdiq talab qilinadi */}
-      <ConfirmModal
-        open={confirm !== null}
-        title={confirm?.action === 'approve' ? t('admin.wdApprove') : t('admin.wdComplete')}
-        message={confirm?.action === 'approve' ? t('admin.wdApprove') : t('admin.wdComplete')}
-        confirmLabel={confirm?.action === 'approve' ? t('admin.wdApprove') : t('admin.wdComplete')}
-        variant="danger"
-        isLoading={confirm !== null && busyId === confirm.id}
-        onConfirm={() => confirm && decide(confirm.id, confirm.action)}
-        onCancel={() => busyId === null && setConfirm(null)}
-      />
-
-      {/* Rad etish — sabab modal ichida */}
-      <Modal
-        open={rejectId !== null}
-        onClose={() => { if (busyId === null) { setRejectId(null); setReason(''); } }}
-        title={t('admin.wdReject')}
-        footer={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => { setRejectId(null); setReason(''); }} disabled={busyId !== null}>
-              {t('admin.wdCancel')}
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              loading={rejectId !== null && busyId === rejectId}
-              onClick={() => {
-                if (!reason.trim()) { toast.error(t('admin.wdReason')); return; }
-                if (rejectId) decide(rejectId, 'reject', reason.trim());
-              }}
-            >
-              {t('admin.wdConfirm')}
-            </Button>
-          </>
+              </>
+            )
+          ) : null
         }
       >
-        <label className="block text-sm font-medium text-foreground mb-1">{t('admin.wdReason')}</label>
-        <textarea
-          value={reason}
-          onChange={(e) => setReason(e.target.value)}
-          rows={3}
-          placeholder={t('admin.wdReasonPlaceholder')}
-          className="w-full px-3 py-2 rounded-md border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-          autoFocus
-        />
-      </Modal>
+        {active && (
+          <div className="space-y-4 text-sm">
+            <Row label={t('admin.colEmail')}>{active.teacherEmail}</Row>
+            <Row label={t('admin.colMethod')}>{methodBadge(active.method).label}</Row>
+            {active.method === 'card' ? (
+              <Row label={t('admin.wdCard')}>{active.cardNumber ?? '—'}</Row>
+            ) : (
+              <>
+                <Row label={t('admin.wdBank')}>{active.bankName ?? '—'}</Row>
+                <Row label="Hisob raqami">{active.bankAccountNumber ?? '—'}</Row>
+              </>
+            )}
+            {active.recipientName && <Row label={t('admin.wdRecipient')}>{active.recipientName}</Row>}
+            <Row label={t('admin.wdRequestedAt')}>{fmtDate(active.requestedAt, locale)}</Row>
+            {active.note && (
+              <div className="p-3 bg-muted/50 rounded-md text-muted-foreground italic">&quot;{active.note}&quot;</div>
+            )}
+            {drawerReject && (
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">{t('admin.wdReason')}</label>
+                <textarea
+                  autoFocus
+                  rows={3}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder={t('admin.wdReasonPlaceholder')}
+                  className="w-full p-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none bg-card"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </Drawer>
+    </div>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <span className="text-muted-foreground shrink-0">{label}</span>
+      <span className="text-foreground text-right break-words">{children}</span>
     </div>
   );
 }
