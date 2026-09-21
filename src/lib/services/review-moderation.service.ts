@@ -32,7 +32,6 @@ export class ReviewNotFoundError extends Error {
 export interface ListReviewsResult {
   reviews: AdminReviewRow[];
   total: number;
-  nextCursor: string | null;
   stats: Awaited<ReturnType<typeof reviewRepo.statusCountsForAdmin>>;
 }
 
@@ -40,19 +39,12 @@ export async function listReviews(
   filters: AdminReviewsFilters = {},
 ): Promise<ListReviewsResult> {
   const limit = filters.limit ?? 20;
-  const [rows, total, stats] = await Promise.all([
+  const [reviews, total, stats] = await Promise.all([
     reviewRepo.findAllForAdmin({ ...filters, limit }),
     reviewRepo.countForAdmin(filters),
     reviewRepo.statusCountsForAdmin(),
   ]);
-  const hasMore = rows.length > limit;
-  const items = hasMore ? rows.slice(0, limit) : rows;
-  return {
-    reviews: items,
-    total,
-    nextCursor: hasMore ? items[items.length - 1].id : null,
-    stats,
-  };
+  return { reviews, total, stats };
 }
 
 export async function hideReview(

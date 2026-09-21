@@ -19,12 +19,22 @@ export type AdminReviewRow = Prisma.CourseReviewGetPayload<{
 
 export type ReviewStatusFilter = 'all' | 'visible' | 'hidden' | 'reported';
 
+export type ReviewSortField = 'createdAt' | 'rating' | 'reportCount';
+
+const REVIEW_SORT_FIELDS: Record<ReviewSortField, keyof Prisma.CourseReviewOrderByWithRelationInput> = {
+  createdAt: 'createdAt',
+  rating: 'rating',
+  reportCount: 'reportCount',
+};
+
 export interface AdminReviewsFilters {
   status?: ReviewStatusFilter;
   rating?: number | 'all';
   search?: string;
   limit?: number;
-  cursor?: string | null;
+  offset?: number;
+  sort?: ReviewSortField;
+  order?: 'asc' | 'desc';
 }
 
 function buildWhere(filters: AdminReviewsFilters): Prisma.CourseReviewWhereInput {
@@ -50,13 +60,14 @@ function buildWhere(filters: AdminReviewsFilters): Prisma.CourseReviewWhereInput
 export async function findAllForAdmin(
   filters: AdminReviewsFilters = {},
 ): Promise<AdminReviewRow[]> {
-  const { limit = 20, cursor } = filters;
+  const { limit = 20, offset = 0, sort = 'reportCount', order = 'desc' } = filters;
+  const sortField = REVIEW_SORT_FIELDS[sort] ?? 'reportCount';
   return prisma.courseReview.findMany({
     where: buildWhere(filters),
     include: adminReviewInclude,
-    orderBy: [{ reportCount: 'desc' }, { createdAt: 'desc' }],
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    orderBy: [{ [sortField]: order } as Prisma.CourseReviewOrderByWithRelationInput, { id: 'asc' }],
+    take: limit,
+    skip: offset,
   });
 }
 

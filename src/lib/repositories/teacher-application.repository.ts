@@ -17,11 +17,20 @@ export type TeacherApplicationRow = Prisma.TeacherApplicationGetPayload<{
 
 export type ApplicationStatus = 'pending' | 'under_review' | 'approved' | 'rejected';
 
+export type ApplicationSortField = 'createdAt' | 'fullName';
+
+const APPLICATION_SORT_FIELDS: Record<ApplicationSortField, keyof Prisma.TeacherApplicationOrderByWithRelationInput> = {
+  createdAt: 'createdAt',
+  fullName: 'fullName',
+};
+
 export interface AdminApplicationsFilters {
   status?: ApplicationStatus | 'all';
   search?: string;
   limit?: number;
-  cursor?: string | null;
+  offset?: number;
+  sort?: ApplicationSortField;
+  order?: 'asc' | 'desc';
 }
 
 function buildWhere(filters: AdminApplicationsFilters): Prisma.TeacherApplicationWhereInput {
@@ -43,13 +52,19 @@ function buildWhere(filters: AdminApplicationsFilters): Prisma.TeacherApplicatio
 export async function findAllForAdmin(
   filters: AdminApplicationsFilters = {},
 ): Promise<TeacherApplicationRow[]> {
-  const { limit = 20, cursor } = filters;
+  const { limit = 20, offset = 0, sort = 'createdAt', order = 'desc' } = filters;
+  const sortField = APPLICATION_SORT_FIELDS[sort] ?? 'createdAt';
   return prisma.teacherApplication.findMany({
     where: buildWhere(filters),
     include: applicationInclude,
-    orderBy: [{ status: 'asc' }, { createdAt: 'desc' }], // pending birinchi
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    // pending birinchi, so'ng tanlangan ustun bo'yicha (id — barqaror ikkilamchi)
+    orderBy: [
+      { status: 'asc' },
+      { [sortField]: order } as Prisma.TeacherApplicationOrderByWithRelationInput,
+      { id: 'asc' },
+    ],
+    take: limit,
+    skip: offset,
   });
 }
 

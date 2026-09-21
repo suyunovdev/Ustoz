@@ -50,7 +50,6 @@ export class AlreadyTeacherError extends Error {
 export interface ListApplicationsResult {
   applications: TeacherApplicationRow[];
   total: number;
-  nextCursor: string | null;
   stats: Awaited<ReturnType<typeof teacherApplicationRepo.statusCountsForAdmin>>;
 }
 
@@ -58,17 +57,14 @@ export async function listApplications(
   filters: AdminApplicationsFilters = {},
 ): Promise<ListApplicationsResult> {
   const limit = filters.limit ?? 20;
-  const [rows, total, stats] = await Promise.all([
+  const [applications, total, stats] = await Promise.all([
     teacherApplicationRepo.findAllForAdmin({ ...filters, limit }),
     teacherApplicationRepo.countForAdmin(filters),
     teacherApplicationRepo.statusCountsForAdmin(),
   ]);
-  const hasMore = rows.length > limit;
-  const items = hasMore ? rows.slice(0, limit) : rows;
   return {
-    applications: items,
+    applications,
     total,
-    nextCursor: hasMore ? items[items.length - 1].id : null,
     stats,
   };
 }

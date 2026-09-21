@@ -46,6 +46,11 @@ export interface DataTableProps<T> {
   emptyDescription?: string;
   emptyIcon?: string;
   className?: string;
+  /** Qator tanlash (bulk amallar) — checkbox ustuni qo'shadi. */
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onToggleRow?: (id: string) => void;
+  onToggleAll?: (allIds: string[], checked: boolean) => void;
 }
 
 const alignCls = (a?: 'left' | 'center' | 'right') =>
@@ -64,9 +69,13 @@ export function DataTable<T>({
   emptyDescription,
   emptyIcon = 'InboxIcon',
   className,
+  selectable,
+  selectedIds,
+  onToggleRow,
+  onToggleAll,
 }: DataTableProps<T>) {
   if (isLoading) {
-    return <SkeletonTable rows={loadingRows} cols={columns.length} />;
+    return <SkeletonTable rows={loadingRows} cols={columns.length + (selectable ? 1 : 0)} />;
   }
 
   const handleSort = (col: Column<T>) => {
@@ -75,6 +84,12 @@ export function DataTable<T>({
       sort?.key === col.key && sort.dir === 'asc' ? 'desc' : 'asc';
     onSortChange({ key: col.key, dir: nextDir });
   };
+
+  const allIds = rows.map(getRowId);
+  const selectedCount = selectedIds ? allIds.filter((id) => selectedIds.has(id)).length : 0;
+  const allSelected = allIds.length > 0 && selectedCount === allIds.length;
+  const someSelected = selectedCount > 0 && !allSelected;
+  const colCount = columns.length + (selectable ? 1 : 0);
 
   return (
     <div
@@ -87,6 +102,20 @@ export function DataTable<T>({
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="border-b border-border bg-muted/40">
+              {selectable && (
+                <th scope="col" className="w-10 px-4">
+                  <input
+                    type="checkbox"
+                    aria-label="Hammasini tanlash"
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected;
+                    }}
+                    onChange={(e) => onToggleAll?.(allIds, e.target.checked)}
+                    className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                  />
+                </th>
+              )}
               {columns.map((col) => {
                 const active = sort?.key === col.key;
                 return (
@@ -133,7 +162,7 @@ export function DataTable<T>({
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={columns.length}>
+                <td colSpan={colCount}>
                   <EmptyState
                     icon={emptyIcon}
                     title={emptyTitle}
@@ -142,15 +171,30 @@ export function DataTable<T>({
                 </td>
               </tr>
             ) : (
-              rows.map((row) => (
+              rows.map((row) => {
+                const id = getRowId(row);
+                const isSelected = selectedIds?.has(id) ?? false;
+                return (
                 <tr
-                  key={getRowId(row)}
+                  key={id}
                   onClick={onRowClick ? () => onRowClick(row) : undefined}
                   className={cx(
                     'border-b border-border last:border-0 transition-smooth',
-                    onRowClick && 'cursor-pointer hover:bg-muted/50',
+                    isSelected ? 'bg-primary/5' : onRowClick && 'hover:bg-muted/50',
+                    onRowClick && 'cursor-pointer',
                   )}
                 >
+                  {selectable && (
+                    <td className="w-10 px-4" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        aria-label="Qatorni tanlash"
+                        checked={isSelected}
+                        onChange={() => onToggleRow?.(id)}
+                        className="w-4 h-4 rounded border-border accent-primary cursor-pointer"
+                      />
+                    </td>
+                  )}
                   {columns.map((col) => (
                     <td
                       key={col.key}
@@ -166,7 +210,8 @@ export function DataTable<T>({
                     </td>
                   ))}
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

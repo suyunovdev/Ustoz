@@ -60,6 +60,7 @@ export type {
   AdminReviewRow,
   AdminReviewsFilters,
   ReviewStatusFilter,
+  ReviewSortField,
 } from './review.repository';
 export type {
   CampaignRow,
@@ -70,6 +71,7 @@ export type {
 export type {
   TeacherApplicationRow,
   ApplicationStatus,
+  ApplicationSortField,
   AdminApplicationsFilters,
   CreateApplicationInput,
 } from './teacher-application.repository';
@@ -77,6 +79,7 @@ export type {
   ModerationQueueRow,
   ModerationQueueFilters,
   ModerationStatusFilter,
+  ModerationSortField,
 } from './moderation.repository';
 export type {
   TicketListRow,

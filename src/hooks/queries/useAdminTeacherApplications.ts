@@ -38,18 +38,21 @@ export interface ApplicationsStats {
   rejected: number;
 }
 
+export type AdminApplicationsSortField = 'createdAt' | 'fullName';
+
 export interface AdminApplicationsResponse {
   applications: TeacherApplicationDTO[];
   total: number;
-  nextCursor: string | null;
   stats: ApplicationsStats;
 }
 
 export interface AdminApplicationsFilters {
   status?: ApplicationStatusDTO | 'all';
   search?: string;
-  cursor?: string | null;
-  limit?: number;
+  page?: number;
+  pageSize?: number;
+  sort?: AdminApplicationsSortField;
+  order?: 'asc' | 'desc';
 }
 
 async function fetchApplications(
@@ -58,8 +61,10 @@ async function fetchApplications(
   const params = new URLSearchParams();
   if (filters.status) params.set('status', filters.status);
   if (filters.search) params.set('search', filters.search);
-  if (filters.cursor) params.set('cursor', filters.cursor);
-  if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.page) params.set('page', String(filters.page));
+  if (filters.pageSize) params.set('limit', String(filters.pageSize));
+  if (filters.sort) params.set('sort', filters.sort);
+  if (filters.order) params.set('order', filters.order);
 
   const res = await fetch(`/api/admin/teacher-applications?${params}`, {
     credentials: 'include',
@@ -76,7 +81,10 @@ export function useAdminTeacherApplications(filters: AdminApplicationsFilters = 
     queryKey: queryKeys.adminTeacherApplications({
       status: filters.status,
       search: filters.search,
-      cursor: filters.cursor,
+      page: filters.page,
+      pageSize: filters.pageSize,
+      sort: filters.sort,
+      order: filters.order,
     }),
     queryFn: () => fetchApplications(filters),
     staleTime: 30_000,

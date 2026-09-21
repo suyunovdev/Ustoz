@@ -1,8 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import Icon from '@/components/ui/AppIcon';
-import ConfirmModal from '@/components/common/ConfirmModal';
+import Badge, { type BadgeVariant } from '@/components/ui/Badge';
+import { Button } from '@/components/ui/Button';
+import { StatCard, StatCardGrid } from '@/components/ui/StatCard';
+import { DataTable, type Column, type SortState } from '@/components/ui/DataTable';
+import { Drawer } from '@/components/ui/Drawer';
+import { Modal } from '@/components/ui/Modal';
+import { Pagination } from '@/components/ui/Pagination';
+import { Toolbar, SearchInput, FilterChips } from '@/components/ui/Toolbar';
+import { BulkActionBar } from '@/components/ui/BulkActionBar';
 import { toast } from '@/components/common/Toaster';
 import {
   useAdminModeration,
@@ -20,24 +28,22 @@ interface ModerationQueuePanelProps {
 
 type StatusFilter = ModerationStatusDTO | 'all';
 
-const STATUS_TABS: { id: StatusFilter; label: string }[] = [
-  { id: 'submitted', label: 'statusNew' },
-  { id: 'under_review', label: 'statusUnderReview' },
-  { id: 'revision_requested', label: 'modRevisionReq' },
-  { id: 'approved', label: 'statusApproved' },
-  { id: 'rejected', label: 'statusRejected' },
-  { id: 'all', label: 'filterAll' },
-];
-
-const STATUS_BADGE: Record<ModerationStatusDTO, { label: string; color: string }> = {
-  draft: { label: 'statusDraft', color: 'bg-muted text-muted-foreground' },
-  submitted: { label: 'statusNew', color: 'bg-warning/10 text-warning' },
-  under_review: { label: 'statusUnderReview', color: 'bg-secondary/10 text-secondary' },
-  approved: { label: 'statusApproved', color: 'bg-success/10 text-success' },
-  rejected: { label: 'statusRejected', color: 'bg-destructive/10 text-destructive' },
-  revision_requested: { label: 'statusRevisionRequested', color: 'bg-primary/10 text-primary' },
+const STATUS_VARIANT: Record<ModerationStatusDTO, BadgeVariant> = {
+  draft: 'muted',
+  submitted: 'warning',
+  under_review: 'secondary',
+  approved: 'success',
+  rejected: 'destructive',
+  revision_requested: 'primary',
 };
-
+const STATUS_LABEL_KEY: Record<ModerationStatusDTO, string> = {
+  draft: 'admin.statusDraft',
+  submitted: 'admin.statusNew',
+  under_review: 'admin.statusUnderReview',
+  approved: 'admin.statusApproved',
+  rejected: 'admin.statusRejected',
+  revision_requested: 'admin.modRevisionReq',
+};
 const CONTENT_TYPE_ICON: Record<string, string> = {
   document: 'DocumentTextIcon',
   video: 'VideoCameraIcon',
@@ -45,13 +51,6 @@ const CONTENT_TYPE_ICON: Record<string, string> = {
   external_link: 'LinkIcon',
 };
 
-type PendingAction =
-  | { item: ModerationQueueItemDTO; type: 'start_review' }
-  | { item: ModerationQueueItemDTO; type: 'approve' }
-  | { item: ModerationQueueItemDTO; type: 'reject' }
-  | { item: ModerationQueueItemDTO; type: 'request_revision' };
-
-// Daqiqani o'qilishi oson formatga (kun/soat/daq) — "35578m" o'rniga "24 kun 17 soat"
 function formatMinutes(mins: number): string {
   if (!mins || mins <= 0) return '—';
   const d = Math.floor(mins / 1440);
@@ -61,137 +60,54 @@ function formatMinutes(mins: number): string {
   if (h > 0) return m > 0 ? `${h} soat ${m} daq` : `${h} soat`;
   return `${m} daq`;
 }
-
 function formatDateTime(iso: string | null, locale: Locale): string {
   if (!iso) return '—';
   return fmtDateTime(iso, locale, {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
   });
 }
+
+const isActionable = (s: ModerationStatusDTO) => s === 'submitted' || s === 'under_review';
 
 const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) => {
   const { t, locale } = useI18n();
   const [status, setStatus] = useState<StatusFilter>('submitted');
-  const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
-  const [openItem, setOpenItem] = useState<string | null>(null);
-  const [pending, setPending] = useState<PendingAction | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [sort, setSort] = useState<SortState>({ key: 'submittedAt', dir: 'desc' });
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [active, setActive] = useState<ModerationQueueItemDTO | null>(null);
+  const [drawerAction, setDrawerAction] = useState<'reject' | 'request_revision' | null>(null);
   const [feedback, setFeedback] = useState('');
-
-  useEffect(() => {
-    const t = setTimeout(() => setSearch(searchInput.trim()), 300);
-    return () => clearTimeout(t);
-  }, [searchInput]);
+  const [bulkReason, setBulkReason] = useState<{ open: boolean; text: string }>({ open: false, text: '' });
 
   const { data, isLoading, isFetching, error, refetch } = useAdminModeration({
     status,
     search: search || undefined,
-    // expanded=false (Overview tab'da) — faqat top 5 ta yangi
-    limit: expanded ? 20 : 5,
+    page: expanded ? page : 1,
+    pageSize: expanded ? pageSize : 5,
+    sort: 'submittedAt',
+    order: sort.dir,
   });
-
   const mutation = useModerateMaterialMutation();
 
   const items = data?.items ?? [];
+  const total = data?.total ?? 0;
   const stats = data?.stats;
-
-  useEffect(() => {
-    if (pending) setFeedback('');
-  }, [pending]);
-
-  const modalProps = useMemo(() => {
-    if (!pending) return null;
-    const itemTitle = pending.item.material.title;
-    switch (pending.type) {
-      case 'start_review':
-        return {
-          title: t('admin.startReviewMod'),
-          message: `"${itemTitle}" materialining ko'rib chiqilishini boshlaymizmi?`,
-          confirmLabel: t('admin.startBtn'),
-          variant: 'default' as const,
-          requireFeedback: false,
-        };
-      case 'approve':
-        return {
-          title: t('admin.approveMaterial'),
-          message: `"${itemTitle}" material tasdiqlanadi va kursda ko'rinadi.`,
-          confirmLabel: t('admin.approveBtn'),
-          variant: 'default' as const,
-          requireFeedback: false,
-        };
-      case 'reject':
-        return {
-          title: t('admin.rejectMaterial'),
-          message: `"${itemTitle}" material rad etiladi. Sabab kerak.`,
-          confirmLabel: t('admin.rejectBtn'),
-          variant: 'danger' as const,
-          requireFeedback: true,
-        };
-      case 'request_revision':
-        return {
-          title: t('admin.requestRevisionMod'),
-          message: `"${itemTitle}" material uchun teacher'ga aniq izoh yozing.`,
-          confirmLabel: t('admin.sendRequest'),
-          variant: 'default' as const,
-          requireFeedback: true,
-        };
-    }
-  }, [pending]);
-
-  const handleConfirm = () => {
-    if (!pending || !modalProps) return;
-    if (modalProps.requireFeedback && feedback.trim().length < 5) {
-      toast.error(t('admin.reasonMin5'));
-      return;
-    }
-    const messages = {
-      start_review: t('admin.reviewStartedMod'),
-      approve: t('admin.materialApproved'),
-      reject: t('admin.materialRejected'),
-      request_revision: t('admin.revisionSentMod'),
-    };
-
-    const variables =
-      pending.type === 'start_review'
-        ? { queueId: pending.item.id, action: 'start_review' as const }
-        : pending.type === 'approve'
-        ? {
-            queueId: pending.item.id,
-            action: 'approve' as const,
-            feedback: feedback || undefined,
-          }
-        : pending.type === 'reject'
-        ? { queueId: pending.item.id, action: 'reject' as const, feedback }
-        : { queueId: pending.item.id, action: 'request_revision' as const, feedback };
-
-    mutation.mutate(variables, {
-      onSuccess: () => {
-        toast.success(messages[pending.type]);
-        setPending(null);
-      },
-      onError: (err) => toast.error(err.message),
-    });
-  };
 
   // ─── Overview compact mode (expanded=false) ──────────────────────────────
   if (!expanded) {
     return (
       <div className="bg-card rounded-md shadow-warm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-heading font-semibold text-foreground">
-            {t('admin.moderationQueue')}
-          </h3>
+          <h3 className="text-xl font-heading font-semibold text-foreground">{t('admin.moderationQueue')}</h3>
           {stats && stats.submitted > 0 && (
             <span className="px-2 py-0.5 bg-warning/10 text-warning text-xs rounded-full">
               {stats.submitted} {t('admin.newItems')}
             </span>
           )}
         </div>
-
         {stats && (
           <div className="grid grid-cols-3 gap-3 mb-4 text-center">
             <div className="p-3 bg-warning/10 rounded-md">
@@ -204,18 +120,13 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
             </div>
             <div className="p-3 bg-muted rounded-md">
               <p className="text-xs text-muted-foreground">{t('admin.averageMod')}</p>
-              <p className="text-xl font-heading font-bold text-foreground">
-                {formatMinutes(stats.avgReviewMinutes)}
-              </p>
+              <p className="text-xl font-heading font-bold text-foreground">{formatMinutes(stats.avgReviewMinutes)}</p>
             </div>
           </div>
         )}
-
         {isLoading ? (
           <div className="space-y-2">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse h-12 bg-muted rounded-md" />
-            ))}
+            {[1, 2, 3].map((i) => <div key={i} className="animate-pulse h-12 bg-muted rounded-md" />)}
           </div>
         ) : items.length === 0 ? (
           <div className="text-center py-6">
@@ -225,28 +136,13 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
         ) : (
           <div className="space-y-2">
             {items.slice(0, 5).map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center gap-3 p-2 hover:bg-muted/40 rounded-md transition-smooth"
-              >
-                <Icon
-                  name={CONTENT_TYPE_ICON[item.material.contentType ?? ''] ?? 'DocumentIcon'}
-                  size={18}
-                  className="text-primary shrink-0"
-                />
+              <div key={item.id} className="flex items-center gap-3 p-2 hover:bg-muted/40 rounded-md transition-smooth">
+                <Icon name={CONTENT_TYPE_ICON[item.material.contentType ?? ''] ?? 'DocumentIcon'} size={18} className="text-primary shrink-0" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {item.material.title}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {item.material.teacher.fullName}
-                  </p>
+                  <p className="text-sm font-medium text-foreground truncate">{item.material.title}</p>
+                  <p className="text-xs text-muted-foreground truncate">{item.material.teacher.fullName}</p>
                 </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[item.status].color}`}
-                >
-                  {t(`admin.${STATUS_BADGE[item.status].label}`)}
-                </span>
+                <Badge variant={STATUS_VARIANT[item.status]}>{t(STATUS_LABEL_KEY[item.status])}</Badge>
               </div>
             ))}
           </div>
@@ -255,284 +151,305 @@ const ModerationQueuePanel = ({ expanded = false }: ModerationQueuePanelProps) =
     );
   }
 
-  // ─── Expanded mode (moderation tab) ──────────────────────────────────────
+  // ─── Expanded CRM mode (moderation tab) ──────────────────────────────────
+  const resetTo = <T,>(setter: (v: T) => void) => (v: T) => {
+    setter(v);
+    setPage(1);
+    setSelectedIds(new Set());
+  };
+  const handleSort = (s: SortState) => {
+    setSort(s);
+    setPage(1);
+  };
+  const toggleRow = (id: string) =>
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const toggleAll = (ids: string[], checked: boolean) =>
+    setSelectedIds((prev) => {
+      const n = new Set(prev);
+      ids.forEach((id) => (checked ? n.add(id) : n.delete(id)));
+      return n;
+    });
+
+  const runSingle = async (
+    item: ModerationQueueItemDTO,
+    action: 'start_review' | 'approve' | 'reject' | 'request_revision',
+    fb?: string,
+  ) => {
+    try {
+      if (action === 'reject') {
+        await mutation.mutateAsync({ queueId: item.id, action: 'reject', feedback: fb! });
+        toast.success(t('admin.materialRejected'));
+      } else if (action === 'request_revision') {
+        await mutation.mutateAsync({ queueId: item.id, action: 'request_revision', feedback: fb! });
+        toast.success(t('admin.revisionSentMod'));
+      } else if (action === 'approve') {
+        await mutation.mutateAsync({ queueId: item.id, action: 'approve' });
+        toast.success(t('admin.materialApproved'));
+      } else {
+        await mutation.mutateAsync({ queueId: item.id, action: 'start_review' });
+        toast.success(t('admin.reviewStartedMod'));
+      }
+      setActive(null);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  const runBulk = async (action: 'approve' | 'reject', fb?: string) => {
+    const targets = items.filter((i) => selectedIds.has(i.id) && isActionable(i.status));
+    if (targets.length === 0) return;
+    const results = await Promise.allSettled(
+      targets.map((i) =>
+        action === 'reject'
+          ? mutation.mutateAsync({ queueId: i.id, action: 'reject', feedback: fb! })
+          : mutation.mutateAsync({ queueId: i.id, action: 'approve' }),
+      ),
+    );
+    const ok = results.filter((r) => r.status === 'fulfilled').length;
+    const fail = results.length - ok;
+    toast.success(`${ok} ${t('admin.bulkSelected')}${fail ? ` · ${fail} ✕` : ''}`);
+    setSelectedIds(new Set());
+    setBulkReason({ open: false, text: '' });
+  };
+
+  const FILTERS: { id: StatusFilter; label: string; count?: number }[] = [
+    { id: 'submitted', label: t('admin.statusNew'), count: stats?.submitted },
+    { id: 'under_review', label: t('admin.statusUnderReview'), count: stats?.under_review },
+    { id: 'revision_requested', label: t('admin.modRevisionReq'), count: stats?.revision_requested },
+    { id: 'approved', label: t('admin.statusApproved'), count: stats?.approved },
+    { id: 'rejected', label: t('admin.statusRejected'), count: stats?.rejected },
+    { id: 'all', label: t('admin.statusAll') },
+  ];
+
+  const columns: Column<ModerationQueueItemDTO>[] = [
+    {
+      key: 'title',
+      header: t('admin.materialLabel'),
+      render: (it) => (
+        <div className="flex items-center gap-3 min-w-0">
+          <Icon name={CONTENT_TYPE_ICON[it.material.contentType ?? ''] ?? 'DocumentIcon'} size={18} className="text-primary shrink-0" />
+          <span className="font-medium text-foreground truncate">{it.material.title}</span>
+        </div>
+      ),
+    },
+    {
+      key: 'teacher',
+      header: t('admin.colTeacher'),
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell text-muted-foreground',
+      render: (it) => <span className="truncate">{it.material.teacher.fullName}</span>,
+    },
+    {
+      key: 'course',
+      header: t('admin.colCourse'),
+      headerClassName: 'hidden lg:table-cell',
+      cellClassName: 'hidden lg:table-cell text-muted-foreground',
+      render: (it) => <span className="truncate">{it.material.course?.title ?? '—'}</span>,
+    },
+    {
+      key: 'status',
+      header: t('admin.colStatus'),
+      render: (it) => <Badge variant={STATUS_VARIANT[it.status]}>{t(STATUS_LABEL_KEY[it.status])}</Badge>,
+    },
+    {
+      key: 'submittedAt',
+      header: t('admin.colCreated'),
+      sortable: true,
+      headerClassName: 'hidden md:table-cell',
+      cellClassName: 'hidden md:table-cell text-muted-foreground whitespace-nowrap',
+      render: (it) => formatDateTime(it.submittedAt, locale),
+    },
+  ];
+
+  const sourceUrl = active?.material.fileUrl || active?.material.externalLink || null;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label={t('admin.statusNew')} value={stats.submitted} icon="ClockIcon" color="text-warning" />
-          <StatCard label={t('admin.reviewingMod')} value={stats.under_review} icon="EyeIcon" color="text-secondary" />
-          <StatCard label={t('admin.modRevisionReq')} value={stats.revision_requested} icon="ArrowPathIcon" color="text-primary" />
-          <StatCard label={t('admin.statusApproved')} value={stats.approved} icon="CheckCircleIcon" color="text-success" />
-          <StatCard label={t('admin.statusRejected')} value={stats.rejected} icon="XCircleIcon" color="text-destructive" />
+        <StatCardGrid className="lg:grid-cols-5">
+          <StatCard label={t('admin.statusNew')} value={stats.submitted} icon="ClockIcon" iconColor="text-warning" />
+          <StatCard label={t('admin.reviewingMod')} value={stats.under_review} icon="EyeIcon" iconColor="text-secondary" />
+          <StatCard label={t('admin.modRevisionReq')} value={stats.revision_requested} icon="ArrowPathIcon" iconColor="text-primary" />
+          <StatCard label={t('admin.statusApproved')} value={stats.approved} icon="CheckCircleIcon" iconColor="text-success" />
+          <StatCard label={t('admin.statusRejected')} value={stats.rejected} icon="XCircleIcon" iconColor="text-destructive" />
+        </StatCardGrid>
+      )}
+
+      <Toolbar>
+        <div className="overflow-x-auto -mx-1 px-1">
+          <FilterChips options={FILTERS} value={status} onChange={resetTo(setStatus)} className="flex-nowrap" />
+        </div>
+        <SearchInput placeholder={t('admin.searchTicketPlaceholder')} onSearch={resetTo(setSearch)} />
+      </Toolbar>
+
+      <BulkActionBar
+        count={selectedIds.size}
+        label={(c) => `${c} ${t('admin.bulkSelected')}`}
+        onClear={() => setSelectedIds(new Set())}
+        isLoading={mutation.isPending}
+        actions={[
+          { label: t('admin.bulkApprove'), icon: 'CheckCircleIcon', variant: 'primary', onClick: () => runBulk('approve') },
+          { label: t('admin.bulkReject'), icon: 'XCircleIcon', variant: 'outline', onClick: () => setBulkReason({ open: true, text: '' }) },
+        ]}
+      />
+
+      {error && (
+        <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 text-sm text-destructive flex items-center justify-between">
+          <span>{t('admin.error')}: {error.message}</span>
+          <button onClick={() => refetch()} className="underline text-xs">{t('admin.retryBtn')}</button>
         </div>
       )}
 
-      <div className="bg-card rounded-md shadow-warm p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-          <div className="flex items-center gap-2 overflow-x-auto -mx-1 px-1 flex-1">
-            {STATUS_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setStatus(tab.id)}
-                className={`px-3 py-2 rounded-md text-sm font-medium whitespace-nowrap transition-smooth ${
-                  status === tab.id
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-foreground hover:bg-muted/80'
-                }`}
-              >
-                {t(`admin.${tab.label}`)}
-              </button>
-            ))}
-          </div>
+      <DataTable
+        columns={columns}
+        rows={items}
+        getRowId={(it) => it.id}
+        onRowClick={(it) => { setActive(it); setDrawerAction(null); setFeedback(''); }}
+        sort={sort}
+        onSortChange={handleSort}
+        isLoading={isLoading}
+        selectable
+        selectedIds={selectedIds}
+        onToggleRow={toggleRow}
+        onToggleAll={toggleAll}
+        emptyIcon="CheckCircleIcon"
+        emptyTitle={t('admin.moderationNotFound')}
+      />
 
-          <div className="relative flex-1 lg:flex-none">
-            <Icon
-              name="MagnifyingGlassIcon"
-              size={18}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              placeholder={t('admin.searchTicketPlaceholder')}
-              className="pl-9 pr-3 py-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary w-full lg:w-64"
-            />
-          </div>
-        </div>
-      </div>
+      <Pagination
+        page={page}
+        pageSize={pageSize}
+        total={total}
+        onPageChange={setPage}
+        onPageSizeChange={resetTo(setPageSize)}
+        isFetching={isFetching}
+      />
 
-      <div className="bg-card rounded-md shadow-warm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-heading font-semibold text-foreground">
-            {t('admin.materials')} ({data?.total ?? 0})
-          </h3>
-          {isFetching && !isLoading && (
-            <span className="text-xs text-muted-foreground">{t('admin.updating')}</span>
-          )}
-        </div>
-
-        {error && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-md p-4 mb-4 text-sm text-destructive flex items-center justify-between">
-            <span>{t('admin.error')}: {error.message}</span>
-            <button onClick={() => refetch()} className="underline text-xs">
-              {t('admin.retryBtn')}
-            </button>
-          </div>
-        )}
-
-        {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-pulse h-24 bg-muted rounded-md" />
-            ))}
-          </div>
-        ) : items.length === 0 ? (
-          <div className="text-center py-12">
-            <Icon name="CheckCircleIcon" size={48} className="text-success mx-auto mb-4" />
-            <p className="text-muted-foreground">{t('admin.noMaterials')}</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {items.map((item) => {
-              const isOpen = openItem === item.id;
-              const badge = STATUS_BADGE[item.status];
-              const iconName = CONTENT_TYPE_ICON[item.material.contentType ?? ''] ?? 'DocumentIcon';
-              const canTakeAction =
-                item.status === 'submitted' || item.status === 'under_review';
-              return (
-                <div
-                  key={item.id}
-                  className="border border-border rounded-md hover:bg-muted/30 transition-smooth"
+      <Drawer
+        open={active !== null}
+        onClose={() => setActive(null)}
+        title={active?.material.title}
+        subtitle={active ? t(STATUS_LABEL_KEY[active.status]) : undefined}
+        width="lg"
+        footer={
+          active && isActionable(active.status) ? (
+            drawerAction ? (
+              <>
+                <Button variant="ghost" onClick={() => setDrawerAction(null)}>{t('common.cancel')}</Button>
+                <Button
+                  variant={drawerAction === 'reject' ? 'destructive' : 'primary'}
+                  loading={mutation.isPending}
+                  onClick={() => {
+                    if (feedback.trim().length < 5) return toast.error(t('admin.noteRequired'));
+                    runSingle(active, drawerAction, feedback.trim());
+                  }}
                 >
-                  <button
-                    onClick={() => setOpenItem(isOpen ? null : item.id)}
-                    className="w-full text-left p-4 flex items-start gap-3"
-                  >
-                    <div className="flex items-center justify-center w-10 h-10 bg-primary/10 rounded-md shrink-0">
-                      <Icon name={iconName} size={20} className="text-primary" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h4 className="font-heading font-semibold text-foreground truncate">
-                          {item.material.title}
-                        </h4>
-                        <span
-                          className={`px-2 py-0.5 rounded-full text-xs font-medium ${badge.color}`}
-                        >
-                          {t(`admin.${badge.label}`)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-muted-foreground truncate">
-                        {item.material.teacher.fullName}
-                        {item.material.course && ` · ${item.material.course.title}`}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        📅 {formatDateTime(item.submittedAt, locale)}
-                      </p>
-                    </div>
-                    <Icon
-                      name={isOpen ? 'ChevronUpIcon' : 'ChevronDownIcon'}
-                      size={18}
-                      className="text-muted-foreground shrink-0 mt-1"
-                    />
-                  </button>
-
-                  {isOpen && (
-                    <div className="px-4 pb-4 pt-0 border-t border-border space-y-3 text-sm">
-                      {item.material.description && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">{`📝 ${t('admin.descriptionSection')}`}</p>
-                          <p className="whitespace-pre-wrap">{item.material.description}</p>
-                        </div>
-                      )}
-
-                      {(item.material.fileUrl || item.material.externalLink) && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">{`🔗 ${t('admin.sourceSection')}`}</p>
-                          <a
-                            href={item.material.fileUrl ?? item.material.externalLink ?? '#'}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary underline break-all"
-                          >
-                            {t('admin.openMaterial')} ({item.material.fileFormat ?? item.material.contentType ?? 'link'})
-                          </a>
-                        </div>
-                      )}
-
-                      {item.feedback && (
-                        <div>
-                          <p className="text-xs text-muted-foreground mb-1">{`💬 ${t('admin.previousNote')}`}</p>
-                          <div className="p-2 bg-muted/50 rounded border-l-2 border-primary">
-                            {item.feedback}
-                          </div>
-                        </div>
-                      )}
-
-                      {item.reviewer && item.reviewedAt && (
-                        <p className="text-xs text-muted-foreground">
-                          ✓ {item.reviewer.fullName} tomonidan {formatDateTime(item.reviewedAt, locale)}'da
-                        </p>
-                      )}
-
-                      {canTakeAction && (
-                        <div className="flex flex-wrap gap-2 pt-2">
-                          {item.status === 'submitted' && (
-                            <button
-                              onClick={() => setPending({ item, type: 'start_review' })}
-                              className="text-xs px-3 py-1.5 rounded-md border border-secondary/30 text-secondary hover:bg-secondary/10 transition-smooth flex items-center gap-1"
-                            >
-                              <Icon name="EyeIcon" size={14} />
-                              {t('admin.startBtn')}
-                            </button>
-                          )}
-                          <button
-                            onClick={() => setPending({ item, type: 'approve' })}
-                            className="text-xs px-3 py-1.5 rounded-md border border-success/30 text-success hover:bg-success/10 transition-smooth flex items-center gap-1"
-                          >
-                            <Icon name="CheckCircleIcon" size={14} />
-                            {t('admin.approveBtn')}
-                          </button>
-                          <button
-                            onClick={() => setPending({ item, type: 'request_revision' })}
-                            className="text-xs px-3 py-1.5 rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-smooth flex items-center gap-1"
-                          >
-                            <Icon name="ArrowPathIcon" size={14} />
-                            {t('admin.revisionBtn')}
-                          </button>
-                          <button
-                            onClick={() => setPending({ item, type: 'reject' })}
-                            className="text-xs px-3 py-1.5 rounded-md border border-destructive/30 text-destructive hover:bg-destructive/10 transition-smooth flex items-center gap-1"
-                          >
-                            <Icon name="XCircleIcon" size={14} />
-                            {t('admin.rejectBtn')}
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                  {drawerAction === 'reject' ? t('admin.rejectBtn') : t('admin.sendRequest')}
+                </Button>
+              </>
+            ) : (
+              <>
+                {active.status === 'submitted' && (
+                  <Button variant="ghost" iconLeft="EyeIcon" loading={mutation.isPending} onClick={() => runSingle(active, 'start_review')}>
+                    {t('admin.startBtn')}
+                  </Button>
+                )}
+                <Button variant="outline" iconLeft="ArrowPathIcon" onClick={() => { setDrawerAction('request_revision'); setFeedback(''); }}>
+                  {t('admin.revisionBtn')}
+                </Button>
+                <Button variant="outline" iconLeft="XCircleIcon" className="text-destructive" onClick={() => { setDrawerAction('reject'); setFeedback(''); }}>
+                  {t('admin.rejectBtn')}
+                </Button>
+                <Button variant="primary" iconLeft="CheckCircleIcon" loading={mutation.isPending} onClick={() => runSingle(active, 'approve')}>
+                  {t('admin.approveBtn')}
+                </Button>
+              </>
+            )
+          ) : null
+        }
+      >
+        {active && (
+          <div className="space-y-4 text-sm">
+            <div className="text-muted-foreground">
+              {active.material.teacher.fullName}
+              {active.material.course ? ` · ${active.material.course.title}` : ''}
+            </div>
+            {active.material.description && (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/70 mb-1">{t('admin.descriptionSection')}</p>
+                <p className="text-foreground whitespace-pre-wrap break-words">{active.material.description}</p>
+              </div>
+            )}
+            {sourceUrl && (
+              <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-primary underline break-all">
+                <Icon name="ArrowTopRightOnSquareIcon" size={14} />
+                {t('admin.openMaterial')}
+              </a>
+            )}
+            {(active.plagiarismScore || active.qualityScore) && (
+              <div className="flex gap-2">
+                {active.plagiarismScore && <Badge variant="warning">Plagiat: {active.plagiarismScore}</Badge>}
+                {active.qualityScore && <Badge variant="secondary">Sifat: {active.qualityScore}</Badge>}
+              </div>
+            )}
+            {active.feedback && (
+              <div className="p-3 bg-muted/50 rounded-md border-l-2 border-primary text-muted-foreground">
+                <strong>{t('admin.previousNote')}:</strong> {active.feedback}
+              </div>
+            )}
+            {drawerAction && (
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1">{t('admin.feedbackLabel')}</label>
+                <textarea
+                  autoFocus
+                  rows={3}
+                  value={feedback}
+                  onChange={(e) => setFeedback(e.target.value)}
+                  className="w-full p-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none bg-card"
+                  placeholder={t('admin.writePlaceholder')}
+                />
+              </div>
+            )}
           </div>
         )}
-      </div>
+      </Drawer>
 
-      {modalProps && pending && (
-        <ConfirmModal
-          open={true}
-          title={modalProps.title}
-          message={modalProps.message}
-          confirmLabel={modalProps.confirmLabel}
-          variant={modalProps.variant}
-          isLoading={mutation.isPending}
-          onConfirm={handleConfirm}
-          onCancel={() => !mutation.isPending && setPending(null)}
+      <Modal
+        open={bulkReason.open}
+        onClose={() => setBulkReason({ open: false, text: '' })}
+        title={t('admin.bulkReasonTitle')}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setBulkReason({ open: false, text: '' })}>{t('common.cancel')}</Button>
+            <Button
+              variant="destructive"
+              loading={mutation.isPending}
+              onClick={() => {
+                if (bulkReason.text.trim().length < 5) return toast.error(t('admin.noteRequired'));
+                runBulk('reject', bulkReason.text.trim());
+              }}
+            >
+              {t('admin.bulkReject')}
+            </Button>
+          </>
+        }
+      >
+        <textarea
+          autoFocus
+          rows={3}
+          value={bulkReason.text}
+          onChange={(e) => setBulkReason((s) => ({ ...s, text: e.target.value }))}
+          className="w-full p-2 border border-border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none bg-card"
+          placeholder={t('admin.writePlaceholder')}
         />
-      )}
-      {modalProps?.requireFeedback && pending && (
-        <FeedbackOverlay
-          label={t('admin.feedbackLabel')}
-          value={feedback}
-          onChange={setFeedback}
-        />
-      )}
+      </Modal>
     </div>
   );
 };
-
-function StatCard({
-  label,
-  value,
-  icon,
-  color,
-}: {
-  label: string;
-  value: number;
-  icon: string;
-  color: string;
-}) {
-  return (
-    <div className="bg-card rounded-md shadow-warm p-4">
-      <div className="flex items-center justify-between mb-1">
-        <p className="text-xs text-muted-foreground">{label}</p>
-        <Icon name={icon} size={18} className={color} />
-      </div>
-      <p className={`text-2xl font-heading font-bold ${color}`}>{value}</p>
-    </div>
-  );
-}
-
-function FeedbackOverlay({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  const { t } = useI18n();
-  return (
-    <div
-      className="fixed left-1/2 -translate-x-1/2 z-[210] w-full max-w-md pointer-events-none"
-      style={{ bottom: '30%' }}
-    >
-      <div className="bg-card border border-border rounded-md shadow-warm-lg p-3 mx-4 pointer-events-auto">
-        <label className="block text-xs text-muted-foreground mb-1">{label}</label>
-        <textarea
-          autoFocus
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          rows={3}
-          className="w-full p-2 border border-border rounded text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          placeholder={t('admin.writePlaceholder')}
-        />
-      </div>
-    </div>
-  );
-}
 
 export default ModerationQueuePanel;

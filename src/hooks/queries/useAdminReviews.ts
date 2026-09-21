@@ -30,10 +30,11 @@ export interface AdminReviewsStats {
   avgRating: number;
 }
 
+export type AdminReviewsSortField = 'createdAt' | 'rating' | 'reportCount';
+
 export interface AdminReviewsResponse {
   reviews: AdminReviewDTO[];
   total: number;
-  nextCursor: string | null;
   stats: AdminReviewsStats;
 }
 
@@ -41,8 +42,10 @@ export interface AdminReviewsFilters {
   status?: ReviewStatusDTO;
   rating?: number | 'all';
   search?: string;
-  cursor?: string | null;
-  limit?: number;
+  page?: number;
+  pageSize?: number;
+  sort?: AdminReviewsSortField;
+  order?: 'asc' | 'desc';
 }
 
 async function fetchAdminReviews(
@@ -52,8 +55,10 @@ async function fetchAdminReviews(
   if (filters.status) params.set('status', filters.status);
   if (filters.rating && filters.rating !== 'all') params.set('rating', String(filters.rating));
   if (filters.search) params.set('search', filters.search);
-  if (filters.cursor) params.set('cursor', filters.cursor);
-  if (filters.limit) params.set('limit', String(filters.limit));
+  if (filters.page) params.set('page', String(filters.page));
+  if (filters.pageSize) params.set('limit', String(filters.pageSize));
+  if (filters.sort) params.set('sort', filters.sort);
+  if (filters.order) params.set('order', filters.order);
 
   const res = await fetch(`/api/admin/reviews?${params}`, { credentials: 'include' });
   if (!res.ok) {
@@ -69,7 +74,10 @@ export function useAdminReviews(filters: AdminReviewsFilters = {}) {
       status: filters.status,
       rating: filters.rating,
       search: filters.search,
-      cursor: filters.cursor,
+      page: filters.page,
+      pageSize: filters.pageSize,
+      sort: filters.sort,
+      order: filters.order,
     }),
     queryFn: () => fetchAdminReviews(filters),
     staleTime: 30_000,

@@ -77,39 +77,57 @@ export const queryKeys = {
     status?: string;
     rating?: number | 'all';
     search?: string;
-    cursor?: string | null;
+    page?: number;
+    pageSize?: number;
+    sort?: string;
+    order?: string;
   }) =>
     [
       'admin-reviews',
       filters.status ?? 'all',
       filters.rating ?? 'all',
       filters.search ?? '',
-      filters.cursor ?? null,
+      filters.page ?? 1,
+      filters.pageSize ?? 20,
+      filters.sort ?? 'reportCount',
+      filters.order ?? 'desc',
     ] as const,
   adminCampaigns: ['admin-campaigns'] as const,
   adminTeacherApplications: (filters: {
     status?: string;
     search?: string;
-    cursor?: string | null;
+    page?: number;
+    pageSize?: number;
+    sort?: string;
+    order?: string;
   }) =>
     [
       'admin-teacher-applications',
       filters.status ?? 'all',
       filters.search ?? '',
-      filters.cursor ?? null,
+      filters.page ?? 1,
+      filters.pageSize ?? 20,
+      filters.sort ?? 'createdAt',
+      filters.order ?? 'desc',
     ] as const,
   adminModeration: (filters: {
     status?: string;
     contentType?: string;
     search?: string;
-    cursor?: string | null;
+    page?: number;
+    pageSize?: number;
+    sort?: string;
+    order?: string;
   }) =>
     [
       'admin-moderation',
       filters.status ?? 'all',
       filters.contentType ?? 'all',
       filters.search ?? '',
-      filters.cursor ?? null,
+      filters.page ?? 1,
+      filters.pageSize ?? 20,
+      filters.sort ?? 'submittedAt',
+      filters.order ?? 'desc',
     ] as const,
   adminTickets: (filters: {
     status?: string;

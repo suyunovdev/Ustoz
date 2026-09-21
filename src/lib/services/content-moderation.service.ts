@@ -35,7 +35,6 @@ export class QueueItemNotFoundError extends Error {
 export interface ListQueueResult {
   items: ModerationQueueRow[];
   total: number;
-  nextCursor: string | null;
   stats: Awaited<ReturnType<typeof moderationRepo.statusCounts>>;
 }
 
@@ -43,19 +42,12 @@ export async function listQueue(
   filters: ModerationQueueFilters = {},
 ): Promise<ListQueueResult> {
   const limit = filters.limit ?? 20;
-  const [rows, total, stats] = await Promise.all([
+  const [items, total, stats] = await Promise.all([
     moderationRepo.findQueueForAdmin({ ...filters, limit }),
     moderationRepo.countForAdmin(filters),
     moderationRepo.statusCounts(),
   ]);
-  const hasMore = rows.length > limit;
-  const items = hasMore ? rows.slice(0, limit) : rows;
-  return {
-    items,
-    total,
-    nextCursor: hasMore ? items[items.length - 1].id : null,
-    stats,
-  };
+  return { items, total, stats };
 }
 
 export async function getMaterialHistory(materialId: string) {

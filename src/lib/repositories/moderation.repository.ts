@@ -31,12 +31,16 @@ export type ModerationQueueRow = Prisma.ModerationQueueGetPayload<{
 
 export type ModerationStatusFilter = ModerationStatus | 'all';
 
+export type ModerationSortField = 'submittedAt';
+
 export interface ModerationQueueFilters {
   status?: ModerationStatusFilter;
   contentType?: string | 'all';
   search?: string;
   limit?: number;
-  cursor?: string | null;
+  offset?: number;
+  sort?: ModerationSortField;
+  order?: 'asc' | 'desc';
 }
 
 function buildWhere(filters: ModerationQueueFilters): Prisma.ModerationQueueWhereInput {
@@ -65,13 +69,20 @@ function buildWhere(filters: ModerationQueueFilters): Prisma.ModerationQueueWher
 export async function findQueueForAdmin(
   filters: ModerationQueueFilters = {},
 ): Promise<ModerationQueueRow[]> {
-  const { limit = 20, cursor } = filters;
+  const { limit = 20, offset = 0, sort = 'submittedAt', order = 'desc' } = filters;
+  const sortField: keyof Prisma.ModerationQueueOrderByWithRelationInput =
+    sort === 'submittedAt' ? 'submittedAt' : 'submittedAt';
   return prisma.moderationQueue.findMany({
     where: buildWhere(filters),
     include: queueInclude,
-    orderBy: [{ status: 'asc' }, { submittedAt: 'desc' }],
-    take: limit + 1,
-    ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+    // navbat tartibi (status) birinchi, so'ng tanlangan ustun + id (barqaror)
+    orderBy: [
+      { status: 'asc' },
+      { [sortField]: order } as Prisma.ModerationQueueOrderByWithRelationInput,
+      { id: 'asc' },
+    ],
+    take: limit,
+    skip: offset,
   });
 }
 
