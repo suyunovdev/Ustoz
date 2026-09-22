@@ -27,10 +27,11 @@ interface TopicTestCardProps {
   courseId?: string;
 }
 
-const TopicTestCard = ({ topicId }: TopicTestCardProps) => {
+const TopicTestCard = ({ topicId, courseId }: TopicTestCardProps) => {
   const { t } = useI18n();
   const router = useRouter();
   const [tests, setTests] = useState<TopicTest[]>([]);
+  const [canTake, setCanTake] = useState(true);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
@@ -48,6 +49,7 @@ const TopicTestCard = ({ topicId }: TopicTestCardProps) => {
       }
       const data = await res.json();
       setTests(data.tests || []);
+      setCanTake(data.canTake !== false);
     } catch {
       setTests([]);
     } finally {
@@ -136,16 +138,37 @@ const TopicTestCard = ({ topicId }: TopicTestCardProps) => {
                   </span>
                 </div>
 
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    disabled={limitReached}
-                    onClick={() => router.push(`/tests/${tst.id}/take`)}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Icon name={tst.bestAttempt ? 'ArrowPathIcon' : 'PlayCircleIcon'} size={18} />
-                    {tst.bestAttempt ? t('learning.testRetake') : t('learning.testStart')}
-                  </button>
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  {canTake ? (
+                    <button
+                      type="button"
+                      disabled={limitReached}
+                      onClick={() => router.push(`/tests/${tst.id}/take`)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-smooth disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Icon name={tst.bestAttempt ? 'ArrowPathIcon' : 'PlayCircleIcon'} size={18} />
+                      {tst.bestAttempt ? t('learning.testRetake') : t('learning.testStart')}
+                    </button>
+                  ) : (
+                    <>
+                      <span
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-muted text-muted-foreground text-sm font-semibold cursor-not-allowed"
+                        title={t('learning.testEnrollToTake')}
+                      >
+                        <Icon name="LockClosedIcon" size={18} />
+                        {t('learning.testEnrollToTake')}
+                      </span>
+                      {courseId && (
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/courses/${courseId}`)}
+                          className="text-sm font-semibold text-primary hover:underline"
+                        >
+                          {t('learning.testEnrollCta')}
+                        </button>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
             </div>

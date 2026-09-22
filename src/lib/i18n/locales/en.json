@@ -2784,6 +2784,8 @@
     "testAttemptsUsed": "attempts used",
     "testTimeMinutes": "minutes",
     "testNoLimit": "No time limit",
+    "testEnrollToTake": "Enroll to take the test",
+    "testEnrollCta": "Enroll in course",
     "previewBanner": "You're not enrolled in this course — only free lessons are open.",
     "enrollCta": "Enroll",
     "lockedTopicEnroll": "This lesson is for enrolled students. Please enroll."

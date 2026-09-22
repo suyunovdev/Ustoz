@@ -2784,6 +2784,8 @@
     "testAttemptsUsed": "urinish ishlatildi",
     "testTimeMinutes": "daqiqa",
     "testNoLimit": "Vaqt cheklovsiz",
+    "testEnrollToTake": "Yechish uchun kursga yoziling",
+    "testEnrollCta": "Kursga yozilish",
     "previewBanner": "Siz bu kursga yozilmagansiz — faqat bepul darslar ochiq.",
     "enrollCta": "Kursga yozilish",
     "lockedTopicEnroll": "Bu dars faqat yozilganlar uchun. Kursga yoziling."

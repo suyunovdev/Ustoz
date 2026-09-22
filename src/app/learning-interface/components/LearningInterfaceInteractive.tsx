@@ -193,14 +193,16 @@ const LearningInterfaceInteractive = () => {
 
       // URL'dan topicId yoki (yozilgan: birinchi tugatilmagan / yozilmagan: birinchi bepul)
       const urlTopicId = searchParams.get('topicId');
-      const selectable = (t: Topic) => canViewAll || !t.locked;
+      // Testli qulflangan mavzu ham tanlanadi (yozilmagan o'quvchi testni ko'ra oladi,
+      // lekin yecha olmaydi; kontent baribir yashirin).
+      const selectable = (t: Topic) => canViewAll || !t.locked || Boolean(t.hasQuiz);
       let initial = urlTopicId
         ? mappedTopics.find((t) => t.id === urlTopicId && selectable(t))
         : undefined;
       if (!initial) {
         initial = canViewAll
           ? (mappedTopics.find((t) => !t.isCompleted) ?? mappedTopics[0])
-          : mappedTopics.find((t) => !t.locked);
+          : (mappedTopics.find((t) => !t.locked || t.hasQuiz) ?? mappedTopics[0]);
       }
       if (initial) {
         initial = { ...initial, isCurrent: true };
@@ -262,7 +264,9 @@ const LearningInterfaceInteractive = () => {
   };
 
   const handleTopicSelect = (topic: Topic) => {
-    if (topic.locked) {
+    // Testsiz qulflangan (pullik video) mavzu bloklanadi; testli mavzu esa
+    // ochiladi — o'quvchi test kartasini ko'radi (yecha olmaydi), kontent yashirin.
+    if (topic.locked && !topic.hasQuiz) {
       toast.info(t('learning.lockedTopicEnroll'));
       return;
     }

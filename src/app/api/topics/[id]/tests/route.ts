@@ -22,20 +22,27 @@ export async function GET(
 
     const topic = await prisma.courseTopic.findUnique({
       where: { id: topicId },
-      select: { id: true, courseId: true, course: { select: { teacherId: true } } },
+      select: {
+        id: true,
+        courseId: true,
+        course: { select: { teacherId: true, isPublished: true } },
+      },
     });
     if (!topic) {
       return jsonResponse({ error: 'Mavzu topilmadi' }, { status: 404 });
     }
 
-    // Kirish huquqi: admin, kurs egasi teacher, yoki faol enrollment'li talaba.
+    // Test YECHISH huquqi: admin, kurs egasi teacher, yoki faol enrollment'li talaba.
     const isAdmin = session.role === 'admin';
     const isOwnerTeacher = session.role === 'teacher' && topic.course?.teacherId === session.sub;
-    let allowed = isAdmin || isOwnerTeacher;
-    if (!allowed) {
-      allowed = await hasActiveCourseAccess(session.sub, topic.courseId);
-    }
-    if (!allowed) {
+    const enrolled = await hasActiveCourseAccess(session.sub, topic.courseId);
+    const canTake = isAdmin || isOwnerTeacher || enrolled;
+
+    // KO'RISH huquqi: yechish huquqi bo'lganlar + nashr qilingan kursда har kim
+    // (yozilmagan o'quvchi testni ko'radi, lekin yecholmaydi). Metadata xavfsiz —
+    // savol matni/kaliti bu endpoint orqali oshkor qilinmaydi.
+    const canView = canTake || topic.course?.isPublished === true;
+    if (!canView) {
       return jsonResponse({ error: 'Bu testlarga kirish huquqingiz yo\'q' }, { status: 403 });
     }
 
@@ -71,7 +78,7 @@ export async function GET(
       }),
     );
 
-    return jsonResponse({ tests });
+    return jsonResponse({ tests, canTake });
   } catch (err) {
     return errorResponse(err);
   }
