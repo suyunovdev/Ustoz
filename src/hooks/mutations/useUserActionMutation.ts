@@ -7,7 +7,8 @@ import type { AdminUserDTO } from '../queries/useAdminUsers';
 export type UserActionMutationVars =
   | { userId: string; action: 'suspend'; reason?: string }
   | { userId: string; action: 'activate' }
-  | { userId: string; action: 'change_role'; newRole: 'student' | 'teacher' | 'admin' };
+  | { userId: string; action: 'change_role'; newRole: 'student' | 'teacher' | 'admin' }
+  | { userId: string; action: 'reset_password'; newPassword: string };
 
 type MutationVars = UserActionMutationVars;
 

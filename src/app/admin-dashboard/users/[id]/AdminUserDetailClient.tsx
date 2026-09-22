@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import Icon from '@/components/ui/AppIcon';
 import Avatar from '@/components/ui/Avatar';
+import { Modal } from '@/components/ui/Modal';
+import { Button } from '@/components/ui/Button';
 import ConfirmModal from '@/components/common/ConfirmModal';
 import { toast } from '@/components/common/Toaster';
 import { useI18n } from '@/contexts/I18nContext';
@@ -18,6 +20,24 @@ type Role = 'student' | 'teacher' | 'admin';
 interface Pending {
   type: 'suspend' | 'activate' | 'change_role';
   newRole?: Role;
+}
+
+/** Kuchli, o'qib bo'ladigan tasodifiy parol (validatePassword siyosatiga mos). */
+function generatePassword(): string {
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnpqrstuvwxyz';
+  const digit = '23456789';
+  const symbol = '!@#$%*?';
+  const all = upper + lower + digit + symbol;
+  const rand = (set: string) => set[crypto.getRandomValues(new Uint32Array(1))[0] % set.length];
+  const chars = [rand(upper), rand(lower), rand(digit), rand(symbol)];
+  for (let i = chars.length; i < 14; i++) chars.push(rand(all));
+  // Fisher-Yates aralashtirish (crypto random)
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
 }
 
 function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: ReactNode; sub?: ReactNode }) {
@@ -49,6 +69,45 @@ export default function AdminUserDetailClient({ userId }: { userId: string }) {
   const { data, isLoading, error, refetch } = useAdminUserDetail(userId);
   const actionMut = useUserActionMutation();
   const [pending, setPending] = useState<Pending | null>(null);
+
+  // Parolni tiklash modali
+  const [resetOpen, setResetOpen] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [showPw, setShowPw] = useState(true);
+  const [resultPw, setResultPw] = useState<string | null>(null);
+  const resetMut = useUserActionMutation();
+
+  const openReset = () => {
+    setNewPassword(generatePassword());
+    setResultPw(null);
+    setShowPw(true);
+    setResetOpen(true);
+  };
+  const submitReset = () => {
+    if (newPassword.trim().length < 8) {
+      toast.error(t('adminUserDetail.passwordPolicyHint'));
+      return;
+    }
+    const pw = newPassword;
+    resetMut.mutate(
+      { userId, action: 'reset_password', newPassword: pw },
+      {
+        onSuccess: () => {
+          setResultPw(pw);
+          qc.invalidateQueries({ queryKey: queryKeys.adminUser(userId) });
+        },
+        onError: (e) => toast.error(e instanceof Error ? e.message : t('adminUserDetail.actionFailed')),
+      },
+    );
+  };
+  const copyPw = async () => {
+    try {
+      await navigator.clipboard.writeText(resultPw ?? newPassword);
+      toast.success(t('adminUserDetail.copied'));
+    } catch {
+      toast.error(t('adminUserDetail.actionFailed'));
+    }
+  };
 
   const uzs = (v: string | number) => formatCurrency(Number(v) || 0, locale, 'UZS');
   const date = (iso: string | null) => (iso ? fmtDate(iso, locale, {}) : '—');
@@ -166,6 +225,34 @@ export default function AdminUserDetailClient({ userId }: { userId: string }) {
                     {roleLabel[r]}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Kirish ma'lumotlari (login + parolni tiklash) */}
+            <div className="bg-card rounded-md shadow-warm p-6 mb-4">
+              <h2 className="text-sm font-heading font-semibold text-foreground mb-3 flex items-center gap-2">
+                <Icon name="KeyIcon" size={16} className="text-primary" />
+                {t('adminUserDetail.loginInfo')}
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">{t('adminUserDetail.loginLabel')}</p>
+                  <p className="text-sm font-medium text-foreground break-all">{data.user.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1">{t('adminUserDetail.passwordLabel')}</p>
+                  <p className="text-sm font-mono tracking-widest text-muted-foreground">••••••••••</p>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">{t('adminUserDetail.passwordHidden')}</p>
+              <div className="mt-4 pt-4 border-t border-border">
+                <button
+                  onClick={openReset}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm rounded-md border border-primary/30 text-primary hover:bg-primary/10 transition-smooth"
+                >
+                  <Icon name="ArrowPathIcon" size={16} />
+                  {t('adminUserDetail.resetPassword')}
+                </button>
               </div>
             </div>
 
@@ -309,6 +396,63 @@ export default function AdminUserDetailClient({ userId }: { userId: string }) {
           onCancel={() => !actionMut.isPending && setPending(null)}
         />
       )}
+
+      {/* Parolni tiklash modali */}
+      <Modal
+        open={resetOpen}
+        onClose={() => !resetMut.isPending && setResetOpen(false)}
+        title={t('adminUserDetail.resetPasswordTitle')}
+        footer={
+          resultPw ? (
+            <Button variant="primary" onClick={() => setResetOpen(false)}>{t('common.close')}</Button>
+          ) : (
+            <>
+              <Button variant="ghost" onClick={() => setResetOpen(false)} disabled={resetMut.isPending}>
+                {t('common.cancel')}
+              </Button>
+              <Button variant="primary" loading={resetMut.isPending} onClick={submitReset}>
+                {t('adminUserDetail.setPasswordBtn')}
+              </Button>
+            </>
+          )
+        }
+      >
+        {resultPw ? (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-success">
+              <Icon name="CheckCircleIcon" size={20} />
+              <span className="font-semibold">{t('adminUserDetail.resetSuccessTitle')}</span>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-md border border-border">
+              <code className="flex-1 font-mono text-sm text-foreground break-all">{resultPw}</code>
+              <button onClick={copyPw} className="p-2 rounded-md hover:bg-muted transition-smooth" title={t('adminUserDetail.copy')}>
+                <Icon name="ClipboardDocumentIcon" size={18} className="text-primary" />
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground">{t('adminUserDetail.resetSuccessNote')}</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <label className="block text-sm font-medium text-foreground">{t('adminUserDetail.newPasswordLabel')}</label>
+            <div className="flex items-center gap-2">
+              <input
+                type={showPw ? 'text' : 'password'}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="flex-1 px-3 py-2 font-mono text-sm bg-card border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                autoComplete="new-password"
+              />
+              <button type="button" onClick={() => setShowPw((s) => !s)} className="p-2 rounded-md border border-border hover:bg-muted transition-smooth" title={showPw ? 'Yashirish' : "Ko'rsatish"}>
+                <Icon name={showPw ? 'EyeSlashIcon' : 'EyeIcon'} size={18} className="text-muted-foreground" />
+              </button>
+              <button type="button" onClick={() => setNewPassword(generatePassword())} className="p-2 rounded-md border border-border hover:bg-muted transition-smooth" title={t('adminUserDetail.generateNew')}>
+                <Icon name="ArrowPathIcon" size={18} className="text-muted-foreground" />
+              </button>
+            </div>
+            <p className="text-xs text-muted-foreground">{t('adminUserDetail.passwordPolicyHint')}</p>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

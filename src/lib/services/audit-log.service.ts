@@ -21,6 +21,7 @@ export const AUDIT_ACTIONS = {
   USER_SUSPEND: 'user.suspend',
   USER_ACTIVATE: 'user.activate',
   USER_ROLE_CHANGE: 'user.role_change',
+  USER_PASSWORD_RESET: 'user.password_reset',
   COURSE_APPROVE: 'course.approve',
   COURSE_REJECT: 'course.reject',
   COURSE_REVISION_REQUESTED: 'course.revision_requested',

@@ -10,6 +10,7 @@
  */
 
 import type { NextRequest } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import type { UserRole } from '@/generated/prisma/client';
 import { userRepo, type AdminUserRow, type ListUsersOptions } from '@/lib/repositories';
@@ -20,6 +21,7 @@ import {
   UserNotFoundError,
   ValidationError,
 } from '@/lib/errors';
+import { validatePassword } from '@/lib/validation';
 import { log as auditLog, AUDIT_ACTIONS } from './audit-log.service';
 
 const VALID_ROLES: ReadonlyArray<UserRole> = ['student', 'teacher', 'admin'];
@@ -155,11 +157,58 @@ export async function changeUserRole(
   });
 }
 
+/**
+ * Admin foydalanuvchi parolini tiklaydi (yangi parol o'rnatadi).
+ * Parol bcrypt-hash sifatida saqlanadi; tokenVersion increment barcha eski
+ * JWT sessiyalarni darhol bekor qiladi. Ochiq parol/hash audit'ga yozilmaydi.
+ */
+export async function resetUserPassword(
+  adminId: string,
+  userId: string,
+  newPassword: string,
+  request?: NextRequest,
+): Promise<AdminUserRow> {
+  // Admin o'z parolini bu yerda emas, profil orqali o'zgartiradi (tasodifan
+  // o'zini chiqarib yubormasin).
+  if (adminId === userId) throw new SelfActionError();
+
+  // Defense-in-depth: route allaqachon tekshiradi, biz ham tekshiramiz.
+  const policyError = validatePassword(newPassword);
+  if (policyError) throw new ValidationError(policyError);
+
+  const target = await userRepo.findById(userId);
+  if (!target) throw new UserNotFoundError(userId);
+
+  const passwordHash = await bcrypt.hash(newPassword, 12);
+
+  return prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: { passwordHash, tokenVersion: { increment: 1 } },
+    });
+    await auditLog(
+      {
+        adminId,
+        action: AUDIT_ACTIONS.USER_PASSWORD_RESET,
+        targetType: 'user',
+        targetId: userId,
+        // Parol/hash HECH QACHON yozilmaydi.
+        metadata: {},
+        request,
+      },
+      tx,
+    );
+    // Safe qator qaytariladi (passwordHash tanlanmaydi).
+    return (await userRepo.findById(userId)) ?? target;
+  });
+}
+
 /** Route handler tarafidan kelgan action'ni dispatch qiladi. */
 export type UserActionPayload =
   | { action: 'suspend'; reason?: string }
   | { action: 'activate' }
-  | { action: 'change_role'; newRole: UserRole };
+  | { action: 'change_role'; newRole: UserRole }
+  | { action: 'reset_password'; newPassword: string };
 
 export async function applyAction(
   adminId: string,
@@ -174,6 +223,8 @@ export async function applyAction(
       return activateUser(adminId, userId, request);
     case 'change_role':
       return changeUserRole(adminId, userId, payload.newRole, request);
+    case 'reset_password':
+      return resetUserPassword(adminId, userId, payload.newPassword, request);
     default: {
       const exhaustive: never = payload;
       throw new ValidationError(`Noma'lum amal: ${JSON.stringify(exhaustive)}`);

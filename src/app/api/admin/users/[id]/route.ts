@@ -5,6 +5,7 @@
  *   { action: 'suspend',     reason?: string }
  *   { action: 'activate' }
  *   { action: 'change_role', newRole: 'student' | 'teacher' | 'admin' }
+ *   { action: 'reset_password', newPassword: string }   // admin parolni tiklaydi
  *
  * Auth: admin only.
  * Side-effects: audit_logs jadval'iga yozadi, transactional.
@@ -24,6 +25,7 @@ import {
 } from '@/lib/services/admin-content.service';
 import { getUserDetailForAdmin } from '@/lib/services/admin-user-detail.service';
 import { ValidationError } from '@/lib/errors';
+import { validatePassword } from '@/lib/validation';
 import type { UserRole } from '@/generated/prisma/client';
 
 /**
@@ -46,7 +48,7 @@ export async function GET(
   }
 }
 
-const VALID_ACTIONS = ['suspend', 'activate', 'change_role'] as const;
+const VALID_ACTIONS = ['suspend', 'activate', 'change_role', 'reset_password'] as const;
 const VALID_ROLES: ReadonlyArray<UserRole> = ['student', 'teacher', 'admin'];
 
 function parseBody(body: unknown): UserActionPayload {
@@ -72,6 +74,12 @@ function parseBody(body: unknown): UserActionPayload {
       throw new ValidationError(`Noto'g'ri rol: ${String(newRole)}`);
     }
     return { action, newRole: newRole as UserRole };
+  }
+  if (action === 'reset_password') {
+    const newPassword = b.newPassword;
+    const policyError = validatePassword(newPassword);
+    if (policyError) throw new ValidationError(policyError);
+    return { action, newPassword: newPassword as string };
   }
   throw new ValidationError(`Noma'lum amal`);
 }
