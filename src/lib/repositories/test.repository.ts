@@ -165,6 +165,47 @@ export async function listTeacherTests(
   }));
 }
 
+export interface PublishedTopicTest {
+  id: string;
+  title: string;
+  description: string | null;
+  passingScore: number;
+  timeLimitSec: number | null;
+  allowedAttempts: number;
+  totalPoints: number;
+  questionCount: number;
+}
+
+/** Mavzuning published testlari — o'quv interfeysi (talaba) uchun. */
+export async function listPublishedTestsByTopic(
+  topicId: string,
+): Promise<PublishedTopicTest[]> {
+  const rows = await prisma.courseTest.findMany({
+    where: { topicId, status: 'published' },
+    orderBy: { createdAt: 'asc' },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      passingScore: true,
+      timeLimitSec: true,
+      allowedAttempts: true,
+      totalPoints: true,
+      _count: { select: { questions: true } },
+    },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    description: r.description,
+    passingScore: r.passingScore,
+    timeLimitSec: r.timeLimitSec,
+    allowedAttempts: r.allowedAttempts,
+    totalPoints: r.totalPoints,
+    questionCount: r._count.questions,
+  }));
+}
+
 export interface UpdateTestInput {
   title?: string;
   description?: string | null;

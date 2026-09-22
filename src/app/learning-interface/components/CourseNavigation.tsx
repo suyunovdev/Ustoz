@@ -14,6 +14,7 @@ interface Topic {
   moduleTitle: string;
   isFreePreview?: boolean;
   locked?: boolean;
+  hasQuiz?: boolean;
 }
 
 interface Section {
@@ -95,6 +96,7 @@ const CourseNavigation = ({ sections, currentTopicId, onTopicChange, progress }:
                 </span>
                 <span className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                   {topic.videoUrl && <Icon name="VideoCameraIcon" size={13} />}
+                  {topic.hasQuiz && <Icon name="ClipboardDocumentCheckIcon" size={13} className="text-primary" />}
                   {topic.duration && topic.duration !== '—' && (
                     <span className="font-data">{topic.duration}</span>
                   )}

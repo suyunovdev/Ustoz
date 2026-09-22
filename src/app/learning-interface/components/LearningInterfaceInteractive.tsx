@@ -8,6 +8,7 @@ import NoteTaking from './NoteTaking';
 import DiscussionPanel from './DiscussionPanel';
 import ResourceDownloads from './ResourceDownloads';
 import AiTutorPanel from './AiTutorPanel';
+import TopicTestCard from './TopicTestCard';
 import Icon from '@/components/ui/AppIcon';
 import { toast } from '@/components/common/Toaster';
 import { renderMarkdown } from '@/lib/markdown';
@@ -29,6 +30,8 @@ interface Topic {
   isFreePreview?: boolean;
   // Yozilmagan o'quvchi uchun bepul BO'LMAGAN mavzular qulflangan.
   locked?: boolean;
+  // Bu mavzuda published test bor (denormalizatsiyalangan bayroq).
+  hasQuiz?: boolean;
 }
 
 interface Section {
@@ -184,6 +187,7 @@ const LearningInterfaceInteractive = () => {
           moduleTitle: t.moduleTitle || '',
           isFreePreview: isFree,
           locked: !canViewAll && !isFree,
+          hasQuiz: Boolean((t as Record<string, unknown>).hasQuiz),
         };
       });
 
@@ -495,13 +499,18 @@ const LearningInterfaceInteractive = () => {
                 className="prose prose-neutral dark:prose-invert max-w-none prose-headings:font-heading prose-a:text-primary prose-img:rounded-lg"
                 dangerouslySetInnerHTML={{ __html: renderMarkdown(currentTopic.content) }}
               />
-            ) : !currentTopic?.videoUrl ? (
+            ) : !currentTopic?.videoUrl && !currentTopic?.hasQuiz ? (
               <div className="rounded-xl border border-dashed border-border bg-muted/30 p-10 text-center">
                 <Icon name="DocumentTextIcon" size={40} className="text-muted-foreground/50 mx-auto mb-3" />
                 <p className="text-foreground font-medium mb-1">{t('learning.materialComingSoonTitle')}</p>
                 <p className="text-sm text-muted-foreground">{t('learning.materialComingSoon')}</p>
               </div>
             ) : null}
+
+            {/* Mavzu testlari (bo'lsa) — asosiy maydonda */}
+            {currentTopic && (
+              <TopicTestCard topicId={currentTopic.id} courseId={courseId ?? undefined} />
+            )}
 
             {/* Oldingi / keyingi mavzu */}
             <div className="flex items-center justify-between gap-3 pt-4 border-t border-border">

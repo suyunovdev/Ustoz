@@ -67,11 +67,20 @@ export class TestNotEnrolledError extends ServiceError {
 async function assertEnrolledInTestCourse(
   courseId: string | null | undefined,
   studentId: string,
+  role?: string,
 ): Promise<void> {
   // Standalone test (courseId=null) — ATAYLAB har autentifikatsiyalangan
   // foydalanuvchiga ochiq (ochiq mashq/imtihon); kursga bog'langan test esa
   // faqat FAOL yozilgan talabaga (M3 — hujjatlashtirilgan; M2 — isActive).
   if (!courseId) return;
+  // Admin — har qanday testni sinab ko'ra oladi (preview / oversight).
+  if (role === 'admin') return;
+  // Kurs egasi (o'qituvchi) — o'z kursi testini yecha oladi.
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    select: { teacherId: true },
+  });
+  if (course?.teacherId === studentId) return;
   const enrolled = await prisma.enrollment.findFirst({
     where: { courseId, studentId, isActive: true },
     select: { id: true },
@@ -388,6 +397,7 @@ export async function deleteQuestion(
 export async function startTestAttempt(
   testId: string,
   studentId: string,
+  role?: string,
 ): Promise<{
   attempt: AttemptRow;
   questions: Array<{
@@ -409,9 +419,9 @@ export async function startTestAttempt(
   const test = await testRepo.findTestWithQuestions(testId);
   if (!test) throw new TestNotFoundError(testId);
   if (test.status !== 'published') throw new TestNotPublishedError();
-  // Faqat kursga yozilgan talaba testni boshlashi mumkin (javob kalitini
-  // o'g'irlash / yozilmasdan test yechishning oldini oladi).
-  await assertEnrolledInTestCourse(test.courseId, studentId);
+  // Faqat kursga yozilgan talaba (yoki admin/kurs egasi) testni boshlashi mumkin
+  // — javob kalitini o'g'irlash / yozilmasdan test yechishning oldini oladi.
+  await assertEnrolledInTestCourse(test.courseId, studentId, role);
 
   if (test.allowedAttempts > 0) {
     const used = await testRepo.countAttempts(testId, studentId);
@@ -508,6 +518,7 @@ export async function submitTestAttempt(
   attemptId: string,
   studentId: string,
   answers: Record<string, string | string[]>,
+  role?: string,
 ): Promise<{
   attempt: AttemptRow;
   results: Array<{
@@ -526,7 +537,7 @@ export async function submitTestAttempt(
 
   const test = await testRepo.findTestWithQuestions(attempt.testId);
   if (!test) throw new TestNotFoundError(attempt.testId);
-  await assertEnrolledInTestCourse(test.courseId, studentId);
+  await assertEnrolledInTestCourse(test.courseId, studentId, role);
 
   // Vaqt cheklov tekshiruvi
   if (test.timeLimitSec) {

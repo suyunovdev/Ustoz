@@ -50,7 +50,7 @@ export async function POST(
       else if (Array.isArray(v) && v.every((x) => typeof x === 'string')) answers[k] = v as string[];
     }
 
-    const result = await submitTestAttempt(id, session.sub, answers);
+    const result = await submitTestAttempt(id, session.sub, answers, session.role);
     return jsonResponse(result);
   } catch (err) {
     if (err instanceof AttemptNotFoundError) {

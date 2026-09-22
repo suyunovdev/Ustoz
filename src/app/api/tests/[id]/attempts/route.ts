@@ -31,7 +31,7 @@ export async function POST(
   try {
     const session = await requireAuth(req);
     const { id } = await params;
-    const result = await startTestAttempt(id, session.sub);
+    const result = await startTestAttempt(id, session.sub, session.role);
     return jsonResponse(result);
   } catch (err) {
     if (err instanceof TestNotFoundError) {
